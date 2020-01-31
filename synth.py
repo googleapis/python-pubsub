@@ -189,7 +189,7 @@ s.replace(
 # ----------------------------------------------------------------------------
 # Add templated files
 # ----------------------------------------------------------------------------
-templated_files = gcp.CommonTemplates().py_library(unit_cov_level=97, cov_level=100)
+templated_files = gcp.CommonTemplates().py_library(unit_cov_level=97, cov_level=99)
 s.move(templated_files)
 
 s.shell.run(["nox", "-s", "blacken"], hide_output=False)
