@@ -63,11 +63,11 @@ class Client(object):
     get sensible defaults.
 
     Args:
+        batch_settings (~google.cloud.pubsub_v1.types.BatchSettings): The
+            settings for batch publishing.
         publisher_options (~google.cloud.pubsub_v1.types.PublisherOptions): The
             options for the publisher client. Note that enabling message ordering will
             override the publish retry timeout to be infinite.
-        batch_settings (~google.cloud.pubsub_v1.types.BatchSettings): The
-            settings for batch publishing.
         kwargs (dict): Any additional arguments provided are sent as keyword
             arguments to the underlying
             :class:`~google.cloud.pubsub_v1.gapic.publisher_client.PublisherClient`.
@@ -86,14 +86,14 @@ class Client(object):
 
         publisher_client = pubsub_v1.PublisherClient(
             # Optional
-            publisher_options = pubsub_v1.types.PublisherOptions(
-                enable_message_ordering=False
-            ),
-
-            # Optional
             batch_settings = pubsub_v1.types.BatchSettings(
                 max_bytes=1024,  # One kilobyte
                 max_latency=1,   # One second
+            ),
+
+            # Optional
+            publisher_options = pubsub_v1.types.PublisherOptions(
+                enable_message_ordering=False
             ),
 
             # Optional
@@ -116,7 +116,15 @@ class Client(object):
         )
     """
 
-    def __init__(self, publisher_options=(), batch_settings=(), **kwargs):
+    def __init__(self, batch_settings=(), publisher_options=(), **kwargs):
+        assert (
+            type(batch_settings) is types.BatchSettings or len(batch_settings) == 0
+        ), "batch_settings must be of type BatchSettings or an empty tuple."
+        assert (
+            type(publisher_options) is types.PublisherOptions
+            or len(publisher_options) == 0
+        ), "publisher_options must be of type PublisherOptions or an empty tuple."
+
         # Sanity check: Is our goal to use the emulator?
         # If so, create a grpc insecure channel with the emulator host
         # as the target.

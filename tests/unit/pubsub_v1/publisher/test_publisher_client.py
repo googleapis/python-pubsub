@@ -357,7 +357,7 @@ def test_stopped_client_does_not_commit_sequencers():
 def test_publish_with_ordering_key():
     creds = mock.Mock(spec=credentials.Credentials)
     publisher_options = types.PublisherOptions(enable_message_ordering=True)
-    client = publisher.Client(publisher_options, credentials=creds)
+    client = publisher.Client(publisher_options=publisher_options, credentials=creds)
 
     # Use a mock in lieu of the actual batch class.
     batch = mock.Mock(spec=client._batch_class)
@@ -396,8 +396,8 @@ def test_ordered_sequencer_cleaned_up():
     batch_settings = types.BatchSettings(max_latency=float("inf"))
     publisher_options = types.PublisherOptions(enable_message_ordering=True)
     client = publisher.Client(
-        publisher_options=publisher_options,
         batch_settings=batch_settings,
+        publisher_options=publisher_options,
         credentials=creds,
     )
 
@@ -421,7 +421,7 @@ def test_ordered_sequencer_cleaned_up():
 def test_resume_publish():
     creds = mock.Mock(spec=credentials.Credentials)
     publisher_options = types.PublisherOptions(enable_message_ordering=True)
-    client = publisher.Client(publisher_options, credentials=creds)
+    client = publisher.Client(publisher_options=publisher_options, credentials=creds)
 
     topic = "topic"
     ordering_key = "ord_key"
@@ -435,7 +435,7 @@ def test_resume_publish():
 def test_resume_publish_no_sequencer_found():
     creds = mock.Mock(spec=credentials.Credentials)
     publisher_options = types.PublisherOptions(enable_message_ordering=True)
-    client = publisher.Client(publisher_options, credentials=creds)
+    client = publisher.Client(publisher_options=publisher_options, credentials=creds)
 
     # Check no exception is thrown if a sequencer with the (topic, ordering_key)
     # pair does not exist.
@@ -445,7 +445,7 @@ def test_resume_publish_no_sequencer_found():
 def test_resume_publish_ordering_keys_not_enabled():
     creds = mock.Mock(spec=credentials.Credentials)
     publisher_options = types.PublisherOptions(enable_message_ordering=False)
-    client = publisher.Client(publisher_options, credentials=creds)
+    client = publisher.Client(publisher_options=publisher_options, credentials=creds)
 
     # Throw on calling resume_publish() when enable_message_ordering is False.
     with pytest.raises(ValueError):
