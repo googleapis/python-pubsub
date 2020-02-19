@@ -47,7 +47,7 @@ def publisher():
     yield pubsub_v1.PublisherClient()
 
 
-@pytest.fixture()
+@pytest.fixture(scope="module")
 def subscriber():
     yield pubsub_v1.SubscriberClient()
 
@@ -385,12 +385,16 @@ def test_managing_subscription_iam_policy(
 
 
 def test_subscriber_not_leaking_open_sockets(
-    publisher, topic_path, subscriber, subscription_path, cleanup
+    publisher, topic_path, subscription_path, cleanup
 ):
     # Make sure the topic and the supscription get deleted.
-    # NOTE: Since `subscriber` will be closed in the test, we need another
-    # subscriber to clean up the subscription.
-    # Also, we need to make sure that auxiliary subscriber releases the sockets, too.
+    # NOTE: Since subscriber client will be closed in the test, we should not
+    # use the shared `subscriber` fixture, but instead construct a new client
+    # in this test.
+    # Also, since the client will get closed, we need another subscriber client
+    # to clean up the subscription. We also need to make sure that auxiliary
+    # subscriber releases the sockets, too.
+    subscriber = pubsub_v1.SubscriberClient()
     subscriber_2 = pubsub_v1.SubscriberClient()
     cleanup.append((subscriber_2.delete_subscription, subscription_path))
 
