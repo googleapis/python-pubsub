@@ -646,7 +646,7 @@ class TestStreamingPull(object):
         cleanup.append((subscriber.delete_subscription, subscription_path))
         cleanup.append((subscriber.delete_snapshot, snapshot_path))
 
-        # create a topic and subscribe to it
+        # Create a topic and subscribe to it.
         publisher.create_topic(topic_path)
         subscriber.create_subscription(
             subscription_path, topic_path, retain_acked_messages=True
