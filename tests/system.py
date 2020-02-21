@@ -628,6 +628,9 @@ class TestStreamingPull(object):
         response = subscriber.pull(subscription_path, max_messages=2)
         assert len(response.received_messages) == 2
 
+    @pytest.mark.skip(
+        "Snapshot creation is not instant on the backend, causing test falkiness."
+    )
     @pytest.mark.skipif(
         "KOKORO_GFILE_DIR" not in os.environ,
         reason="Requires Kokoro environment with a service account with limited role.",
