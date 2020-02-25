@@ -191,9 +191,20 @@ class StreamingPullManager(object):
         Returns:
             int: The ack deadline.
         """
-        target = min([self._last_histogram_size * 2, self._last_histogram_size + 100])
-        if len(self.ack_histogram) > target:
-            self._ack_deadline = self.ack_histogram.percentile(percent=99)
+        target_size = min(
+            self._last_histogram_size * 2, self._last_histogram_size + 100
+        )
+        hist_size = len(self.ack_histogram)
+
+        if hist_size > target_size:
+            self._last_histogram_size = hist_size
+            p99 = self.ack_histogram.percentile(percent=99)
+
+            if self.flow_control.max_extension_period > 0:
+                self._ack_deadline = min(p99, self.flow_control.max_extension_period)
+            else:
+                self._ack_deadline = p99
+
         return self._ack_deadline
 
     @property

@@ -144,6 +144,15 @@ def test_ack_deadline():
     assert manager.ack_deadline == 20
 
 
+def test_ack_deadline_w_max_extension_period():
+    manager = make_manager()
+    manager._flow_control = types.FlowControl(max_extension_period=5)
+    for _ in range(5):
+        manager.ack_histogram.add(20)
+
+    assert manager.ack_deadline == 5
+
+
 def test_maybe_pause_consumer_wo_consumer_set():
     manager = make_manager(
         flow_control=types.FlowControl(max_messages=10, max_bytes=1000)
