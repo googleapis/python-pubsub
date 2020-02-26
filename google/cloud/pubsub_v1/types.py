@@ -115,8 +115,8 @@ if sys.version_info >= (3, 5):
         "before dropping it from the lease management."
     )
     FlowControl.max_extension_period.__doc__ = (
-        "Bounds the maximum amount of time before a message redelivery in the "
-        "event the subscriber fails to extend the deadline."
+        "Bounds the maximum amount of time in seconds before a message redelivery "
+        "in the event the subscriber fails to extend the deadline."
     )
 
 
