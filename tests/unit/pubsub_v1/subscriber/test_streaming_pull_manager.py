@@ -147,6 +147,8 @@ def test_ack_deadline():
 def test_ack_deadline_w_max_extension_period():
     manager = make_manager()
     manager._flow_control = types.FlowControl(max_extension_period=5)
+
+    assert manager.ack_deadline == 5
     for _ in range(5):
         manager.ack_histogram.add(20)
 
