@@ -63,7 +63,7 @@ class TestStreamingPullFuture(object):
         future.set_result("foo")
         assert future.done()
 
-        # invoking on close callback should result in an error
+        # invoking on close callback should not result in an error
         future._on_close_callback(mock.sentinel.manager, "bar")
 
         result = future.result()
