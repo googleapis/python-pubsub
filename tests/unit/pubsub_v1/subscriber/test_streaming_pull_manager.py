@@ -144,9 +144,9 @@ def test_ack_deadline():
     assert manager.ack_deadline == 20
 
 
-def test_ack_deadline_w_max_extension_period():
+def test_ack_deadline_w_max_duration_per_lease_extension():
     manager = make_manager()
-    manager._flow_control = types.FlowControl(max_extension_period=5)
+    manager._flow_control = types.FlowControl(max_duration_per_lease_extension=5)
 
     assert manager.ack_deadline == 5
     for _ in range(5):
