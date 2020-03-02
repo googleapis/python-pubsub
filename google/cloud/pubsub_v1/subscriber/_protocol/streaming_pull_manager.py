@@ -200,9 +200,9 @@ class StreamingPullManager(object):
             self._last_histogram_size = hist_size
             self._ack_deadline = self.ack_histogram.percentile(percent=99)
 
-        if self.flow_control.max_extension_period > 0:
+        if self.flow_control.max_duration_per_lease_extension > 0:
             self._ack_deadline = min(
-                self._ack_deadline, self.flow_control.max_extension_period
+                self._ack_deadline, self.flow_control.max_duration_per_lease_extension
             )
         return self._ack_deadline
 
