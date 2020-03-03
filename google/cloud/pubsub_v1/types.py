@@ -121,8 +121,8 @@ if sys.version_info >= (3, 5):
     )
     FlowControl.max_duration_per_lease_extension.__doc__ = (
         "The max amount of time in seconds for a single lease extension attempt. "
-        "Bounds the delay before a message redelivery in the event the "
-        "subscriber fails to extend the deadline."
+        "Bounds the delay before a message redelivery if the subscriber "
+        "fails to extend the deadline."
     )
 
 
