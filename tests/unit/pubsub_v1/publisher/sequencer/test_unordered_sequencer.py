@@ -120,6 +120,7 @@ def test_publish_after_batch_error():
     batch._set_status(base.BatchStatus.ERROR)
 
     # Will create a new batch since the old one has been committed. The fact
-    # that it errored should not matter in the publish of the next message.
+    # that the old batch errored should not matter in the publish of the next
+    # message.
     future = sequencer.publish(message)
     assert future is not None
