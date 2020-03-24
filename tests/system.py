@@ -448,7 +448,7 @@ def test_synchronous_pull_no_deadline_error_if_no_messages(
         response = subscriber.pull(subscription_path, max_messages=2)
     except core_exceptions.DeadlineExceeded:
         pytest.fail(
-            "Unexpected DeadlineExceeded error on syncronous pull when no "
+            "Unexpected DeadlineExceeded error on synchronous pull when no "
             "messages published to the topic."
         )
     else:
