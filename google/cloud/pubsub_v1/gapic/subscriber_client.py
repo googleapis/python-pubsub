@@ -246,7 +246,9 @@ class SubscriberClient(object):
         labels=None,
         enable_message_ordering=None,
         expiration_policy=None,
+        filter_=None,
         dead_letter_policy=None,
+        retry_policy=None,
         retry=google.api_core.gapic_v1.method.DEFAULT,
         timeout=google.api_core.gapic_v1.method.DEFAULT,
         metadata=None,
@@ -343,6 +345,13 @@ class SubscriberClient(object):
 
                 If a dict is provided, it must be of the same form as the protobuf
                 message :class:`~google.cloud.pubsub_v1.types.ExpirationPolicy`
+            filter_ (str): An expression written in the Cloud Pub/Sub filter language. If
+                non-empty, then only ``PubsubMessage``\ s whose ``attributes`` field
+                matches the filter are delivered on this subscription. If empty, then no
+                messages are filtered out. EXPERIMENTAL: This feature is part of a
+                closed alpha release. This API might be changed in backward-incompatible
+                ways and is not recommended for production use. It is not subject to any
+                SLA or deprecation policy.
             dead_letter_policy (Union[dict, ~google.cloud.pubsub_v1.types.DeadLetterPolicy]): A policy that specifies the conditions for dead lettering messages in
                 this subscription. If dead\_letter\_policy is not set, dead lettering is
                 disabled.
@@ -357,6 +366,19 @@ class SubscriberClient(object):
 
                 If a dict is provided, it must be of the same form as the protobuf
                 message :class:`~google.cloud.pubsub_v1.types.DeadLetterPolicy`
+            retry_policy (Union[dict, ~google.cloud.pubsub_v1.types.RetryPolicy]): A policy that specifies how Cloud Pub/Sub retries message delivery for this
+                subscription.
+
+                If not set, the default retry policy is applied. This generally implies
+                that messages will be retried as soon as possible for healthy subscribers.
+                RetryPolicy will be triggered on NACKs or acknowledgement deadline
+                exceeded events for a given message.
+                <b>EXPERIMENTAL:</b> This API might be changed in backward-incompatible
+                ways and is not recommended for production use. It is not subject to any
+                SLA or deprecation policy.
+
+                If a dict is provided, it must be of the same form as the protobuf
+                message :class:`~google.cloud.pubsub_v1.types.RetryPolicy`
             retry (Optional[google.api_core.retry.Retry]):  A retry object used
                 to retry requests. If ``None`` is specified, requests will
                 be retried using a default configuration.
@@ -397,7 +419,9 @@ class SubscriberClient(object):
             labels=labels,
             enable_message_ordering=enable_message_ordering,
             expiration_policy=expiration_policy,
+            filter=filter_,
             dead_letter_policy=dead_letter_policy,
+            retry_policy=retry_policy,
         )
         if metadata is None:
             metadata = []
@@ -950,13 +974,16 @@ class SubscriberClient(object):
         Args:
             subscription (str): Required. The subscription from which messages should be pulled. Format
                 is ``projects/{project}/subscriptions/{sub}``.
-            max_messages (int): Required. The maximum number of messages to return for this request. Must be a
-                positive integer. The Pub/Sub system may return fewer than the number
+            max_messages (int): Required. The maximum number of messages to return for this request. Must
+                be a positive integer. The Pub/Sub system may return fewer than the number
                 specified.
-            return_immediately (bool): If this field set to true, the system will respond immediately even if
-                it there are no messages available to return in the ``Pull`` response.
-                Otherwise, the system may wait (for a bounded amount of time) until at
-                least one message is available, rather than returning no messages.
+            return_immediately (bool): Optional. If this field set to true, the system will respond immediately
+                even if it there are no messages available to return in the ``Pull``
+                response. Otherwise, the system may wait (for a bounded amount of time)
+                until at least one message is available, rather than returning no
+                messages. Warning: setting this field to ``true`` is discouraged because
+                it adversely impacts the performance of ``Pull`` operations. We
+                recommend that users do not set this field.
             retry (Optional[google.api_core.retry.Retry]):  A retry object used
                 to retry requests. If ``None`` is specified, requests will
                 be retried using a default configuration.
@@ -1656,7 +1683,8 @@ class SubscriberClient(object):
             >>>
             >>> client = pubsub_v1.SubscriberClient()
             >>>
-            >>> resource = client.subscription_path('[PROJECT]', '[SUBSCRIPTION]')
+            >>> # TODO: Initialize `resource`:
+            >>> resource = ''
             >>>
             >>> # TODO: Initialize `policy`:
             >>> policy = {}
@@ -1738,7 +1766,8 @@ class SubscriberClient(object):
             >>>
             >>> client = pubsub_v1.SubscriberClient()
             >>>
-            >>> resource = client.subscription_path('[PROJECT]', '[SUBSCRIPTION]')
+            >>> # TODO: Initialize `resource`:
+            >>> resource = ''
             >>>
             >>> response = client.get_iam_policy(resource)
 
@@ -1822,7 +1851,8 @@ class SubscriberClient(object):
             >>>
             >>> client = pubsub_v1.SubscriberClient()
             >>>
-            >>> resource = client.subscription_path('[PROJECT]', '[SUBSCRIPTION]')
+            >>> # TODO: Initialize `resource`:
+            >>> resource = ''
             >>>
             >>> # TODO: Initialize `permissions`:
             >>> permissions = []

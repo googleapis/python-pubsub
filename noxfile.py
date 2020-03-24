@@ -110,9 +110,10 @@ def system(session):
 
     # Install all test dependencies, then install this package into the
     # virtualenv's dist-packages.
-    session.install("mock", "pytest", "psutil")
+    session.install("mock", "pytest")
 
     session.install("-e", "test_utils")
+    session.install("-e", "psutil")
     session.install("-e", ".")
 
     # Run py.test against the system tests.

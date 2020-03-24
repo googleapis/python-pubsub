@@ -77,12 +77,14 @@ class TestSubscriberClient(object):
         ack_deadline_seconds = 2135351438
         retain_acked_messages = False
         enable_message_ordering = True
+        filter_ = "filter-1274492040"
         expected_response = {
             "name": name_2,
             "topic": topic_2,
             "ack_deadline_seconds": ack_deadline_seconds,
             "retain_acked_messages": retain_acked_messages,
             "enable_message_ordering": enable_message_ordering,
+            "filter": filter_,
         }
         expected_response = pubsub_pb2.Subscription(**expected_response)
 
@@ -127,12 +129,14 @@ class TestSubscriberClient(object):
         ack_deadline_seconds = 2135351438
         retain_acked_messages = False
         enable_message_ordering = True
+        filter_ = "filter-1274492040"
         expected_response = {
             "name": name,
             "topic": topic,
             "ack_deadline_seconds": ack_deadline_seconds,
             "retain_acked_messages": retain_acked_messages,
             "enable_message_ordering": enable_message_ordering,
+            "filter": filter_,
         }
         expected_response = pubsub_pb2.Subscription(**expected_response)
 
@@ -175,12 +179,14 @@ class TestSubscriberClient(object):
         ack_deadline_seconds_2 = 921632575
         retain_acked_messages = False
         enable_message_ordering = True
+        filter_ = "filter-1274492040"
         expected_response = {
             "name": name,
             "topic": topic,
             "ack_deadline_seconds": ack_deadline_seconds_2,
             "retain_acked_messages": retain_acked_messages,
             "enable_message_ordering": enable_message_ordering,
+            "filter": filter_,
         }
         expected_response = pubsub_pb2.Subscription(**expected_response)
 
@@ -422,9 +428,7 @@ class TestSubscriberClient(object):
 
     def test_streaming_pull(self):
         # Setup Expected Response
-        received_messages_element = {}
-        received_messages = [received_messages_element]
-        expected_response = {"received_messages": received_messages}
+        expected_response = {}
         expected_response = pubsub_pb2.StreamingPullResponse(**expected_response)
 
         # Mock the API response
@@ -732,7 +736,7 @@ class TestSubscriberClient(object):
             client = subscriber_client.SubscriberClient()
 
         # Setup Request
-        resource = client.subscription_path("[PROJECT]", "[SUBSCRIPTION]")
+        resource = "resource-341064690"
         policy = {}
 
         response = client.set_iam_policy(resource, policy)
@@ -754,7 +758,7 @@ class TestSubscriberClient(object):
             client = subscriber_client.SubscriberClient()
 
         # Setup request
-        resource = client.subscription_path("[PROJECT]", "[SUBSCRIPTION]")
+        resource = "resource-341064690"
         policy = {}
 
         with pytest.raises(CustomException):
@@ -775,7 +779,7 @@ class TestSubscriberClient(object):
             client = subscriber_client.SubscriberClient()
 
         # Setup Request
-        resource = client.subscription_path("[PROJECT]", "[SUBSCRIPTION]")
+        resource = "resource-341064690"
 
         response = client.get_iam_policy(resource)
         assert expected_response == response
@@ -794,7 +798,7 @@ class TestSubscriberClient(object):
             client = subscriber_client.SubscriberClient()
 
         # Setup request
-        resource = client.subscription_path("[PROJECT]", "[SUBSCRIPTION]")
+        resource = "resource-341064690"
 
         with pytest.raises(CustomException):
             client.get_iam_policy(resource)
@@ -814,7 +818,7 @@ class TestSubscriberClient(object):
             client = subscriber_client.SubscriberClient()
 
         # Setup Request
-        resource = client.subscription_path("[PROJECT]", "[SUBSCRIPTION]")
+        resource = "resource-341064690"
         permissions = []
 
         response = client.test_iam_permissions(resource, permissions)
@@ -836,7 +840,7 @@ class TestSubscriberClient(object):
             client = subscriber_client.SubscriberClient()
 
         # Setup request
-        resource = client.subscription_path("[PROJECT]", "[SUBSCRIPTION]")
+        resource = "resource-341064690"
         permissions = []
 
         with pytest.raises(CustomException):
