@@ -16,6 +16,7 @@ from __future__ import absolute_import
 
 import os
 import pkg_resources
+import six
 
 import grpc
 
@@ -81,7 +82,11 @@ class Client(object):
 
         # api_endpoint wont be applied if 'transport' is passed in.
         client_options = kwargs.pop("client_options", None)
-        if client_options and type(client_options["api_endpoint"]) is str:
+        if (
+            client_options
+            and "api_endpoint" in client_options
+            and isinstance(client_options["api_endpoint"], six.string_types)
+        ):
             self._target = client_options["api_endpoint"]
         else:
             self._target = subscriber_client.SubscriberClient.SERVICE_ADDRESS

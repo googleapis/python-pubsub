@@ -134,7 +134,11 @@ class Client(object):
             )
 
         client_options = kwargs.pop("client_options", None)
-        if client_options and type(client_options["api_endpoint"]) is str:
+        if (
+            client_options
+            and "api_endpoint" in client_options
+            and isinstance(client_options["api_endpoint"], six.string_types)
+        ):
             self._target = client_options["api_endpoint"]
         else:
             self._target = publisher_client.PublisherClient.SERVICE_ADDRESS
