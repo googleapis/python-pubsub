@@ -79,6 +79,13 @@ class Client(object):
                 target=os.environ.get("PUBSUB_EMULATOR_HOST")
             )
 
+        # api_endpoint wont be applied if 'transport' is passed in.
+        client_options = kwargs.pop("client_options", None)
+        if client_options and type(client_options["api_endpoint"]) is str:
+            self._target = client_options["api_endpoint"]
+        else:
+            self._target = subscriber_client.SubscriberClient.SERVICE_ADDRESS
+
         # Use a custom channel.
         # We need this in order to set appropriate default message size and
         # keepalive options.
@@ -133,7 +140,7 @@ class Client(object):
         Returns:
             str: The location of the API.
         """
-        return subscriber_client.SubscriberClient.SERVICE_ADDRESS
+        return self._target
 
     @property
     def api(self):
