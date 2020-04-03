@@ -774,6 +774,113 @@ class PublisherClient(object):
         )
         return iterator
 
+    def list_topic_snapshots(
+        self,
+        topic,
+        page_size=None,
+        retry=google.api_core.gapic_v1.method.DEFAULT,
+        timeout=google.api_core.gapic_v1.method.DEFAULT,
+        metadata=None,
+    ):
+        """
+        Lists the names of the snapshots on this topic. Snapshots are used in
+        <a href="https://cloud.google.com/pubsub/docs/replay-overview">Seek</a>
+        operations, which allow
+        you to manage message acknowledgments in bulk. That is, you can set the
+        acknowledgment state of messages in an existing subscription to the state
+        captured by a snapshot.
+
+        Example:
+            >>> from google.cloud import pubsub_v1
+            >>>
+            >>> client = pubsub_v1.PublisherClient()
+            >>>
+            >>> topic = client.topic_path('[PROJECT]', '[TOPIC]')
+            >>>
+            >>> # Iterate over all results
+            >>> for element in client.list_topic_snapshots(topic):
+            ...     # process element
+            ...     pass
+            >>>
+            >>>
+            >>> # Alternatively:
+            >>>
+            >>> # Iterate over results one page at a time
+            >>> for page in client.list_topic_snapshots(topic).pages:
+            ...     for element in page:
+            ...         # process element
+            ...         pass
+
+        Args:
+            topic (str): Required. The name of the topic that snapshots are attached to. Format
+                is ``projects/{project}/topics/{topic}``.
+            page_size (int): The maximum number of resources contained in the
+                underlying API response. If page streaming is performed per-
+                resource, this parameter does not affect the return value. If page
+                streaming is performed per-page, this determines the maximum number
+                of resources in a page.
+            retry (Optional[google.api_core.retry.Retry]):  A retry object used
+                to retry requests. If ``None`` is specified, requests will
+                be retried using a default configuration.
+            timeout (Optional[float]): The amount of time, in seconds, to wait
+                for the request to complete. Note that if ``retry`` is
+                specified, the timeout applies to each individual attempt.
+            metadata (Optional[Sequence[Tuple[str, str]]]): Additional metadata
+                that is provided to the method.
+
+        Returns:
+            A :class:`~google.api_core.page_iterator.GRPCIterator` instance.
+            An iterable of :class:`str` instances.
+            You can also iterate over the pages of the response
+            using its `pages` property.
+
+        Raises:
+            google.api_core.exceptions.GoogleAPICallError: If the request
+                    failed for any reason.
+            google.api_core.exceptions.RetryError: If the request failed due
+                    to a retryable error and retry attempts failed.
+            ValueError: If the parameters are invalid.
+        """
+        # Wrap the transport method to add retry and timeout logic.
+        if "list_topic_snapshots" not in self._inner_api_calls:
+            self._inner_api_calls[
+                "list_topic_snapshots"
+            ] = google.api_core.gapic_v1.method.wrap_method(
+                self.transport.list_topic_snapshots,
+                default_retry=self._method_configs["ListTopicSnapshots"].retry,
+                default_timeout=self._method_configs["ListTopicSnapshots"].timeout,
+                client_info=self._client_info,
+            )
+
+        request = pubsub_pb2.ListTopicSnapshotsRequest(topic=topic, page_size=page_size)
+        if metadata is None:
+            metadata = []
+        metadata = list(metadata)
+        try:
+            routing_header = [("topic", topic)]
+        except AttributeError:
+            pass
+        else:
+            routing_metadata = google.api_core.gapic_v1.routing_header.to_grpc_metadata(
+                routing_header
+            )
+            metadata.append(routing_metadata)
+
+        iterator = google.api_core.page_iterator.GRPCIterator(
+            client=None,
+            method=functools.partial(
+                self._inner_api_calls["list_topic_snapshots"],
+                retry=retry,
+                timeout=timeout,
+                metadata=metadata,
+            ),
+            request=request,
+            items_field="snapshots",
+            request_token_field="page_token",
+            response_token_field="next_page_token",
+        )
+        return iterator
+
     def delete_topic(
         self,
         topic,
@@ -866,7 +973,8 @@ class PublisherClient(object):
             >>>
             >>> client = pubsub_v1.PublisherClient()
             >>>
-            >>> resource = client.topic_path('[PROJECT]', '[TOPIC]')
+            >>> # TODO: Initialize `resource`:
+            >>> resource = ''
             >>>
             >>> # TODO: Initialize `policy`:
             >>> policy = {}
@@ -948,7 +1056,8 @@ class PublisherClient(object):
             >>>
             >>> client = pubsub_v1.PublisherClient()
             >>>
-            >>> resource = client.topic_path('[PROJECT]', '[TOPIC]')
+            >>> # TODO: Initialize `resource`:
+            >>> resource = ''
             >>>
             >>> response = client.get_iam_policy(resource)
 
@@ -1032,7 +1141,8 @@ class PublisherClient(object):
             >>>
             >>> client = pubsub_v1.PublisherClient()
             >>>
-            >>> resource = client.topic_path('[PROJECT]', '[TOPIC]')
+            >>> # TODO: Initialize `resource`:
+            >>> resource = ''
             >>>
             >>> # TODO: Initialize `permissions`:
             >>> permissions = []
