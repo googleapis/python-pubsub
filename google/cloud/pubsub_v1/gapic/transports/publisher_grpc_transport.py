@@ -116,8 +116,12 @@ class PublisherGrpcTransport(object):
     def create_topic(self):
         """Return the gRPC stub for :meth:`PublisherClient.create_topic`.
 
-        Creates the given topic with the given name. See the resource name
-        rules.
+        Deletes the topic with the given name. Returns ``NOT_FOUND`` if the
+        topic does not exist. After a topic is deleted, a new topic may be
+        created with the same name; this is an entirely new topic with none of
+        the old configuration or subscriptions. Existing subscriptions to this
+        topic are not deleted, but their ``topic`` field is set to
+        ``_deleted-topic_``.
 
         Returns:
             Callable: A callable which accepts the appropriate
@@ -144,8 +148,37 @@ class PublisherGrpcTransport(object):
     def publish(self):
         """Return the gRPC stub for :meth:`PublisherClient.publish`.
 
-        Adds one or more messages to the topic. Returns ``NOT_FOUND`` if the
-        topic does not exist.
+        Protocol Buffers - Google's data interchange format Copyright 2008
+        Google Inc. All rights reserved.
+        https://developers.google.com/protocol-buffers/
+
+        Redistribution and use in source and binary forms, with or without
+        modification, are permitted provided that the following conditions are
+        met:
+
+        ::
+
+            * Redistributions of source code must retain the above copyright
+
+        notice, this list of conditions and the following disclaimer. \*
+        Redistributions in binary form must reproduce the above copyright
+        notice, this list of conditions and the following disclaimer in the
+        documentation and/or other materials provided with the distribution. \*
+        Neither the name of Google Inc. nor the names of its contributors may be
+        used to endorse or promote products derived from this software without
+        specific prior written permission.
+
+        THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
+        IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+        TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+        PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER
+        OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+        EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+        PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+        PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+        LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+        NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+        SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
         Returns:
             Callable: A callable which accepts the appropriate
@@ -215,12 +248,8 @@ class PublisherGrpcTransport(object):
     def delete_topic(self):
         """Return the gRPC stub for :meth:`PublisherClient.delete_topic`.
 
-        Deletes the topic with the given name. Returns ``NOT_FOUND`` if the
-        topic does not exist. After a topic is deleted, a new topic may be
-        created with the same name; this is an entirely new topic with none of
-        the old configuration or subscriptions. Existing subscriptions to this
-        topic are not deleted, but their ``topic`` field is set to
-        ``_deleted-topic_``.
+        An annotation that describes a resource reference, see
+        ``ResourceReference``.
 
         Returns:
             Callable: A callable which accepts the appropriate
