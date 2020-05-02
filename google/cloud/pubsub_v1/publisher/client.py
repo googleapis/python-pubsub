@@ -315,8 +315,6 @@ class Client(object):
             ordering_key: A string that identifies related messages for which
                 publish order should be respected. Message ordering must be
                 enabled for this client to use this feature.
-                EXPERIMENTAL: This feature is currently available in a closed
-                alpha. Please contact the Cloud Pub/Sub team to use it.
             attrs (Mapping[str, str]): A dictionary of attributes to be
                 sent as metadata. (These may be text strings or byte strings.)
 

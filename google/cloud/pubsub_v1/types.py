@@ -43,9 +43,6 @@ if sys.version_info >= (3, 5):
     PublisherOptions.__doc__ = "The options for the publisher client."
     PublisherOptions.enable_message_ordering.__doc__ = (
         "Whether to order messages in a batch by a supplied ordering key."
-        "EXPERIMENTAL: Message ordering is an alpha feature that requires "
-        "special permissions to use. Please contact the Cloud Pub/Sub team for "
-        "more information."
     )
 
 
