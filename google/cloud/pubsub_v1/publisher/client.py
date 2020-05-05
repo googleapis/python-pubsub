@@ -34,6 +34,7 @@ from google.cloud.pubsub_v1.gapic.transports import publisher_grpc_transport
 from google.cloud.pubsub_v1.publisher._batch import thread
 from google.cloud.pubsub_v1.publisher._sequencer import ordered_sequencer
 from google.cloud.pubsub_v1.publisher._sequencer import unordered_sequencer
+from google.cloud.pubsub_v1.publisher.flow_controller import FlowController
 
 __version__ = pkg_resources.get_distribution("google-cloud-pubsub").version
 
@@ -93,7 +94,11 @@ class Client(object):
 
             # Optional
             publisher_options = pubsub_v1.types.PublisherOptions(
-                enable_message_ordering=False
+                enable_message_ordering=False,
+                flow_control=pubsub_v1.types.PublishFlowControl(
+                    message_limit=2000,
+                    limit_exceeded_behavior=pubsub_v1.types.LimitExceededBehavior.BLOCK,
+                ),
             ),
 
             # Optional
@@ -197,6 +202,9 @@ class Client(object):
         self._is_stopped = False
         # Thread created to commit all sequencers after a timeout.
         self._commit_thread = None
+
+        # The object controlling the message publishing flow
+        self._flow_controller = FlowController(self.publisher_options.flow_control)
 
     @classmethod
     def from_service_account_file(cls, filename, batch_settings=(), **kwargs):
@@ -333,6 +341,11 @@ class Client(object):
 
             pubsub_v1.publisher.exceptions.MessageTooLargeError: If publishing
                 the ``message`` would exceed the max size limit on the backend.
+
+            :exception:`~pubsub_v1.publisher.exceptions.FlowControlLimitError`:
+                If publishing a new message would exceed the publish flow control
+                limits and the desired action on overflow is
+                :attr:`~google.cloud.pubsub_v1.types.LimitExceededBehavior.ERROR`.
         """
         # Sanity check: Is the data being sent as a bytestring?
         # If it is literally anything else, complain loudly about it.
@@ -364,6 +377,13 @@ class Client(object):
             data=data, ordering_key=ordering_key, attributes=attrs
         )
 
+        # Messages should go through flow control to prevent excessive
+        # queuing on the client side (depending on the settings).
+        self._flow_controller.add(message)
+
+        def on_publish_done(future):
+            self._flow_controller.release(message)
+
         with self._batch_lock:
             if self._is_stopped:
                 raise RuntimeError("Cannot publish on a stopped publisher.")
@@ -372,6 +392,7 @@ class Client(object):
 
             # Delegate the publishing to the sequencer.
             future = sequencer.publish(message)
+            future.add_done_callback(on_publish_done)
 
             # Create a timer thread if necessary to enforce the batching
             # timeout.
