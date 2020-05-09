@@ -34,6 +34,35 @@ def test_init_w_custom_transport():
     assert client.api.transport is transport
 
 
+def test_init_w_api_endpoint():
+    client_options = {"api_endpoint": "testendpoint.google.com"}
+    client = subscriber.Client(client_options=client_options)
+
+    assert isinstance(client.api, subscriber_client.SubscriberClient)
+    assert (client.api.transport._channel._channel.target()).decode(
+        "utf-8"
+    ) == "testendpoint.google.com"
+
+
+def test_init_w_unicode_api_endpoint():
+    client_options = {"api_endpoint": u"testendpoint.google.com"}
+    client = subscriber.Client(client_options=client_options)
+
+    assert isinstance(client.api, subscriber_client.SubscriberClient)
+    assert (client.api.transport._channel._channel.target()).decode(
+        "utf-8"
+    ) == "testendpoint.google.com"
+
+
+def test_init_w_empty_client_options():
+    client = subscriber.Client(client_options={})
+
+    assert isinstance(client.api, subscriber_client.SubscriberClient)
+    assert (client.api.transport._channel._channel.target()).decode(
+        "utf-8"
+    ) == subscriber_client.SubscriberClient.SERVICE_ADDRESS
+
+
 def test_init_emulator(monkeypatch):
     monkeypatch.setenv("PUBSUB_EMULATOR_HOST", "/baz/bacon/")
     # NOTE: When the emulator host is set, a custom channel will be used, so
@@ -106,3 +135,22 @@ def test_subscribe_options(manager_open):
         callback=mock.sentinel.callback,
         on_callback_error=future.set_exception,
     )
+
+
+def test_close():
+    mock_transport = mock.NonCallableMock()
+    client = subscriber.Client(transport=mock_transport)
+
+    client.close()
+
+    mock_transport.channel.close.assert_called()
+
+
+def test_closes_channel_as_context_manager():
+    mock_transport = mock.NonCallableMock()
+    client = subscriber.Client(transport=mock_transport)
+
+    with client:
+        pass
+
+    mock_transport.channel.close.assert_called()

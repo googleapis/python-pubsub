@@ -16,6 +16,7 @@ from __future__ import absolute_import
 
 import os
 import pkg_resources
+import six
 
 import grpc
 
@@ -79,6 +80,17 @@ class Client(object):
                 target=os.environ.get("PUBSUB_EMULATOR_HOST")
             )
 
+        # api_endpoint wont be applied if 'transport' is passed in.
+        client_options = kwargs.pop("client_options", None)
+        if (
+            client_options
+            and "api_endpoint" in client_options
+            and isinstance(client_options["api_endpoint"], six.string_types)
+        ):
+            self._target = client_options["api_endpoint"]
+        else:
+            self._target = subscriber_client.SubscriberClient.SERVICE_ADDRESS
+
         # Use a custom channel.
         # We need this in order to set appropriate default message size and
         # keepalive options.
@@ -133,7 +145,7 @@ class Client(object):
         Returns:
             str: The location of the API.
         """
-        return subscriber_client.SubscriberClient.SERVICE_ADDRESS
+        return self._target
 
     @property
     def api(self):
@@ -228,3 +240,19 @@ class Client(object):
         manager.open(callback=callback, on_callback_error=future.set_exception)
 
         return future
+
+    def close(self):
+        """Close the underlying channel to release socket resources.
+
+        After a channel has been closed, the client instance cannot be used
+        anymore.
+
+        This method is idempotent.
+        """
+        self.api.transport.channel.close()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()

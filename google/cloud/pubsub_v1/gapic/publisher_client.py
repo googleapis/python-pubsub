@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2019 Google LLC
+# Copyright 2020 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -51,10 +51,10 @@ _GAPIC_LIBRARY_VERSION = pkg_resources.get_distribution("google-cloud-pubsub").v
 
 
 # TODO: remove conditional import after Python 2 support is dropped
-if six.PY3:
-    from collections.abc import Mapping
-else:
+if six.PY2:
     from collections import Mapping
+else:
+    from collections.abc import Mapping
 
 
 def _merge_dict(d1, d2):
@@ -260,12 +260,12 @@ class PublisherClient(object):
             >>> response = client.create_topic(name)
 
         Args:
-            name (str): The name of the topic. It must have the format
-                `"projects/{project}/topics/{topic}"`. `{topic}` must start with a letter,
-                and contain only letters (`[A-Za-z]`), numbers (`[0-9]`), dashes (`-`),
-                underscores (`_`), periods (`.`), tildes (`~`), plus (`+`) or percent
-                signs (`%`). It must be between 3 and 255 characters in length, and it
-                must not start with `"goog"`.
+            name (str): Required. The name of the topic. It must have the format
+                ``"projects/{project}/topics/{topic}"``. ``{topic}`` must start with a
+                letter, and contain only letters (``[A-Za-z]``), numbers (``[0-9]``),
+                dashes (``-``), underscores (``_``), periods (``.``), tildes (``~``),
+                plus (``+``) or percent signs (``%``). It must be between 3 and 255
+                characters in length, and it must not start with ``"goog"``.
             labels (dict[str -> str]): See <a href="https://cloud.google.com/pubsub/docs/labels"> Creating and
                 managing labels</a>.
             message_storage_policy (Union[dict, ~google.cloud.pubsub_v1.types.MessageStoragePolicy]): Policy constraining the set of Google Cloud Platform regions where messages
@@ -358,16 +358,15 @@ class PublisherClient(object):
             >>> response = client.update_topic(topic, update_mask)
 
         Args:
-            topic (Union[dict, ~google.cloud.pubsub_v1.types.Topic]): The updated topic object.
+            topic (Union[dict, ~google.cloud.pubsub_v1.types.Topic]): Required. The updated topic object.
 
                 If a dict is provided, it must be of the same form as the protobuf
                 message :class:`~google.cloud.pubsub_v1.types.Topic`
-            update_mask (Union[dict, ~google.cloud.pubsub_v1.types.FieldMask]): Indicates which fields in the provided topic to update. Must be
-                specified and non-empty. Note that if ``update_mask`` contains
-                "message\_storage\_policy" then the new value will be determined based
-                on the policy configured at the project or organization level. The
-                ``message_storage_policy`` must not be set in the ``topic`` provided
-                above.
+            update_mask (Union[dict, ~google.cloud.pubsub_v1.types.FieldMask]): Required. Indicates which fields in the provided topic to update. Must
+                be specified and non-empty. Note that if ``update_mask`` contains
+                "message\_storage\_policy" but the ``message_storage_policy`` is not set
+                in the ``topic`` provided above, then the updated value is determined by
+                the policy configured at the project or organization level.
 
                 If a dict is provided, it must be of the same form as the protobuf
                 message :class:`~google.cloud.pubsub_v1.types.FieldMask`
@@ -444,9 +443,9 @@ class PublisherClient(object):
             >>> response = client.publish(topic, messages)
 
         Args:
-            topic (str): The messages in the request will be published on this topic. Format is
-                ``projects/{project}/topics/{topic}``.
-            messages (list[Union[dict, ~google.cloud.pubsub_v1.types.PubsubMessage]]): The messages to publish.
+            topic (str): Required. The messages in the request will be published on this topic.
+                Format is ``projects/{project}/topics/{topic}``.
+            messages (list[Union[dict, ~google.cloud.pubsub_v1.types.PubsubMessage]]): Required. The messages to publish.
 
                 If a dict is provided, it must be of the same form as the protobuf
                 message :class:`~google.cloud.pubsub_v1.types.PubsubMessage`
@@ -518,7 +517,7 @@ class PublisherClient(object):
             >>> response = client.get_topic(topic)
 
         Args:
-            topic (str): The name of the topic to get. Format is
+            topic (str): Required. The name of the topic to get. Format is
                 ``projects/{project}/topics/{topic}``.
             retry (Optional[google.api_core.retry.Retry]):  A retry object used
                 to retry requests. If ``None`` is specified, requests will
@@ -601,7 +600,7 @@ class PublisherClient(object):
             ...         pass
 
         Args:
-            project (str): The name of the project in which to list topics. Format is
+            project (str): Required. The name of the project in which to list topics. Format is
                 ``projects/{project-id}``.
             page_size (int): The maximum number of resources contained in the
                 underlying API response. If page streaming is performed per-
@@ -703,8 +702,8 @@ class PublisherClient(object):
             ...         pass
 
         Args:
-            topic (str): The name of the topic that subscriptions are attached to. Format is
-                ``projects/{project}/topics/{topic}``.
+            topic (str): Required. The name of the topic that subscriptions are attached to.
+                Format is ``projects/{project}/topics/{topic}``.
             page_size (int): The maximum number of resources contained in the
                 underlying API response. If page streaming is performed per-
                 resource, this parameter does not affect the return value. If page
@@ -774,6 +773,113 @@ class PublisherClient(object):
         )
         return iterator
 
+    def list_topic_snapshots(
+        self,
+        topic,
+        page_size=None,
+        retry=google.api_core.gapic_v1.method.DEFAULT,
+        timeout=google.api_core.gapic_v1.method.DEFAULT,
+        metadata=None,
+    ):
+        """
+        Lists the names of the snapshots on this topic. Snapshots are used in
+        <a href="https://cloud.google.com/pubsub/docs/replay-overview">Seek</a>
+        operations, which allow
+        you to manage message acknowledgments in bulk. That is, you can set the
+        acknowledgment state of messages in an existing subscription to the state
+        captured by a snapshot.
+
+        Example:
+            >>> from google.cloud import pubsub_v1
+            >>>
+            >>> client = pubsub_v1.PublisherClient()
+            >>>
+            >>> topic = client.topic_path('[PROJECT]', '[TOPIC]')
+            >>>
+            >>> # Iterate over all results
+            >>> for element in client.list_topic_snapshots(topic):
+            ...     # process element
+            ...     pass
+            >>>
+            >>>
+            >>> # Alternatively:
+            >>>
+            >>> # Iterate over results one page at a time
+            >>> for page in client.list_topic_snapshots(topic).pages:
+            ...     for element in page:
+            ...         # process element
+            ...         pass
+
+        Args:
+            topic (str): Required. The name of the topic that snapshots are attached to. Format
+                is ``projects/{project}/topics/{topic}``.
+            page_size (int): The maximum number of resources contained in the
+                underlying API response. If page streaming is performed per-
+                resource, this parameter does not affect the return value. If page
+                streaming is performed per-page, this determines the maximum number
+                of resources in a page.
+            retry (Optional[google.api_core.retry.Retry]):  A retry object used
+                to retry requests. If ``None`` is specified, requests will
+                be retried using a default configuration.
+            timeout (Optional[float]): The amount of time, in seconds, to wait
+                for the request to complete. Note that if ``retry`` is
+                specified, the timeout applies to each individual attempt.
+            metadata (Optional[Sequence[Tuple[str, str]]]): Additional metadata
+                that is provided to the method.
+
+        Returns:
+            A :class:`~google.api_core.page_iterator.GRPCIterator` instance.
+            An iterable of :class:`str` instances.
+            You can also iterate over the pages of the response
+            using its `pages` property.
+
+        Raises:
+            google.api_core.exceptions.GoogleAPICallError: If the request
+                    failed for any reason.
+            google.api_core.exceptions.RetryError: If the request failed due
+                    to a retryable error and retry attempts failed.
+            ValueError: If the parameters are invalid.
+        """
+        # Wrap the transport method to add retry and timeout logic.
+        if "list_topic_snapshots" not in self._inner_api_calls:
+            self._inner_api_calls[
+                "list_topic_snapshots"
+            ] = google.api_core.gapic_v1.method.wrap_method(
+                self.transport.list_topic_snapshots,
+                default_retry=self._method_configs["ListTopicSnapshots"].retry,
+                default_timeout=self._method_configs["ListTopicSnapshots"].timeout,
+                client_info=self._client_info,
+            )
+
+        request = pubsub_pb2.ListTopicSnapshotsRequest(topic=topic, page_size=page_size)
+        if metadata is None:
+            metadata = []
+        metadata = list(metadata)
+        try:
+            routing_header = [("topic", topic)]
+        except AttributeError:
+            pass
+        else:
+            routing_metadata = google.api_core.gapic_v1.routing_header.to_grpc_metadata(
+                routing_header
+            )
+            metadata.append(routing_metadata)
+
+        iterator = google.api_core.page_iterator.GRPCIterator(
+            client=None,
+            method=functools.partial(
+                self._inner_api_calls["list_topic_snapshots"],
+                retry=retry,
+                timeout=timeout,
+                metadata=metadata,
+            ),
+            request=request,
+            items_field="snapshots",
+            request_token_field="page_token",
+            response_token_field="next_page_token",
+        )
+        return iterator
+
     def delete_topic(
         self,
         topic,
@@ -799,7 +905,7 @@ class PublisherClient(object):
             >>> client.delete_topic(topic)
 
         Args:
-            topic (str): Name of the topic to delete. Format is
+            topic (str): Required. Name of the topic to delete. Format is
                 ``projects/{project}/topics/{topic}``.
             retry (Optional[google.api_core.retry.Retry]):  A retry object used
                 to retry requests. If ``None`` is specified, requests will
@@ -855,15 +961,19 @@ class PublisherClient(object):
         metadata=None,
     ):
         """
-        Sets the access control policy on the specified resource. Replaces any
-        existing policy.
+        Sets the access control policy on the specified resource. Replaces
+        any existing policy.
+
+        Can return `NOT_FOUND`, `INVALID_ARGUMENT`, and `PERMISSION_DENIED`
+        errors.
 
         Example:
             >>> from google.cloud import pubsub_v1
             >>>
             >>> client = pubsub_v1.PublisherClient()
             >>>
-            >>> resource = client.topic_path('[PROJECT]', '[TOPIC]')
+            >>> # TODO: Initialize `resource`:
+            >>> resource = ''
             >>>
             >>> # TODO: Initialize `policy`:
             >>> policy = {}
@@ -937,16 +1047,16 @@ class PublisherClient(object):
         metadata=None,
     ):
         """
-        Gets the access control policy for a resource.
-        Returns an empty policy if the resource exists and does not have a policy
-        set.
+        Gets the access control policy for a resource. Returns an empty policy
+        if the resource exists and does not have a policy set.
 
         Example:
             >>> from google.cloud import pubsub_v1
             >>>
             >>> client = pubsub_v1.PublisherClient()
             >>>
-            >>> resource = client.topic_path('[PROJECT]', '[TOPIC]')
+            >>> # TODO: Initialize `resource`:
+            >>> resource = ''
             >>>
             >>> response = client.get_iam_policy(resource)
 
@@ -1018,8 +1128,8 @@ class PublisherClient(object):
     ):
         """
         Returns permissions that a caller has on the specified resource. If the
-        resource does not exist, this will return an empty set of permissions,
-        not a NOT\_FOUND error.
+        resource does not exist, this will return an empty set of
+        permissions, not a `NOT_FOUND` error.
 
         Note: This operation is designed to be used for building
         permission-aware UIs and command-line tools, not for authorization
@@ -1030,7 +1140,8 @@ class PublisherClient(object):
             >>>
             >>> client = pubsub_v1.PublisherClient()
             >>>
-            >>> resource = client.topic_path('[PROJECT]', '[TOPIC]')
+            >>> # TODO: Initialize `resource`:
+            >>> resource = ''
             >>>
             >>> # TODO: Initialize `permissions`:
             >>> permissions = []

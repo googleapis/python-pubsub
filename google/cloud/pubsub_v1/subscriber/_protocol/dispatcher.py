@@ -114,7 +114,7 @@ class Dispatcher(object):
         if batched_commands[requests.ModAckRequest]:
             self.modify_ack_deadline(batched_commands.pop(requests.ModAckRequest))
         # Note: Drop and ack *must* be after lease. It's possible to get both
-        # the lease the and ack/drop request in the same batch.
+        # the lease and the ack/drop request in the same batch.
         if batched_commands[requests.AckRequest]:
             self.ack(batched_commands.pop(requests.AckRequest))
         if batched_commands[requests.NackRequest]:
@@ -155,6 +155,8 @@ class Dispatcher(object):
             items(Sequence[DropRequest]): The items to drop.
         """
         self._manager.leaser.remove(items)
+        ordering_keys = (k.ordering_key for k in items if k.ordering_key)
+        self._manager.activate_ordering_keys(ordering_keys)
         self._manager.maybe_resume_consumer()
 
     def lease(self, items):

@@ -18,6 +18,7 @@ import datetime
 import itertools
 import operator as op
 import os
+import psutil
 import threading
 import time
 
@@ -26,6 +27,7 @@ import pytest
 import six
 
 import google.auth
+from google.api_core import exceptions as core_exceptions
 from google.cloud import pubsub_v1
 from google.cloud.pubsub_v1 import exceptions
 from google.cloud.pubsub_v1 import futures
@@ -46,7 +48,7 @@ def publisher():
     yield pubsub_v1.PublisherClient()
 
 
-@pytest.fixture(scope=u"module")
+@pytest.fixture(scope="module")
 def subscriber():
     yield pubsub_v1.SubscriberClient()
 
@@ -383,6 +385,76 @@ def test_managing_subscription_iam_policy(
     assert bindings[1].members == ["group:cloud-logs@google.com"]
 
 
+def test_subscriber_not_leaking_open_sockets(
+    publisher, topic_path, subscription_path, cleanup
+):
+    # Make sure the topic and the supscription get deleted.
+    # NOTE: Since subscriber client will be closed in the test, we should not
+    # use the shared `subscriber` fixture, but instead construct a new client
+    # in this test.
+    # Also, since the client will get closed, we need another subscriber client
+    # to clean up the subscription. We also need to make sure that auxiliary
+    # subscriber releases the sockets, too.
+    subscriber = pubsub_v1.SubscriberClient()
+    subscriber_2 = pubsub_v1.SubscriberClient()
+    cleanup.append((subscriber_2.delete_subscription, subscription_path))
+
+    def one_arg_close(subscriber):  # the cleanup helper expects exactly one argument
+        subscriber.close()
+
+    cleanup.append((one_arg_close, subscriber_2))
+    cleanup.append((publisher.delete_topic, topic_path))
+
+    # Create topic before starting to track connection count (any sockets opened
+    # by the publisher client are not counted by this test).
+    publisher.create_topic(topic_path)
+
+    current_process = psutil.Process()
+    conn_count_start = len(current_process.connections())
+
+    # Publish a few messages, then synchronously pull them and check that
+    # no sockets are leaked.
+    with subscriber:
+        subscriber.create_subscription(name=subscription_path, topic=topic_path)
+
+        # Publish a few messages, wait for the publish to succeed.
+        publish_futures = [
+            publisher.publish(topic_path, u"message {}".format(i).encode())
+            for i in range(1, 4)
+        ]
+        for future in publish_futures:
+            future.result()
+
+        # Synchronously pull messages.
+        response = subscriber.pull(subscription_path, max_messages=3)
+        assert len(response.received_messages) == 3
+
+    conn_count_end = len(current_process.connections())
+    assert conn_count_end == conn_count_start
+
+
+def test_synchronous_pull_no_deadline_error_if_no_messages(
+    publisher, topic_path, subscriber, subscription_path, cleanup
+):
+    # Make sure the topic and subscription get deleted.
+    cleanup.append((publisher.delete_topic, topic_path))
+    cleanup.append((subscriber.delete_subscription, subscription_path))
+
+    # Create a topic and subscribe to it.
+    publisher.create_topic(topic_path)
+    subscriber.create_subscription(subscription_path, topic_path)
+
+    try:
+        response = subscriber.pull(subscription_path, max_messages=2)
+    except core_exceptions.DeadlineExceeded:
+        pytest.fail(
+            "Unexpected DeadlineExceeded error on synchronous pull when no "
+            "messages published to the topic."
+        )
+    else:
+        assert list(response.received_messages) == []
+
+
 class TestStreamingPull(object):
     def test_streaming_pull_callback_error_propagation(
         self, publisher, topic_path, subscriber, subscription_path, cleanup
@@ -428,7 +500,7 @@ class TestStreamingPull(object):
         )
 
         # publish some messages and wait for completion
-        self._publish_messages(publisher, topic_path, batch_sizes=[2])
+        _publish_messages(publisher, topic_path, batch_sizes=[2])
 
         # subscribe to the topic
         callback = StreamingPullCallback(
@@ -471,7 +543,7 @@ class TestStreamingPull(object):
         subscriber.create_subscription(subscription_path, topic_path)
 
         batch_sizes = (7, 4, 8, 2, 10, 1, 3, 8, 6, 1)  # total: 50
-        self._publish_messages(publisher, topic_path, batch_sizes=batch_sizes)
+        _publish_messages(publisher, topic_path, batch_sizes=batch_sizes)
 
         # now subscribe and do the main part, check for max pending messages
         total_messages = sum(batch_sizes)
@@ -513,10 +585,12 @@ class TestStreamingPull(object):
         finally:
             subscription_future.cancel()  # trigger clean shutdown
 
-    @pytest.mark.skipif(
-        "KOKORO_GFILE_DIR" not in os.environ,
-        reason="Requires Kokoro environment with a limited subscriber service account.",
-    )
+
+@pytest.mark.skipif(
+    "KOKORO_GFILE_DIR" not in os.environ,
+    reason="Requires Kokoro environment with a service account with limited role.",
+)
+class TestBasicRBAC(object):
     def test_streaming_pull_subscriber_permissions_sufficient(
         self, publisher, topic_path, subscriber, subscription_path, cleanup
     ):
@@ -539,7 +613,7 @@ class TestStreamingPull(object):
         # successfully pulls and processes it.
         callback = StreamingPullCallback(processing_time=0.01, resolve_at_msg_count=1)
         future = streaming_pull_subscriber.subscribe(subscription_path, callback)
-        self._publish_messages(publisher, topic_path, batch_sizes=[1])
+        _publish_messages(publisher, topic_path, batch_sizes=[1])
 
         try:
             callback.done_future.result(timeout=10)
@@ -552,30 +626,143 @@ class TestStreamingPull(object):
         finally:
             future.cancel()
 
-    def _publish_messages(self, publisher, topic_path, batch_sizes):
-        """Publish ``count`` messages in batches and wait until completion."""
-        publish_futures = []
-        msg_counter = itertools.count(start=1)
+    def test_publisher_role_can_publish_messages(
+        self, publisher, topic_path, subscriber, subscription_path, cleanup
+    ):
 
-        for batch_size in batch_sizes:
-            msg_batch = self._make_messages(count=batch_size)
-            for msg in msg_batch:
-                future = publisher.publish(
-                    topic_path, msg, seq_num=str(next(msg_counter))
-                )
-                publish_futures.append(future)
-            time.sleep(0.1)
+        # Make sure the topic and subscription get deleted.
+        cleanup.append((publisher.delete_topic, topic_path))
+        cleanup.append((subscriber.delete_subscription, subscription_path))
 
-        # wait untill all messages have been successfully published
-        for future in publish_futures:
-            future.result(timeout=30)
+        # Create a topic and subscribe to it.
+        publisher.create_topic(topic_path)
+        subscriber.create_subscription(subscription_path, topic_path)
 
-    def _make_messages(self, count):
-        messages = [
-            u"message {}/{}".format(i, count).encode("utf-8")
-            for i in range(1, count + 1)
-        ]
-        return messages
+        # Create a publisher client with only the publisher role only.
+        filename = os.path.join(
+            os.environ["KOKORO_GFILE_DIR"], "pubsub-publisher-service-account.json"
+        )
+        publisher_only_client = type(publisher).from_service_account_file(filename)
+
+        _publish_messages(publisher_only_client, topic_path, batch_sizes=[2])
+
+        response = subscriber.pull(subscription_path, max_messages=2)
+        assert len(response.received_messages) == 2
+
+    @pytest.mark.skip(
+        "Snapshot creation is not instant on the backend, causing test falkiness."
+    )
+    def test_snapshot_seek_subscriber_permissions_sufficient(
+        self, project, publisher, topic_path, subscriber, subscription_path, cleanup
+    ):
+        snapshot_name = "snap" + unique_resource_id("-")
+        snapshot_path = "projects/{}/snapshots/{}".format(project, snapshot_name)
+
+        # Make sure the topic and subscription get deleted.
+        cleanup.append((publisher.delete_topic, topic_path))
+        cleanup.append((subscriber.delete_subscription, subscription_path))
+        cleanup.append((subscriber.delete_snapshot, snapshot_path))
+
+        # Create a topic and subscribe to it.
+        publisher.create_topic(topic_path)
+        subscriber.create_subscription(
+            subscription_path, topic_path, retain_acked_messages=True
+        )
+
+        # A service account granting only the pubsub.subscriber role must be used.
+        filename = os.path.join(
+            os.environ["KOKORO_GFILE_DIR"], "pubsub-subscriber-service-account.json"
+        )
+        subscriber_only_client = type(subscriber).from_service_account_file(filename)
+
+        # Publish two messages and create a snapshot inbetween.
+        _publish_messages(publisher, topic_path, batch_sizes=[1])
+        response = subscriber.pull(subscription_path, max_messages=10)
+        assert len(response.received_messages) == 1
+
+        subscriber.create_snapshot(snapshot_path, subscription_path)
+
+        _publish_messages(publisher, topic_path, batch_sizes=[1])
+        response = subscriber.pull(subscription_path, max_messages=10)
+        assert len(response.received_messages) == 1
+
+        # A subscriber-only client should be allowed to seek to a snapshot.
+        subscriber_only_client.seek(subscription_path, snapshot=snapshot_path)
+
+        # We should receive one message again, since we sought back to a snapshot.
+        response = subscriber.pull(subscription_path, max_messages=10)
+        assert len(response.received_messages) == 1
+
+    def test_viewer_role_can_list_resources(
+        self, project, publisher, topic_path, subscriber, cleanup
+    ):
+        project_path = "projects/" + project
+
+        # Make sure the created topic gets deleted.
+        cleanup.append((publisher.delete_topic, topic_path))
+
+        publisher.create_topic(topic_path)
+
+        # A service account granting only the pubsub.viewer role must be used.
+        filename = os.path.join(
+            os.environ["KOKORO_GFILE_DIR"], "pubsub-viewer-service-account.json"
+        )
+        viewer_only_subscriber = type(subscriber).from_service_account_file(filename)
+        viewer_only_publisher = type(publisher).from_service_account_file(filename)
+
+        # The following operations should not raise permission denied errors.
+        # NOTE: At least one topic exists.
+        topic = next(iter(viewer_only_publisher.list_topics(project_path)))
+        next(iter(viewer_only_publisher.list_topic_subscriptions(topic.name)), None)
+        next(iter(viewer_only_subscriber.list_subscriptions(project_path)), None)
+        next(iter(viewer_only_subscriber.list_snapshots(project_path)), None)
+
+    def test_editor_role_can_create_resources(
+        self, project, publisher, topic_path, subscriber, subscription_path, cleanup
+    ):
+        snapshot_name = "snap" + unique_resource_id("-")
+        snapshot_path = "projects/{}/snapshots/{}".format(project, snapshot_name)
+
+        # Make sure the created resources get deleted.
+        cleanup.append((subscriber.delete_snapshot, snapshot_path))
+        cleanup.append((subscriber.delete_subscription, subscription_path))
+        cleanup.append((publisher.delete_topic, topic_path))
+
+        # A service account granting only the pubsub.editor role must be used.
+        filename = os.path.join(
+            os.environ["KOKORO_GFILE_DIR"], "pubsub-editor-service-account.json"
+        )
+        editor_subscriber = type(subscriber).from_service_account_file(filename)
+        editor_publisher = type(publisher).from_service_account_file(filename)
+
+        # The following operations should not raise permission denied errors.
+        editor_publisher.create_topic(topic_path)
+        editor_subscriber.create_subscription(subscription_path, topic_path)
+        editor_subscriber.create_snapshot(snapshot_path, subscription_path)
+
+
+def _publish_messages(publisher, topic_path, batch_sizes):
+    """Publish ``count`` messages in batches and wait until completion."""
+    publish_futures = []
+    msg_counter = itertools.count(start=1)
+
+    for batch_size in batch_sizes:
+        msg_batch = _make_messages(count=batch_size)
+        for msg in msg_batch:
+            future = publisher.publish(topic_path, msg, seq_num=str(next(msg_counter)))
+            publish_futures.append(future)
+        time.sleep(0.1)
+
+    # wait untill all messages have been successfully published
+    for future in publish_futures:
+        future.result(timeout=30)
+
+
+def _make_messages(count):
+    messages = [
+        u"message {}/{}".format(i, count).encode("utf-8") for i in range(1, count + 1)
+    ]
+    return messages
 
 
 class AckCallback(object):

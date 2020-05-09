@@ -30,7 +30,9 @@ _LOGGER = logging.getLogger(__name__)
 _LEASE_WORKER_NAME = "Thread-LeaseMaintainer"
 
 
-_LeasedMessage = collections.namedtuple("_LeasedMessage", ["added_time", "size"])
+_LeasedMessage = collections.namedtuple(
+    "_LeasedMessage", ["sent_time", "size", "ordering_key"]
+)
 
 
 class Leaser(object):
@@ -45,6 +47,7 @@ class Leaser(object):
         # intertwined. Protects the _leased_messages and _bytes attributes.
         self._add_remove_lock = threading.Lock()
 
+        # Dict of ack_id -> _LeasedMessage
         self._leased_messages = {}
         """dict[str, float]: A mapping of ack IDs to the local time when the
             ack ID was initially leased in seconds since the epoch."""
@@ -76,11 +79,30 @@ class Leaser(object):
                 # the size counter.
                 if item.ack_id not in self._leased_messages:
                     self._leased_messages[item.ack_id] = _LeasedMessage(
-                        added_time=time.time(), size=item.byte_size
+                        sent_time=float("inf"),
+                        size=item.byte_size,
+                        ordering_key=item.ordering_key,
                     )
                     self._bytes += item.byte_size
                 else:
                     _LOGGER.debug("Message %s is already lease managed", item.ack_id)
+
+    def start_lease_expiry_timer(self, ack_ids):
+        """Start the lease expiry timer for `items`.
+
+        Args:
+            items (Sequence[str]): Sequence of ack-ids for which to start
+                lease expiry timers.
+        """
+        with self._add_remove_lock:
+            for ack_id in ack_ids:
+                lease_info = self._leased_messages.get(ack_id)
+                # Lease info might not exist for this ack_id because it has already
+                # been removed by remove().
+                if lease_info:
+                    self._leased_messages[ack_id] = lease_info._replace(
+                        sent_time=time.time()
+                    )
 
     def remove(self, items):
         """Remove messages from lease management."""
@@ -108,22 +130,22 @@ class Leaser(object):
             # Determine the appropriate duration for the lease. This is
             # based off of how long previous messages have taken to ack, with
             # a sensible default and within the ranges allowed by Pub/Sub.
-            p99 = self._manager.ack_histogram.percentile(99)
-            _LOGGER.debug("The current p99 value is %d seconds.", p99)
+            deadline = self._manager.ack_deadline
+            _LOGGER.debug("The current deadline value is %d seconds.", deadline)
 
             # Make a copy of the leased messages. This is needed because it's
             # possible for another thread to modify the dictionary while
             # we're iterating over it.
             leased_messages = copy.copy(self._leased_messages)
 
-            # Drop any leases that are well beyond max lease time. This
-            # ensures that in the event of a badly behaving actor, we can
-            # drop messages and allow Pub/Sub to resend them.
+            # Drop any leases that are beyond the max lease time. This ensures
+            # that in the event of a badly behaving actor, we can drop messages
+            # and allow the Pub/Sub server to resend them.
             cutoff = time.time() - self._manager.flow_control.max_lease_duration
             to_drop = [
-                requests.DropRequest(ack_id, item.size)
+                requests.DropRequest(ack_id, item.size, item.ordering_key)
                 for ack_id, item in six.iteritems(leased_messages)
-                if item.added_time < cutoff
+                if item.sent_time < cutoff
             ]
 
             if to_drop:
@@ -151,7 +173,7 @@ class Leaser(object):
                 #       way for ``send_request`` to fail when the consumer
                 #       is inactive.
                 self._manager.dispatcher.modify_ack_deadline(
-                    [requests.ModAckRequest(ack_id, p99) for ack_id in ack_ids]
+                    [requests.ModAckRequest(ack_id, deadline) for ack_id in ack_ids]
                 )
 
             # Now wait an appropriate period of time and do this again.
@@ -160,7 +182,7 @@ class Leaser(object):
             # period between 0 seconds and 90% of the lease. This use of
             # jitter (http://bit.ly/2s2ekL7) helps decrease contention in cases
             # where there are many clients.
-            snooze = random.uniform(0.0, p99 * 0.9)
+            snooze = random.uniform(0.0, deadline * 0.9)
             _LOGGER.debug("Snoozing lease management for %f seconds.", snooze)
             self._stop_event.wait(timeout=snooze)
 

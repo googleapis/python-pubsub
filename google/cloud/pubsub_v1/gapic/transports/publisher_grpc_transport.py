@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2019 Google LLC
+# Copyright 2020 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -194,6 +194,24 @@ class PublisherGrpcTransport(object):
         return self._stubs["publisher_stub"].ListTopicSubscriptions
 
     @property
+    def list_topic_snapshots(self):
+        """Return the gRPC stub for :meth:`PublisherClient.list_topic_snapshots`.
+
+        Lists the names of the snapshots on this topic. Snapshots are used in
+        <a href="https://cloud.google.com/pubsub/docs/replay-overview">Seek</a>
+        operations, which allow
+        you to manage message acknowledgments in bulk. That is, you can set the
+        acknowledgment state of messages in an existing subscription to the state
+        captured by a snapshot.
+
+        Returns:
+            Callable: A callable which accepts the appropriate
+                deserialized request object and returns a
+                deserialized response object.
+        """
+        return self._stubs["publisher_stub"].ListTopicSnapshots
+
+    @property
     def delete_topic(self):
         """Return the gRPC stub for :meth:`PublisherClient.delete_topic`.
 
@@ -215,8 +233,11 @@ class PublisherGrpcTransport(object):
     def set_iam_policy(self):
         """Return the gRPC stub for :meth:`PublisherClient.set_iam_policy`.
 
-        Sets the access control policy on the specified resource. Replaces any
-        existing policy.
+        Sets the access control policy on the specified resource. Replaces
+        any existing policy.
+
+        Can return `NOT_FOUND`, `INVALID_ARGUMENT`, and `PERMISSION_DENIED`
+        errors.
 
         Returns:
             Callable: A callable which accepts the appropriate
@@ -229,9 +250,8 @@ class PublisherGrpcTransport(object):
     def get_iam_policy(self):
         """Return the gRPC stub for :meth:`PublisherClient.get_iam_policy`.
 
-        Gets the access control policy for a resource.
-        Returns an empty policy if the resource exists and does not have a policy
-        set.
+        Gets the access control policy for a resource. Returns an empty policy
+        if the resource exists and does not have a policy set.
 
         Returns:
             Callable: A callable which accepts the appropriate
@@ -245,8 +265,8 @@ class PublisherGrpcTransport(object):
         """Return the gRPC stub for :meth:`PublisherClient.test_iam_permissions`.
 
         Returns permissions that a caller has on the specified resource. If the
-        resource does not exist, this will return an empty set of permissions,
-        not a NOT\_FOUND error.
+        resource does not exist, this will return an empty set of
+        permissions, not a `NOT_FOUND` error.
 
         Note: This operation is designed to be used for building
         permission-aware UIs and command-line tools, not for authorization

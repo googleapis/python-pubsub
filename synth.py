@@ -14,13 +14,10 @@
 
 """This script is used to synthesize generated parts of this library."""
 
-import re
-import textwrap
-
 import synthtool as s
 from synthtool import gcp
 
-gapic = gcp.GAPICGenerator()
+gapic = gcp.GAPICBazel()
 common = gcp.CommonTemplates()
 version = "v1"
 
@@ -28,9 +25,9 @@ version = "v1"
 # Generate pubsub GAPIC layer
 # ----------------------------------------------------------------------------
 library = gapic.py_library(
-    "pubsub",
-    version,
-    config_path="/google/pubsub/artman_pubsub.yaml",
+    service="pubsub",
+    version=version,
+    bazel_target="//google/pubsub/v1:pubsub-v1-py",
     include_protos=True,
 )
 s.move(
@@ -186,10 +183,13 @@ s.replace(
     "from google.iam.v1 import iam_policy_pb2_grpc as iam_policy_pb2",
 )
 
+
 # ----------------------------------------------------------------------------
 # Add templated files
 # ----------------------------------------------------------------------------
-templated_files = gcp.CommonTemplates().py_library(unit_cov_level=97, cov_level=100)
+templated_files = gcp.CommonTemplates().py_library(
+    unit_cov_level=97, cov_level=99, system_test_external_dependencies=["psutil"],
+)
 s.move(templated_files)
 
 s.shell.run(["nox", "-s", "blacken"], hide_output=False)

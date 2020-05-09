@@ -4,6 +4,7 @@ config = {
             "retry_codes": {
                 "idempotent": ["ABORTED", "UNAVAILABLE", "UNKNOWN"],
                 "non_idempotent": ["UNAVAILABLE"],
+                "idempotent2": ["DEADLINE_EXCEEDED", "UNAVAILABLE"],
                 "streaming_pull": [
                     "ABORTED",
                     "DEADLINE_EXCEEDED",
@@ -26,9 +27,9 @@ config = {
                     "initial_retry_delay_millis": 100,
                     "retry_delay_multiplier": 1.3,
                     "max_retry_delay_millis": 60000,
-                    "initial_rpc_timeout_millis": 5000,
-                    "rpc_timeout_multiplier": 1.3,
-                    "max_rpc_timeout_millis": 600000,
+                    "initial_rpc_timeout_millis": 25000,
+                    "rpc_timeout_multiplier": 1.0,
+                    "max_rpc_timeout_millis": 25000,
                     "total_timeout_millis": 600000,
                 },
                 "streaming_messaging": {
@@ -65,6 +66,11 @@ config = {
                 "DeleteSubscription": {
                     "timeout_millis": 60000,
                     "retry_codes_name": "non_idempotent",
+                    "retry_params_name": "default",
+                },
+                "GetSnapshot": {
+                    "timeout_millis": 60000,
+                    "retry_codes_name": "idempotent2",
                     "retry_params_name": "default",
                 },
                 "ModifyAckDeadline": {
