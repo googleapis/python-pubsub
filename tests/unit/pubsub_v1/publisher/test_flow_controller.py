@@ -307,7 +307,7 @@ def test_error_if_mesage_would_block_indefinitely():
 
 def test_threads_posting_large_messages_do_not_starve():
     settings = types.PublishFlowControl(
-        message_limit=100,  # simulate non-sane settings
+        message_limit=100,
         byte_limit=110,
         limit_exceeded_behavior=types.LimitExceededBehavior.BLOCK,
     )
