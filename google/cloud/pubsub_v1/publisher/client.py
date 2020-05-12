@@ -31,6 +31,8 @@ from google.cloud.pubsub_v1 import _gapic
 from google.cloud.pubsub_v1 import types
 from google.cloud.pubsub_v1.gapic import publisher_client
 from google.cloud.pubsub_v1.gapic.transports import publisher_grpc_transport
+from google.cloud.pubsub_v1.publisher import exceptions
+from google.cloud.pubsub_v1.publisher import futures
 from google.cloud.pubsub_v1.publisher._batch import thread
 from google.cloud.pubsub_v1.publisher._sequencer import ordered_sequencer
 from google.cloud.pubsub_v1.publisher._sequencer import unordered_sequencer
@@ -379,7 +381,12 @@ class Client(object):
 
         # Messages should go through flow control to prevent excessive
         # queuing on the client side (depending on the settings).
-        self._flow_controller.add(message)
+        try:
+            self._flow_controller.add(message)
+        except exceptions.FlowControlLimitError as exc:
+            future = futures.Future()
+            future.set_exception(exc)
+            return future
 
         def on_publish_done(future):
             self._flow_controller.release(message)

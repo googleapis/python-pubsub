@@ -25,6 +25,7 @@ from google.cloud.pubsub_v1.gapic import publisher_client
 from google.cloud.pubsub_v1 import publisher
 from google.cloud.pubsub_v1 import types
 
+from google.cloud.pubsub_v1.publisher import exceptions
 from google.cloud.pubsub_v1.publisher._sequencer import ordered_sequencer
 
 
@@ -154,6 +155,30 @@ def test_publish():
             mock.call(types.PubsubMessage(data=b"foo", attributes={"bar": "baz"})),
         ]
     )
+
+
+def test_publish_error_exceeding_flow_control_limits():
+    creds = mock.Mock(spec=credentials.Credentials)
+    publisher_options = types.PublisherOptions(
+        flow_control=types.PublishFlowControl(
+            message_limit=10,
+            byte_limit=150,
+            limit_exceeded_behavior=types.LimitExceededBehavior.ERROR,
+        )
+    )
+    client = publisher.Client(credentials=creds, publisher_options=publisher_options)
+
+    mock_batch = mock.Mock(spec=client._batch_class)
+    mock_batch.will_accept.return_value = True
+    topic = "topic/path"
+    client._set_batch(topic, mock_batch)
+
+    future1 = client.publish(topic, b"a" * 100)
+    future2 = client.publish(topic, b"b" * 100)
+
+    future1.result()  # no error, still within flow control limits
+    with pytest.raises(exceptions.FlowControlLimitError):
+        future2.result()
 
 
 def test_publish_data_not_bytestring_error():
