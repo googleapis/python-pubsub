@@ -100,18 +100,14 @@ class FlowController(object):
                 # Raising an error means rejecting a message, thus we do not
                 # add anything to the existing load, but we do report the would-be
                 # load if we accepted the message.
-                msg = (
-                    "Flow control limits would be exceeded "
-                    "(messages: {} / {}, bytes: {} / {})."
-                ).format(
-                    self._message_count + 1,
-                    self._settings.message_limit,
-                    self._total_bytes + message.ByteSize(),
-                    self._settings.byte_limit,
+                load_info = self._load_info(
+                    message_count=self._message_count + 1,
+                    total_bytes=self._total_bytes + message.ByteSize(),
                 )
-                error = exceptions.FlowControlLimitError(msg)
-
-                raise error
+                error_msg = "Flow control limits would be exceeded - {}.".format(
+                    load_info
+                )
+                raise exceptions.FlowControlLimitError(error_msg)
 
             assert (
                 self._settings.limit_exceeded_behavior
@@ -124,14 +120,11 @@ class FlowController(object):
                 message.ByteSize() > self._settings.byte_limit
                 or self._settings.message_limit < 1
             ):
-                error_msg = (
-                    "Flow control limits too low for the message. "
-                    "(messages: {} / {}, bytes: {} / {})."
-                ).format(
-                    1,
-                    self._settings.message_limit,
-                    message.ByteSize(),
-                    self._settings.byte_limit,
+                load_info = self._load_info(
+                    message_count=1, total_bytes=message.ByteSize()
+                )
+                error_msg = "Flow control limits too low for the message - {}.".format(
+                    load_info
                 )
                 raise exceptions.PermanentlyBlockedError(error_msg)
 
@@ -145,10 +138,16 @@ class FlowController(object):
                     )
 
                 _LOGGER.debug(
-                    "Blocking until there is enough free capacity in the flow."
+                    "Blocking until there is enough free capacity in the flow - "
+                    "{}.".format(self._load_info())
                 )
+
                 self._has_capacity.wait()
-                _LOGGER.debug("Woke up from waiting on free capacity in the flow.")
+
+                _LOGGER.debug(
+                    "Woke up from waiting on free capacity in the flow - "
+                    "{}.".format(self._load_info())
+                )
 
             # Message accepted, increase the load and remove thread stats if
             # they exist in the waiting queue.
@@ -254,3 +253,41 @@ class FlowController(object):
         msg_count_overflow = self._message_count + 1 > self._settings.message_limit
 
         return size_overflow or msg_count_overflow
+
+    def _load_info(self, message_count=None, total_bytes=None, reserved_bytes=None):
+        """Return the current flow control load information.
+
+        The caller can optionally adjust some of the values to fit its reporting
+        needs.
+
+        The method assumes that the caller has obtained ``_operational_lock``.
+
+        Args:
+            message_count (Optional[int]):
+                The value to override the current message count with.
+            total_bytes (Optional[int]):
+                The value to override the current total bytes with.
+            reserved_bytes (Optional[int]):
+                The value to override the current number of reserved bytes with.
+
+        Returns:
+            str
+        """
+        msg = "messages: {} / {}, bytes: {} / {} (reserved: {})"
+
+        if message_count is None:
+            message_count = self._message_count
+
+        if total_bytes is None:
+            total_bytes = self._total_bytes
+
+        if reserved_bytes is None:
+            reserved_bytes = self._reserved_bytes
+
+        return msg.format(
+            message_count,
+            self._settings.message_limit,
+            total_bytes,
+            self._settings.byte_limit,
+            reserved_bytes,
+        )
