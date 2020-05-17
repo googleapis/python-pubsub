@@ -32,7 +32,7 @@ dependencies = [
     # google-api-core[grpc] 1.17.0 causes problems, thus restricting its
     # version until the issue gets fixed.
     # https://github.com/googleapis/python-pubsub/issues/74
-    "google-api-core[grpc] >= 1.14.0, < 1.17.0",
+    "google-api-core[grpc]>=1.14.0, <1.17.1",
     "grpc-google-iam-v1 >= 0.12.3, < 0.13dev",
     'enum34; python_version < "3.4"',
 ]
