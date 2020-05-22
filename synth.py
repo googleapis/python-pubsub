@@ -183,6 +183,19 @@ s.replace(
     "from google.iam.v1 import iam_policy_pb2_grpc as iam_policy_pb2",
 )
 
+# Monkey patch the streaming_pull() GAPIC method to disable pre-fetching stream
+# results.
+s.replace(
+    "google/cloud/pubsub_v1/gapic/subscriber_client.py",
+    r"return self\._inner_api_calls\['streaming_pull'\]\(.*",
+    """
+            # Wrappers in api-core should not automatically pre-fetch the first
+            # stream result, as this breaks the stream when re-opening it.
+            # https://github.com/googleapis/python-pubsub/issues/93#issuecomment-630762257
+            self.transport.streaming_pull._prefetch_first_result_ = False
+
+        \g<0>"""
+)
 
 # ----------------------------------------------------------------------------
 # Add templated files
