@@ -343,11 +343,6 @@ class Client(object):
 
             pubsub_v1.publisher.exceptions.MessageTooLargeError: If publishing
                 the ``message`` would exceed the max size limit on the backend.
-
-            :exception:`~pubsub_v1.publisher.exceptions.FlowControlLimitError`:
-                If publishing a new message would exceed the publish flow control
-                limits and the desired action on overflow is
-                :attr:`~google.cloud.pubsub_v1.types.LimitExceededBehavior.ERROR`.
         """
         # Sanity check: Is the data being sent as a bytestring?
         # If it is literally anything else, complain loudly about it.
