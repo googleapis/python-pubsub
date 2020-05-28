@@ -287,20 +287,6 @@ def test_publish_updating_batch_size():
     assert batch.size > 0  # I do not always trust protobuf.
 
 
-def test_publish_not_will_accept():
-    batch = create_batch(topic="topic_foo", max_messages=0)
-    base_request_size = types.PublishRequest(topic="topic_foo").ByteSize()
-
-    # Publish the message.
-    message = types.PubsubMessage(data=b"foobarbaz")
-    future = batch.publish(message)
-
-    assert future is None
-    assert batch.size == base_request_size
-    assert batch.messages == []
-    assert batch._futures == []
-
-
 def test_publish_exceed_max_messages():
     max_messages = 4
     batch = create_batch(max_messages=max_messages)

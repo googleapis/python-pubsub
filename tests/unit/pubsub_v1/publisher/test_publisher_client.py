@@ -128,7 +128,6 @@ def test_publish():
     # Use a mock in lieu of the actual batch class.
     batch = mock.Mock(spec=client._batch_class)
     # Set the mock up to claim indiscriminately that it accepts all messages.
-    batch.will_accept.return_value = True
     batch.publish.side_effect = (mock.sentinel.future1, mock.sentinel.future2)
 
     topic = "topic/path"
@@ -185,7 +184,6 @@ def test_publish_attrs_bytestring():
     # Use a mock in lieu of the actual batch class.
     batch = mock.Mock(spec=client._batch_class)
     # Set the mock up to claim indiscriminately that it accepts all messages.
-    batch.will_accept.return_value = True
 
     topic = "topic/path"
     client._set_batch(topic, batch)
@@ -391,7 +389,6 @@ def test_publish_with_ordering_key():
     # Use a mock in lieu of the actual batch class.
     batch = mock.Mock(spec=client._batch_class)
     # Set the mock up to claim indiscriminately that it accepts all messages.
-    batch.will_accept.return_value = True
     batch.publish.side_effect = (mock.sentinel.future1, mock.sentinel.future2)
 
     topic = "topic/path"
