@@ -201,8 +201,16 @@ class FlowController(object):
 
             reservation = self._byte_reservations[thread]
             still_needed = reservation.needed - reservation.reserved
-            can_give = min(still_needed, available)
 
+            # Sanity check for any internal inconsistencies.
+            if still_needed < 0:
+                msg = "Too many bytes reserved: {} / {}".format(
+                    reservation.reserved, reservation.needed
+                )
+                warnings.warn(msg, category=RuntimeWarning)
+                still_needed = 0
+
+            can_give = min(still_needed, available)
             reservation.reserved += can_give
             self._reserved_bytes += can_give
             available -= can_give

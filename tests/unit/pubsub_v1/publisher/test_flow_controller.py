@@ -362,3 +362,48 @@ def test_threads_posting_large_messages_do_not_starve():
 
     if not adding_busy_done.wait(timeout=1.0):
         pytest.fail("Adding messages blocked or errored.")
+
+
+def test_warning_on_internal_reservation_stats_error_when_unblocking():
+    settings = types.PublishFlowControl(
+        message_limit=1,
+        byte_limit=150,
+        limit_exceeded_behavior=types.LimitExceededBehavior.BLOCK,
+    )
+    flow_controller = FlowController(settings)
+
+    msg1 = types.PubsubMessage(data=b"x" * 100)
+    msg2 = types.PubsubMessage(data=b"y" * 100)
+
+    # If there is a concurrency bug in FlowController, we do not want to block
+    # the main thread running the tests, thus we delegate all add/release
+    # operations to daemon threads and check the outcome (blocked/not blocked)
+    # through Events.
+    adding_1_done = threading.Event()
+    adding_2_done = threading.Event()
+    releasing_1_done = threading.Event()
+
+    # Adding a message with free capacity should not block.
+    _run_in_daemon(flow_controller, "add", [msg1], adding_1_done)
+    if not adding_1_done.wait(timeout=0.1):
+        pytest.fail("Adding a message with enough flow capacity blocked or errored.")
+
+    # Adding messages when there is not enough capacity should block, even if
+    # added through multiple threads.
+    _run_in_daemon(flow_controller, "add", [msg2], adding_2_done)
+    if adding_2_done.wait(timeout=0.1):
+        pytest.fail("Adding a message on overflow did not block.")
+
+    # Intentionally corrupt internal stats
+    reservation = next(iter(flow_controller._byte_reservations.values()), None)
+    assert reservation is not None, "No messages blocked by flow controller."
+    reservation.reserved = reservation.needed + 1
+
+    with warnings.catch_warnings(record=True) as warned:
+        _run_in_daemon(flow_controller, "release", [msg1], releasing_1_done)
+        if not releasing_1_done.wait(timeout=0.1):
+            pytest.fail("Releasing a message blocked or errored.")
+
+    matches = [warning for warning in warned if warning.category is RuntimeWarning]
+    assert len(matches) == 1
+    assert "too many bytes reserved" in str(matches[0].message).lower()
