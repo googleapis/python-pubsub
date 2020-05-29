@@ -149,16 +149,12 @@ class FlowController(object):
                     "{}.".format(self._load_info())
                 )
 
-            # Message accepted, increase the load and remove thread stats if
-            # they exist in the waiting queue.
+            # Message accepted, increase the load and remove thread stats.
             self._message_count += 1
             self._total_bytes += message.ByteSize()
-
-            reservation = self._byte_reservations.get(current_thread)
-            if reservation:
-                self._reserved_bytes -= reservation.reserved
-                del self._byte_reservations[current_thread]
-                self._waiting.remove(current_thread)
+            self._reserved_bytes -= self._byte_reservations[current_thread].reserved
+            del self._byte_reservations[current_thread]
+            self._waiting.remove(current_thread)
 
     def release(self, message):
         """Release a mesage from flow control.
