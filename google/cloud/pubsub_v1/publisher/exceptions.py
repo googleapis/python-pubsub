@@ -42,10 +42,6 @@ class FlowControlLimitError(Exception):
     """An action resulted in exceeding the flow control limits."""
 
 
-class PermanentlyBlockedError(FlowControlLimitError):
-    """A message exceeds *total* flow control limits and would block forever."""
-
-
 __all__ = (
     "FlowControlLimitError",
     "MessageTooLargeError",

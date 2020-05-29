@@ -297,10 +297,11 @@ def test_error_if_mesage_would_block_indefinitely():
     # Now that we know that an error occurs, we can check its type directly
     # without the fear of blocking indefinitely.
     flow_controller = FlowController(settings)  # we want a fresh controller
-    with pytest.raises(exceptions.PermanentlyBlockedError) as error_info:
+    with pytest.raises(exceptions.FlowControlLimitError) as error_info:
         flow_controller.add(msg)
 
     error_msg = str(error_info.value)
+    assert "would block forever" in error_msg
     assert "messages: 1 / 0" in error_msg
     assert "bytes: {} / 1".format(msg.ByteSize()) in error_msg
 

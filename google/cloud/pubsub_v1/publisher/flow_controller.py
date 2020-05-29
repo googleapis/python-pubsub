@@ -76,12 +76,12 @@ class FlowController(object):
 
         Raises:
             :exception:`~pubsub_v1.publisher.exceptions.FlowControlLimitError`:
-                If adding a message exceeds flow control limits and the desired
-                action is :attr:`~google.cloud.pubsub_v1.types.LimitExceededBehavior.ERROR`.
-            :exception:`~pubsub_v1.publisher.exceptions.PermanentlyBlockedError`:
-                If adding a message exceeds total flow control limits and would
-                always overflow on its own, and the desired action is
-                :attr:`~google.cloud.pubsub_v1.types.LimitExceededBehavior.BLOCK`.
+                If adding a message would exceed flow control limits and the desired
+                action is :attr:`~google.cloud.pubsub_v1.types.LimitExceededBehavior.ERROR`,
+                or if a message would always exceed total flow control limits on
+                its own and the desired action is
+                :attr:`~google.cloud.pubsub_v1.types.LimitExceededBehavior.BLOCK`,
+                meaning that the message would block forever.
         """
         if self._settings.limit_exceeded_behavior == types.LimitExceededBehavior.IGNORE:
             return
@@ -123,10 +123,11 @@ class FlowController(object):
                 load_info = self._load_info(
                     message_count=1, total_bytes=message.ByteSize()
                 )
-                error_msg = "Flow control limits too low for the message - {}.".format(
-                    load_info
+                error_msg = (
+                    "Total flow control limits too low for the message, "
+                    "would block forever - {}.".format(load_info)
                 )
-                raise exceptions.PermanentlyBlockedError(error_msg)
+                raise exceptions.FlowControlLimitError(error_msg)
 
             current_thread = threading.current_thread()
 
