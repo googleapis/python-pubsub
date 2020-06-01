@@ -76,12 +76,11 @@ class FlowController(object):
 
         Raises:
             :exception:`~pubsub_v1.publisher.exceptions.FlowControlLimitError`:
-                If adding a message would exceed flow control limits and the desired
-                action is :attr:`~google.cloud.pubsub_v1.types.LimitExceededBehavior.ERROR`,
-                or if a message would always exceed total flow control limits on
-                its own and the desired action is
-                :attr:`~google.cloud.pubsub_v1.types.LimitExceededBehavior.BLOCK`,
-                meaning that the message would block forever.
+                Raised when the desired action is
+                :attr:`~google.cloud.pubsub_v1.types.LimitExceededBehavior.ERROR` and
+                the message would exceed flow control limits, or when the desired action
+                is :attr:`~google.cloud.pubsub_v1.types.LimitExceededBehavior.BLOCK` and
+                the message would block forever against the flow control limits.
         """
         if self._settings.limit_exceeded_behavior == types.LimitExceededBehavior.IGNORE:
             return
