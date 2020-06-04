@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+#!/bin/bash
+
 set -eo pipefail
 
 # Disable buffering, so that the logs stream through.
