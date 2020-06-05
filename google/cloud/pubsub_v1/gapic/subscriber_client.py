@@ -249,6 +249,7 @@ class SubscriberClient(object):
         filter_=None,
         dead_letter_policy=None,
         retry_policy=None,
+        detached=None,
         retry=google.api_core.gapic_v1.method.DEFAULT,
         timeout=google.api_core.gapic_v1.method.DEFAULT,
         metadata=None,
@@ -370,6 +371,11 @@ class SubscriberClient(object):
 
                 If a dict is provided, it must be of the same form as the protobuf
                 message :class:`~google.cloud.pubsub_v1.types.RetryPolicy`
+            detached (bool): Indicates whether the subscription is detached from its topic.
+                Detached subscriptions don't receive messages from their topic and don't
+                retain any backlog. ``Pull`` and ``StreamingPull`` requests will return
+                FAILED_PRECONDITION. If the subscription is a push subscription, pushes
+                to the endpoint will not be made.
             retry (Optional[google.api_core.retry.Retry]):  A retry object used
                 to retry requests. If ``None`` is specified, requests will
                 be retried using a default configuration.
@@ -413,6 +419,7 @@ class SubscriberClient(object):
             filter=filter_,
             dead_letter_policy=dead_letter_policy,
             retry_policy=retry_policy,
+            detached=detached,
         )
         if metadata is None:
             metadata = []
