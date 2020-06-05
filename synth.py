@@ -184,6 +184,7 @@ s.replace(
 )
 
 # Add missing blank line before Attributes: in generated docstrings
+# https://github.com/googleapis/protoc-docs-plugin/pull/31
 s.replace(
     "google/cloud/pubsub_v1/proto/pubsub_pb2.py",
     "(\s+)Attributes:",
