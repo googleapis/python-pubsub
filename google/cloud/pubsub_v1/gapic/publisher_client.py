@@ -678,7 +678,7 @@ class PublisherClient(object):
         metadata=None,
     ):
         """
-        Lists the names of the subscriptions on this topic.
+        Lists the names of the attached subscriptions on this topic.
 
         Example:
             >>> from google.cloud import pubsub_v1
@@ -1202,5 +1202,78 @@ class PublisherClient(object):
             metadata.append(routing_metadata)
 
         return self._inner_api_calls["test_iam_permissions"](
+            request, retry=retry, timeout=timeout, metadata=metadata
+        )
+
+    def detach_subscription(
+        self,
+        subscription,
+        retry=google.api_core.gapic_v1.method.DEFAULT,
+        timeout=google.api_core.gapic_v1.method.DEFAULT,
+        metadata=None,
+    ):
+        """
+        Detaches a subscription from this topic. All messages retained in
+        the subscription are dropped. Subsequent ``Pull`` and ``StreamingPull``
+        requests will return FAILED_PRECONDITION. If the subscription is a push
+        subscription, pushes to the endpoint will stop.
+
+        Example:
+            >>> from google.cloud import pubsub_v1
+            >>>
+            >>> client = pubsub_v1.PublisherClient()
+            >>>
+            >>> subscription = client.topic_path('[PROJECT]', '[TOPIC]')
+            >>>
+            >>> response = client.detach_subscription(subscription)
+
+        Args:
+            subscription (str): Required. The subscription to detach. Format is
+                ``projects/{project}/subscriptions/{subscription}``.
+            retry (Optional[google.api_core.retry.Retry]):  A retry object used
+                to retry requests. If ``None`` is specified, requests will
+                be retried using a default configuration.
+            timeout (Optional[float]): The amount of time, in seconds, to wait
+                for the request to complete. Note that if ``retry`` is
+                specified, the timeout applies to each individual attempt.
+            metadata (Optional[Sequence[Tuple[str, str]]]): Additional metadata
+                that is provided to the method.
+
+        Returns:
+            A :class:`~google.cloud.pubsub_v1.types.DetachSubscriptionResponse` instance.
+
+        Raises:
+            google.api_core.exceptions.GoogleAPICallError: If the request
+                    failed for any reason.
+            google.api_core.exceptions.RetryError: If the request failed due
+                    to a retryable error and retry attempts failed.
+            ValueError: If the parameters are invalid.
+        """
+        # Wrap the transport method to add retry and timeout logic.
+        if "detach_subscription" not in self._inner_api_calls:
+            self._inner_api_calls[
+                "detach_subscription"
+            ] = google.api_core.gapic_v1.method.wrap_method(
+                self.transport.detach_subscription,
+                default_retry=self._method_configs["DetachSubscription"].retry,
+                default_timeout=self._method_configs["DetachSubscription"].timeout,
+                client_info=self._client_info,
+            )
+
+        request = pubsub_pb2.DetachSubscriptionRequest(subscription=subscription)
+        if metadata is None:
+            metadata = []
+        metadata = list(metadata)
+        try:
+            routing_header = [("subscription", subscription)]
+        except AttributeError:
+            pass
+        else:
+            routing_metadata = google.api_core.gapic_v1.routing_header.to_grpc_metadata(
+                routing_header
+            )
+            metadata.append(routing_metadata)
+
+        return self._inner_api_calls["detach_subscription"](
             request, retry=retry, timeout=timeout, metadata=metadata
         )
