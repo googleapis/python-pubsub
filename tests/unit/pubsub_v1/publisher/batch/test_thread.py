@@ -296,6 +296,19 @@ def test_publish():
     assert batch._futures == [future]
 
 
+def test_publish_max_messages_zero():
+    batch = create_batch(topic="topic_foo", max_messages=0)
+
+    message = types.PubsubMessage(data=b"foobarbaz")
+    with mock.patch.object(batch, "commit") as commit:
+        future = batch.publish(message)
+
+    assert future is not None
+    assert len(batch.messages) == 1
+    assert batch._futures == [future]
+    commit.assert_called_once()
+
+
 def test_publish_max_messages_enforced():
     batch = create_batch(topic="topic_foo", max_messages=1)
 
