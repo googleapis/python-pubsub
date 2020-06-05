@@ -362,9 +362,9 @@ class PublisherClient(object):
 
                 If a dict is provided, it must be of the same form as the protobuf
                 message :class:`~google.cloud.pubsub_v1.types.Topic`
-            update_mask (Union[dict, ~google.cloud.pubsub_v1.types.FieldMask]): Required. Indicates which fields in the provided topic to update. Must
-                be specified and non-empty. Note that if ``update_mask`` contains
-                "message\_storage\_policy" but the ``message_storage_policy`` is not set
+            update_mask (Union[dict, ~google.cloud.pubsub_v1.types.FieldMask]): Required. Indicates which fields in the provided topic to update.
+                Must be specified and non-empty. Note that if ``update_mask`` contains
+                "message_storage_policy" but the ``message_storage_policy`` is not set
                 in the ``topic`` provided above, then the updated value is determined by
                 the policy configured at the project or organization level.
 
@@ -443,8 +443,8 @@ class PublisherClient(object):
             >>> response = client.publish(topic, messages)
 
         Args:
-            topic (str): Required. The messages in the request will be published on this topic.
-                Format is ``projects/{project}/topics/{topic}``.
+            topic (str): Required. The messages in the request will be published on this
+                topic. Format is ``projects/{project}/topics/{topic}``.
             messages (list[Union[dict, ~google.cloud.pubsub_v1.types.PubsubMessage]]): Required. The messages to publish.
 
                 If a dict is provided, it must be of the same form as the protobuf
@@ -811,8 +811,8 @@ class PublisherClient(object):
             ...         pass
 
         Args:
-            topic (str): Required. The name of the topic that snapshots are attached to. Format
-                is ``projects/{project}/topics/{topic}``.
+            topic (str): Required. The name of the topic that snapshots are attached to.
+                Format is ``projects/{project}/topics/{topic}``.
             page_size (int): The maximum number of resources contained in the
                 underlying API response. If page streaming is performed per-
                 resource, this parameter does not affect the return value. If page
@@ -1151,8 +1151,8 @@ class PublisherClient(object):
         Args:
             resource (str): REQUIRED: The resource for which the policy detail is being requested.
                 See the operation documentation for the appropriate value for this field.
-            permissions (list[str]): The set of permissions to check for the ``resource``. Permissions with
-                wildcards (such as '*' or 'storage.*') are not allowed. For more
+            permissions (list[str]): The set of permissions to check for the ``resource``. Permissions
+                with wildcards (such as '*' or 'storage.*') are not allowed. For more
                 information see `IAM
                 Overview <https://cloud.google.com/iam/docs/overview#permissions>`__.
             retry (Optional[google.api_core.retry.Retry]):  A retry object used
