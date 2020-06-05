@@ -27,6 +27,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
     package="google.pubsub.v1",
     syntax="proto3",
     serialized_options=b"\n\024com.google.pubsub.v1B\013PubsubProtoP\001Z6google.golang.org/genproto/googleapis/pubsub/v1;pubsub\370\001\001\252\002\026Google.Cloud.PubSub.V1\312\002\026Google\\Cloud\\PubSub\\V1\352\002\031Google::Cloud::PubSub::V1",
+    create_key=_descriptor._internal_create_key,
     serialized_pb=b'\n)google/cloud/pubsub_v1/proto/pubsub.proto\x12\x10google.pubsub.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x17google/api/client.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x19google/api/resource.proto\x1a\x1egoogle/protobuf/duration.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a google/protobuf/field_mask.proto\x1a\x1fgoogle/protobuf/timestamp.proto";\n\x14MessageStoragePolicy\x12#\n\x1b\x61llowed_persistence_regions\x18\x01 \x03(\t"\xb2\x02\n\x05Topic\x12\x11\n\x04name\x18\x01 \x01(\tB\x03\xe0\x41\x02\x12\x33\n\x06labels\x18\x02 \x03(\x0b\x32#.google.pubsub.v1.Topic.LabelsEntry\x12\x46\n\x16message_storage_policy\x18\x03 \x01(\x0b\x32&.google.pubsub.v1.MessageStoragePolicy\x12\x14\n\x0ckms_key_name\x18\x05 \x01(\t\x1a-\n\x0bLabelsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01:T\xea\x41Q\n\x1bpubsub.googleapis.com/Topic\x12!projects/{project}/topics/{topic}\x12\x0f_deleted-topic_"\xf1\x01\n\rPubsubMessage\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\x0c\x12\x43\n\nattributes\x18\x02 \x03(\x0b\x32/.google.pubsub.v1.PubsubMessage.AttributesEntry\x12\x12\n\nmessage_id\x18\x03 \x01(\t\x12\x30\n\x0cpublish_time\x18\x04 \x01(\x0b\x32\x1a.google.protobuf.Timestamp\x12\x14\n\x0cordering_key\x18\x05 \x01(\t\x1a\x31\n\x0f\x41ttributesEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01"E\n\x0fGetTopicRequest\x12\x32\n\x05topic\x18\x01 \x01(\tB#\xe0\x41\x02\xfa\x41\x1d\n\x1bpubsub.googleapis.com/Topic"w\n\x12UpdateTopicRequest\x12+\n\x05topic\x18\x01 \x01(\x0b\x32\x17.google.pubsub.v1.TopicB\x03\xe0\x41\x02\x12\x34\n\x0bupdate_mask\x18\x02 \x01(\x0b\x32\x1a.google.protobuf.FieldMaskB\x03\xe0\x41\x02"|\n\x0ePublishRequest\x12\x32\n\x05topic\x18\x01 \x01(\tB#\xe0\x41\x02\xfa\x41\x1d\n\x1bpubsub.googleapis.com/Topic\x12\x36\n\x08messages\x18\x02 \x03(\x0b\x32\x1f.google.pubsub.v1.PubsubMessageB\x03\xe0\x41\x02"&\n\x0fPublishResponse\x12\x13\n\x0bmessage_ids\x18\x01 \x03(\t"\x80\x01\n\x11ListTopicsRequest\x12\x44\n\x07project\x18\x01 \x01(\tB3\xe0\x41\x02\xfa\x41-\n+cloudresourcemanager.googleapis.com/Project\x12\x11\n\tpage_size\x18\x02 \x01(\x05\x12\x12\n\npage_token\x18\x03 \x01(\t"V\n\x12ListTopicsResponse\x12\'\n\x06topics\x18\x01 \x03(\x0b\x32\x17.google.pubsub.v1.Topic\x12\x17\n\x0fnext_page_token\x18\x02 \x01(\t"z\n\x1dListTopicSubscriptionsRequest\x12\x32\n\x05topic\x18\x01 \x01(\tB#\xe0\x41\x02\xfa\x41\x1d\n\x1bpubsub.googleapis.com/Topic\x12\x11\n\tpage_size\x18\x02 \x01(\x05\x12\x12\n\npage_token\x18\x03 \x01(\t"y\n\x1eListTopicSubscriptionsResponse\x12>\n\rsubscriptions\x18\x01 \x03(\tB\'\xfa\x41$\n"pubsub.googleapis.com/Subscription\x12\x17\n\x0fnext_page_token\x18\x02 \x01(\t"v\n\x19ListTopicSnapshotsRequest\x12\x32\n\x05topic\x18\x01 \x01(\tB#\xe0\x41\x02\xfa\x41\x1d\n\x1bpubsub.googleapis.com/Topic\x12\x11\n\tpage_size\x18\x02 \x01(\x05\x12\x12\n\npage_token\x18\x03 \x01(\t"H\n\x1aListTopicSnapshotsResponse\x12\x11\n\tsnapshots\x18\x01 \x03(\t\x12\x17\n\x0fnext_page_token\x18\x02 \x01(\t"H\n\x12\x44\x65leteTopicRequest\x12\x32\n\x05topic\x18\x01 \x01(\tB#\xe0\x41\x02\xfa\x41\x1d\n\x1bpubsub.googleapis.com/Topic"V\n\x19\x44\x65tachSubscriptionRequest\x12\x39\n\x0csubscription\x18\x01 \x01(\tB#\xe0\x41\x02\xfa\x41\x1d\n\x1bpubsub.googleapis.com/Topic"\x1c\n\x1a\x44\x65tachSubscriptionResponse"\xae\x05\n\x0cSubscription\x12\x11\n\x04name\x18\x01 \x01(\tB\x03\xe0\x41\x02\x12\x32\n\x05topic\x18\x02 \x01(\tB#\xe0\x41\x02\xfa\x41\x1d\n\x1bpubsub.googleapis.com/Topic\x12\x31\n\x0bpush_config\x18\x04 \x01(\x0b\x32\x1c.google.pubsub.v1.PushConfig\x12\x1c\n\x14\x61\x63k_deadline_seconds\x18\x05 \x01(\x05\x12\x1d\n\x15retain_acked_messages\x18\x07 \x01(\x08\x12=\n\x1amessage_retention_duration\x18\x08 \x01(\x0b\x32\x19.google.protobuf.Duration\x12:\n\x06labels\x18\t \x03(\x0b\x32*.google.pubsub.v1.Subscription.LabelsEntry\x12\x1f\n\x17\x65nable_message_ordering\x18\n \x01(\x08\x12=\n\x11\x65xpiration_policy\x18\x0b \x01(\x0b\x32".google.pubsub.v1.ExpirationPolicy\x12\x0e\n\x06\x66ilter\x18\x0c \x01(\t\x12>\n\x12\x64\x65\x61\x64_letter_policy\x18\r \x01(\x0b\x32".google.pubsub.v1.DeadLetterPolicy\x12\x33\n\x0cretry_policy\x18\x0e \x01(\x0b\x32\x1d.google.pubsub.v1.RetryPolicy\x1a-\n\x0bLabelsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01:X\xea\x41U\n"pubsub.googleapis.com/Subscription\x12/projects/{project}/subscriptions/{subscription}"u\n\x0bRetryPolicy\x12\x32\n\x0fminimum_backoff\x18\x01 \x01(\x0b\x32\x19.google.protobuf.Duration\x12\x32\n\x0fmaximum_backoff\x18\x02 \x01(\x0b\x32\x19.google.protobuf.Duration"L\n\x10\x44\x65\x61\x64LetterPolicy\x12\x19\n\x11\x64\x65\x61\x64_letter_topic\x18\x01 \x01(\t\x12\x1d\n\x15max_delivery_attempts\x18\x02 \x01(\x05":\n\x10\x45xpirationPolicy\x12&\n\x03ttl\x18\x01 \x01(\x0b\x32\x19.google.protobuf.Duration"\xad\x02\n\nPushConfig\x12\x15\n\rpush_endpoint\x18\x01 \x01(\t\x12@\n\nattributes\x18\x02 \x03(\x0b\x32,.google.pubsub.v1.PushConfig.AttributesEntry\x12<\n\noidc_token\x18\x03 \x01(\x0b\x32&.google.pubsub.v1.PushConfig.OidcTokenH\x00\x1a<\n\tOidcToken\x12\x1d\n\x15service_account_email\x18\x01 \x01(\t\x12\x10\n\x08\x61udience\x18\x02 \x01(\t\x1a\x31\n\x0f\x41ttributesEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\x42\x17\n\x15\x61uthentication_method"m\n\x0fReceivedMessage\x12\x0e\n\x06\x61\x63k_id\x18\x01 \x01(\t\x12\x30\n\x07message\x18\x02 \x01(\x0b\x32\x1f.google.pubsub.v1.PubsubMessage\x12\x18\n\x10\x64\x65livery_attempt\x18\x03 \x01(\x05"Z\n\x16GetSubscriptionRequest\x12@\n\x0csubscription\x18\x01 \x01(\tB*\xe0\x41\x02\xfa\x41$\n"pubsub.googleapis.com/Subscription"\x8c\x01\n\x19UpdateSubscriptionRequest\x12\x39\n\x0csubscription\x18\x01 \x01(\x0b\x32\x1e.google.pubsub.v1.SubscriptionB\x03\xe0\x41\x02\x12\x34\n\x0bupdate_mask\x18\x02 \x01(\x0b\x32\x1a.google.protobuf.FieldMaskB\x03\xe0\x41\x02"\x87\x01\n\x18ListSubscriptionsRequest\x12\x44\n\x07project\x18\x01 \x01(\tB3\xe0\x41\x02\xfa\x41-\n+cloudresourcemanager.googleapis.com/Project\x12\x11\n\tpage_size\x18\x02 \x01(\x05\x12\x12\n\npage_token\x18\x03 \x01(\t"k\n\x19ListSubscriptionsResponse\x12\x35\n\rsubscriptions\x18\x01 \x03(\x0b\x32\x1e.google.pubsub.v1.Subscription\x12\x17\n\x0fnext_page_token\x18\x02 \x01(\t"]\n\x19\x44\x65leteSubscriptionRequest\x12@\n\x0csubscription\x18\x01 \x01(\tB*\xe0\x41\x02\xfa\x41$\n"pubsub.googleapis.com/Subscription"\x93\x01\n\x17ModifyPushConfigRequest\x12@\n\x0csubscription\x18\x01 \x01(\tB*\xe0\x41\x02\xfa\x41$\n"pubsub.googleapis.com/Subscription\x12\x36\n\x0bpush_config\x18\x02 \x01(\x0b\x32\x1c.google.pubsub.v1.PushConfigB\x03\xe0\x41\x02"\x8d\x01\n\x0bPullRequest\x12@\n\x0csubscription\x18\x01 \x01(\tB*\xe0\x41\x02\xfa\x41$\n"pubsub.googleapis.com/Subscription\x12!\n\x12return_immediately\x18\x02 \x01(\x08\x42\x05\x18\x01\xe0\x41\x01\x12\x19\n\x0cmax_messages\x18\x03 \x01(\x05\x42\x03\xe0\x41\x02"L\n\x0cPullResponse\x12<\n\x11received_messages\x18\x01 \x03(\x0b\x32!.google.pubsub.v1.ReceivedMessage"\x95\x01\n\x18ModifyAckDeadlineRequest\x12@\n\x0csubscription\x18\x01 \x01(\tB*\xe0\x41\x02\xfa\x41$\n"pubsub.googleapis.com/Subscription\x12\x14\n\x07\x61\x63k_ids\x18\x04 \x03(\tB\x03\xe0\x41\x02\x12!\n\x14\x61\x63k_deadline_seconds\x18\x03 \x01(\x05\x42\x03\xe0\x41\x02"l\n\x12\x41\x63knowledgeRequest\x12@\n\x0csubscription\x18\x01 \x01(\tB*\xe0\x41\x02\xfa\x41$\n"pubsub.googleapis.com/Subscription\x12\x14\n\x07\x61\x63k_ids\x18\x02 \x03(\tB\x03\xe0\x41\x02"\xe8\x01\n\x14StreamingPullRequest\x12@\n\x0csubscription\x18\x01 \x01(\tB*\xe0\x41\x02\xfa\x41$\n"pubsub.googleapis.com/Subscription\x12\x0f\n\x07\x61\x63k_ids\x18\x02 \x03(\t\x12\x1f\n\x17modify_deadline_seconds\x18\x03 \x03(\x05\x12\x1f\n\x17modify_deadline_ack_ids\x18\x04 \x03(\t\x12(\n\x1bstream_ack_deadline_seconds\x18\x05 \x01(\x05\x42\x03\xe0\x41\x02\x12\x11\n\tclient_id\x18\x06 \x01(\t"U\n\x15StreamingPullResponse\x12<\n\x11received_messages\x18\x01 \x03(\x0b\x32!.google.pubsub.v1.ReceivedMessage"\x83\x02\n\x15\x43reateSnapshotRequest\x12\x34\n\x04name\x18\x01 \x01(\tB&\xe0\x41\x02\xfa\x41 \n\x1epubsub.googleapis.com/Snapshot\x12@\n\x0csubscription\x18\x02 \x01(\tB*\xe0\x41\x02\xfa\x41$\n"pubsub.googleapis.com/Subscription\x12\x43\n\x06labels\x18\x03 \x03(\x0b\x32\x33.google.pubsub.v1.CreateSnapshotRequest.LabelsEntry\x1a-\n\x0bLabelsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01"\x80\x01\n\x15UpdateSnapshotRequest\x12\x31\n\x08snapshot\x18\x01 \x01(\x0b\x32\x1a.google.pubsub.v1.SnapshotB\x03\xe0\x41\x02\x12\x34\n\x0bupdate_mask\x18\x02 \x01(\x0b\x32\x1a.google.protobuf.FieldMaskB\x03\xe0\x41\x02"\xaf\x02\n\x08Snapshot\x12\x0c\n\x04name\x18\x01 \x01(\t\x12/\n\x05topic\x18\x02 \x01(\tB \xfa\x41\x1d\n\x1bpubsub.googleapis.com/Topic\x12/\n\x0b\x65xpire_time\x18\x03 \x01(\x0b\x32\x1a.google.protobuf.Timestamp\x12\x36\n\x06labels\x18\x04 \x03(\x0b\x32&.google.pubsub.v1.Snapshot.LabelsEntry\x1a-\n\x0bLabelsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01:L\xea\x41I\n\x1epubsub.googleapis.com/Snapshot\x12\'projects/{project}/snapshots/{snapshot}"N\n\x12GetSnapshotRequest\x12\x38\n\x08snapshot\x18\x01 \x01(\tB&\xe0\x41\x02\xfa\x41 \n\x1epubsub.googleapis.com/Snapshot"\x83\x01\n\x14ListSnapshotsRequest\x12\x44\n\x07project\x18\x01 \x01(\tB3\xe0\x41\x02\xfa\x41-\n+cloudresourcemanager.googleapis.com/Project\x12\x11\n\tpage_size\x18\x02 \x01(\x05\x12\x12\n\npage_token\x18\x03 \x01(\t"_\n\x15ListSnapshotsResponse\x12-\n\tsnapshots\x18\x01 \x03(\x0b\x32\x1a.google.pubsub.v1.Snapshot\x12\x17\n\x0fnext_page_token\x18\x02 \x01(\t"Q\n\x15\x44\x65leteSnapshotRequest\x12\x38\n\x08snapshot\x18\x01 \x01(\tB&\xe0\x41\x02\xfa\x41 \n\x1epubsub.googleapis.com/Snapshot"\xbe\x01\n\x0bSeekRequest\x12@\n\x0csubscription\x18\x01 \x01(\tB*\xe0\x41\x02\xfa\x41$\n"pubsub.googleapis.com/Subscription\x12*\n\x04time\x18\x02 \x01(\x0b\x32\x1a.google.protobuf.TimestampH\x00\x12\x37\n\x08snapshot\x18\x03 \x01(\tB#\xfa\x41 \n\x1epubsub.googleapis.com/SnapshotH\x00\x42\x08\n\x06target"\x0e\n\x0cSeekResponse2\xa3\x0b\n\tPublisher\x12q\n\x0b\x43reateTopic\x12\x17.google.pubsub.v1.Topic\x1a\x17.google.pubsub.v1.Topic"0\x82\xd3\xe4\x93\x02#\x1a\x1e/v1/{name=projects/*/topics/*}:\x01*\xda\x41\x04name\x12}\n\x0bUpdateTopic\x12$.google.pubsub.v1.UpdateTopicRequest\x1a\x17.google.pubsub.v1.Topic"/\x82\xd3\xe4\x93\x02)2$/v1/{topic.name=projects/*/topics/*}:\x01*\x12\x93\x01\n\x07Publish\x12 .google.pubsub.v1.PublishRequest\x1a!.google.pubsub.v1.PublishResponse"C\x82\xd3\xe4\x93\x02,"\'/v1/{topic=projects/*/topics/*}:publish:\x01*\xda\x41\x0etopic,messages\x12w\n\x08GetTopic\x12!.google.pubsub.v1.GetTopicRequest\x1a\x17.google.pubsub.v1.Topic"/\x82\xd3\xe4\x93\x02!\x12\x1f/v1/{topic=projects/*/topics/*}\xda\x41\x05topic\x12\x8a\x01\n\nListTopics\x12#.google.pubsub.v1.ListTopicsRequest\x1a$.google.pubsub.v1.ListTopicsResponse"1\x82\xd3\xe4\x93\x02!\x12\x1f/v1/{project=projects/*}/topics\xda\x41\x07project\x12\xba\x01\n\x16ListTopicSubscriptions\x12/.google.pubsub.v1.ListTopicSubscriptionsRequest\x1a\x30.google.pubsub.v1.ListTopicSubscriptionsResponse"=\x82\xd3\xe4\x93\x02/\x12-/v1/{topic=projects/*/topics/*}/subscriptions\xda\x41\x05topic\x12\xaa\x01\n\x12ListTopicSnapshots\x12+.google.pubsub.v1.ListTopicSnapshotsRequest\x1a,.google.pubsub.v1.ListTopicSnapshotsResponse"9\x82\xd3\xe4\x93\x02+\x12)/v1/{topic=projects/*/topics/*}/snapshots\xda\x41\x05topic\x12|\n\x0b\x44\x65leteTopic\x12$.google.pubsub.v1.DeleteTopicRequest\x1a\x16.google.protobuf.Empty"/\x82\xd3\xe4\x93\x02!*\x1f/v1/{topic=projects/*/topics/*}\xda\x41\x05topic\x12\xad\x01\n\x12\x44\x65tachSubscription\x12+.google.pubsub.v1.DetachSubscriptionRequest\x1a,.google.pubsub.v1.DetachSubscriptionResponse"<\x82\xd3\xe4\x93\x02\x36"4/v1/{subscription=projects/*/subscriptions/*}:detach\x1ap\xca\x41\x15pubsub.googleapis.com\xd2\x41Uhttps://www.googleapis.com/auth/cloud-platform,https://www.googleapis.com/auth/pubsub2\x83\x15\n\nSubscriber\x12\xb4\x01\n\x12\x43reateSubscription\x12\x1e.google.pubsub.v1.Subscription\x1a\x1e.google.pubsub.v1.Subscription"^\x82\xd3\xe4\x93\x02*\x1a%/v1/{name=projects/*/subscriptions/*}:\x01*\xda\x41+name,topic,push_config,ack_deadline_seconds\x12\xa1\x01\n\x0fGetSubscription\x12(.google.pubsub.v1.GetSubscriptionRequest\x1a\x1e.google.pubsub.v1.Subscription"D\x82\xd3\xe4\x93\x02/\x12-/v1/{subscription=projects/*/subscriptions/*}\xda\x41\x0csubscription\x12\xa0\x01\n\x12UpdateSubscription\x12+.google.pubsub.v1.UpdateSubscriptionRequest\x1a\x1e.google.pubsub.v1.Subscription"=\x82\xd3\xe4\x93\x02\x37\x32\x32/v1/{subscription.name=projects/*/subscriptions/*}:\x01*\x12\xa6\x01\n\x11ListSubscriptions\x12*.google.pubsub.v1.ListSubscriptionsRequest\x1a+.google.pubsub.v1.ListSubscriptionsResponse"8\x82\xd3\xe4\x93\x02(\x12&/v1/{project=projects/*}/subscriptions\xda\x41\x07project\x12\x9f\x01\n\x12\x44\x65leteSubscription\x12+.google.pubsub.v1.DeleteSubscriptionRequest\x1a\x16.google.protobuf.Empty"D\x82\xd3\xe4\x93\x02/*-/v1/{subscription=projects/*/subscriptions/*}\xda\x41\x0csubscription\x12\xcf\x01\n\x11ModifyAckDeadline\x12*.google.pubsub.v1.ModifyAckDeadlineRequest\x1a\x16.google.protobuf.Empty"v\x82\xd3\xe4\x93\x02\x44"?/v1/{subscription=projects/*/subscriptions/*}:modifyAckDeadline:\x01*\xda\x41)subscription,ack_ids,ack_deadline_seconds\x12\xa8\x01\n\x0b\x41\x63knowledge\x12$.google.pubsub.v1.AcknowledgeRequest\x1a\x16.google.protobuf.Empty"[\x82\xd3\xe4\x93\x02>"9/v1/{subscription=projects/*/subscriptions/*}:acknowledge:\x01*\xda\x41\x14subscription,ack_ids\x12\xb3\x01\n\x04Pull\x12\x1d.google.pubsub.v1.PullRequest\x1a\x1e.google.pubsub.v1.PullResponse"l\x82\xd3\xe4\x93\x02\x37"2/v1/{subscription=projects/*/subscriptions/*}:pull:\x01*\xda\x41,subscription,return_immediately,max_messages\x12\x66\n\rStreamingPull\x12&.google.pubsub.v1.StreamingPullRequest\x1a\'.google.pubsub.v1.StreamingPullResponse"\x00(\x01\x30\x01\x12\xbb\x01\n\x10ModifyPushConfig\x12).google.pubsub.v1.ModifyPushConfigRequest\x1a\x16.google.protobuf.Empty"d\x82\xd3\xe4\x93\x02\x43">/v1/{subscription=projects/*/subscriptions/*}:modifyPushConfig:\x01*\xda\x41\x18subscription,push_config\x12\x89\x01\n\x0bGetSnapshot\x12$.google.pubsub.v1.GetSnapshotRequest\x1a\x1a.google.pubsub.v1.Snapshot"8\x82\xd3\xe4\x93\x02\'\x12%/v1/{snapshot=projects/*/snapshots/*}\xda\x41\x08snapshot\x12\x96\x01\n\rListSnapshots\x12&.google.pubsub.v1.ListSnapshotsRequest\x1a\'.google.pubsub.v1.ListSnapshotsResponse"4\x82\xd3\xe4\x93\x02$\x12"/v1/{project=projects/*}/snapshots\xda\x41\x07project\x12\x97\x01\n\x0e\x43reateSnapshot\x12\'.google.pubsub.v1.CreateSnapshotRequest\x1a\x1a.google.pubsub.v1.Snapshot"@\x82\xd3\xe4\x93\x02&\x1a!/v1/{name=projects/*/snapshots/*}:\x01*\xda\x41\x11name,subscription\x12\x8c\x01\n\x0eUpdateSnapshot\x12\'.google.pubsub.v1.UpdateSnapshotRequest\x1a\x1a.google.pubsub.v1.Snapshot"5\x82\xd3\xe4\x93\x02/2*/v1/{snapshot.name=projects/*/snapshots/*}:\x01*\x12\x8b\x01\n\x0e\x44\x65leteSnapshot\x12\'.google.pubsub.v1.DeleteSnapshotRequest\x1a\x16.google.protobuf.Empty"8\x82\xd3\xe4\x93\x02\'*%/v1/{snapshot=projects/*/snapshots/*}\xda\x41\x08snapshot\x12\x84\x01\n\x04Seek\x12\x1d.google.pubsub.v1.SeekRequest\x1a\x1e.google.pubsub.v1.SeekResponse"=\x82\xd3\xe4\x93\x02\x37"2/v1/{subscription=projects/*/subscriptions/*}:seek:\x01*\x1ap\xca\x41\x15pubsub.googleapis.com\xd2\x41Uhttps://www.googleapis.com/auth/cloud-platform,https://www.googleapis.com/auth/pubsubB\xae\x01\n\x14\x63om.google.pubsub.v1B\x0bPubsubProtoP\x01Z6google.golang.org/genproto/googleapis/pubsub/v1;pubsub\xf8\x01\x01\xaa\x02\x16Google.Cloud.PubSub.V1\xca\x02\x16Google\\Cloud\\PubSub\\V1\xea\x02\x19Google::Cloud::PubSub::V1b\x06proto3',
     dependencies=[
         google_dot_api_dot_annotations__pb2.DESCRIPTOR,
@@ -47,6 +48,7 @@ _MESSAGESTORAGEPOLICY = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
+    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="allowed_persistence_regions",
@@ -65,6 +67,7 @@ _MESSAGESTORAGEPOLICY = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         )
     ],
     extensions=[],
@@ -86,6 +89,7 @@ _TOPIC_LABELSENTRY = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
+    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="key",
@@ -104,6 +108,7 @@ _TOPIC_LABELSENTRY = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="value",
@@ -122,6 +127,7 @@ _TOPIC_LABELSENTRY = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
     ],
     extensions=[],
@@ -142,6 +148,7 @@ _TOPIC = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
+    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="name",
@@ -160,6 +167,7 @@ _TOPIC = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=b"\340A\002",
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="labels",
@@ -178,6 +186,7 @@ _TOPIC = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="message_storage_policy",
@@ -196,6 +205,7 @@ _TOPIC = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="kms_key_name",
@@ -214,6 +224,7 @@ _TOPIC = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
     ],
     extensions=[],
@@ -235,6 +246,7 @@ _PUBSUBMESSAGE_ATTRIBUTESENTRY = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
+    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="key",
@@ -253,6 +265,7 @@ _PUBSUBMESSAGE_ATTRIBUTESENTRY = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="value",
@@ -271,6 +284,7 @@ _PUBSUBMESSAGE_ATTRIBUTESENTRY = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
     ],
     extensions=[],
@@ -291,6 +305,7 @@ _PUBSUBMESSAGE = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
+    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="data",
@@ -309,6 +324,7 @@ _PUBSUBMESSAGE = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="attributes",
@@ -327,6 +343,7 @@ _PUBSUBMESSAGE = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="message_id",
@@ -345,6 +362,7 @@ _PUBSUBMESSAGE = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="publish_time",
@@ -363,6 +381,7 @@ _PUBSUBMESSAGE = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="ordering_key",
@@ -381,6 +400,7 @@ _PUBSUBMESSAGE = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
     ],
     extensions=[],
@@ -402,6 +422,7 @@ _GETTOPICREQUEST = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
+    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="topic",
@@ -420,6 +441,7 @@ _GETTOPICREQUEST = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=b"\340A\002\372A\035\n\033pubsub.googleapis.com/Topic",
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         )
     ],
     extensions=[],
@@ -441,6 +463,7 @@ _UPDATETOPICREQUEST = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
+    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="topic",
@@ -459,6 +482,7 @@ _UPDATETOPICREQUEST = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=b"\340A\002",
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="update_mask",
@@ -477,6 +501,7 @@ _UPDATETOPICREQUEST = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=b"\340A\002",
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
     ],
     extensions=[],
@@ -498,6 +523,7 @@ _PUBLISHREQUEST = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
+    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="topic",
@@ -516,6 +542,7 @@ _PUBLISHREQUEST = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=b"\340A\002\372A\035\n\033pubsub.googleapis.com/Topic",
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="messages",
@@ -534,6 +561,7 @@ _PUBLISHREQUEST = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=b"\340A\002",
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
     ],
     extensions=[],
@@ -555,6 +583,7 @@ _PUBLISHRESPONSE = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
+    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="message_ids",
@@ -573,6 +602,7 @@ _PUBLISHRESPONSE = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         )
     ],
     extensions=[],
@@ -594,6 +624,7 @@ _LISTTOPICSREQUEST = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
+    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="project",
@@ -612,6 +643,7 @@ _LISTTOPICSREQUEST = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=b"\340A\002\372A-\n+cloudresourcemanager.googleapis.com/Project",
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="page_size",
@@ -630,6 +662,7 @@ _LISTTOPICSREQUEST = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="page_token",
@@ -648,6 +681,7 @@ _LISTTOPICSREQUEST = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
     ],
     extensions=[],
@@ -669,6 +703,7 @@ _LISTTOPICSRESPONSE = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
+    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="topics",
@@ -687,6 +722,7 @@ _LISTTOPICSRESPONSE = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="next_page_token",
@@ -705,6 +741,7 @@ _LISTTOPICSRESPONSE = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
     ],
     extensions=[],
@@ -726,6 +763,7 @@ _LISTTOPICSUBSCRIPTIONSREQUEST = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
+    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="topic",
@@ -744,6 +782,7 @@ _LISTTOPICSUBSCRIPTIONSREQUEST = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=b"\340A\002\372A\035\n\033pubsub.googleapis.com/Topic",
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="page_size",
@@ -762,6 +801,7 @@ _LISTTOPICSUBSCRIPTIONSREQUEST = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="page_token",
@@ -780,6 +820,7 @@ _LISTTOPICSUBSCRIPTIONSREQUEST = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
     ],
     extensions=[],
@@ -801,6 +842,7 @@ _LISTTOPICSUBSCRIPTIONSRESPONSE = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
+    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="subscriptions",
@@ -819,6 +861,7 @@ _LISTTOPICSUBSCRIPTIONSRESPONSE = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=b'\372A$\n"pubsub.googleapis.com/Subscription',
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="next_page_token",
@@ -837,6 +880,7 @@ _LISTTOPICSUBSCRIPTIONSRESPONSE = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
     ],
     extensions=[],
@@ -858,6 +902,7 @@ _LISTTOPICSNAPSHOTSREQUEST = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
+    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="topic",
@@ -876,6 +921,7 @@ _LISTTOPICSNAPSHOTSREQUEST = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=b"\340A\002\372A\035\n\033pubsub.googleapis.com/Topic",
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="page_size",
@@ -894,6 +940,7 @@ _LISTTOPICSNAPSHOTSREQUEST = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="page_token",
@@ -912,6 +959,7 @@ _LISTTOPICSNAPSHOTSREQUEST = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
     ],
     extensions=[],
@@ -933,6 +981,7 @@ _LISTTOPICSNAPSHOTSRESPONSE = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
+    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="snapshots",
@@ -951,6 +1000,7 @@ _LISTTOPICSNAPSHOTSRESPONSE = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="next_page_token",
@@ -969,6 +1019,7 @@ _LISTTOPICSNAPSHOTSRESPONSE = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
     ],
     extensions=[],
@@ -990,6 +1041,7 @@ _DELETETOPICREQUEST = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
+    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="topic",
@@ -1008,6 +1060,7 @@ _DELETETOPICREQUEST = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=b"\340A\002\372A\035\n\033pubsub.googleapis.com/Topic",
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         )
     ],
     extensions=[],
@@ -1029,6 +1082,7 @@ _DETACHSUBSCRIPTIONREQUEST = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
+    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="subscription",
@@ -1047,6 +1101,7 @@ _DETACHSUBSCRIPTIONREQUEST = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=b"\340A\002\372A\035\n\033pubsub.googleapis.com/Topic",
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         )
     ],
     extensions=[],
@@ -1068,6 +1123,7 @@ _DETACHSUBSCRIPTIONRESPONSE = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
+    create_key=_descriptor._internal_create_key,
     fields=[],
     extensions=[],
     nested_types=[],
@@ -1088,6 +1144,7 @@ _SUBSCRIPTION_LABELSENTRY = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
+    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="key",
@@ -1106,6 +1163,7 @@ _SUBSCRIPTION_LABELSENTRY = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="value",
@@ -1124,6 +1182,7 @@ _SUBSCRIPTION_LABELSENTRY = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
     ],
     extensions=[],
@@ -1144,6 +1203,7 @@ _SUBSCRIPTION = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
+    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="name",
@@ -1162,6 +1222,7 @@ _SUBSCRIPTION = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=b"\340A\002",
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="topic",
@@ -1180,6 +1241,7 @@ _SUBSCRIPTION = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=b"\340A\002\372A\035\n\033pubsub.googleapis.com/Topic",
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="push_config",
@@ -1198,6 +1260,7 @@ _SUBSCRIPTION = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="ack_deadline_seconds",
@@ -1216,6 +1279,7 @@ _SUBSCRIPTION = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="retain_acked_messages",
@@ -1234,6 +1298,7 @@ _SUBSCRIPTION = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="message_retention_duration",
@@ -1252,6 +1317,7 @@ _SUBSCRIPTION = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="labels",
@@ -1270,6 +1336,7 @@ _SUBSCRIPTION = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="enable_message_ordering",
@@ -1288,6 +1355,7 @@ _SUBSCRIPTION = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="expiration_policy",
@@ -1306,6 +1374,7 @@ _SUBSCRIPTION = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="filter",
@@ -1324,6 +1393,7 @@ _SUBSCRIPTION = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="dead_letter_policy",
@@ -1342,6 +1412,7 @@ _SUBSCRIPTION = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="retry_policy",
@@ -1360,6 +1431,7 @@ _SUBSCRIPTION = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
     ],
     extensions=[],
@@ -1381,6 +1453,7 @@ _RETRYPOLICY = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
+    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="minimum_backoff",
@@ -1399,6 +1472,7 @@ _RETRYPOLICY = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="maximum_backoff",
@@ -1417,6 +1491,7 @@ _RETRYPOLICY = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
     ],
     extensions=[],
@@ -1438,6 +1513,7 @@ _DEADLETTERPOLICY = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
+    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="dead_letter_topic",
@@ -1456,6 +1532,7 @@ _DEADLETTERPOLICY = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="max_delivery_attempts",
@@ -1474,6 +1551,7 @@ _DEADLETTERPOLICY = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
     ],
     extensions=[],
@@ -1495,6 +1573,7 @@ _EXPIRATIONPOLICY = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
+    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="ttl",
@@ -1513,6 +1592,7 @@ _EXPIRATIONPOLICY = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         )
     ],
     extensions=[],
@@ -1534,6 +1614,7 @@ _PUSHCONFIG_OIDCTOKEN = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
+    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="service_account_email",
@@ -1552,6 +1633,7 @@ _PUSHCONFIG_OIDCTOKEN = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="audience",
@@ -1570,6 +1652,7 @@ _PUSHCONFIG_OIDCTOKEN = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
     ],
     extensions=[],
@@ -1590,6 +1673,7 @@ _PUSHCONFIG_ATTRIBUTESENTRY = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
+    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="key",
@@ -1608,6 +1692,7 @@ _PUSHCONFIG_ATTRIBUTESENTRY = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="value",
@@ -1626,6 +1711,7 @@ _PUSHCONFIG_ATTRIBUTESENTRY = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
     ],
     extensions=[],
@@ -1646,6 +1732,7 @@ _PUSHCONFIG = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
+    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="push_endpoint",
@@ -1664,6 +1751,7 @@ _PUSHCONFIG = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="attributes",
@@ -1682,6 +1770,7 @@ _PUSHCONFIG = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="oidc_token",
@@ -1700,6 +1789,7 @@ _PUSHCONFIG = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
     ],
     extensions=[],
@@ -1715,6 +1805,7 @@ _PUSHCONFIG = _descriptor.Descriptor(
             full_name="google.pubsub.v1.PushConfig.authentication_method",
             index=0,
             containing_type=None,
+            create_key=_descriptor._internal_create_key,
             fields=[],
         )
     ],
@@ -1729,6 +1820,7 @@ _RECEIVEDMESSAGE = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
+    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="ack_id",
@@ -1747,6 +1839,7 @@ _RECEIVEDMESSAGE = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="message",
@@ -1765,6 +1858,7 @@ _RECEIVEDMESSAGE = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="delivery_attempt",
@@ -1783,6 +1877,7 @@ _RECEIVEDMESSAGE = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
     ],
     extensions=[],
@@ -1804,6 +1899,7 @@ _GETSUBSCRIPTIONREQUEST = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
+    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="subscription",
@@ -1822,6 +1918,7 @@ _GETSUBSCRIPTIONREQUEST = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=b'\340A\002\372A$\n"pubsub.googleapis.com/Subscription',
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         )
     ],
     extensions=[],
@@ -1843,6 +1940,7 @@ _UPDATESUBSCRIPTIONREQUEST = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
+    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="subscription",
@@ -1861,6 +1959,7 @@ _UPDATESUBSCRIPTIONREQUEST = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=b"\340A\002",
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="update_mask",
@@ -1879,6 +1978,7 @@ _UPDATESUBSCRIPTIONREQUEST = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=b"\340A\002",
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
     ],
     extensions=[],
@@ -1900,6 +2000,7 @@ _LISTSUBSCRIPTIONSREQUEST = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
+    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="project",
@@ -1918,6 +2019,7 @@ _LISTSUBSCRIPTIONSREQUEST = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=b"\340A\002\372A-\n+cloudresourcemanager.googleapis.com/Project",
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="page_size",
@@ -1936,6 +2038,7 @@ _LISTSUBSCRIPTIONSREQUEST = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="page_token",
@@ -1954,6 +2057,7 @@ _LISTSUBSCRIPTIONSREQUEST = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
     ],
     extensions=[],
@@ -1975,6 +2079,7 @@ _LISTSUBSCRIPTIONSRESPONSE = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
+    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="subscriptions",
@@ -1993,6 +2098,7 @@ _LISTSUBSCRIPTIONSRESPONSE = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="next_page_token",
@@ -2011,6 +2117,7 @@ _LISTSUBSCRIPTIONSRESPONSE = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
     ],
     extensions=[],
@@ -2032,6 +2139,7 @@ _DELETESUBSCRIPTIONREQUEST = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
+    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="subscription",
@@ -2050,6 +2158,7 @@ _DELETESUBSCRIPTIONREQUEST = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=b'\340A\002\372A$\n"pubsub.googleapis.com/Subscription',
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         )
     ],
     extensions=[],
@@ -2071,6 +2180,7 @@ _MODIFYPUSHCONFIGREQUEST = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
+    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="subscription",
@@ -2089,6 +2199,7 @@ _MODIFYPUSHCONFIGREQUEST = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=b'\340A\002\372A$\n"pubsub.googleapis.com/Subscription',
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="push_config",
@@ -2107,6 +2218,7 @@ _MODIFYPUSHCONFIGREQUEST = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=b"\340A\002",
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
     ],
     extensions=[],
@@ -2128,6 +2240,7 @@ _PULLREQUEST = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
+    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="subscription",
@@ -2146,6 +2259,7 @@ _PULLREQUEST = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=b'\340A\002\372A$\n"pubsub.googleapis.com/Subscription',
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="return_immediately",
@@ -2164,6 +2278,7 @@ _PULLREQUEST = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=b"\030\001\340A\001",
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="max_messages",
@@ -2182,6 +2297,7 @@ _PULLREQUEST = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=b"\340A\002",
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
     ],
     extensions=[],
@@ -2203,6 +2319,7 @@ _PULLRESPONSE = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
+    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="received_messages",
@@ -2221,6 +2338,7 @@ _PULLRESPONSE = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         )
     ],
     extensions=[],
@@ -2242,6 +2360,7 @@ _MODIFYACKDEADLINEREQUEST = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
+    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="subscription",
@@ -2260,6 +2379,7 @@ _MODIFYACKDEADLINEREQUEST = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=b'\340A\002\372A$\n"pubsub.googleapis.com/Subscription',
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="ack_ids",
@@ -2278,6 +2398,7 @@ _MODIFYACKDEADLINEREQUEST = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=b"\340A\002",
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="ack_deadline_seconds",
@@ -2296,6 +2417,7 @@ _MODIFYACKDEADLINEREQUEST = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=b"\340A\002",
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
     ],
     extensions=[],
@@ -2317,6 +2439,7 @@ _ACKNOWLEDGEREQUEST = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
+    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="subscription",
@@ -2335,6 +2458,7 @@ _ACKNOWLEDGEREQUEST = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=b'\340A\002\372A$\n"pubsub.googleapis.com/Subscription',
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="ack_ids",
@@ -2353,6 +2477,7 @@ _ACKNOWLEDGEREQUEST = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=b"\340A\002",
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
     ],
     extensions=[],
@@ -2374,6 +2499,7 @@ _STREAMINGPULLREQUEST = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
+    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="subscription",
@@ -2392,6 +2518,7 @@ _STREAMINGPULLREQUEST = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=b'\340A\002\372A$\n"pubsub.googleapis.com/Subscription',
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="ack_ids",
@@ -2410,6 +2537,7 @@ _STREAMINGPULLREQUEST = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="modify_deadline_seconds",
@@ -2428,6 +2556,7 @@ _STREAMINGPULLREQUEST = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="modify_deadline_ack_ids",
@@ -2446,6 +2575,7 @@ _STREAMINGPULLREQUEST = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="stream_ack_deadline_seconds",
@@ -2464,6 +2594,7 @@ _STREAMINGPULLREQUEST = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=b"\340A\002",
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="client_id",
@@ -2482,6 +2613,7 @@ _STREAMINGPULLREQUEST = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
     ],
     extensions=[],
@@ -2503,6 +2635,7 @@ _STREAMINGPULLRESPONSE = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
+    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="received_messages",
@@ -2521,6 +2654,7 @@ _STREAMINGPULLRESPONSE = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         )
     ],
     extensions=[],
@@ -2542,6 +2676,7 @@ _CREATESNAPSHOTREQUEST_LABELSENTRY = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
+    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="key",
@@ -2560,6 +2695,7 @@ _CREATESNAPSHOTREQUEST_LABELSENTRY = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="value",
@@ -2578,6 +2714,7 @@ _CREATESNAPSHOTREQUEST_LABELSENTRY = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
     ],
     extensions=[],
@@ -2598,6 +2735,7 @@ _CREATESNAPSHOTREQUEST = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
+    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="name",
@@ -2616,6 +2754,7 @@ _CREATESNAPSHOTREQUEST = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=b"\340A\002\372A \n\036pubsub.googleapis.com/Snapshot",
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="subscription",
@@ -2634,6 +2773,7 @@ _CREATESNAPSHOTREQUEST = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=b'\340A\002\372A$\n"pubsub.googleapis.com/Subscription',
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="labels",
@@ -2652,6 +2792,7 @@ _CREATESNAPSHOTREQUEST = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
     ],
     extensions=[],
@@ -2673,6 +2814,7 @@ _UPDATESNAPSHOTREQUEST = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
+    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="snapshot",
@@ -2691,6 +2833,7 @@ _UPDATESNAPSHOTREQUEST = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=b"\340A\002",
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="update_mask",
@@ -2709,6 +2852,7 @@ _UPDATESNAPSHOTREQUEST = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=b"\340A\002",
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
     ],
     extensions=[],
@@ -2730,6 +2874,7 @@ _SNAPSHOT_LABELSENTRY = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
+    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="key",
@@ -2748,6 +2893,7 @@ _SNAPSHOT_LABELSENTRY = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="value",
@@ -2766,6 +2912,7 @@ _SNAPSHOT_LABELSENTRY = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
     ],
     extensions=[],
@@ -2786,6 +2933,7 @@ _SNAPSHOT = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
+    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="name",
@@ -2804,6 +2952,7 @@ _SNAPSHOT = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="topic",
@@ -2822,6 +2971,7 @@ _SNAPSHOT = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=b"\372A\035\n\033pubsub.googleapis.com/Topic",
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="expire_time",
@@ -2840,6 +2990,7 @@ _SNAPSHOT = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="labels",
@@ -2858,6 +3009,7 @@ _SNAPSHOT = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
     ],
     extensions=[],
@@ -2879,6 +3031,7 @@ _GETSNAPSHOTREQUEST = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
+    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="snapshot",
@@ -2897,6 +3050,7 @@ _GETSNAPSHOTREQUEST = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=b"\340A\002\372A \n\036pubsub.googleapis.com/Snapshot",
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         )
     ],
     extensions=[],
@@ -2918,6 +3072,7 @@ _LISTSNAPSHOTSREQUEST = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
+    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="project",
@@ -2936,6 +3091,7 @@ _LISTSNAPSHOTSREQUEST = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=b"\340A\002\372A-\n+cloudresourcemanager.googleapis.com/Project",
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="page_size",
@@ -2954,6 +3110,7 @@ _LISTSNAPSHOTSREQUEST = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="page_token",
@@ -2972,6 +3129,7 @@ _LISTSNAPSHOTSREQUEST = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
     ],
     extensions=[],
@@ -2993,6 +3151,7 @@ _LISTSNAPSHOTSRESPONSE = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
+    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="snapshots",
@@ -3011,6 +3170,7 @@ _LISTSNAPSHOTSRESPONSE = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="next_page_token",
@@ -3029,6 +3189,7 @@ _LISTSNAPSHOTSRESPONSE = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
     ],
     extensions=[],
@@ -3050,6 +3211,7 @@ _DELETESNAPSHOTREQUEST = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
+    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="snapshot",
@@ -3068,6 +3230,7 @@ _DELETESNAPSHOTREQUEST = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=b"\340A\002\372A \n\036pubsub.googleapis.com/Snapshot",
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         )
     ],
     extensions=[],
@@ -3089,6 +3252,7 @@ _SEEKREQUEST = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
+    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="subscription",
@@ -3107,6 +3271,7 @@ _SEEKREQUEST = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=b'\340A\002\372A$\n"pubsub.googleapis.com/Subscription',
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="time",
@@ -3125,6 +3290,7 @@ _SEEKREQUEST = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="snapshot",
@@ -3143,6 +3309,7 @@ _SEEKREQUEST = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=b"\372A \n\036pubsub.googleapis.com/Snapshot",
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
     ],
     extensions=[],
@@ -3158,6 +3325,7 @@ _SEEKREQUEST = _descriptor.Descriptor(
             full_name="google.pubsub.v1.SeekRequest.target",
             index=0,
             containing_type=None,
+            create_key=_descriptor._internal_create_key,
             fields=[],
         )
     ],
@@ -3172,6 +3340,7 @@ _SEEKRESPONSE = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
+    create_key=_descriptor._internal_create_key,
     fields=[],
     extensions=[],
     nested_types=[],
@@ -4630,6 +4799,7 @@ _PUBLISHER = _descriptor.ServiceDescriptor(
     file=DESCRIPTOR,
     index=0,
     serialized_options=b"\312A\025pubsub.googleapis.com\322AUhttps://www.googleapis.com/auth/cloud-platform,https://www.googleapis.com/auth/pubsub",
+    create_key=_descriptor._internal_create_key,
     serialized_start=6327,
     serialized_end=7770,
     methods=[
@@ -4641,6 +4811,7 @@ _PUBLISHER = _descriptor.ServiceDescriptor(
             input_type=_TOPIC,
             output_type=_TOPIC,
             serialized_options=b"\202\323\344\223\002#\032\036/v1/{name=projects/*/topics/*}:\001*\332A\004name",
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.MethodDescriptor(
             name="UpdateTopic",
@@ -4650,6 +4821,7 @@ _PUBLISHER = _descriptor.ServiceDescriptor(
             input_type=_UPDATETOPICREQUEST,
             output_type=_TOPIC,
             serialized_options=b"\202\323\344\223\002)2$/v1/{topic.name=projects/*/topics/*}:\001*",
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.MethodDescriptor(
             name="Publish",
@@ -4659,6 +4831,7 @@ _PUBLISHER = _descriptor.ServiceDescriptor(
             input_type=_PUBLISHREQUEST,
             output_type=_PUBLISHRESPONSE,
             serialized_options=b"\202\323\344\223\002,\"'/v1/{topic=projects/*/topics/*}:publish:\001*\332A\016topic,messages",
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.MethodDescriptor(
             name="GetTopic",
@@ -4668,6 +4841,7 @@ _PUBLISHER = _descriptor.ServiceDescriptor(
             input_type=_GETTOPICREQUEST,
             output_type=_TOPIC,
             serialized_options=b"\202\323\344\223\002!\022\037/v1/{topic=projects/*/topics/*}\332A\005topic",
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.MethodDescriptor(
             name="ListTopics",
@@ -4677,6 +4851,7 @@ _PUBLISHER = _descriptor.ServiceDescriptor(
             input_type=_LISTTOPICSREQUEST,
             output_type=_LISTTOPICSRESPONSE,
             serialized_options=b"\202\323\344\223\002!\022\037/v1/{project=projects/*}/topics\332A\007project",
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.MethodDescriptor(
             name="ListTopicSubscriptions",
@@ -4686,6 +4861,7 @@ _PUBLISHER = _descriptor.ServiceDescriptor(
             input_type=_LISTTOPICSUBSCRIPTIONSREQUEST,
             output_type=_LISTTOPICSUBSCRIPTIONSRESPONSE,
             serialized_options=b"\202\323\344\223\002/\022-/v1/{topic=projects/*/topics/*}/subscriptions\332A\005topic",
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.MethodDescriptor(
             name="ListTopicSnapshots",
@@ -4695,6 +4871,7 @@ _PUBLISHER = _descriptor.ServiceDescriptor(
             input_type=_LISTTOPICSNAPSHOTSREQUEST,
             output_type=_LISTTOPICSNAPSHOTSRESPONSE,
             serialized_options=b"\202\323\344\223\002+\022)/v1/{topic=projects/*/topics/*}/snapshots\332A\005topic",
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.MethodDescriptor(
             name="DeleteTopic",
@@ -4704,6 +4881,7 @@ _PUBLISHER = _descriptor.ServiceDescriptor(
             input_type=_DELETETOPICREQUEST,
             output_type=google_dot_protobuf_dot_empty__pb2._EMPTY,
             serialized_options=b"\202\323\344\223\002!*\037/v1/{topic=projects/*/topics/*}\332A\005topic",
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.MethodDescriptor(
             name="DetachSubscription",
@@ -4713,6 +4891,7 @@ _PUBLISHER = _descriptor.ServiceDescriptor(
             input_type=_DETACHSUBSCRIPTIONREQUEST,
             output_type=_DETACHSUBSCRIPTIONRESPONSE,
             serialized_options=b'\202\323\344\223\0026"4/v1/{subscription=projects/*/subscriptions/*}:detach',
+            create_key=_descriptor._internal_create_key,
         ),
     ],
 )
@@ -4727,6 +4906,7 @@ _SUBSCRIBER = _descriptor.ServiceDescriptor(
     file=DESCRIPTOR,
     index=1,
     serialized_options=b"\312A\025pubsub.googleapis.com\322AUhttps://www.googleapis.com/auth/cloud-platform,https://www.googleapis.com/auth/pubsub",
+    create_key=_descriptor._internal_create_key,
     serialized_start=7773,
     serialized_end=10464,
     methods=[
@@ -4738,6 +4918,7 @@ _SUBSCRIBER = _descriptor.ServiceDescriptor(
             input_type=_SUBSCRIPTION,
             output_type=_SUBSCRIPTION,
             serialized_options=b"\202\323\344\223\002*\032%/v1/{name=projects/*/subscriptions/*}:\001*\332A+name,topic,push_config,ack_deadline_seconds",
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.MethodDescriptor(
             name="GetSubscription",
@@ -4747,6 +4928,7 @@ _SUBSCRIBER = _descriptor.ServiceDescriptor(
             input_type=_GETSUBSCRIPTIONREQUEST,
             output_type=_SUBSCRIPTION,
             serialized_options=b"\202\323\344\223\002/\022-/v1/{subscription=projects/*/subscriptions/*}\332A\014subscription",
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.MethodDescriptor(
             name="UpdateSubscription",
@@ -4756,6 +4938,7 @@ _SUBSCRIBER = _descriptor.ServiceDescriptor(
             input_type=_UPDATESUBSCRIPTIONREQUEST,
             output_type=_SUBSCRIPTION,
             serialized_options=b"\202\323\344\223\002722/v1/{subscription.name=projects/*/subscriptions/*}:\001*",
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.MethodDescriptor(
             name="ListSubscriptions",
@@ -4765,6 +4948,7 @@ _SUBSCRIBER = _descriptor.ServiceDescriptor(
             input_type=_LISTSUBSCRIPTIONSREQUEST,
             output_type=_LISTSUBSCRIPTIONSRESPONSE,
             serialized_options=b"\202\323\344\223\002(\022&/v1/{project=projects/*}/subscriptions\332A\007project",
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.MethodDescriptor(
             name="DeleteSubscription",
@@ -4774,6 +4958,7 @@ _SUBSCRIBER = _descriptor.ServiceDescriptor(
             input_type=_DELETESUBSCRIPTIONREQUEST,
             output_type=google_dot_protobuf_dot_empty__pb2._EMPTY,
             serialized_options=b"\202\323\344\223\002/*-/v1/{subscription=projects/*/subscriptions/*}\332A\014subscription",
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.MethodDescriptor(
             name="ModifyAckDeadline",
@@ -4783,6 +4968,7 @@ _SUBSCRIBER = _descriptor.ServiceDescriptor(
             input_type=_MODIFYACKDEADLINEREQUEST,
             output_type=google_dot_protobuf_dot_empty__pb2._EMPTY,
             serialized_options=b'\202\323\344\223\002D"?/v1/{subscription=projects/*/subscriptions/*}:modifyAckDeadline:\001*\332A)subscription,ack_ids,ack_deadline_seconds',
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.MethodDescriptor(
             name="Acknowledge",
@@ -4792,6 +4978,7 @@ _SUBSCRIBER = _descriptor.ServiceDescriptor(
             input_type=_ACKNOWLEDGEREQUEST,
             output_type=google_dot_protobuf_dot_empty__pb2._EMPTY,
             serialized_options=b'\202\323\344\223\002>"9/v1/{subscription=projects/*/subscriptions/*}:acknowledge:\001*\332A\024subscription,ack_ids',
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.MethodDescriptor(
             name="Pull",
@@ -4801,6 +4988,7 @@ _SUBSCRIBER = _descriptor.ServiceDescriptor(
             input_type=_PULLREQUEST,
             output_type=_PULLRESPONSE,
             serialized_options=b'\202\323\344\223\0027"2/v1/{subscription=projects/*/subscriptions/*}:pull:\001*\332A,subscription,return_immediately,max_messages',
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.MethodDescriptor(
             name="StreamingPull",
@@ -4810,6 +4998,7 @@ _SUBSCRIBER = _descriptor.ServiceDescriptor(
             input_type=_STREAMINGPULLREQUEST,
             output_type=_STREAMINGPULLRESPONSE,
             serialized_options=None,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.MethodDescriptor(
             name="ModifyPushConfig",
@@ -4819,6 +5008,7 @@ _SUBSCRIBER = _descriptor.ServiceDescriptor(
             input_type=_MODIFYPUSHCONFIGREQUEST,
             output_type=google_dot_protobuf_dot_empty__pb2._EMPTY,
             serialized_options=b'\202\323\344\223\002C">/v1/{subscription=projects/*/subscriptions/*}:modifyPushConfig:\001*\332A\030subscription,push_config',
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.MethodDescriptor(
             name="GetSnapshot",
@@ -4828,6 +5018,7 @@ _SUBSCRIBER = _descriptor.ServiceDescriptor(
             input_type=_GETSNAPSHOTREQUEST,
             output_type=_SNAPSHOT,
             serialized_options=b"\202\323\344\223\002'\022%/v1/{snapshot=projects/*/snapshots/*}\332A\010snapshot",
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.MethodDescriptor(
             name="ListSnapshots",
@@ -4837,6 +5028,7 @@ _SUBSCRIBER = _descriptor.ServiceDescriptor(
             input_type=_LISTSNAPSHOTSREQUEST,
             output_type=_LISTSNAPSHOTSRESPONSE,
             serialized_options=b'\202\323\344\223\002$\022"/v1/{project=projects/*}/snapshots\332A\007project',
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.MethodDescriptor(
             name="CreateSnapshot",
@@ -4846,6 +5038,7 @@ _SUBSCRIBER = _descriptor.ServiceDescriptor(
             input_type=_CREATESNAPSHOTREQUEST,
             output_type=_SNAPSHOT,
             serialized_options=b"\202\323\344\223\002&\032!/v1/{name=projects/*/snapshots/*}:\001*\332A\021name,subscription",
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.MethodDescriptor(
             name="UpdateSnapshot",
@@ -4855,6 +5048,7 @@ _SUBSCRIBER = _descriptor.ServiceDescriptor(
             input_type=_UPDATESNAPSHOTREQUEST,
             output_type=_SNAPSHOT,
             serialized_options=b"\202\323\344\223\002/2*/v1/{snapshot.name=projects/*/snapshots/*}:\001*",
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.MethodDescriptor(
             name="DeleteSnapshot",
@@ -4864,6 +5058,7 @@ _SUBSCRIBER = _descriptor.ServiceDescriptor(
             input_type=_DELETESNAPSHOTREQUEST,
             output_type=google_dot_protobuf_dot_empty__pb2._EMPTY,
             serialized_options=b"\202\323\344\223\002'*%/v1/{snapshot=projects/*/snapshots/*}\332A\010snapshot",
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.MethodDescriptor(
             name="Seek",
@@ -4873,6 +5068,7 @@ _SUBSCRIBER = _descriptor.ServiceDescriptor(
             input_type=_SEEKREQUEST,
             output_type=_SEEKRESPONSE,
             serialized_options=b'\202\323\344\223\0027"2/v1/{subscription=projects/*/subscriptions/*}:seek:\001*',
+            create_key=_descriptor._internal_create_key,
         ),
     ],
 )
