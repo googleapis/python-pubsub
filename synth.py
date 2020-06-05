@@ -183,7 +183,12 @@ s.replace(
     "from google.iam.v1 import iam_policy_pb2_grpc as iam_policy_pb2",
 )
 
-
+# Add missing blank line before Attributes: in generated docstrings
+s.replace(
+    "google/cloud/pubsub_v1/proto/pubsub_pb2.py",
+    "(\s+)Attributes:",
+    "\n\g<1>Attributes:"
+)
 # ----------------------------------------------------------------------------
 # Add templated files
 # ----------------------------------------------------------------------------

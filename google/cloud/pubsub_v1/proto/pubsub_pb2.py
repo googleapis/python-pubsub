@@ -3525,6 +3525,7 @@ MessageStoragePolicy = _reflection.GeneratedProtocolMessageType(
         "DESCRIPTOR": _MESSAGESTORAGEPOLICY,
         "__module__": "google.cloud.pubsub_v1.proto.pubsub_pb2",
         "__doc__": """A policy constraining the storage of messages published to the topic.
+
   Attributes:
       allowed_persistence_regions:
           A list of IDs of GCP regions where messages that are published
@@ -3555,6 +3556,7 @@ Topic = _reflection.GeneratedProtocolMessageType(
         "DESCRIPTOR": _TOPIC,
         "__module__": "google.cloud.pubsub_v1.proto.pubsub_pb2",
         "__doc__": """A topic resource.
+
   Attributes:
       name:
           Required. The name of the topic. It must have the format
@@ -3603,6 +3605,7 @@ PubsubMessage = _reflection.GeneratedProtocolMessageType(
   differently depending on the language. See the corresponding client
   library documentation for more information. See Quotas and limits for
   more information about message limits.
+
   Attributes:
       data:
           The message data field. If this field is empty, the message
@@ -3646,6 +3649,7 @@ GetTopicRequest = _reflection.GeneratedProtocolMessageType(
         "DESCRIPTOR": _GETTOPICREQUEST,
         "__module__": "google.cloud.pubsub_v1.proto.pubsub_pb2",
         "__doc__": """Request for the GetTopic method.
+
   Attributes:
       topic:
           Required. The name of the topic to get. Format is
@@ -3663,6 +3667,7 @@ UpdateTopicRequest = _reflection.GeneratedProtocolMessageType(
         "DESCRIPTOR": _UPDATETOPICREQUEST,
         "__module__": "google.cloud.pubsub_v1.proto.pubsub_pb2",
         "__doc__": """Request for the UpdateTopic method.
+
   Attributes:
       topic:
           Required. The updated topic object.
@@ -3686,6 +3691,7 @@ PublishRequest = _reflection.GeneratedProtocolMessageType(
         "DESCRIPTOR": _PUBLISHREQUEST,
         "__module__": "google.cloud.pubsub_v1.proto.pubsub_pb2",
         "__doc__": """Request for the Publish method.
+
   Attributes:
       topic:
           Required. The messages in the request will be published on
@@ -3705,6 +3711,7 @@ PublishResponse = _reflection.GeneratedProtocolMessageType(
         "DESCRIPTOR": _PUBLISHRESPONSE,
         "__module__": "google.cloud.pubsub_v1.proto.pubsub_pb2",
         "__doc__": """Response for the ``Publish`` method.
+
   Attributes:
       message_ids:
           The server-assigned ID of each published message, in the same
@@ -3723,6 +3730,7 @@ ListTopicsRequest = _reflection.GeneratedProtocolMessageType(
         "DESCRIPTOR": _LISTTOPICSREQUEST,
         "__module__": "google.cloud.pubsub_v1.proto.pubsub_pb2",
         "__doc__": """Request for the ``ListTopics`` method.
+
   Attributes:
       project:
           Required. The name of the project in which to list topics.
@@ -3747,6 +3755,7 @@ ListTopicsResponse = _reflection.GeneratedProtocolMessageType(
         "DESCRIPTOR": _LISTTOPICSRESPONSE,
         "__module__": "google.cloud.pubsub_v1.proto.pubsub_pb2",
         "__doc__": """Response for the ``ListTopics`` method.
+
   Attributes:
       topics:
           The resulting topics.
@@ -3767,6 +3776,7 @@ ListTopicSubscriptionsRequest = _reflection.GeneratedProtocolMessageType(
         "DESCRIPTOR": _LISTTOPICSUBSCRIPTIONSREQUEST,
         "__module__": "google.cloud.pubsub_v1.proto.pubsub_pb2",
         "__doc__": """Request for the ``ListTopicSubscriptions`` method.
+
   Attributes:
       topic:
           Required. The name of the topic that subscriptions are
@@ -3791,6 +3801,7 @@ ListTopicSubscriptionsResponse = _reflection.GeneratedProtocolMessageType(
         "DESCRIPTOR": _LISTTOPICSUBSCRIPTIONSRESPONSE,
         "__module__": "google.cloud.pubsub_v1.proto.pubsub_pb2",
         "__doc__": """Response for the ``ListTopicSubscriptions`` method.
+
   Attributes:
       subscriptions:
           The names of subscriptions attached to the topic specified in
@@ -3812,6 +3823,7 @@ ListTopicSnapshotsRequest = _reflection.GeneratedProtocolMessageType(
         "DESCRIPTOR": _LISTTOPICSNAPSHOTSREQUEST,
         "__module__": "google.cloud.pubsub_v1.proto.pubsub_pb2",
         "__doc__": """Request for the ``ListTopicSnapshots`` method.
+
   Attributes:
       topic:
           Required. The name of the topic that snapshots are attached
@@ -3836,6 +3848,7 @@ ListTopicSnapshotsResponse = _reflection.GeneratedProtocolMessageType(
         "DESCRIPTOR": _LISTTOPICSNAPSHOTSRESPONSE,
         "__module__": "google.cloud.pubsub_v1.proto.pubsub_pb2",
         "__doc__": """Response for the ``ListTopicSnapshots`` method.
+
   Attributes:
       snapshots:
           The names of the snapshots that match the request.
@@ -3856,6 +3869,7 @@ DeleteTopicRequest = _reflection.GeneratedProtocolMessageType(
         "DESCRIPTOR": _DELETETOPICREQUEST,
         "__module__": "google.cloud.pubsub_v1.proto.pubsub_pb2",
         "__doc__": """Request for the ``DeleteTopic`` method.
+
   Attributes:
       topic:
           Required. Name of the topic to delete. Format is
@@ -3873,6 +3887,7 @@ DetachSubscriptionRequest = _reflection.GeneratedProtocolMessageType(
         "DESCRIPTOR": _DETACHSUBSCRIPTIONREQUEST,
         "__module__": "google.cloud.pubsub_v1.proto.pubsub_pb2",
         "__doc__": """Request for the DetachSubscription method.
+
   Attributes:
       subscription:
           Required. The subscription to detach. Format is
@@ -3911,6 +3926,7 @@ Subscription = _reflection.GeneratedProtocolMessageType(
         "DESCRIPTOR": _SUBSCRIPTION,
         "__module__": "google.cloud.pubsub_v1.proto.pubsub_pb2",
         "__doc__": """A subscription resource.
+
   Attributes:
       name:
           Required. The name of the subscription. It must have the
@@ -4029,6 +4045,7 @@ RetryPolicy = _reflection.GeneratedProtocolMessageType(
   best effort basis. At times, the delay between consecutive deliveries
   may not match the configuration. That is, delay can be more or less
   than configured backoff.
+
   Attributes:
       minimum_backoff:
           The minimum delay between consecutive deliveries of a given
@@ -4054,6 +4071,7 @@ DeadLetterPolicy = _reflection.GeneratedProtocolMessageType(
   be dead lettered multiple times.  If validation on any of the fields
   fails at subscription creation/updation, the create/update
   subscription request will fail.
+
   Attributes:
       dead_letter_topic:
           The name of the topic to which dead letter messages should be
@@ -4090,6 +4108,7 @@ ExpirationPolicy = _reflection.GeneratedProtocolMessageType(
         "__module__": "google.cloud.pubsub_v1.proto.pubsub_pb2",
         "__doc__": """A policy that specifies the conditions for resource expiration (i.e.,
   automatic resource deletion).
+
   Attributes:
       ttl:
           Specifies the “time-to-live” duration for an associated
@@ -4117,6 +4136,7 @@ PushConfig = _reflection.GeneratedProtocolMessageType(
                 "__module__": "google.cloud.pubsub_v1.proto.pubsub_pb2",
                 "__doc__": """Contains information needed for generating an `OpenID Connect token
     <https://developers.google.com/identity/protocols/OpenIDConnect>`__.
+
     Attributes:
         service_account_email:
             \ `Service account email
@@ -4149,6 +4169,7 @@ PushConfig = _reflection.GeneratedProtocolMessageType(
         "DESCRIPTOR": _PUSHCONFIG,
         "__module__": "google.cloud.pubsub_v1.proto.pubsub_pb2",
         "__doc__": """Configuration for a push delivery endpoint.
+
   Attributes:
       push_endpoint:
           A URL locating the endpoint to which messages should be
@@ -4198,6 +4219,7 @@ ReceivedMessage = _reflection.GeneratedProtocolMessageType(
         "DESCRIPTOR": _RECEIVEDMESSAGE,
         "__module__": "google.cloud.pubsub_v1.proto.pubsub_pb2",
         "__doc__": """A message and its corresponding acknowledgment ID.
+
   Attributes:
       ack_id:
           This ID can be used to acknowledge the received message.
@@ -4230,6 +4252,7 @@ GetSubscriptionRequest = _reflection.GeneratedProtocolMessageType(
         "DESCRIPTOR": _GETSUBSCRIPTIONREQUEST,
         "__module__": "google.cloud.pubsub_v1.proto.pubsub_pb2",
         "__doc__": """Request for the GetSubscription method.
+
   Attributes:
       subscription:
           Required. The name of the subscription to get. Format is
@@ -4247,6 +4270,7 @@ UpdateSubscriptionRequest = _reflection.GeneratedProtocolMessageType(
         "DESCRIPTOR": _UPDATESUBSCRIPTIONREQUEST,
         "__module__": "google.cloud.pubsub_v1.proto.pubsub_pb2",
         "__doc__": """Request for the UpdateSubscription method.
+
   Attributes:
       subscription:
           Required. The updated subscription object.
@@ -4266,6 +4290,7 @@ ListSubscriptionsRequest = _reflection.GeneratedProtocolMessageType(
         "DESCRIPTOR": _LISTSUBSCRIPTIONSREQUEST,
         "__module__": "google.cloud.pubsub_v1.proto.pubsub_pb2",
         "__doc__": """Request for the ``ListSubscriptions`` method.
+
   Attributes:
       project:
           Required. The name of the project in which to list
@@ -4290,6 +4315,7 @@ ListSubscriptionsResponse = _reflection.GeneratedProtocolMessageType(
         "DESCRIPTOR": _LISTSUBSCRIPTIONSRESPONSE,
         "__module__": "google.cloud.pubsub_v1.proto.pubsub_pb2",
         "__doc__": """Response for the ``ListSubscriptions`` method.
+
   Attributes:
       subscriptions:
           The subscriptions that match the request.
@@ -4310,6 +4336,7 @@ DeleteSubscriptionRequest = _reflection.GeneratedProtocolMessageType(
         "DESCRIPTOR": _DELETESUBSCRIPTIONREQUEST,
         "__module__": "google.cloud.pubsub_v1.proto.pubsub_pb2",
         "__doc__": """Request for the DeleteSubscription method.
+
   Attributes:
       subscription:
           Required. The subscription to delete. Format is
@@ -4327,6 +4354,7 @@ ModifyPushConfigRequest = _reflection.GeneratedProtocolMessageType(
         "DESCRIPTOR": _MODIFYPUSHCONFIGREQUEST,
         "__module__": "google.cloud.pubsub_v1.proto.pubsub_pb2",
         "__doc__": """Request for the ModifyPushConfig method.
+
   Attributes:
       subscription:
           Required. The name of the subscription. Format is
@@ -4351,6 +4379,7 @@ PullRequest = _reflection.GeneratedProtocolMessageType(
         "DESCRIPTOR": _PULLREQUEST,
         "__module__": "google.cloud.pubsub_v1.proto.pubsub_pb2",
         "__doc__": """Request for the ``Pull`` method.
+
   Attributes:
       subscription:
           Required. The subscription from which messages should be
@@ -4381,6 +4410,7 @@ PullResponse = _reflection.GeneratedProtocolMessageType(
         "DESCRIPTOR": _PULLRESPONSE,
         "__module__": "google.cloud.pubsub_v1.proto.pubsub_pb2",
         "__doc__": """Response for the ``Pull`` method.
+
   Attributes:
       received_messages:
           Received Pub/Sub messages. The list will be empty if there are
@@ -4401,6 +4431,7 @@ ModifyAckDeadlineRequest = _reflection.GeneratedProtocolMessageType(
         "DESCRIPTOR": _MODIFYACKDEADLINEREQUEST,
         "__module__": "google.cloud.pubsub_v1.proto.pubsub_pb2",
         "__doc__": """Request for the ModifyAckDeadline method.
+
   Attributes:
       subscription:
           Required. The name of the subscription. Format is
@@ -4430,6 +4461,7 @@ AcknowledgeRequest = _reflection.GeneratedProtocolMessageType(
         "DESCRIPTOR": _ACKNOWLEDGEREQUEST,
         "__module__": "google.cloud.pubsub_v1.proto.pubsub_pb2",
         "__doc__": """Request for the Acknowledge method.
+
   Attributes:
       subscription:
           Required. The subscription whose message is being
@@ -4455,6 +4487,7 @@ StreamingPullRequest = _reflection.GeneratedProtocolMessageType(
   is used to establish the initial stream as well as to stream
   acknowledgements and ack deadline modifications from the client to the
   server.
+
   Attributes:
       subscription:
           Required. The subscription for which to initialize the new
@@ -4519,6 +4552,7 @@ StreamingPullResponse = _reflection.GeneratedProtocolMessageType(
         "__module__": "google.cloud.pubsub_v1.proto.pubsub_pb2",
         "__doc__": """Response for the ``StreamingPull`` method. This response is used to
   stream messages from the server to the client.
+
   Attributes:
       received_messages:
           Received Pub/Sub messages. This will not be empty.
@@ -4544,6 +4578,7 @@ CreateSnapshotRequest = _reflection.GeneratedProtocolMessageType(
         "DESCRIPTOR": _CREATESNAPSHOTREQUEST,
         "__module__": "google.cloud.pubsub_v1.proto.pubsub_pb2",
         "__doc__": """Request for the ``CreateSnapshot`` method.
+
   Attributes:
       name:
           Required. User-provided name for this snapshot. If the name is
@@ -4578,6 +4613,7 @@ UpdateSnapshotRequest = _reflection.GeneratedProtocolMessageType(
         "DESCRIPTOR": _UPDATESNAPSHOTREQUEST,
         "__module__": "google.cloud.pubsub_v1.proto.pubsub_pb2",
         "__doc__": """Request for the UpdateSnapshot method.
+
   Attributes:
       snapshot:
           Required. The updated snapshot object.
@@ -4609,6 +4645,7 @@ Snapshot = _reflection.GeneratedProtocolMessageType(
   allow you to manage message acknowledgments in bulk. That is, you can
   set the acknowledgment state of messages in an existing subscription
   to the state captured by a snapshot.
+
   Attributes:
       name:
           The name of the snapshot.
@@ -4644,6 +4681,7 @@ GetSnapshotRequest = _reflection.GeneratedProtocolMessageType(
         "DESCRIPTOR": _GETSNAPSHOTREQUEST,
         "__module__": "google.cloud.pubsub_v1.proto.pubsub_pb2",
         "__doc__": """Request for the GetSnapshot method.
+
   Attributes:
       snapshot:
           Required. The name of the snapshot to get. Format is
@@ -4661,6 +4699,7 @@ ListSnapshotsRequest = _reflection.GeneratedProtocolMessageType(
         "DESCRIPTOR": _LISTSNAPSHOTSREQUEST,
         "__module__": "google.cloud.pubsub_v1.proto.pubsub_pb2",
         "__doc__": """Request for the ``ListSnapshots`` method.
+
   Attributes:
       project:
           Required. The name of the project in which to list snapshots.
@@ -4685,6 +4724,7 @@ ListSnapshotsResponse = _reflection.GeneratedProtocolMessageType(
         "DESCRIPTOR": _LISTSNAPSHOTSRESPONSE,
         "__module__": "google.cloud.pubsub_v1.proto.pubsub_pb2",
         "__doc__": """Response for the ``ListSnapshots`` method.
+
   Attributes:
       snapshots:
           The resulting snapshots.
@@ -4705,6 +4745,7 @@ DeleteSnapshotRequest = _reflection.GeneratedProtocolMessageType(
         "DESCRIPTOR": _DELETESNAPSHOTREQUEST,
         "__module__": "google.cloud.pubsub_v1.proto.pubsub_pb2",
         "__doc__": """Request for the ``DeleteSnapshot`` method.
+
   Attributes:
       snapshot:
           Required. The name of the snapshot to delete. Format is
@@ -4722,6 +4763,7 @@ SeekRequest = _reflection.GeneratedProtocolMessageType(
         "DESCRIPTOR": _SEEKREQUEST,
         "__module__": "google.cloud.pubsub_v1.proto.pubsub_pb2",
         "__doc__": """Request for the ``Seek`` method.
+
   Attributes:
       subscription:
           Required. The subscription to affect.
