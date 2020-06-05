@@ -3505,7 +3505,8 @@ MessageStoragePolicy = _reflection.GeneratedProtocolMessageType(
     {
         "DESCRIPTOR": _MESSAGESTORAGEPOLICY,
         "__module__": "google.cloud.pubsub_v1.proto.pubsub_pb2",
-        "__doc__": """Attributes:
+        "__doc__": """A policy constraining the storage of messages published to the topic.
+  Attributes:
       allowed_persistence_regions:
           A list of IDs of GCP regions where messages that are published
           to the topic may be persisted in storage. Messages published
