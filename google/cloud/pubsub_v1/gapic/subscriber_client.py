@@ -348,10 +348,7 @@ class SubscriberClient(object):
             filter_ (str): An expression written in the Cloud Pub/Sub filter language. If
                 non-empty, then only ``PubsubMessage``\ s whose ``attributes`` field
                 matches the filter are delivered on this subscription. If empty, then no
-                messages are filtered out. EXPERIMENTAL: This feature is part of a
-                closed alpha release. This API might be changed in backward-incompatible
-                ways and is not recommended for production use. It is not subject to any
-                SLA or deprecation policy.
+                messages are filtered out.
             dead_letter_policy (Union[dict, ~google.cloud.pubsub_v1.types.DeadLetterPolicy]): A policy that specifies the conditions for dead lettering messages
                 in this subscription. If dead_letter_policy is not set, dead lettering
                 is disabled.
@@ -363,16 +360,13 @@ class SubscriberClient(object):
 
                 If a dict is provided, it must be of the same form as the protobuf
                 message :class:`~google.cloud.pubsub_v1.types.DeadLetterPolicy`
-            retry_policy (Union[dict, ~google.cloud.pubsub_v1.types.RetryPolicy]): A policy that specifies how Cloud Pub/Sub retries message delivery for this
+            retry_policy (Union[dict, ~google.cloud.pubsub_v1.types.RetryPolicy]): A policy that specifies how Pub/Sub retries message delivery for this
                 subscription.
 
                 If not set, the default retry policy is applied. This generally implies
                 that messages will be retried as soon as possible for healthy subscribers.
                 RetryPolicy will be triggered on NACKs or acknowledgement deadline
                 exceeded events for a given message.
-                <b>EXPERIMENTAL:</b> This API might be changed in backward-incompatible
-                ways and is not recommended for production use. It is not subject to any
-                SLA or deprecation policy.
 
                 If a dict is provided, it must be of the same form as the protobuf
                 message :class:`~google.cloud.pubsub_v1.types.RetryPolicy`
