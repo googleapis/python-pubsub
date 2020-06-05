@@ -14,6 +14,8 @@
 
 """This script is used to synthesize generated parts of this library."""
 
+import textwrap
+
 import synthtool as s
 from synthtool import gcp
 
@@ -181,6 +183,39 @@ s.replace(
     "google/cloud/pubsub_v1/gapic/transports/*_grpc_transport.py",
     "from google.iam.v1 import iam_policy_pb2",
     "from google.iam.v1 import iam_policy_pb2_grpc as iam_policy_pb2",
+)
+
+# Fix incomplete docstring examples.
+s.replace(
+    "google/cloud/pubsub_v1/gapic/subscriber_client.py",
+    r"\s+>>> subscription = \{'ack_deadline_seconds': ack_deadline_seconds\}",
+    textwrap.indent(
+        """
+>>> subscription_name = 'projects/my-project/subscriptions/my-subscription'
+>>> topic_name = 'projects/my-project/topics/my-topic'
+>>> subscription = {
+...    'name': subscription_name,
+...    'topic': topic_name,
+...    'ack_deadline_seconds': ack_deadline_seconds,
+... }""",
+        prefix=" " * 12,
+    )
+)
+
+s.replace(
+    "google/cloud/pubsub_v1/gapic/subscriber_client.py",
+    r"\s+>>> snapshot = \{'expire_time': expire_time\}",
+    textwrap.indent(
+        """
+>>> snapshot_name = 'projects/my-project/snapshots/my-snapshot'
+>>> topic_name = 'projects/my-project/topics/my-topic'
+>>> snapshot = {
+...    'name': snapshot_name,
+...    'topic': topic_name,
+...    'expire_time': expire_time,
+... }""",
+        prefix=" " * 12,
+    )
 )
 
 
