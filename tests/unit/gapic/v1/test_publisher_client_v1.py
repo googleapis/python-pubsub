@@ -533,7 +533,7 @@ class TestPublisherClient(object):
             client = publisher_client.PublisherClient()
 
         # Setup Request
-        subscription = client.topic_path("[PROJECT]", "[TOPIC]")
+        subscription = client.subscription_path("[PROJECT]", "[SUBSCRIPTION]")
 
         response = client.detach_subscription(subscription)
         assert expected_response == response
@@ -554,7 +554,7 @@ class TestPublisherClient(object):
             client = publisher_client.PublisherClient()
 
         # Setup request
-        subscription = client.topic_path("[PROJECT]", "[TOPIC]")
+        subscription = client.subscription_path("[PROJECT]", "[SUBSCRIPTION]")
 
         with pytest.raises(CustomException):
             client.detach_subscription(subscription)

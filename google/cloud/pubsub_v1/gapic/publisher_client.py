@@ -120,6 +120,15 @@ class PublisherClient(object):
         )
 
     @classmethod
+    def subscription_path(cls, project, subscription):
+        """Return a fully-qualified subscription string."""
+        return google.api_core.path_template.expand(
+            "projects/{project}/subscriptions/{subscription}",
+            project=project,
+            subscription=subscription,
+        )
+
+    @classmethod
     def topic_path(cls, project, topic):
         """Return a fully-qualified topic string."""
         return google.api_core.path_template.expand(
@@ -1223,7 +1232,7 @@ class PublisherClient(object):
             >>>
             >>> client = pubsub_v1.PublisherClient()
             >>>
-            >>> subscription = client.topic_path('[PROJECT]', '[TOPIC]')
+            >>> subscription = client.subscription_path('[PROJECT]', '[SUBSCRIPTION]')
             >>>
             >>> response = client.detach_subscription(subscription)
 
