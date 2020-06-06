@@ -192,10 +192,8 @@ s.replace(
     textwrap.indent(
         """
 >>> subscription_name = 'projects/my-project/subscriptions/my-subscription'
->>> topic_name = 'projects/my-project/topics/my-topic'
 >>> subscription = {
 ...    'name': subscription_name,
-...    'topic': topic_name,
 ...    'ack_deadline_seconds': ack_deadline_seconds,
 ... }""",
         prefix=" " * 12,
@@ -208,10 +206,8 @@ s.replace(
     textwrap.indent(
         """
 >>> snapshot_name = 'projects/my-project/snapshots/my-snapshot'
->>> topic_name = 'projects/my-project/topics/my-topic'
 >>> snapshot = {
 ...    'name': snapshot_name,
-...    'topic': topic_name,
 ...    'expire_time': expire_time,
 ... }""",
         prefix=" " * 12,
