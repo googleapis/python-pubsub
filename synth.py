@@ -214,6 +214,31 @@ s.replace(
     )
 )
 
+s.replace(
+    "google/cloud/pubsub_v1/gapic/publisher_client.py",
+    r"\s+>>> # TODO: Initialize `topic`:\n\s+>>> topic = \{\}\n",
+    textwrap.indent(
+        """
+>>> topic_name = 'projects/my-project/topics/my-topic'
+>>> topic_labels = {'source': 'external'}
+>>> topic = {'name': topic_name, 'labels': topic_labels}
+""",
+        prefix=" " * 12,
+    ),
+)
+
+s.replace(
+    "google/cloud/pubsub_v1/gapic/publisher_client.py",
+    r"\s+>>> # TODO: Initialize `update_mask`:\n\s+>>> update_mask = \{\}\n",
+    textwrap.indent(
+        """
+>>> paths_element = 'labels'
+>>> paths = [paths_element]
+>>> update_mask = {'paths': paths}
+""",
+        prefix=" " * 12,
+    ),
+)
 
 # ----------------------------------------------------------------------------
 # Add templated files
