@@ -4,6 +4,18 @@
 
 [1]: https://pypi.org/project/google-cloud-pubsub/#history
 
+## [1.6.0](https://www.github.com/googleapis/python-pubsub/compare/v1.5.0...v1.6.0) (2020-06-09)
+
+
+### Features
+
+* add flow control for message publishing ([#96](https://www.github.com/googleapis/python-pubsub/issues/96)) ([06085c4](https://www.github.com/googleapis/python-pubsub/commit/06085c4083b9dccdd50383257799904510bbf3a0))
+
+
+### Bug Fixes
+
+* PubSub incompatibility with api-core 1.17.0+ ([#103](https://www.github.com/googleapis/python-pubsub/issues/103)) ([c02060f](https://www.github.com/googleapis/python-pubsub/commit/c02060fbbe6e2ca4664bee08d2de10665d41dc0b))
+
 ## [1.5.0](https://www.github.com/googleapis/python-pubsub/compare/v1.4.3...v1.5.0) (2020-05-04)
 
 
