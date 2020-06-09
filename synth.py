@@ -197,6 +197,7 @@ s.replace(
             self.transport.streaming_pull._prefetch_first_result_ = False
 
         \g<0>"""
+)
 
 # Add missing blank line before Attributes: in generated docstrings
 # https://github.com/googleapis/protoc-docs-plugin/pull/31
