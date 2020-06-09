@@ -9,12 +9,22 @@
 
 ### Features
 
-* add flow control for message publishing ([#96](https://www.github.com/googleapis/python-pubsub/issues/96)) ([06085c4](https://www.github.com/googleapis/python-pubsub/commit/06085c4083b9dccdd50383257799904510bbf3a0))
+* Add flow control for message publishing ([#96](https://www.github.com/googleapis/python-pubsub/issues/96)) ([06085c4](https://www.github.com/googleapis/python-pubsub/commit/06085c4083b9dccdd50383257799904510bbf3a0))
 
 
 ### Bug Fixes
 
-* PubSub incompatibility with api-core 1.17.0+ ([#103](https://www.github.com/googleapis/python-pubsub/issues/103)) ([c02060f](https://www.github.com/googleapis/python-pubsub/commit/c02060fbbe6e2ca4664bee08d2de10665d41dc0b))
+* Fix PubSub incompatibility with api-core 1.17.0+ ([#103](https://www.github.com/googleapis/python-pubsub/issues/103)) ([c02060f](https://www.github.com/googleapis/python-pubsub/commit/c02060fbbe6e2ca4664bee08d2de10665d41dc0b))
+
+
+### Documentation
+- Clarify that Schedulers shouldn't be used with multiple SubscriberClients [#100](https://github.com/googleapis/google-cloud-python/pull/100))
+- Fix update subscription/snapshot/topic samples [#113](https://github.com/googleapis/google-cloud-python/pull/113))
+
+
+### Internal / Testing Changes
+- Re-generated service implementaton to pick up changes in the API and/or client library generator [#114](https://github.com/googleapis/google-cloud-python/pull/114)
+- Incorporate will_accept() checks into publish() [#108](https://github.com/googleapis/google-cloud-python/pull/108)
 
 ## [1.5.0](https://www.github.com/googleapis/python-pubsub/compare/v1.4.3...v1.5.0) (2020-05-04)
 
