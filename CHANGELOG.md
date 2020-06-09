@@ -18,13 +18,13 @@
 
 
 ### Documentation
-- Clarify that Schedulers shouldn't be used with multiple SubscriberClients [#100](https://github.com/googleapis/google-cloud-python/pull/100))
-- Fix update subscription/snapshot/topic samples [#113](https://github.com/googleapis/google-cloud-python/pull/113))
+- Clarify that Schedulers shouldn't be used with multiple SubscriberClients ([#100](https://github.com/googleapis/python-pubsub/pull/100)) ([cf9e87c](https://github.com/googleapis/python-pubsub/commit/cf9e87c80c0771f3fa6ef784a8d76cb760ad37ef))
+- Fix update subscription/snapshot/topic samples ([#113](https://github.com/googleapis/python-pubsub/pull/113)) ([e62c38b](https://github.com/googleapis/python-pubsub/commit/e62c38bb33de2434e32f866979de769382dea34a))
 
 
 ### Internal / Testing Changes
-- Re-generated service implementaton to pick up changes in the API and/or client library generator [#114](https://github.com/googleapis/google-cloud-python/pull/114)
-- Incorporate will_accept() checks into publish() [#108](https://github.com/googleapis/google-cloud-python/pull/108)
+- Re-generated service implementaton using synth: removed experimental notes from the RetryPolicy and filtering features in anticipation of GA, added DetachSubscription (experimental) ([#114](https://github.com/googleapis/python-pubsub/pull/114)) ([0132a46](https://github.com/googleapis/python-pubsub/commit/0132a4680e0727ce45d5e27d98ffc9f3541a0962))
+- Incorporate will_accept() checks into publish() ([#108](https://github.com/googleapis/python-pubsub/pull/108)) ([6c7677e](https://github.com/googleapis/python-pubsub/commit/6c7677ecb259672bbb9b6f7646919e602c698570))
 
 ## [1.5.0](https://www.github.com/googleapis/python-pubsub/compare/v1.4.3...v1.5.0) (2020-05-04)
 
