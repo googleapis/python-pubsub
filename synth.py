@@ -270,4 +270,23 @@ templated_files = gcp.CommonTemplates().py_library(
 )
 s.move(templated_files)
 
+# Configure Python versions in noxfile.py
+s.replace(
+    "noxfile.py",
+    'DEFAULT_PYTHON_VERSION=""',
+    'DEFAULT_PYTHON_VERSION = "3.7"',
+)
+
+s.replace(
+    "noxfile.py",
+    r"SYSTEM_TEST_PYTHON_VERSIONS=\[\]",
+    'SYSTEM_TEST_PYTHON_VERSIONS = ["2.7", "3.7"]',
+)
+
+s.replace(
+    "noxfile.py",
+    r"UNIT_TEST_PYTHON_VERSIONS=\[\]",
+    'UNIT_TEST_PYTHON_VERSIONS = ["2.7", "3.5", "3.6", "3.7", "3.8"]',
+)
+
 s.shell.run(["nox", "-s", "blacken"], hide_output=False)

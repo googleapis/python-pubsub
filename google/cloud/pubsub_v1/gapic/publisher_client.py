@@ -256,8 +256,10 @@ class PublisherClient(object):
         metadata=None,
     ):
         """
-        Creates the given topic with the given name. See the resource name
-        rules.
+        REQUIRED: The complete policy to be applied to the ``resource``. The
+        size of the policy is limited to a few 10s of KB. An empty policy is a
+        valid policy but certain Cloud Platform services (such as Projects)
+        might reject them.
 
         Example:
             >>> from google.cloud import pubsub_v1
@@ -269,12 +271,10 @@ class PublisherClient(object):
             >>> response = client.create_topic(name)
 
         Args:
-            name (str): Required. The name of the topic. It must have the format
-                ``"projects/{project}/topics/{topic}"``. ``{topic}`` must start with a
-                letter, and contain only letters (``[A-Za-z]``), numbers (``[0-9]``),
-                dashes (``-``), underscores (``_``), periods (``.``), tildes (``~``),
-                plus (``+``) or percent signs (``%``). It must be between 3 and 255
-                characters in length, and it must not start with ``"goog"``.
+            name (str): An annotation that describes a resource reference, see
+                ``ResourceReference``. Defines the HTTP configuration for an API
+                service. It contains a list of ``HttpRule``, each specifying the mapping
+                of an RPC method to one or more HTTP REST API methods.
             labels (dict[str -> str]): See <a href="https://cloud.google.com/pubsub/docs/labels"> Creating and
                 managing labels</a>.
             message_storage_policy (Union[dict, ~google.cloud.pubsub_v1.types.MessageStoragePolicy]): Policy constraining the set of Google Cloud Platform regions where messages
@@ -283,11 +283,7 @@ class PublisherClient(object):
 
                 If a dict is provided, it must be of the same form as the protobuf
                 message :class:`~google.cloud.pubsub_v1.types.MessageStoragePolicy`
-            kms_key_name (str): The resource name of the Cloud KMS CryptoKey to be used to protect
-                access to messages published on this topic.
-
-                The expected format is
-                ``projects/*/locations/*/keyRings/*/cryptoKeys/*``.
+            kms_key_name (str): Request message for ``GetIamPolicy`` method.
             retry (Optional[google.api_core.retry.Retry]):  A retry object used
                 to retry requests. If ``None`` is specified, requests will
                 be retried using a default configuration.
@@ -373,11 +369,8 @@ class PublisherClient(object):
 
                 If a dict is provided, it must be of the same form as the protobuf
                 message :class:`~google.cloud.pubsub_v1.types.Topic`
-            update_mask (Union[dict, ~google.cloud.pubsub_v1.types.FieldMask]): Required. Indicates which fields in the provided topic to update.
-                Must be specified and non-empty. Note that if ``update_mask`` contains
-                "message_storage_policy" but the ``message_storage_policy`` is not set
-                in the ``topic`` provided above, then the updated value is determined by
-                the policy configured at the project or organization level.
+            update_mask (Union[dict, ~google.cloud.pubsub_v1.types.FieldMask]): Required. The subscription to delete. Format is
+                ``projects/{project}/subscriptions/{sub}``.
 
                 If a dict is provided, it must be of the same form as the protobuf
                 message :class:`~google.cloud.pubsub_v1.types.FieldMask`
@@ -438,8 +431,9 @@ class PublisherClient(object):
         metadata=None,
     ):
         """
-        Adds one or more messages to the topic. Returns ``NOT_FOUND`` if the
-        topic does not exist.
+        If type_name is set, this need not be set. If both this and
+        type_name are set, this must be one of TYPE_ENUM, TYPE_MESSAGE or
+        TYPE_GROUP.
 
         Example:
             >>> from google.cloud import pubsub_v1
@@ -454,8 +448,13 @@ class PublisherClient(object):
             >>> response = client.publish(topic, messages)
 
         Args:
-            topic (str): Required. The messages in the request will be published on this
-                topic. Format is ``projects/{project}/topics/{topic}``.
+            topic (str): Acknowledges the messages associated with the ``ack_ids`` in the
+                ``AcknowledgeRequest``. The Pub/Sub system can remove the relevant
+                messages from the subscription.
+
+                Acknowledging a message whose ack deadline has expired may succeed, but
+                such a message may be redelivered later. Acknowledging a message more
+                than once will not result in an error.
             messages (list[Union[dict, ~google.cloud.pubsub_v1.types.PubsubMessage]]): Required. The messages to publish.
 
                 If a dict is provided, it must be of the same form as the protobuf
@@ -528,8 +527,8 @@ class PublisherClient(object):
             >>> response = client.get_topic(topic)
 
         Args:
-            topic (str): Required. The name of the topic to get. Format is
-                ``projects/{project}/topics/{topic}``.
+            topic (str): An annotation that describes a resource definition without a
+                corresponding message; see ``ResourceDescriptor``.
             retry (Optional[google.api_core.retry.Retry]):  A retry object used
                 to retry requests. If ``None`` is specified, requests will
                 be retried using a default configuration.
@@ -611,8 +610,8 @@ class PublisherClient(object):
             ...         pass
 
         Args:
-            project (str): Required. The name of the project in which to list topics. Format is
-                ``projects/{project-id}``.
+            project (str): An annotation that describes a resource definition, see
+                ``ResourceDescriptor``.
             page_size (int): The maximum number of resources contained in the
                 underlying API response. If page streaming is performed per-
                 resource, this parameter does not affect the return value. If page
@@ -713,8 +712,9 @@ class PublisherClient(object):
             ...         pass
 
         Args:
-            topic (str): Required. The name of the topic that subscriptions are attached to.
-                Format is ``projects/{project}/topics/{topic}``.
+            topic (str): Pulls messages from the server. The server may return
+                ``UNAVAILABLE`` if there are too many concurrent pull requests pending
+                for the given subscription.
             page_size (int): The maximum number of resources contained in the
                 underlying API response. If page streaming is performed per-
                 resource, this parameter does not affect the return value. If page
@@ -822,8 +822,11 @@ class PublisherClient(object):
             ...         pass
 
         Args:
-            topic (str): Required. The name of the topic that snapshots are attached to.
-                Format is ``projects/{project}/topics/{topic}``.
+            topic (str): Required. User-provided name for this snapshot. If the name is not
+                provided in the request, the server will assign a random name for this
+                snapshot on the same project as the subscription. Note that for REST API
+                requests, you must specify a name. See the resource name rules. Format
+                is ``projects/{project}/snapshots/{snap}``.
             page_size (int): The maximum number of resources contained in the
                 underlying API response. If page streaming is performed per-
                 resource, this parameter does not affect the return value. If page
@@ -916,8 +919,13 @@ class PublisherClient(object):
             >>> client.delete_topic(topic)
 
         Args:
-            topic (str): Required. Name of the topic to delete. Format is
-                ``projects/{project}/topics/{topic}``.
+            topic (str): Establishes a stream with the server, which sends messages down to
+                the client. The client streams acknowledgements and ack deadline
+                modifications back to the server. The server will close the stream and
+                return the status on any error. The server may close the stream with
+                status ``UNAVAILABLE`` to reassign server-side resources, in which case,
+                the client should re-establish the stream. Flow control can be achieved
+                by configuring the underlying RPC channel.
             retry (Optional[google.api_core.retry.Retry]):  A retry object used
                 to retry requests. If ``None`` is specified, requests will
                 be retried using a default configuration.
@@ -994,10 +1002,8 @@ class PublisherClient(object):
         Args:
             resource (str): REQUIRED: The resource for which the policy is being specified.
                 See the operation documentation for the appropriate value for this field.
-            policy (Union[dict, ~google.cloud.pubsub_v1.types.Policy]): REQUIRED: The complete policy to be applied to the ``resource``. The
-                size of the policy is limited to a few 10s of KB. An empty policy is a
-                valid policy but certain Cloud Platform services (such as Projects)
-                might reject them.
+            policy (Union[dict, ~google.cloud.pubsub_v1.types.Policy]): Role that is assigned to ``members``. For example, ``roles/viewer``,
+                ``roles/editor``, or ``roles/owner``. Required
 
                 If a dict is provided, it must be of the same form as the protobuf
                 message :class:`~google.cloud.pubsub_v1.types.Policy`
@@ -1074,8 +1080,16 @@ class PublisherClient(object):
         Args:
             resource (str): REQUIRED: The resource for which the policy is being requested.
                 See the operation documentation for the appropriate value for this field.
-            options_ (Union[dict, ~google.cloud.pubsub_v1.types.GetPolicyOptions]): OPTIONAL: A ``GetPolicyOptions`` object for specifying options to
-                ``GetIamPolicy``. This field is only used by Cloud IAM.
+            options_ (Union[dict, ~google.cloud.pubsub_v1.types.GetPolicyOptions]): The name of the topic to which dead letter messages should be
+                published. Format is ``projects/{project}/topics/{topic}``.The Cloud
+                Pub/Sub service account associated with the enclosing subscription's
+                parent project (i.e.,
+                service-{project_number}@gcp-sa-pubsub.iam.gserviceaccount.com) must
+                have permission to Publish() to this topic.
+
+                The operation will fail if the topic does not exist. Users should ensure
+                that there is a subscription attached to this topic since messages
+                published to a topic with no subscriptions are lost.
 
                 If a dict is provided, it must be of the same form as the protobuf
                 message :class:`~google.cloud.pubsub_v1.types.GetPolicyOptions`
@@ -1162,10 +1176,7 @@ class PublisherClient(object):
         Args:
             resource (str): REQUIRED: The resource for which the policy detail is being requested.
                 See the operation documentation for the appropriate value for this field.
-            permissions (list[str]): The set of permissions to check for the ``resource``. Permissions
-                with wildcards (such as '*' or 'storage.*') are not allowed. For more
-                information see `IAM
-                Overview <https://cloud.google.com/iam/docs/overview#permissions>`__.
+            permissions (list[str]): See ``HttpRule``.
             retry (Optional[google.api_core.retry.Retry]):  A retry object used
                 to retry requests. If ``None`` is specified, requests will
                 be retried using a default configuration.
@@ -1224,10 +1235,9 @@ class PublisherClient(object):
         metadata=None,
     ):
         """
-        Detaches a subscription from this topic. All messages retained in
-        the subscription are dropped. Subsequent ``Pull`` and ``StreamingPull``
-        requests will return FAILED_PRECONDITION. If the subscription is a push
-        subscription, pushes to the endpoint will stop.
+        The snapshot to seek to. The snapshot's topic must be the same as
+        that of the provided subscription. Format is
+        ``projects/{project}/snapshots/{snap}``.
 
         Example:
             >>> from google.cloud import pubsub_v1
@@ -1239,8 +1249,11 @@ class PublisherClient(object):
             >>> response = client.detach_subscription(subscription)
 
         Args:
-            subscription (str): Required. The subscription to detach. Format is
-                ``projects/{project}/subscriptions/{subscription}``.
+            subscription (str): The name of the uninterpreted option. Each string represents a
+                segment in a dot-separated name. is_extension is true iff a segment
+                represents an extension (denoted with parentheses in options specs in
+                .proto files). E.g.,{ ["foo", false], ["bar.baz", true], ["qux", false]
+                } represents "foo.(bar.baz).qux".
             retry (Optional[google.api_core.retry.Retry]):  A retry object used
                 to retry requests. If ``None`` is specified, requests will
                 be retried using a default configuration.

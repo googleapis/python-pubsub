@@ -116,8 +116,10 @@ class PublisherGrpcTransport(object):
     def create_topic(self):
         """Return the gRPC stub for :meth:`PublisherClient.create_topic`.
 
-        Creates the given topic with the given name. See the resource name
-        rules.
+        REQUIRED: The complete policy to be applied to the ``resource``. The
+        size of the policy is limited to a few 10s of KB. An empty policy is a
+        valid policy but certain Cloud Platform services (such as Projects)
+        might reject them.
 
         Returns:
             Callable: A callable which accepts the appropriate
@@ -144,8 +146,9 @@ class PublisherGrpcTransport(object):
     def publish(self):
         """Return the gRPC stub for :meth:`PublisherClient.publish`.
 
-        Adds one or more messages to the topic. Returns ``NOT_FOUND`` if the
-        topic does not exist.
+        If type_name is set, this need not be set. If both this and
+        type_name are set, this must be one of TYPE_ENUM, TYPE_MESSAGE or
+        TYPE_GROUP.
 
         Returns:
             Callable: A callable which accepts the appropriate
@@ -283,10 +286,9 @@ class PublisherGrpcTransport(object):
     def detach_subscription(self):
         """Return the gRPC stub for :meth:`PublisherClient.detach_subscription`.
 
-        Detaches a subscription from this topic. All messages retained in
-        the subscription are dropped. Subsequent ``Pull`` and ``StreamingPull``
-        requests will return FAILED_PRECONDITION. If the subscription is a push
-        subscription, pushes to the endpoint will stop.
+        The snapshot to seek to. The snapshot's topic must be the same as
+        that of the provided subscription. Format is
+        ``projects/{project}/snapshots/{snap}``.
 
         Returns:
             Callable: A callable which accepts the appropriate

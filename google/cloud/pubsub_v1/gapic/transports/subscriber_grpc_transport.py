@@ -116,16 +116,7 @@ class SubscriberGrpcTransport(object):
     def create_subscription(self):
         """Return the gRPC stub for :meth:`SubscriberClient.create_subscription`.
 
-        Creates a subscription to a given topic. See the resource name
-        rules. If the subscription already exists, returns ``ALREADY_EXISTS``.
-        If the corresponding topic doesn't exist, returns ``NOT_FOUND``.
-
-        If the name is not provided in the request, the server will assign a
-        random name for this subscription on the same project as the topic,
-        conforming to the `resource name
-        format <https://cloud.google.com/pubsub/docs/admin#resource_names>`__.
-        The generated name is populated in the returned Subscription object.
-        Note that for REST API requests, you must specify a name in the request.
+        Request for the ``Pull`` method.
 
         Returns:
             Callable: A callable which accepts the appropriate
@@ -178,12 +169,7 @@ class SubscriberGrpcTransport(object):
     def delete_subscription(self):
         """Return the gRPC stub for :meth:`SubscriberClient.delete_subscription`.
 
-        Deletes an existing subscription. All messages retained in the
-        subscription are immediately dropped. Calls to ``Pull`` after deletion
-        will return ``NOT_FOUND``. After a subscription is deleted, a new one
-        may be created with the same name, but the new one has no association
-        with the old subscription or its topic unless the same topic is
-        specified.
+        Response message for ``TestIamPermissions`` method.
 
         Returns:
             Callable: A callable which accepts the appropriate
@@ -213,11 +199,27 @@ class SubscriberGrpcTransport(object):
     def modify_ack_deadline(self):
         """Return the gRPC stub for :meth:`SubscriberClient.modify_ack_deadline`.
 
-        Modifies the ack deadline for a specific message. This method is
-        useful to indicate that more time is needed to process a message by the
-        subscriber, or to make the message available for redelivery if the
-        processing was interrupted. Note that this does not modify the
-        subscription-level ``ackDeadlineSeconds`` used for subsequent messages.
+        If true, this is a proto3 "optional". When a proto3 field is
+        optional, it tracks presence regardless of field type.
+
+        When proto3_optional is true, this field must be belong to a oneof to
+        signal to old proto3 clients that presence is tracked for this field.
+        This oneof is known as a "synthetic" oneof, and this field must be its
+        sole member (each proto3 optional field gets its own synthetic oneof).
+        Synthetic oneofs exist in the descriptor only, and do not generate any
+        API. Synthetic oneofs must be ordered after all "real" oneofs.
+
+        For message fields, proto3_optional doesn't create any semantic change,
+        since non-repeated message fields always track presence. However it
+        still indicates the semantic detail of whether the user wrote "optional"
+        or not. This can be useful for round-tripping the .proto file. For
+        consistency we give message fields a synthetic oneof also, even though
+        it is not required to track presence. This is especially important
+        because the parser can't tell if a field is a message or an enum, so it
+        must always create a synthetic oneof.
+
+        Proto2 optional fields do not set this flag, because they already
+        indicate optional with ``LABEL_OPTIONAL``.
 
         Returns:
             Callable: A callable which accepts the appropriate
@@ -230,13 +232,16 @@ class SubscriberGrpcTransport(object):
     def acknowledge(self):
         """Return the gRPC stub for :meth:`SubscriberClient.acknowledge`.
 
-        Acknowledges the messages associated with the ``ack_ids`` in the
-        ``AcknowledgeRequest``. The Pub/Sub system can remove the relevant
-        messages from the subscription.
+        The resource type. It must be in the format of
+        {service_name}/{resource_type_kind}. The ``resource_type_kind`` must be
+        singular and must not include version numbers.
 
-        Acknowledging a message whose ack deadline has expired may succeed, but
-        such a message may be redelivered later. Acknowledging a message more
-        than once will not result in an error.
+        Example: ``storage.googleapis.com/Bucket``
+
+        The value of the resource_type_kind must follow the regular expression
+        /[A-Za-z][a-zA-Z0-9]+/. It should start with an upper case character and
+        should use PascalCase (UpperCamelCase). The maximum number of characters
+        allowed for the ``resource_type_kind`` is 100.
 
         Returns:
             Callable: A callable which accepts the appropriate
@@ -249,9 +254,8 @@ class SubscriberGrpcTransport(object):
     def pull(self):
         """Return the gRPC stub for :meth:`SubscriberClient.pull`.
 
-        Pulls messages from the server. The server may return
-        ``UNAVAILABLE`` if there are too many concurrent pull requests pending
-        for the given subscription.
+        Required. The subscription from which messages should be pulled.
+        Format is ``projects/{project}/subscriptions/{sub}``.
 
         Returns:
             Callable: A callable which accepts the appropriate
@@ -264,13 +268,8 @@ class SubscriberGrpcTransport(object):
     def streaming_pull(self):
         """Return the gRPC stub for :meth:`SubscriberClient.streaming_pull`.
 
-        Establishes a stream with the server, which sends messages down to
-        the client. The client streams acknowledgements and ack deadline
-        modifications back to the server. The server will close the stream and
-        return the status on any error. The server may close the stream with
-        status ``UNAVAILABLE`` to reassign server-side resources, in which case,
-        the client should re-establish the stream. Flow control can be achieved
-        by configuring the underlying RPC channel.
+        A subset of ``TestPermissionsRequest.permissions`` that the caller
+        is allowed.
 
         Returns:
             Callable: A callable which accepts the appropriate
@@ -283,13 +282,9 @@ class SubscriberGrpcTransport(object):
     def modify_push_config(self):
         """Return the gRPC stub for :meth:`SubscriberClient.modify_push_config`.
 
-        Modifies the ``PushConfig`` for a specified subscription.
-
-        This may be used to change a push subscription to a pull one (signified
-        by an empty ``PushConfig``) or vice versa, or change the endpoint URL
-        and other attributes of a push subscription. Messages will accumulate
-        for delivery continuously through the call regardless of changes to the
-        ``PushConfig``.
+        Denotes a field as required. This indicates that the field **must**
+        be provided as part of the request, and failure to do so will cause an
+        error (usually ``INVALID_ARGUMENT``).
 
         Returns:
             Callable: A callable which accepts the appropriate
@@ -320,21 +315,30 @@ class SubscriberGrpcTransport(object):
     def create_snapshot(self):
         """Return the gRPC stub for :meth:`SubscriberClient.create_snapshot`.
 
-        Creates a snapshot from the requested subscription. Snapshots are
-        used in Seek operations, which allow you to manage message
-        acknowledgments in bulk. That is, you can set the acknowledgment state
-        of messages in an existing subscription to the state captured by a
-        snapshot. If the snapshot already exists, returns ``ALREADY_EXISTS``. If
-        the requested subscription doesn't exist, returns ``NOT_FOUND``. If the
-        backlog in the subscription is too old -- and the resulting snapshot
-        would expire in less than 1 hour -- then ``FAILED_PRECONDITION`` is
-        returned. See also the ``Snapshot.expire_time`` field. If the name is
-        not provided in the request, the server will assign a random name for
-        this snapshot on the same project as the subscription, conforming to the
-        `resource name
-        format <https://cloud.google.com/pubsub/docs/admin#resource_names>`__.
-        The generated name is populated in the returned Snapshot object. Note
-        that for REST API requests, you must specify a name in the request.
+        Optional. The relative resource name pattern associated with this
+        resource type. The DNS prefix of the full resource name shouldn't be
+        specified here.
+
+        The path pattern must follow the syntax, which aligns with HTTP binding
+        syntax:
+
+        ::
+
+            Template = Segment { "/" Segment } ;
+            Segment = LITERAL | Variable ;
+            Variable = "{" LITERAL "}" ;
+
+        Examples:
+
+        ::
+
+            - "projects/{project}/topics/{topic}"
+            - "projects/{project}/knowledgeBases/{knowledge_base}"
+
+        The components in braces correspond to the IDs for each resource in the
+        hierarchy. It is expected that, if multiple patterns are provided, the
+        same component name (e.g. "project") refers to IDs of the same type of
+        resource.
 
         Returns:
             Callable: A callable which accepts the appropriate
