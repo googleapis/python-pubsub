@@ -64,13 +64,13 @@ To pull the messages synchronously, use the client's
     subscriber.acknowledge(subscription_path, ack_ids)
 
 The method returns a :class:`~.pubsub_v1.types.PullResponse` instance that
-cointains a list of received :class:`~.pubsub_v1.types.ReceivedMessage`
+contains a list of received :class:`~.pubsub_v1.types.ReceivedMessage`
 instances.
 
 If you want to **nack** some of the received messages (see :ref:`explaining-ack` below),
 you can use the :meth:`~.pubsub_v1.subscriber.client.Client.modify_ack_deadline`
 method and set their acknowledge deadlines to zero. This will cause them to
-expire instantly and the backend will try to re-deliver them.
+be dropped by this client and the backend will try to re-deliver them.
 
 .. code-block:: python
 
