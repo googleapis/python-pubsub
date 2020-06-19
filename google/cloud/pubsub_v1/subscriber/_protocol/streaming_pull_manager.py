@@ -19,6 +19,7 @@ import functools
 import logging
 import threading
 import uuid
+import json
 
 import grpc
 import six
@@ -26,6 +27,7 @@ import six
 from google.api_core import bidi
 from google.api_core import exceptions
 from google.cloud.pubsub_v1 import types
+from google.cloud.pubsub_v1.opentelemetry_tracing import create_span
 from google.cloud.pubsub_v1.subscriber._protocol import dispatcher
 from google.cloud.pubsub_v1.subscriber._protocol import heartbeater
 from google.cloud.pubsub_v1.subscriber._protocol import histogram
@@ -619,20 +621,40 @@ class StreamingPullManager(object):
 
         with self._pause_resume_lock:
             for received_message in response.received_messages:
-                message = google.cloud.pubsub_v1.subscriber.message.Message(
-                    received_message.message,
-                    received_message.ack_id,
-                    received_message.delivery_attempt,
-                    self._scheduler.queue,
-                )
-                self._messages_on_hold.put(message)
-                self._on_hold_bytes += message.size
-                req = requests.LeaseRequest(
-                    ack_id=message.ack_id,
-                    byte_size=message.size,
-                    ordering_key=message.ordering_key,
-                )
-                self.leaser.add([req])
+                if (
+                    "googclient_OpenTelemetrySpanContext"
+                    in received_message.message.attributes
+                ):
+                    publisher_span_context = json.loads(
+                        received_message.message.attributes[
+                            "googclient_OpenTelemetrySpanContext"
+                        ]
+                    )
+                else:
+                    publisher_span_context = None
+                span_attributes = {
+                    "ack_id": received_message.ack_id,
+                    "delivery_attempt": received_message.delivery_attempt,
+                }
+                with create_span(
+                    "subscriber",
+                    attributes=span_attributes,
+                    parent=publisher_span_context,
+                ):
+                    message = google.cloud.pubsub_v1.subscriber.message.Message(
+                        received_message.message,
+                        received_message.ack_id,
+                        received_message.delivery_attempt,
+                        self._scheduler.queue,
+                    )
+                    self._messages_on_hold.put(message)
+                    self._on_hold_bytes += message.size
+                    req = requests.LeaseRequest(
+                        ack_id=message.ack_id,
+                        byte_size=message.size,
+                        ordering_key=message.ordering_key,
+                    )
+                    self.leaser.add([req])
 
             self._maybe_release_messages()
 

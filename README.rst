@@ -186,13 +186,38 @@ For example, to use JSON Web Tokens, provide a `google.auth.jwt.Credentials`_ in
 
     # The same for the publisher, except that the "audience" claim needs to be adjusted
     publisher_audience = "https://pubsub.googleapis.com/google.pubsub.v1.Publisher"
-    credentials_pub = credentials.with_claims(audience=publisher_audience) 
+    credentials_pub = credentials.with_claims(audience=publisher_audience)
     publisher = pubsub_v1.PublisherClient(credentials=credentials_pub)
 
 .. _Credentials: https://google-auth.readthedocs.io/en/latest/reference/google.auth.credentials.html#google.auth.credentials.Credentials
 .. _google-auth: https://google-auth.readthedocs.io/en/latest/index.html
 .. _google.auth.jwt.Credentials: https://google-auth.readthedocs.io/en/latest/reference/google.auth.jwt.html#google.auth.jwt.Credentials
 
+
+OpenTelemetry Tracing
+^^^^^^^^^^^^^^^^^^^^^
+
+To enable OpenTelemetry tracing in Pub/Sub clients, the ``opentelemetry-api``, ``opentelemetry-sdk``,
+and ``opentelemetry-instrumentation`` libraries must be installed. After installation, OpenTelemetry
+can be used with any publisher or subscriber client by specifying an exporter for traces.
+
+For example, for traces to be exported to Google Cloud Tracing, the Cloud Trace exporter must be specified.
+
+.. code-block:: python
+
+    from opentelemetry import trace
+    from opentelemetry.sdk.trace import TracerProvider
+    from opentelemetry.sdk.trace.export import SimpleExportSpanProcessor
+    from opentelemetry.exporter.cloud_trace import CloudTraceSpanExporter
+
+    trace.set_tracer_provider(TracerProvider())
+    trace.get_tracer_provider().add_span_processor(
+        SimpleExportSpanProcessor(CloudTraceSpanExporter())
+    )
+
+For more information on OpenTelemetry, please consult the `OpenTelemetry documentation`_.
+
+.. _OpenTelemetry documentation: https://opentelemetry-python.readthedocs.io
 
 Versioning
 ----------

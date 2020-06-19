@@ -20,14 +20,30 @@ from google.auth import credentials
 import mock
 import pytest
 import time
+import sys
+from importlib import reload
 
 from google.cloud.pubsub_v1.gapic import publisher_client
 from google.cloud.pubsub_v1 import publisher
 from google.cloud.pubsub_v1 import types
+from google.cloud.pubsub_v1 import opentelemetry_tracing
 
 from google.cloud.pubsub_v1.publisher import exceptions
 from google.cloud.pubsub_v1.publisher._sequencer import ordered_sequencer
 
+# Disable OpenTelemetry for publisher tests
+@pytest.fixture(scope="module")
+def disable_opentelemetry():
+    #Setup
+    tmp_opentelemetry = sys.modules["opentelemetry"]
+    sys.modules["opentelemetry"] = None
+    reload(opentelemetry_tracing)
+    yield None
+    # Teardown
+    sys.modules["opentelemetry"] = tmp_opentelemetry
+    reload(opentelemetry_tracing)
+
+from google.cloud.pubsub_v1 import opentelemetry_tracing
 
 def test_init():
     creds = mock.Mock(spec=credentials.Credentials)
@@ -122,7 +138,7 @@ def test_message_ordering_changes_retry_deadline():
     assert client.api._method_configs["Publish"].retry._deadline == 2 ** 32 / 1000
 
 
-def test_publish():
+def test_publish(disable_opentelemetry):
     creds = mock.Mock(spec=credentials.Credentials)
     client = publisher.Client(credentials=creds)
 
@@ -156,7 +172,7 @@ def test_publish():
     )
 
 
-def test_publish_error_exceeding_flow_control_limits():
+def test_publish_error_exceeding_flow_control_limits(disable_opentelemetry):
     creds = mock.Mock(spec=credentials.Credentials)
     publisher_options = types.PublisherOptions(
         flow_control=types.PublishFlowControl(
@@ -207,7 +223,7 @@ def test_publish_empty_ordering_key_when_message_ordering_enabled():
     assert client.publish(topic, b"bytestring body", ordering_key="") is not None
 
 
-def test_publish_attrs_bytestring():
+def test_publish_attrs_bytestring(disable_opentelemetry):
     creds = mock.Mock(spec=credentials.Credentials)
     client = publisher.Client(credentials=creds)
 
@@ -229,7 +245,7 @@ def test_publish_attrs_bytestring():
     )
 
 
-def test_publish_new_batch_needed():
+def test_publish_new_batch_needed(disable_opentelemetry):
     creds = mock.Mock(spec=credentials.Credentials)
     client = publisher.Client(credentials=creds)
 
@@ -414,7 +430,7 @@ def test_stopped_client_does_not_commit_sequencers():
             assert _commit_sequencers.call_count == 0
 
 
-def test_publish_with_ordering_key():
+def test_publish_with_ordering_key(disable_opentelemetry):
     creds = mock.Mock(spec=credentials.Credentials)
     publisher_options = types.PublisherOptions(enable_message_ordering=True)
     client = publisher.Client(publisher_options=publisher_options, credentials=creds)

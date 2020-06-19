@@ -279,4 +279,17 @@ s.move(templated_files)
 # ----------------------------------------------------------------------------
 python.py_samples()
 
+# ----------------------------------------------------------------------------
+# Additional unit test dependincies
+# ----------------------------------------------------------------------------
+s.replace(
+    "noxfile.py",
+    r'session\.install\("mock", "pytest", "pytest-cov"\)',
+    """\g<0>
+    session.install(
+        "mock", "pytest", "pytest-cov",
+        "opentelemetry-api", "opentelemetry-sdk", "opentelemetry-instrumentation",
+    )""",
+)
+
 s.shell.run(["nox", "-s", "blacken"], hide_output=False)

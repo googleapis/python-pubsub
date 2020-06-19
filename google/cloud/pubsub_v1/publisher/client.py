@@ -20,6 +20,8 @@ import os
 import pkg_resources
 import threading
 import time
+import sys
+import json
 
 import grpc
 import six
@@ -29,6 +31,7 @@ from google.oauth2 import service_account
 
 from google.cloud.pubsub_v1 import _gapic
 from google.cloud.pubsub_v1 import types
+from google.cloud.pubsub_v1.opentelemetry_tracing import create_span
 from google.cloud.pubsub_v1.gapic import publisher_client
 from google.cloud.pubsub_v1.gapic.transports import publisher_grpc_transport
 from google.cloud.pubsub_v1.publisher import exceptions
@@ -369,38 +372,54 @@ class Client(object):
                 "be sent as text strings."
             )
 
-        # Create the Pub/Sub message object.
-        message = types.PubsubMessage(
-            data=data, ordering_key=ordering_key, attributes=attrs
-        )
+        span_name = "{} publisher".format(topic)
+        span_attributes = {"data": data.decode()}
+        with create_span(span_name, attributes=span_attributes) as span:
+            if span is not None:
 
-        # Messages should go through flow control to prevent excessive
-        # queuing on the client side (depending on the settings).
-        try:
-            self._flow_controller.add(message)
-        except exceptions.FlowControlLimitError as exc:
-            future = futures.Future()
-            future.set_exception(exc)
-            return future
+                if "googclient_OpenTelemetrySpanContext" in attrs:
+                    _LOGGER.warn(
+                        "googclient_OpenTelemetrySpanContext set on message"
+                        "as an attribute, but will be overridden."
+                    )
 
-        def on_publish_done(future):
-            self._flow_controller.release(message)
+                # Add the context of the span as an attribute
+                attrs["googclient_OpenTelemetrySpanContext"] = json.dumps(
+                    span.get_context().__dict__
+                )
 
-        with self._batch_lock:
-            if self._is_stopped:
-                raise RuntimeError("Cannot publish on a stopped publisher.")
+            # Create the Pub/Sub message object.
+            message = types.PubsubMessage(
+                data=data, ordering_key=ordering_key, attributes=attrs
+            )
 
-            sequencer = self._get_or_create_sequencer(topic, ordering_key)
+            # Messages should go through flow control to prevent excessive
+            # queuing on the client side (depending on the settings).
+            try:
+                self._flow_controller.add(message)
+            except exceptions.FlowControlLimitError as exc:
+                future = futures.Future()
+                future.set_exception(exc)
+                return future
 
-            # Delegate the publishing to the sequencer.
-            future = sequencer.publish(message)
-            future.add_done_callback(on_publish_done)
+            def on_publish_done(future):
+                self._flow_controller.release(message)
 
-            # Create a timer thread if necessary to enforce the batching
-            # timeout.
-            self._ensure_commit_timer_runs_no_lock()
+            with self._batch_lock:
+                if self._is_stopped:
+                    raise RuntimeError("Cannot publish on a stopped publisher.")
 
-            return future
+                sequencer = self._get_or_create_sequencer(topic, ordering_key)
+
+                # Delegate the publishing to the sequencer.
+                future = sequencer.publish(message)
+                future.add_done_callback(on_publish_done)
+
+                # Create a timer thread if necessary to enforce the batching
+                # timeout.
+                self._ensure_commit_timer_runs_no_lock()
+
+                return future
 
     def ensure_cleanup_and_commit_timer_runs(self):
         """ Ensure a cleanup/commit timer thread is running.
