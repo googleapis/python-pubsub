@@ -32,7 +32,6 @@ from google.api_core.protobuf_helpers import get_messages
 from google.cloud.pubsub_v1.proto import pubsub_pb2
 
 
-
 # Define the default values for batching.
 #
 # This class is used when creating a publisher or subscriber client, and
