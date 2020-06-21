@@ -4,6 +4,36 @@
 
 [1]: https://pypi.org/project/google-cloud-pubsub/#history
 
+## [1.6.0](https://www.github.com/googleapis/python-pubsub/compare/v1.5.0...v1.6.0) (2020-06-09)
+
+
+### Features
+
+* Add flow control for message publishing ([#96](https://www.github.com/googleapis/python-pubsub/issues/96)) ([06085c4](https://www.github.com/googleapis/python-pubsub/commit/06085c4083b9dccdd50383257799904510bbf3a0))
+
+
+### Bug Fixes
+
+* Fix PubSub incompatibility with api-core 1.17.0+ ([#103](https://www.github.com/googleapis/python-pubsub/issues/103)) ([c02060f](https://www.github.com/googleapis/python-pubsub/commit/c02060fbbe6e2ca4664bee08d2de10665d41dc0b))
+
+
+### Documentation
+- Clarify that Schedulers shouldn't be used with multiple SubscriberClients ([#100](https://github.com/googleapis/python-pubsub/pull/100)) ([cf9e87c](https://github.com/googleapis/python-pubsub/commit/cf9e87c80c0771f3fa6ef784a8d76cb760ad37ef))
+- Fix update subscription/snapshot/topic samples ([#113](https://github.com/googleapis/python-pubsub/pull/113)) ([e62c38b](https://github.com/googleapis/python-pubsub/commit/e62c38bb33de2434e32f866979de769382dea34a))
+
+
+### Internal / Testing Changes
+- Re-generated service implementaton using synth: removed experimental notes from the RetryPolicy and filtering features in anticipation of GA, added DetachSubscription (experimental) ([#114](https://github.com/googleapis/python-pubsub/pull/114)) ([0132a46](https://github.com/googleapis/python-pubsub/commit/0132a4680e0727ce45d5e27d98ffc9f3541a0962))
+- Incorporate will_accept() checks into publish() ([#108](https://github.com/googleapis/python-pubsub/pull/108)) ([6c7677e](https://github.com/googleapis/python-pubsub/commit/6c7677ecb259672bbb9b6f7646919e602c698570))
+
+## [1.5.0](https://www.github.com/googleapis/python-pubsub/compare/v1.4.3...v1.5.0) (2020-05-04)
+
+
+### Features
+
+* add methods for listing snapshots (via synth) ([#66](https://www.github.com/googleapis/python-pubsub/issues/66)) ([4ce898e](https://www.github.com/googleapis/python-pubsub/commit/4ce898e80eeb16b18d1ee29c678ade149804d186))
+* send client id with StreamingPullRequest ([#58](https://www.github.com/googleapis/python-pubsub/issues/58)) ([9f8acfa](https://www.github.com/googleapis/python-pubsub/commit/9f8acfacfbe93224f59439bb51a17fc28b06c22a)), closes [#62](https://www.github.com/googleapis/python-pubsub/issues/62)
+
 ## [1.4.3](https://www.github.com/googleapis/python-pubsub/compare/v1.4.2...v1.4.3) (2020-04-16)
 
 
