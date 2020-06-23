@@ -128,6 +128,35 @@ You can also attach a callback to the future:
     future.add_done_callback(callback)
 
 
+Publish Flow Control
+--------------------
+
+If publishing large amounts of messages or very large messages in quick
+succession, some of the publish requests might time out, especially if the
+bandwidth available is limited. To mitigate this the client can be
+configured with custom :class:`~.pubsub_v1.types.PublishFlowControl` settings.
+
+You can configure the maximum desired number of messages and their maximum total
+size, as well as the action that should be taken when the threshold is reached.
+If you choose ``BLOCK``, for instance, the client will internally queue
+excessive messages before their corresponding publish requests are made,
+reducing the chance of network timeouts.
+
+.. code-block:: python
+
+    from google.cloud import pubsub_v1
+
+    client = pubsub_v1.PublisherClient(
+        publisher_options=pubsub_v1.types.PublisherOptions(
+            flow_control=pubsub_v1.types.PublishFlowControl(
+                message_limit=500,
+                byte_limit=2 * 1024 * 1024,
+                limit_exceeded_behavior=pubsub_v1.types.LimitExceededBehavior.BLOCK,
+            ),
+        ),
+    )
+
+
 API Reference
 -------------
 
