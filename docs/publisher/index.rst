@@ -138,9 +138,6 @@ configured with custom :class:`~.pubsub_v1.types.PublishFlowControl` settings.
 
 You can configure the maximum desired number of messages and their maximum total
 size, as well as the action that should be taken when the threshold is reached.
-If you choose ``BLOCK``, for instance, the client will internally queue
-excessive messages before their corresponding publish requests are made,
-reducing the chance of network timeouts.
 
 .. code-block:: python
 
@@ -155,6 +152,18 @@ reducing the chance of network timeouts.
             ),
         ),
     )
+
+The action to be taken on overflow can be one of the following:
+
+* :attr:`~.pubsub_v1.types.LimitExceededBehavior.IGNORE` (default): Ignore the
+  overflow and continue publishing the messages as normal.
+* :attr:`~.pubsub_v1.types.LimitExceededBehavior.ERROR`: Raise
+  :exc:`~.pubsub_v1.publisher.exceptions.FlowControlLimitError` and reject the message.
+* :attr:`~.pubsub_v1.types.LimitExceededBehavior.BLOCK`: Temporarily block in the
+  :meth:`~.pubsub_v1.publisher.client.Client.publish` method until there is
+  enough capacity available. Excessive messages are queued internally before
+  their corresponding publish requests are actually made, reducing the chance of
+  network timeouts.
 
 
 API Reference
