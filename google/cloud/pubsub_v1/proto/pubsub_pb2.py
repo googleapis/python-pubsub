@@ -3612,7 +3612,8 @@ PubsubMessage = _reflection.GeneratedProtocolMessageType(
           must contain at least one attribute.
       attributes:
           Attributes for this message. If this field is empty, the
-          message must contain non-empty data.
+          message must contain non-empty data. This can be used to
+          filter messages on the subscription.
       message_id:
           ID of this message, assigned by the server when the message is
           published. Guaranteed to be unique within the topic. This
@@ -3998,8 +3999,9 @@ Subscription = _reflection.GeneratedProtocolMessageType(
           ``ttl`` of 31 days will be used. The minimum allowed value for
           ``expiration_policy.ttl`` is 1 day.
       filter:
-          An expression written in the Cloud Pub/Sub filter language. If
-          non-empty, then only ``PubsubMessage``\ s whose ``attributes``
+          An expression written in the Pub/Sub `filter language
+          <https://cloud.google.com/pubsub/docs/filtering>`__. If non-
+          empty, then only ``PubsubMessage``\ s whose ``attributes``
           field matches the filter are delivered on this subscription.
           If empty, then no messages are filtered out.
       dead_letter_policy:
