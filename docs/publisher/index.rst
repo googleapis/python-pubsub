@@ -161,9 +161,7 @@ The action to be taken on overflow can be one of the following:
   :exc:`~.pubsub_v1.publisher.exceptions.FlowControlLimitError` and reject the message.
 * :attr:`~.pubsub_v1.types.LimitExceededBehavior.BLOCK`: Temporarily block in the
   :meth:`~.pubsub_v1.publisher.client.Client.publish` method until there is
-  enough capacity available. Excessive messages are queued internally before
-  their corresponding publish requests are actually made, reducing the chance of
-  network timeouts.
+  enough capacity available.
 
 
 API Reference
