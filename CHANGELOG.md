@@ -4,6 +4,25 @@
 
 [1]: https://pypi.org/project/google-cloud-pubsub/#history
 
+## [1.7.0](https://www.github.com/googleapis/python-pubsub/compare/v1.6.1...v1.7.0) (2020-07-10)
+
+
+### Features
+
+* Add support for server-side flow control ([#143](https://www.github.com/googleapis/python-pubsub/issues/143)) ([04e261c](https://www.github.com/googleapis/python-pubsub/commit/04e261c602a2919cc75b3efa3dab099fb2cf704c))
+
+
+### Bug Fixes
+
+* make timeout an optional positional arg [([#3938](https://www.github.com/googleapis/python-pubsub/issues/3938))](https://github.com/GoogleCloudPlatform/python-docs-samples/issues/3938) ([88090bd](https://www.github.com/googleapis/python-pubsub/commit/88090bdfcb8ed10e2168bbbd662233975cf2cc71))
+* replace name with id in samples [([#3953](https://www.github.com/googleapis/python-pubsub/issues/3953))](https://github.com/GoogleCloudPlatform/python-docs-samples/issues/3953) ([e7eb577](https://www.github.com/googleapis/python-pubsub/commit/e7eb577720d4e2c58c077fd0f0b6a12d3424df26))
+
+
+### Documentation
+
+* Add a link to Pub/Sub filtering language public documentation to pubsub.proto ([#121](https://www.github.com/googleapis/python-pubsub/issues/121)) ([8802d81](https://www.github.com/googleapis/python-pubsub/commit/8802d8126247f22e26057e68a42f5b5a82dcbf0d))
+* add flow control section to publish overview ([#129](https://www.github.com/googleapis/python-pubsub/issues/129)) ([acc19eb](https://www.github.com/googleapis/python-pubsub/commit/acc19eb048eef067d9818ef3e310b165d9c6307e))
+
 ### [1.6.1](https://www.github.com/googleapis/python-pubsub/compare/v1.6.0...v1.6.1) (2020-06-30)
 
 
