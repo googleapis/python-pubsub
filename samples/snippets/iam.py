@@ -178,7 +178,7 @@ def check_subscription_permissions(project_id, subscription_id):
 
 
 def detach_subscription(project_id, subscription_id):
-    """Detaches a subscription from a topic and drop all messages retained in it."""
+    """Detaches a subscription from a topic and drops all messages retained in it."""
     # [START pubsub_detach_subscription]
     from google.api_core.exceptions import GoogleAPICallError, RetryError
     from google.cloud import pubsub_v1

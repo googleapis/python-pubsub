@@ -119,7 +119,7 @@ def test_check_subscription_permissions(subscription, capsys):
 
 
 def test_detach_subscription(subscription, capsys):
-    iam.check_subscription_permissions(PROJECT_ID, SUBSCRIPTION_ID)
+    iam.detach_subscription(PROJECT_ID, SUBSCRIPTION_ID)
 
     out, _ = capsys.readouterr()
 

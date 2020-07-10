@@ -251,7 +251,7 @@ To run this sample:
                             Checks to which permissions are available on the given
                             subscription.
         detach-subscription
-                            Detaches a subscription from a topic and drop all
+                            Detaches a subscription from a topic and drops all
                             messages retained in it.
 
     optional arguments:
