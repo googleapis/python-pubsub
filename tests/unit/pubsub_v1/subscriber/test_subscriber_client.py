@@ -19,6 +19,7 @@ from google.cloud.pubsub_v1 import subscriber
 from google.cloud.pubsub_v1 import types
 from google.cloud.pubsub_v1.subscriber import futures
 from google.pubsub_v1.services.subscriber import client as subscriber_client
+from google.pubsub_v1.services.subscriber.transports.base import SubscriberTransport
 
 
 def test_init():
@@ -28,10 +29,10 @@ def test_init():
 
 
 def test_init_w_custom_transport():
-    transport = object()
+    transport = SubscriberTransport()
     client = subscriber.Client(transport=transport)
     assert isinstance(client.api, subscriber_client.SubscriberClient)
-    assert client.api.transport is transport
+    assert client.api._transport is transport
 
 
 def test_init_w_api_endpoint():
@@ -39,7 +40,7 @@ def test_init_w_api_endpoint():
     client = subscriber.Client(client_options=client_options)
 
     assert isinstance(client.api, subscriber_client.SubscriberClient)
-    assert (client.api.transport._channel._channel.target()).decode(
+    assert (client.api._transport.grpc_channel._channel.target()).decode(
         "utf-8"
     ) == "testendpoint.google.com"
 
@@ -49,7 +50,7 @@ def test_init_w_unicode_api_endpoint():
     client = subscriber.Client(client_options=client_options)
 
     assert isinstance(client.api, subscriber_client.SubscriberClient)
-    assert (client.api.transport._channel._channel.target()).decode(
+    assert (client.api._transport.grpc_channel._channel.target()).decode(
         "utf-8"
     ) == "testendpoint.google.com"
 
@@ -58,7 +59,7 @@ def test_init_w_empty_client_options():
     client = subscriber.Client(client_options={})
 
     assert isinstance(client.api, subscriber_client.SubscriberClient)
-    assert (client.api.transport._channel._channel.target()).decode(
+    assert (client.api._transport.grpc_channel._channel.target()).decode(
         "utf-8"
     ) == subscriber_client.SubscriberClient.SERVICE_ADDRESS
 
@@ -73,7 +74,7 @@ def test_init_emulator(monkeypatch):
     #
     # Sadly, there seems to be no good way to do this without poking at
     # the private API of gRPC.
-    channel = client.api.transport.pull._channel
+    channel = client.api._transport.pull._channel
     assert channel.target().decode("utf8") == "/baz/bacon/"
 
 
@@ -138,22 +139,24 @@ def test_subscribe_options(manager_open):
 
 
 def test_close():
-    mock_transport = mock.NonCallableMock()
-    client = subscriber.Client(transport=mock_transport)
+    client = subscriber.Client()
+    patcher = mock.patch.object(client.api._transport.grpc_channel, "close")
 
-    client.close()
+    with patcher as patched_close:
+        client.close()
 
-    mock_transport.channel.close.assert_called()
+    patched_close.assert_called()
 
 
 def test_closes_channel_as_context_manager():
-    mock_transport = mock.NonCallableMock()
-    client = subscriber.Client(transport=mock_transport)
+    client = subscriber.Client()
+    patcher = mock.patch.object(client.api._transport.grpc_channel, "close")
 
-    with client:
-        pass
+    with patcher as patched_close:
+        with client:
+            pass
 
-    mock_transport.channel.close.assert_called()
+    patched_close.assert_called()
 
 
 def test_streaming_pull_gapic_monkeypatch():
@@ -163,6 +166,6 @@ def test_streaming_pull_gapic_monkeypatch():
 
     client.streaming_pull(requests=iter([]))
 
-    assert client.api.transport is transport
+    assert client.api._transport is transport
     assert hasattr(transport.streaming_pull, "_prefetch_first_result_")
     assert not transport.streaming_pull._prefetch_first_result_

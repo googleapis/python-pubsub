@@ -29,6 +29,7 @@ from google.cloud.pubsub_v1.publisher._sequencer import ordered_sequencer
 
 from google.pubsub_v1 import types as gapic_types
 from google.pubsub_v1.services.publisher import client as publisher_client
+from google.pubsub_v1.services.publisher.transports.base import PublisherTransport
 
 
 def test_init():
@@ -44,13 +45,13 @@ def test_init():
 
 
 def test_init_w_custom_transport():
-    transport = object()
+    transport = PublisherTransport()
     client = publisher.Client(transport=transport)
 
     # A plain client should have an `api` (the underlying GAPIC) and a
     # batch settings object, which should have the defaults.
     assert isinstance(client.api, publisher_client.PublisherClient)
-    assert client.api.transport is transport
+    assert client.api._transport is transport
     assert client.batch_settings.max_bytes == 1 * 1000 * 1000
     assert client.batch_settings.max_latency == 0.01
     assert client.batch_settings.max_messages == 100
@@ -61,7 +62,7 @@ def test_init_w_api_endpoint():
     client = publisher.Client(client_options=client_options)
 
     assert isinstance(client.api, publisher_client.PublisherClient)
-    assert (client.api.transport._channel._channel.target()).decode(
+    assert (client.api._transport.grpc_channel._channel.target()).decode(
         "utf-8"
     ) == "testendpoint.google.com"
 
@@ -71,7 +72,7 @@ def test_init_w_unicode_api_endpoint():
     client = publisher.Client(client_options=client_options)
 
     assert isinstance(client.api, publisher_client.PublisherClient)
-    assert (client.api.transport._channel._channel.target()).decode(
+    assert (client.api._transport.grpc_channel._channel.target()).decode(
         "utf-8"
     ) == "testendpoint.google.com"
 
@@ -80,7 +81,7 @@ def test_init_w_empty_client_options():
     client = publisher.Client(client_options={})
 
     assert isinstance(client.api, publisher_client.PublisherClient)
-    assert (client.api.transport._channel._channel.target()).decode(
+    assert (client.api._transport.grpc_channel._channel.target()).decode(
         "utf-8"
     ) == publisher_client.PublisherClient.SERVICE_ADDRESS
 
@@ -95,7 +96,7 @@ def test_init_emulator(monkeypatch):
     #
     # Sadly, there seems to be no good way to do this without poking at
     # the private API of gRPC.
-    channel = client.api.transport.publish._channel
+    channel = client.api._transport.publish._channel
     assert channel.target().decode("utf8") == "/foo/bar/"
 
 

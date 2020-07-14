@@ -252,7 +252,7 @@ class Client(object):
 
         This method is idempotent.
         """
-        self.api.transport.channel.close()
+        self.api._transport.grpc_channel.close()
 
     def __enter__(self):
         return self
