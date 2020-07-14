@@ -215,7 +215,44 @@ To run this sample:
       -h, --help            show this help message and exit
 
 
+Identity and Access Management
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+.. image:: https://gstatic.com/cloudssh/images/open-btn.png
+   :target: https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com//googleapis/python-pubsub&page=editor&open_in_editor=samples/snippets/iam.py,samples/snippets/README.rst
+
+
+
+
+To run this sample:
+
+.. code-block:: bash
+    $ python iam.py
+    usage: iam.py [-h]
+                  project
+                  {get-topic-policy,get-subscription-policy,set-topic-policy,set-subscription-policy,check-topic-permissions,check-subscription-permissions}
+                  ...
+    This application demonstrates how to perform basic operations on IAM
+    policies with the Cloud Pub/Sub API.
+    For more information, see the README.md under /pubsub and the documentation
+    at https://cloud.google.com/pubsub/docs.
+    positional arguments:
+      project               Your Google Cloud project ID
+      {get-topic-policy,get-subscription-policy,set-topic-policy,set-subscription-policy,check-topic-permissions,check-subscription-permissions}
+        get-topic-policy    Prints the IAM policy for the given topic.
+        get-subscription-policy
+                            Prints the IAM policy for the given subscription.
+        set-topic-policy    Sets the IAM policy for a topic.
+        set-subscription-policy
+                            Sets the IAM policy for a topic.
+        check-topic-permissions
+                            Checks to which permissions are available on the given
+                            topic.
+        check-subscription-permissions
+                            Checks to which permissions are available on the given
+                            subscription.
+    optional arguments:
+      -h, --help            show this help message and exit
 
 
 The client library
