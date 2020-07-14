@@ -292,13 +292,16 @@ def test_stop():
 def test_gapic_instance_method():
     creds = mock.Mock(spec=credentials.Credentials)
     client = publisher.Client(credentials=creds)
+    patcher = mock.patch.object(client.api, "_transport")
 
-    ct = mock.Mock()
-    client.api._inner_api_calls["create_topic"] = ct
+    topic = gapic_types.Topic(name="projects/foo/topics/bar")
 
-    client.create_topic("projects/foo/topics/bar")
-    assert ct.call_count == 1
-    _, args, _ = ct.mock_calls[0]
+    with patcher as fake_transport:
+        client.create_topic(topic)
+
+    fake_create_topic = fake_transport.create_topic
+    assert fake_create_topic.call_count == 1
+    _, args, _ = fake_create_topic.mock_calls[0]
     assert args[0] == gapic_types.Topic(name="projects/foo/topics/bar")
 
 
