@@ -176,22 +176,6 @@ class Client(object):
         # For a transient failure, retry publishing the message infinitely.
         self.publisher_options = types.PublisherOptions(*publisher_options)
         self._enable_message_ordering = self.publisher_options[0]
-        if self._enable_message_ordering:
-            # Set retry timeout to "infinite" when message ordering is enabled.
-            # Note that this then also impacts messages added with an empty ordering
-            # key.
-            client_config = _set_nested_value(
-                kwargs.pop("client_config", {}),
-                2 ** 32,
-                [
-                    "interfaces",
-                    "google.pubsub.v1.Publisher",
-                    "retry_params",
-                    "messaging",
-                    "total_timeout_millis",
-                ],
-            )
-            kwargs["client_config"] = client_config
 
         # Add the metrics headers, and instantiate the underlying GAPIC
         # client.

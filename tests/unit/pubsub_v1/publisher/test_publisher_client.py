@@ -111,19 +111,6 @@ def test_message_ordering_enabled():
     assert client._enable_message_ordering
 
 
-def test_message_ordering_changes_retry_deadline():
-    creds = mock.Mock(spec=credentials.Credentials)
-
-    client = publisher.Client(credentials=creds)
-    assert client.api._method_configs["Publish"].retry._deadline == 60
-
-    client = publisher.Client(
-        publisher_options=types.PublisherOptions(enable_message_ordering=True),
-        credentials=creds,
-    )
-    assert client.api._method_configs["Publish"].retry._deadline == 2 ** 32 / 1000
-
-
 def test_publish():
     creds = mock.Mock(spec=credentials.Credentials)
     client = publisher.Client(credentials=creds)
