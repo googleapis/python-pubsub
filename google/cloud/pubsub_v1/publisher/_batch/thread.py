@@ -247,7 +247,9 @@ class Batch(base.Batch):
         try:
             # Performs retries for errors defined in retry_codes.publish in the
             # publisher_client_config.py file.
-            response = self._client.api.publish(self._topic, self._messages)
+            response = self._client.api.publish(
+                topic=self._topic, messages=self._messages,
+            )
         except google.api_core.exceptions.GoogleAPIError as exc:
             # We failed to publish, even after retries, so set the exception on
             # all futures and exit.

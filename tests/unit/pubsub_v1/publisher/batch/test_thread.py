@@ -127,8 +127,8 @@ def test_blocking__commit():
     # Establish that the underlying API call was made with expected
     # arguments.
     publish.assert_called_once_with(
-        "topic_name",
-        [
+        topic="topic_name",
+        messages=[
             gapic_types.PubsubMessage(data=b"This is my message."),
             gapic_types.PubsubMessage(data=b"This is another message."),
         ],
@@ -146,7 +146,7 @@ def test_client_api_publish_not_blocking_additional_publish_calls():
     batch = create_batch(max_messages=1)
     api_publish_called = threading.Event()
 
-    def api_publish_delay(_, messages):
+    def api_publish_delay(topic="", messages=()):
         api_publish_called.set()
         time.sleep(1.0)
         message_ids = [str(i) for i in range(len(messages))]
