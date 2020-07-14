@@ -26,7 +26,6 @@ from google.cloud.pubsub_v1 import types
 from google.cloud.pubsub_v1.subscriber import client
 from google.cloud.pubsub_v1.subscriber import message
 from google.cloud.pubsub_v1.subscriber import scheduler
-from google.cloud.pubsub_v1.subscriber import subscriber_client_config
 from google.cloud.pubsub_v1.subscriber._protocol import dispatcher
 from google.cloud.pubsub_v1.subscriber._protocol import heartbeater
 from google.cloud.pubsub_v1.subscriber._protocol import leaser
@@ -906,20 +905,6 @@ def test__on_response_with_ordering_keys():
 
     # No messages available in the queue.
     assert manager._messages_on_hold.get() is None
-
-
-def test_retryable_stream_errors():
-    # Make sure the config matches our hard-coded tuple of exceptions.
-    interfaces = subscriber_client_config.config["interfaces"]
-    retry_codes = interfaces["google.pubsub.v1.Subscriber"]["retry_codes"]
-    idempotent = retry_codes["idempotent"]
-
-    status_codes = tuple(getattr(grpc.StatusCode, name, None) for name in idempotent)
-    expected = tuple(
-        exceptions.exception_class_for_grpc_status(status_code)
-        for status_code in status_codes
-    )
-    assert set(expected).issubset(set(streaming_pull_manager._RETRYABLE_STREAM_ERRORS))
 
 
 def test__should_recover_true():
