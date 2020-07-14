@@ -127,7 +127,7 @@ def test_ack_splitting_large_payload():
 
     for call in calls:
         message = call.args[0]
-        assert message.ByteSize() <= 524288  # server-side limit (2**19)
+        assert message._pb.ByteSize() <= 524288  # server-side limit (2**19)
         sent_ack_ids.update(message.ack_ids)
 
     assert set(sent_ack_ids) == all_ack_ids  # all messages should have been ACK-ed
@@ -238,7 +238,7 @@ def test_modify_ack_deadline_splitting_large_payload():
 
     for call in calls:
         message = call.args[0]
-        assert message.ByteSize() <= 524288  # server-side limit (2**19)
+        assert message._pb.ByteSize() <= 524288  # server-side limit (2**19)
         sent_ack_ids.update(message.modify_deadline_ack_ids)
 
     assert set(sent_ack_ids) == all_ack_ids  # all messages should have been MODACK-ed

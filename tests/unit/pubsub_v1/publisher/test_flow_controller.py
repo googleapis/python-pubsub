@@ -117,7 +117,7 @@ def test_byte_size_overflow_error():
     with pytest.raises(exceptions.FlowControlLimitError) as error:
         flow_controller.add(msg2)
 
-    total_size = msg1.ByteSize() + msg2.ByteSize()
+    total_size = msg1._pb.ByteSize() + msg2._pb.ByteSize()
     expected_info = "bytes: {} / 199".format(total_size)
     assert expected_info in str(error.value)
 
@@ -197,7 +197,7 @@ def test_incorrectly_releasing_too_many_messages():
 
     error_msg = str(error.value)
     assert "messages: 2 / 1" in error_msg
-    total_size = msg2.ByteSize() + msg3.ByteSize()
+    total_size = msg2._pb.ByteSize() + msg3._pb.ByteSize()
     expected_size_info = "bytes: {} / 150".format(total_size)
     assert expected_size_info in error_msg
 
@@ -304,7 +304,7 @@ def test_error_if_mesage_would_block_indefinitely():
     error_msg = str(error_info.value)
     assert "would block forever" in error_msg
     assert "messages: 1 / 0" in error_msg
-    assert "bytes: {} / 1".format(msg.ByteSize()) in error_msg
+    assert "bytes: {} / 1".format(msg._pb.ByteSize()) in error_msg
 
 
 def test_threads_posting_large_messages_do_not_starve():

@@ -279,9 +279,9 @@ def test_publish_updating_batch_size():
 
     # The size should have been incremented by the sum of the size
     # contributions of each message to the PublishRequest.
-    base_request_size = gapic_types.PublishRequest(topic="topic_foo").ByteSize()
+    base_request_size = gapic_types.PublishRequest(topic="topic_foo")._pb.ByteSize()
     expected_request_size = base_request_size + sum(
-        gapic_types.PublishRequest(messages=[msg]).ByteSize() for msg in messages
+        gapic_types.PublishRequest(messages=[msg])._pb.ByteSize() for msg in messages
     )
 
     assert batch.size == expected_request_size
@@ -379,7 +379,7 @@ def test_publish_single_message_size_exceeds_server_size_limit():
 
     request_size = gapic_types.PublishRequest(
         topic="topic_foo", messages=[big_message]
-    ).ByteSize()
+    )._pb.ByteSize()
     assert request_size == 1001  # sanity check, just above the (mocked) server limit
 
     with pytest.raises(exceptions.MessageTooLargeError):
@@ -399,7 +399,7 @@ def test_publish_total_messages_size_exceeds_server_size_limit():
     # but it exceeds the server-side size limit.
     request_size = gapic_types.PublishRequest(
         topic="topic_foo", messages=messages
-    ).ByteSize()
+    )._pb.ByteSize()
     assert 1000 < request_size < 1500
 
     with mock.patch.object(batch, "commit") as fake_commit:

@@ -165,7 +165,7 @@ class Message(object):
     @property
     def size(self):
         """Return the size of the underlying message, in bytes."""
-        return self._message.ByteSize()
+        return self._message._pb.ByteSize()
 
     @property
     def ack_id(self):

@@ -92,7 +92,7 @@ class Batch(base.Batch):
 
         # The initial size is not zero, we need to account for the size overhead
         # of the PublishRequest message itself.
-        self._base_request_size = gapic_types.PublishRequest(topic=topic).ByteSize()
+        self._base_request_size = gapic_types.PublishRequest(topic=topic)._pb.ByteSize()
         self._size = self._base_request_size
 
     @staticmethod
@@ -336,7 +336,9 @@ class Batch(base.Batch):
             if self.status != base.BatchStatus.ACCEPTING_MESSAGES:
                 return
 
-            size_increase = gapic_types.PublishRequest(messages=[message]).ByteSize()
+            size_increase = gapic_types.PublishRequest(
+                messages=[message]
+            )._pb.ByteSize()
 
             if (self._base_request_size + size_increase) > _SERVER_PUBLISH_MAX_BYTES:
                 err_msg = (
