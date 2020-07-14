@@ -267,12 +267,12 @@ s.replace(
 # Add templated files
 # ----------------------------------------------------------------------------
 templated_files = gcp.CommonTemplates().py_library(
-    unit_cov_level=97,
+    microgenerator=True,
+    samples=True,
     cov_level=99,
     system_test_external_dependencies=["psutil"],
-    samples=True,
 )
-s.move(templated_files)
+s.move(templated_files, excludes=[".coveragerc"])
 
 # ----------------------------------------------------------------------------
 # Samples templates
