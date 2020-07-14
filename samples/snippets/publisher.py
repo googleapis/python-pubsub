@@ -33,9 +33,9 @@ def list_topics(project_id):
     # project_id = "your-project-id"
 
     publisher = pubsub_v1.PublisherClient()
-    project_path = publisher.project_path(project_id)
+    project_path = f"projects/{project_id}"
 
-    for topic in publisher.list_topics(project_path):
+    for topic in publisher.list_topics(request={"project": project_path}):
         print(topic)
     # [END pubsub_list_topics]
 
@@ -53,7 +53,7 @@ def create_topic(project_id, topic_id):
     publisher = pubsub_v1.PublisherClient()
     topic_path = publisher.topic_path(project_id, topic_id)
 
-    topic = publisher.create_topic(topic_path)
+    topic = publisher.create_topic(request={"name": topic_path})
 
     print("Topic created: {}".format(topic))
     # [END pubsub_quickstart_create_topic]
@@ -72,7 +72,7 @@ def delete_topic(project_id, topic_id):
     publisher = pubsub_v1.PublisherClient()
     topic_path = publisher.topic_path(project_id, topic_id)
 
-    publisher.delete_topic(topic_path)
+    publisher.delete_topic(request={"topic": topic_path})
 
     print("Topic deleted: {}".format(topic_path))
     # [END pubsub_delete_topic]
@@ -94,11 +94,11 @@ def publish_messages(project_id, topic_id):
     topic_path = publisher.topic_path(project_id, topic_id)
 
     for n in range(1, 10):
-        data = u"Message number {}".format(n)
+        data = "Message number {}".format(n)
         # Data must be a bytestring
         data = data.encode("utf-8")
         # When you publish a message, the client returns a future.
-        future = publisher.publish(topic_path, data=data)
+        future = publisher.publish(topic_path, data)
         print(future.result())
 
     print("Published messages.")
@@ -120,7 +120,7 @@ def publish_messages_with_custom_attributes(project_id, topic_id):
     topic_path = publisher.topic_path(project_id, topic_id)
 
     for n in range(1, 10):
-        data = u"Message number {}".format(n)
+        data = "Message number {}".format(n)
         # Data must be a bytestring
         data = data.encode("utf-8")
         # Add two attributes, origin and username, to the message
@@ -163,9 +163,7 @@ def publish_messages_with_error_handler(project_id, topic_id):
         data = str(i)
         futures.update({data: None})
         # When you publish a message, the client returns a future.
-        future = publisher.publish(
-            topic_path, data=data.encode("utf-8")  # data must be a bytestring.
-        )
+        future = publisher.publish(topic_path, data.encode("utf-8"))
         futures[data] = future
         # Publish failures shall be handled in the callback function.
         future.add_done_callback(get_callback(future, data))
@@ -203,10 +201,10 @@ def publish_messages_with_batch_settings(project_id, topic_id):
         print(message_id)
 
     for n in range(1, 10):
-        data = u"Message number {}".format(n)
+        data = "Message number {}".format(n)
         # Data must be a bytestring
         data = data.encode("utf-8")
-        future = publisher.publish(topic_path, data=data)
+        future = publisher.publish(topic_path, data)
         # Non-blocking. Allow the publisher client to batch multiple messages.
         future.add_done_callback(callback)
 
@@ -263,10 +261,10 @@ def publish_messages_with_retry_settings(project_id, topic_id):
     topic_path = publisher.topic_path(project_id, topic_id)
 
     for n in range(1, 10):
-        data = u"Message number {}".format(n)
+        data = "Message number {}".format(n)
         # Data must be a bytestring
         data = data.encode("utf-8")
-        future = publisher.publish(topic_path, data=data)
+        future = publisher.publish(request={"topic": topic_path, "messages": data})
         print(future.result())
 
     print("Published messages with retry settings.")

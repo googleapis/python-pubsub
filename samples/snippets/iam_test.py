@@ -36,15 +36,15 @@ def topic(publisher_client):
     topic_path = publisher_client.topic_path(PROJECT, TOPIC)
 
     try:
-        publisher_client.delete_topic(topic_path)
+        publisher_client.delete_topic(request={"topic": topic_path})
     except Exception:
         pass
 
-    publisher_client.create_topic(topic_path)
+    publisher_client.create_topic(request={"name": topic_path})
 
     yield topic_path
 
-    publisher_client.delete_topic(topic_path)
+    publisher_client.delete_topic(request={"topic": topic_path})
 
 
 @pytest.fixture(scope="module")
@@ -59,15 +59,19 @@ def subscription(subscriber_client, topic):
     subscription_path = subscriber_client.subscription_path(PROJECT, SUBSCRIPTION)
 
     try:
-        subscriber_client.delete_subscription(subscription_path)
+        subscriber_client.delete_subscription(
+            request={"subscription": subscription_path}
+        )
     except Exception:
         pass
 
-    subscriber_client.create_subscription(subscription_path, topic=topic)
+    subscriber_client.create_subscription(
+        request={"name": subscription_path, "topic": topic}
+    )
 
     yield subscription_path
 
-    subscriber_client.delete_subscription(subscription_path)
+    subscriber_client.delete_subscription(request={"subscription": subscription_path})
 
 
 def test_get_topic_policy(topic, capsys):
