@@ -29,14 +29,17 @@ from google.oauth2 import service_account
 
 from google.cloud.pubsub_v1 import _gapic
 from google.cloud.pubsub_v1 import types
-from google.cloud.pubsub_v1.gapic import publisher_client
-from google.cloud.pubsub_v1.gapic.transports import publisher_grpc_transport
 from google.cloud.pubsub_v1.publisher import exceptions
 from google.cloud.pubsub_v1.publisher import futures
 from google.cloud.pubsub_v1.publisher._batch import thread
 from google.cloud.pubsub_v1.publisher._sequencer import ordered_sequencer
 from google.cloud.pubsub_v1.publisher._sequencer import unordered_sequencer
 from google.cloud.pubsub_v1.publisher.flow_controller import FlowController
+from google.pubsub_v1 import types as gapic_types
+from google.pubsub_v1.services.publisher import client as publisher_client
+from google.pubsub_v1.services.publisher.transports import (
+    grpc as publisher_grpc_transport,
+)
 
 __version__ = pkg_resources.get_distribution("google-cloud-pubsub").version
 
@@ -47,6 +50,19 @@ _BLACKLISTED_METHODS = (
     "from_service_account_file",
     "from_service_account_json",
 )
+
+# TODO: inject via synth?
+# What is DEFAULT_ENDPOINT? A replacement for SERVICE_ADDRESS?
+
+# The scopes needed to make gRPC calls to all of the methods defined in
+# this service
+publisher_client.PublisherClient._DEFAULT_SCOPES = (
+    "https://www.googleapis.com/auth/cloud-platform",
+    "https://www.googleapis.com/auth/pubsub",
+)
+
+publisher_client.PublisherClient.SERVICE_ADDRESS = "pubsub.googleapis.com:443"
+"""The default address of the service."""
 
 
 def _set_nested_value(container, value, keys):
@@ -370,7 +386,7 @@ class Client(object):
             )
 
         # Create the Pub/Sub message object.
-        message = types.PubsubMessage(
+        message = gapic_types.PubsubMessage(
             data=data, ordering_key=ordering_key, attributes=attrs
         )
 

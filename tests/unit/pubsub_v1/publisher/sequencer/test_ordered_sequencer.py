@@ -18,14 +18,14 @@ import pytest
 
 from google.auth import credentials
 from google.cloud.pubsub_v1 import publisher
-from google.cloud.pubsub_v1 import types
 from google.cloud.pubsub_v1.publisher._sequencer import ordered_sequencer
+from google.pubsub_v1 import types as gapic_types
 
 _ORDERING_KEY = "ordering_key_1"
 
 
 def create_message():
-    return types.PubsubMessage(data=b"foo", attributes={"bar": u"baz"})
+    return gapic_types.PubsubMessage(data=b"foo", attributes={"bar": u"baz"})
 
 
 def create_client():

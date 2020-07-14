@@ -29,7 +29,8 @@ from google.protobuf import field_mask_pb2
 from google.protobuf import timestamp_pb2
 
 from google.api_core.protobuf_helpers import get_messages
-from google.cloud.pubsub_v1.proto import pubsub_pb2
+
+# from google.cloud.pubsub_v1.proto import pubsub_pb2
 
 
 # Define the default values for batching.
@@ -178,7 +179,7 @@ _shared_modules = [
     timestamp_pb2,
 ]
 
-_local_modules = [pubsub_pb2]
+_local_modules = []  # [pubsub_pb2]
 
 
 names = ["BatchSettings", "FlowControl"]

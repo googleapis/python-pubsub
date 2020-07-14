@@ -16,9 +16,9 @@ from google.auth import credentials
 import mock
 
 from google.cloud.pubsub_v1 import subscriber
-from google.cloud.pubsub_v1.gapic import subscriber_client
 from google.cloud.pubsub_v1 import types
 from google.cloud.pubsub_v1.subscriber import futures
+from google.pubsub_v1.services.subscriber import client as subscriber_client
 
 
 def test_init():

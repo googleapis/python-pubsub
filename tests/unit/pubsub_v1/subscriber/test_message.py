@@ -21,9 +21,9 @@ from six.moves import queue
 from google.protobuf import timestamp_pb2
 
 from google.api_core import datetime_helpers
-from google.cloud.pubsub_v1 import types
 from google.cloud.pubsub_v1.subscriber import message
 from google.cloud.pubsub_v1.subscriber._protocol import requests
+from google.pubsub_v1 import types as gapic_types
 
 
 RECEIVED = datetime.datetime(2012, 4, 21, 15, 0, tzinfo=pytz.utc)
@@ -37,7 +37,7 @@ def create_message(data, ack_id="ACKID", delivery_attempt=0, ordering_key="", **
     with mock.patch.object(time, "time") as time_:
         time_.return_value = RECEIVED_SECONDS
         msg = message.Message(
-            message=types.PubsubMessage(
+            message=gapic_types.PubsubMessage(
                 attributes=attrs,
                 data=data,
                 message_id="message_id",

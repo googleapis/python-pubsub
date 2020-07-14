@@ -21,10 +21,10 @@ import time
 import six
 
 import google.api_core.exceptions
-from google.cloud.pubsub_v1 import types
 from google.cloud.pubsub_v1.publisher import exceptions
 from google.cloud.pubsub_v1.publisher import futures
 from google.cloud.pubsub_v1.publisher._batch import base
+from google.pubsub_v1 import types as gapic_types
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -92,7 +92,7 @@ class Batch(base.Batch):
 
         # The initial size is not zero, we need to account for the size overhead
         # of the PublishRequest message itself.
-        self._base_request_size = types.PublishRequest(topic=topic).ByteSize()
+        self._base_request_size = gapic_types.PublishRequest(topic=topic).ByteSize()
         self._size = self._base_request_size
 
     @staticmethod
@@ -323,8 +323,8 @@ class Batch(base.Batch):
         """
 
         # Coerce the type, just in case.
-        if not isinstance(message, types.PubsubMessage):
-            message = types.PubsubMessage(**message)
+        if not isinstance(message, gapic_types.PubsubMessage):
+            message = gapic_types.PubsubMessage(**message)
 
         future = None
 
@@ -336,7 +336,7 @@ class Batch(base.Batch):
             if self.status != base.BatchStatus.ACCEPTING_MESSAGES:
                 return
 
-            size_increase = types.PublishRequest(messages=[message]).ByteSize()
+            size_increase = gapic_types.PublishRequest(messages=[message]).ByteSize()
 
             if (self._base_request_size + size_increase) > _SERVER_PUBLISH_MAX_BYTES:
                 err_msg = (

@@ -21,12 +21,14 @@ import mock
 import pytest
 import time
 
-from google.cloud.pubsub_v1.gapic import publisher_client
 from google.cloud.pubsub_v1 import publisher
 from google.cloud.pubsub_v1 import types
 
 from google.cloud.pubsub_v1.publisher import exceptions
 from google.cloud.pubsub_v1.publisher._sequencer import ordered_sequencer
+
+from google.pubsub_v1 import types as gapic_types
+from google.pubsub_v1.services.publisher import client as publisher_client
 
 
 def test_init():
@@ -150,8 +152,10 @@ def test_publish():
     # Check mock.
     batch.publish.assert_has_calls(
         [
-            mock.call(types.PubsubMessage(data=b"spam")),
-            mock.call(types.PubsubMessage(data=b"foo", attributes={"bar": "baz"})),
+            mock.call(gapic_types.PubsubMessage(data=b"spam")),
+            mock.call(
+                gapic_types.PubsubMessage(data=b"foo", attributes={"bar": "baz"})
+            ),
         ]
     )
 
@@ -225,7 +229,7 @@ def test_publish_attrs_bytestring():
 
     # The attributes should have been sent as text.
     batch.publish.assert_called_once_with(
-        types.PubsubMessage(data=b"foo", attributes={"bar": u"baz"})
+        gapic_types.PubsubMessage(data=b"foo", attributes={"bar": u"baz"})
     )
 
 
@@ -263,7 +267,7 @@ def test_publish_new_batch_needed():
         batch_done_callback=None,
         commit_when_full=True,
     )
-    message_pb = types.PubsubMessage(data=b"foo", attributes={"bar": u"baz"})
+    message_pb = gapic_types.PubsubMessage(data=b"foo", attributes={"bar": u"baz"})
     batch1.publish.assert_called_once_with(message_pb)
     batch2.publish.assert_called_once_with(message_pb)
 
@@ -308,7 +312,7 @@ def test_gapic_instance_method():
     client.create_topic("projects/foo/topics/bar")
     assert ct.call_count == 1
     _, args, _ = ct.mock_calls[0]
-    assert args[0] == types.Topic(name="projects/foo/topics/bar")
+    assert args[0] == gapic_types.Topic(name="projects/foo/topics/bar")
 
 
 def test_gapic_class_method_on_class():
@@ -444,9 +448,9 @@ def test_publish_with_ordering_key():
     # Check mock.
     batch.publish.assert_has_calls(
         [
-            mock.call(types.PubsubMessage(data=b"spam", ordering_key="k1")),
+            mock.call(gapic_types.PubsubMessage(data=b"spam", ordering_key="k1")),
             mock.call(
-                types.PubsubMessage(
+                gapic_types.PubsubMessage(
                     data=b"foo", attributes={"bar": "baz"}, ordering_key="k1"
                 )
             ),

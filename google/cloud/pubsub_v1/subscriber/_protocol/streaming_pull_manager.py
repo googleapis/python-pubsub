@@ -34,6 +34,7 @@ from google.cloud.pubsub_v1.subscriber._protocol import messages_on_hold
 from google.cloud.pubsub_v1.subscriber._protocol import requests
 import google.cloud.pubsub_v1.subscriber.message
 import google.cloud.pubsub_v1.subscriber.scheduler
+from google.pubsub_v1 import types as gapic_types
 
 _LOGGER = logging.getLogger(__name__)
 _RPC_ERROR_THREAD_NAME = "Thread-OnRpcTerminated"
@@ -369,7 +370,7 @@ class StreamingPullManager(object):
         stream.
 
         Args:
-            request (types.StreamingPullRequest): The stream request to be
+            request (gapic_types.StreamingPullRequest): The stream request to be
                 mapped into unary requests.
         """
         if request.ack_ids:
@@ -430,7 +431,7 @@ class StreamingPullManager(object):
         ``self._UNARY_REQUESTS`` is set or not.
         """
         if self._rpc is not None and self._rpc.is_active:
-            self._rpc.send(types.StreamingPullRequest())
+            self._rpc.send(gapic_types.StreamingPullRequest())
 
     def open(self, callback, on_callback_error):
         """Begin consuming messages.
@@ -555,7 +556,7 @@ class StreamingPullManager(object):
                 The default message acknowledge deadline for the stream.
 
         Returns:
-            google.cloud.pubsub_v1.types.StreamingPullRequest: A request
+            google.pubsub_v1.types.StreamingPullRequest: A request
             suitable for being the first request on the stream (and not
             suitable for any other purpose).
         """
@@ -569,7 +570,7 @@ class StreamingPullManager(object):
             lease_ids = []
 
         # Put the request together.
-        request = types.StreamingPullRequest(
+        request = gapic_types.StreamingPullRequest(
             modify_deadline_ack_ids=list(lease_ids),
             modify_deadline_seconds=[self.ack_deadline] * len(lease_ids),
             stream_ack_deadline_seconds=stream_ack_deadline_seconds,
