@@ -51,19 +51,6 @@ _BLACKLISTED_METHODS = (
     "from_service_account_json",
 )
 
-# TODO: inject via synth?
-# What is DEFAULT_ENDPOINT? A replacement for SERVICE_ADDRESS?
-
-# The scopes needed to make gRPC calls to all of the methods defined in
-# this service
-publisher_client.PublisherClient._DEFAULT_SCOPES = (
-    "https://www.googleapis.com/auth/cloud-platform",
-    "https://www.googleapis.com/auth/pubsub",
-)
-
-publisher_client.PublisherClient.SERVICE_ADDRESS = "pubsub.googleapis.com:443"
-"""The default address of the service."""
-
 
 def _set_nested_value(container, value, keys):
     current = container

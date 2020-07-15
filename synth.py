@@ -68,15 +68,20 @@ s.replace(
     " subscriber_client",
 )
 
-# DEFAULT SCOPES are being used. so let's force them in.
+# DEFAULT SCOPES and SERVICE_ADDRESS are being used. so let's force them in.
 s.replace(
-    "google/cloud/pubsub_v1/gapic/*er_client.py",
-    "# The name of the interface for this client. This is the key used to",
-    """# The scopes needed to make gRPC calls to all of the methods defined in
+    "google/pubsub_v1/services/*er/client.py",
+    r"DEFAULT_ENDPOINT = 'pubsub\.googleapis\.com'",
+    """
+    # The scopes needed to make gRPC calls to all of the methods defined in
     # this service
     _DEFAULT_SCOPES = (
         'https://www.googleapis.com/auth/cloud-platform',
-        'https://www.googleapis.com/auth/pubsub', )
+        'https://www.googleapis.com/auth/pubsub',
+    )
+
+    SERVICE_ADDRESS = "pubsub.googleapis.com:443"
+    \"""The default address of the service.\"""
 
     \g<0>""",
 )

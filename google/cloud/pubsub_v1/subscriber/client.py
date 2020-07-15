@@ -41,19 +41,6 @@ _BLACKLISTED_METHODS = (
     "from_service_account_json",
 )
 
-# TODO: inject via synth?
-# What is DEFAULT_ENDPOINT? A replacement for SERVICE_ADDRESS?
-
-# The scopes needed to make gRPC calls to all of the methods defined in
-# this service
-subscriber_client.SubscriberClient._DEFAULT_SCOPES = (
-    "https://www.googleapis.com/auth/cloud-platform",
-    "https://www.googleapis.com/auth/pubsub",
-)
-
-subscriber_client.SubscriberClient.SERVICE_ADDRESS = "pubsub.googleapis.com:443"
-"""The default address of the service."""
-
 
 @_gapic.add_methods(subscriber_client.SubscriberClient, blacklist=_BLACKLISTED_METHODS)
 class Client(object):
