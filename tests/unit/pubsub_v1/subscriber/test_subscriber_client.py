@@ -160,12 +160,11 @@ def test_closes_channel_as_context_manager():
 
 
 def test_streaming_pull_gapic_monkeypatch():
-    transport = mock.NonCallableMock(spec=["streaming_pull"])
-    transport.streaming_pull = mock.Mock(spec=[])
-    client = subscriber.Client(transport=transport)
+    client = subscriber.Client()
 
-    client.streaming_pull(requests=iter([]))
+    with mock.patch("google.api_core.gapic_v1.method.wrap_method"):
+        client.streaming_pull(requests=iter([]))
 
-    assert client.api._transport is transport
+    transport = client.api._transport
     assert hasattr(transport.streaming_pull, "_prefetch_first_result_")
     assert not transport.streaming_pull._prefetch_first_result_
