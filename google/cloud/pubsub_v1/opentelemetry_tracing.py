@@ -69,7 +69,7 @@ def create_span(span_name, attributes=None, parent=None):
         try:
             parent_span_context = SpanContext(**parent)
         except TypeError:
-            _LOGGER.warn(
+            _LOGGER.warning(
                 "A parent span was provided but it could not be"
                 "converted into a SpanContext. Ensure that the"
                 "parent is a mapping with at least a trace_id, span_id"

@@ -378,7 +378,7 @@ class Client(object):
             if span is not None:
 
                 if "googclient_OpenTelemetrySpanContext" in attrs:
-                    _LOGGER.warn(
+                    _LOGGER.warning(
                         "googclient_OpenTelemetrySpanContext set on message"
                         "as an attribute, but will be overridden."
                     )

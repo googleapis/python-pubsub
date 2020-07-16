@@ -21,6 +21,7 @@ import mock
 import pytest
 import time
 import sys
+import logging
 from importlib import reload
 
 from google.cloud.pubsub_v1.gapic import publisher_client
@@ -290,6 +291,16 @@ def test_publish_attrs_type_error():
     topic = "topic/path"
     with pytest.raises(TypeError):
         client.publish(topic, b"foo", answer=42)
+
+def test_publish_opentelemetry_span_key_warning(caplog):
+    creds = mock.Mock(spec=credentials.Credentials)
+    client = publisher.Client(credentials=creds)
+    topic = "topic/path"
+
+    with caplog.at_level(logging.WARNING):
+        client.publish(topic, b"foo", googclient_OpenTelemetrySpanContext=b"bar")
+
+    assert len(caplog.records) == 1
 
 
 def test_stop():
