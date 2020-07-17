@@ -121,9 +121,12 @@ def create_subscription_with_dead_letter_topic(
     )
 
     with subscriber:
-        subscription = subscriber.create_subscription(
-            subscription_path, topic_path, dead_letter_policy=dead_letter_policy
-        )
+        request = {
+            "name": subscription_path,
+            "topic": topic_path,
+            "dead_letter_policy": dead_letter_policy,
+        }
+        subscription = subscriber.create_subscription(request)
 
     print("Subscription created: {}".format(subscription.name))
     print(

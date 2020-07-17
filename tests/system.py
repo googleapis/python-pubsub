@@ -232,19 +232,18 @@ def test_creating_subscriptions_with_non_default_settings(
     # create a topic and a subscription, customize the latter's policy
     publisher.create_topic(name=topic_path)
 
-    msg_retention_duration = {"seconds": 911}
-    expiration_policy = {"ttl": {"seconds": 90210}}
-    new_subscription = subscriber.create_subscription(
-        name=subscription_path,
-        topic=topic_path,
-        ack_deadline_seconds=30,
-        retain_acked_messages=True,
-        message_retention_duration=msg_retention_duration,
-        expiration_policy=expiration_policy,
-    )
+    request = {
+        "name": subscription_path,
+        "topic": topic_path,
+        "ack_deadline_seconds": 30,
+        "retain_acked_messages": True,
+        "message_retention_duration": {"seconds": 911},
+        "expiration_policy": {"ttl": {"seconds": 90210}},  # 1 day, 3810 seconds
+    }
+    new_subscription = subscriber.create_subscription(request)
 
     # fetch the subscription and check its settings
-    project_path = subscriber.project_path(project)
+    project_path = f"projects/{project}"
     subscriptions = subscriber.list_subscriptions(project=project_path)
 
     subscriptions = [sub for sub in subscriptions if sub.topic == topic_path]
@@ -255,7 +254,9 @@ def test_creating_subscriptions_with_non_default_settings(
     assert subscription.ack_deadline_seconds == 30
     assert subscription.retain_acked_messages
     assert subscription.message_retention_duration.seconds == 911
-    assert subscription.expiration_policy.ttl.seconds == 90210
+    assert subscription.expiration_policy.ttl == datetime.timedelta(
+        days=1, seconds=3810
+    )
 
 
 def test_listing_project_topics(publisher, project, cleanup):
