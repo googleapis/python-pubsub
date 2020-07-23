@@ -91,7 +91,7 @@ def test_get_subscription_policy(subscription, capsys):
 def test_set_topic_policy(publisher_client, topic):
     iam.set_topic_policy(PROJECT, TOPIC)
 
-    policy = publisher_client.get_iam_policy(topic)
+    policy = publisher_client.get_iam_policy(request={"resource": topic})
     assert "roles/pubsub.publisher" in str(policy)
     assert "allUsers" in str(policy)
 
@@ -99,7 +99,7 @@ def test_set_topic_policy(publisher_client, topic):
 def test_set_subscription_policy(subscriber_client, subscription):
     iam.set_subscription_policy(PROJECT, SUBSCRIPTION)
 
-    policy = subscriber_client.get_iam_policy(subscription)
+    policy = subscriber_client.get_iam_policy(request={"resource": subscription})
     assert "roles/pubsub.viewer" in str(policy)
     assert "allUsers" in str(policy)
 

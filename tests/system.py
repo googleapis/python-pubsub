@@ -345,16 +345,18 @@ def test_managing_topic_iam_policy(publisher, topic_path, cleanup):
 
     # create a topic and customize its policy
     publisher.create_topic(name=topic_path)
-    topic_policy = publisher.get_iam_policy(topic_path)
+    topic_policy = publisher.get_iam_policy(request={"resource": topic_path})
 
     topic_policy.bindings.add(role="roles/pubsub.editor", members=["domain:google.com"])
     topic_policy.bindings.add(
         role="roles/pubsub.viewer", members=["group:cloud-logs@google.com"]
     )
-    new_policy = publisher.set_iam_policy(topic_path, topic_policy)
+    new_policy = publisher.set_iam_policy(
+        request={"resource": topic_path, "policy": topic_policy}
+    )
 
     # fetch the topic policy again and check its values
-    topic_policy = publisher.get_iam_policy(topic_path)
+    topic_policy = publisher.get_iam_policy(request={"resource": topic_path})
     assert topic_policy.bindings == new_policy.bindings
     assert len(topic_policy.bindings) == 2
 
@@ -378,16 +380,18 @@ def test_managing_subscription_iam_policy(
     # create a topic and a subscription, customize the latter's policy
     publisher.create_topic(name=topic_path)
     subscriber.create_subscription(name=subscription_path, topic=topic_path)
-    sub_policy = subscriber.get_iam_policy(subscription_path)
+    sub_policy = subscriber.get_iam_policy(request={"resource": subscription_path})
 
     sub_policy.bindings.add(role="roles/pubsub.editor", members=["domain:google.com"])
     sub_policy.bindings.add(
         role="roles/pubsub.viewer", members=["group:cloud-logs@google.com"]
     )
-    new_policy = subscriber.set_iam_policy(subscription_path, sub_policy)
+    new_policy = subscriber.set_iam_policy(
+        request={"resource": subscription_path, "policy": sub_policy}
+    )
 
     # fetch the subscription policy again and check its values
-    sub_policy = subscriber.get_iam_policy(subscription_path)
+    sub_policy = subscriber.get_iam_policy(request={"resource": subscription_path})
     assert sub_policy.bindings == new_policy.bindings
     assert len(sub_policy.bindings) == 2
 
