@@ -744,7 +744,9 @@ class PushConfig(proto.Message):
 
     attributes = proto.MapField(proto.STRING, proto.STRING, number=2)
 
-    oidc_token = proto.Field(proto.MESSAGE, number=3, message=OidcToken,)
+    oidc_token = proto.Field(
+        proto.MESSAGE, number=3, oneof="authentication_method", message=OidcToken,
+    )
 
 
 class ReceivedMessage(proto.Message):
@@ -1294,9 +1296,11 @@ class SeekRequest(proto.Message):
 
     subscription = proto.Field(proto.STRING, number=1)
 
-    time = proto.Field(proto.MESSAGE, number=2, message=timestamp.Timestamp,)
+    time = proto.Field(
+        proto.MESSAGE, number=2, oneof="target", message=timestamp.Timestamp,
+    )
 
-    snapshot = proto.Field(proto.STRING, number=3)
+    snapshot = proto.Field(proto.STRING, number=3, oneof="target")
 
 
 class SeekResponse(proto.Message):

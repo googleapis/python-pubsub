@@ -22,6 +22,8 @@ from google import auth
 from google.api_core import exceptions  # type: ignore
 from google.auth import credentials  # type: ignore
 
+from google.iam.v1 import iam_policy_pb2 as iam_policy  # type: ignore
+from google.iam.v1 import policy_pb2 as policy  # type: ignore
 from google.protobuf import empty_pb2 as empty  # type: ignore
 from google.pubsub_v1.types import pubsub
 
@@ -41,6 +43,7 @@ class PublisherTransport(abc.ABC):
         credentials: credentials.Credentials = None,
         credentials_file: typing.Optional[str] = None,
         scopes: typing.Optional[typing.Sequence[str]] = AUTH_SCOPES,
+        quota_project_id: typing.Optional[str] = None,
         **kwargs,
     ) -> None:
         """Instantiate the transport.
@@ -56,6 +59,8 @@ class PublisherTransport(abc.ABC):
                 be loaded with :func:`google.auth.load_credentials_from_file`.
                 This argument is mutually exclusive with credentials.
             scope (Optional[Sequence[str]]): A list of scopes.
+            quota_project_id (Optional[str]): An optional project to use for billing
+                and quota.
         """
         # Save the hostname. Default to port 443 (HTTPS) if none is specified.
         if ":" not in host:
@@ -71,10 +76,13 @@ class PublisherTransport(abc.ABC):
 
         if credentials_file is not None:
             credentials, _ = auth.load_credentials_from_file(
-                credentials_file, scopes=scopes
+                credentials_file, scopes=scopes, quota_project_id=quota_project_id
             )
+
         elif credentials is None:
-            credentials, _ = auth.default(scopes=scopes)
+            credentials, _ = auth.default(
+                scopes=scopes, quota_project_id=quota_project_id
+            )
 
         # Save the credentials.
         self._credentials = credentials
@@ -166,6 +174,36 @@ class PublisherTransport(abc.ABC):
         typing.Union[
             pubsub.DetachSubscriptionResponse,
             typing.Awaitable[pubsub.DetachSubscriptionResponse],
+        ],
+    ]:
+        raise NotImplementedError()
+
+    @property
+    def set_iam_policy(
+        self,
+    ) -> typing.Callable[
+        [iam_policy.SetIamPolicyRequest],
+        typing.Union[policy.Policy, typing.Awaitable[policy.Policy]],
+    ]:
+        raise NotImplementedError()
+
+    @property
+    def get_iam_policy(
+        self,
+    ) -> typing.Callable[
+        [iam_policy.GetIamPolicyRequest],
+        typing.Union[policy.Policy, typing.Awaitable[policy.Policy]],
+    ]:
+        raise NotImplementedError()
+
+    @property
+    def test_iam_permissions(
+        self,
+    ) -> typing.Callable[
+        [iam_policy.TestIamPermissionsRequest],
+        typing.Union[
+            iam_policy.TestIamPermissionsResponse,
+            typing.Awaitable[iam_policy.TestIamPermissionsResponse],
         ],
     ]:
         raise NotImplementedError()
