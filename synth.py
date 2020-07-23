@@ -47,7 +47,7 @@ s.move(
 
 # DEFAULT SCOPES and SERVICE_ADDRESS are being used. so let's force them in.
 s.replace(
-    "google/pubsub_v1/services/*er/client.py",
+    "google/pubsub_v1/services/*er/*client.py",
     r"DEFAULT_ENDPOINT = 'pubsub\.googleapis\.com'",
     """
     # The scopes needed to make gRPC calls to all of the methods defined in
@@ -75,6 +75,29 @@ s.replace(
         self._transport.streaming_pull._prefetch_first_result_ = False
 
     \g<0>""",
+)
+
+# Docstrings of *_iam_policy() methods are formatted poorly and must be fixed
+# in order to avoid docstring format warnings in docs.
+s.replace(
+    "google/pubsub_v1/services/*er/client.py",
+    r"(\s+)Args:",
+    "\n\g<1>Args:"
+)
+s.replace(
+    "google/pubsub_v1/services/*er/client.py",
+    r"(\s+)\*\*JSON Example\*\*\s+::",
+    "\n\g<1>**JSON Example**::\n",
+)
+s.replace(
+    "google/pubsub_v1/services/*er/client.py",
+    r"(\s+)\*\*YAML Example\*\*\s+::",
+    "\n\g<1>**YAML Example**::\n",
+)
+s.replace(
+    "google/pubsub_v1/services/*er/client.py",
+    r"(\s+)For a description of IAM and its features, see",
+    "\n\g<0>",
 )
 
 # ----------------------------------------------------------------------------

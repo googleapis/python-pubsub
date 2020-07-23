@@ -55,6 +55,7 @@ class PublisherClientMeta(type):
     def get_transport_class(cls, label: str = None,) -> Type[PublisherTransport]:
         """Return an appropriate transport class.
 
+
         Args:
             label: The name of the desired transport. If none is
                 provided, then the first transport in the registry is used.
@@ -81,6 +82,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
         """Convert api endpoint to mTLS endpoint.
         Convert "*.sandbox.googleapis.com" and "*.googleapis.com" to
         "*.mtls.sandbox.googleapis.com" and "*.mtls.googleapis.com" respectively.
+
         Args:
             api_endpoint (Optional[str]): the api endpoint to convert.
         Returns:
@@ -125,6 +127,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
         """Creates an instance of this client using the provided credentials
         file.
 
+
         Args:
             filename (str): The path to the service account private key json
                 file.
@@ -159,6 +162,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
         client_options: ClientOptions = None,
     ) -> None:
         """Instantiate the publisher client.
+
 
         Args:
             credentials (Optional[google.auth.credentials.Credentials]): The
@@ -253,6 +257,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
         r"""Creates the given topic with the given name. See the resource
         name rules.
 
+
         Args:
             request (:class:`~.pubsub.Topic`):
                 The request object. A topic resource.
@@ -333,6 +338,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
         r"""Updates an existing topic. Note that certain
         properties of a topic are not modifiable.
 
+
         Args:
             request (:class:`~.pubsub.UpdateTopicRequest`):
                 The request object. Request for the UpdateTopic method.
@@ -391,6 +397,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
     ) -> pubsub.PublishResponse:
         r"""Adds one or more messages to the topic. Returns ``NOT_FOUND`` if
         the topic does not exist.
+
 
         Args:
             request (:class:`~.pubsub.PublishRequest`):
@@ -482,6 +489,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
     ) -> pubsub.Topic:
         r"""Gets the configuration of a topic.
 
+
         Args:
             request (:class:`~.pubsub.GetTopicRequest`):
                 The request object. Request for the GetTopic method.
@@ -559,6 +567,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pagers.ListTopicsPager:
         r"""Lists matching topics.
+
 
         Args:
             request (:class:`~.pubsub.ListTopicsRequest`):
@@ -648,6 +657,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
     ) -> pagers.ListTopicSubscriptionsPager:
         r"""Lists the names of the attached subscriptions on this
         topic.
+
 
         Args:
             request (:class:`~.pubsub.ListTopicSubscriptionsRequest`):
@@ -746,6 +756,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
         existing subscription to the state captured by a
         snapshot.
 
+
         Args:
             request (:class:`~.pubsub.ListTopicSnapshotsRequest`):
                 The request object. Request for the `ListTopicSnapshots`
@@ -841,6 +852,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
         subscriptions to this topic are not deleted, but their ``topic``
         field is set to ``_deleted-topic_``.
 
+
         Args:
             request (:class:`~.pubsub.DeleteTopicRequest`):
                 The request object. Request for the `DeleteTopic`
@@ -914,6 +926,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
         the subscription is a push subscription, pushes to the endpoint
         will stop.
 
+
         Args:
             request (:class:`~.pubsub.DetachSubscriptionRequest`):
                 The request object. Request for the DetachSubscription
@@ -973,6 +986,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
     ) -> policy.Policy:
         r"""Sets the IAM access control policy on the specified
         function. Replaces any existing policy.
+
         Args:
             request (:class:`~.iam_policy.SetIamPolicyRequest`):
                 The request object. Request message for `SetIamPolicy`
@@ -997,8 +1011,9 @@ class PublisherClient(metaclass=PublisherClientMeta):
                 expression that further constrains the role binding
                 based on attributes about the request and/or target
                 resource.
-                **JSON Example**
-                ::
+
+                **JSON Example**::
+
                     {
                       "bindings": [
                         {
@@ -1022,8 +1037,9 @@ class PublisherClient(metaclass=PublisherClientMeta):
                         }
                       ]
                     }
-                **YAML Example**
-                ::
+
+                **YAML Example**::
+
                     bindings:
                     - members:
                       - user:mike@example.com
@@ -1038,6 +1054,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
                         title: expirable access
                         description: Does not grant access after Sep 2020
                         expression: request.time < timestamp('2020-10-01T00:00:00.000Z')
+
                 For a description of IAM and its features, see the `IAM
                 developer's
                 guide <https://cloud.google.com/iam/docs>`__.
@@ -1080,6 +1097,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
         r"""Gets the IAM access control policy for a function.
         Returns an empty policy if the function exists and does
         not have a policy set.
+
         Args:
             request (:class:`~.iam_policy.GetIamPolicyRequest`):
                 The request object. Request message for `GetIamPolicy`
@@ -1104,8 +1122,9 @@ class PublisherClient(metaclass=PublisherClientMeta):
                 expression that further constrains the role binding
                 based on attributes about the request and/or target
                 resource.
-                **JSON Example**
-                ::
+
+                **JSON Example**::
+
                     {
                       "bindings": [
                         {
@@ -1129,8 +1148,9 @@ class PublisherClient(metaclass=PublisherClientMeta):
                         }
                       ]
                     }
-                **YAML Example**
-                ::
+
+                **YAML Example**::
+
                     bindings:
                     - members:
                       - user:mike@example.com
@@ -1145,6 +1165,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
                         title: expirable access
                         description: Does not grant access after Sep 2020
                         expression: request.time < timestamp('2020-10-01T00:00:00.000Z')
+
                 For a description of IAM and its features, see the `IAM
                 developer's
                 guide <https://cloud.google.com/iam/docs>`__.
@@ -1187,6 +1208,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
         r"""Tests the specified permissions against the IAM access control
         policy for a function. If the function does not exist, this will
         return an empty set of permissions, not a NOT_FOUND error.
+
         Args:
             request (:class:`~.iam_policy.TestIamPermissionsRequest`):
                 The request object. Request message for

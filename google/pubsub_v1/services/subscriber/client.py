@@ -57,6 +57,7 @@ class SubscriberClientMeta(type):
     def get_transport_class(cls, label: str = None,) -> Type[SubscriberTransport]:
         """Return an appropriate transport class.
 
+
         Args:
             label: The name of the desired transport. If none is
                 provided, then the first transport in the registry is used.
@@ -85,6 +86,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
         """Convert api endpoint to mTLS endpoint.
         Convert "*.sandbox.googleapis.com" and "*.googleapis.com" to
         "*.mtls.sandbox.googleapis.com" and "*.mtls.googleapis.com" respectively.
+
         Args:
             api_endpoint (Optional[str]): the api endpoint to convert.
         Returns:
@@ -128,6 +130,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
     def from_service_account_file(cls, filename: str, *args, **kwargs):
         """Creates an instance of this client using the provided credentials
         file.
+
 
         Args:
             filename (str): The path to the service account private key json
@@ -180,6 +183,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
         client_options: ClientOptions = None,
     ) -> None:
         """Instantiate the subscriber client.
+
 
         Args:
             credentials (Optional[google.auth.credentials.Credentials]): The
@@ -286,6 +290,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
         The generated name is populated in the returned Subscription
         object. Note that for REST API requests, you must specify a name
         in the request.
+
 
         Args:
             request (:class:`~.pubsub.Subscription`):
@@ -425,6 +430,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
     ) -> pubsub.Subscription:
         r"""Gets the configuration details of a subscription.
 
+
         Args:
             request (:class:`~.pubsub.GetSubscriptionRequest`):
                 The request object. Request for the GetSubscription
@@ -507,6 +513,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
         properties of a subscription, such as its topic, are not
         modifiable.
 
+
         Args:
             request (:class:`~.pubsub.UpdateSubscriptionRequest`):
                 The request object. Request for the UpdateSubscription
@@ -564,6 +571,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pagers.ListSubscriptionsPager:
         r"""Lists matching subscriptions.
+
 
         Args:
             request (:class:`~.pubsub.ListSubscriptionsRequest`):
@@ -659,6 +667,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
         new one has no association with the old subscription or its
         topic unless the same topic is specified.
 
+
         Args:
             request (:class:`~.pubsub.DeleteSubscriptionRequest`):
                 The request object. Request for the DeleteSubscription
@@ -737,6 +746,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
         redelivery if the processing was interrupted. Note that this
         does not modify the subscription-level ``ackDeadlineSeconds``
         used for subsequent messages.
+
 
         Args:
             request (:class:`~.pubsub.ModifyAckDeadlineRequest`):
@@ -842,6 +852,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
         Acknowledging a message more than once will not result in an
         error.
 
+
         Args:
             request (:class:`~.pubsub.AcknowledgeRequest`):
                 The request object. Request for the Acknowledge method.
@@ -926,6 +937,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
         r"""Pulls messages from the server. The server may return
         ``UNAVAILABLE`` if there are too many concurrent pull requests
         pending for the given subscription.
+
 
         Args:
             request (:class:`~.pubsub.PullRequest`):
@@ -1042,6 +1054,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
         re-establish the stream. Flow control can be achieved by
         configuring the underlying RPC channel.
 
+
         Args:
             requests (Iterator[`~.pubsub.StreamingPullRequest`]):
                 The request object iterator. Request for the `StreamingPull`
@@ -1110,6 +1123,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
         the endpoint URL and other attributes of a push subscription.
         Messages will accumulate for delivery continuously through the
         call regardless of changes to the ``PushConfig``.
+
 
         Args:
             request (:class:`~.pubsub.ModifyPushConfigRequest`):
@@ -1201,6 +1215,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
         message acknowledgments in bulk. That is, you can set
         the acknowledgment state of messages in an existing
         subscription to the state captured by a snapshot.
+
 
         Args:
             request (:class:`~.pubsub.GetSnapshotRequest`):
@@ -1295,6 +1310,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
         you can set the acknowledgment state of messages in an
         existing subscription to the state captured by a
         snapshot.
+
 
         Args:
             request (:class:`~.pubsub.ListSnapshotsRequest`):
@@ -1401,6 +1417,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
         The generated name is populated in the returned Snapshot object.
         Note that for REST API requests, you must specify a name in the
         request.
+
 
         Args:
             request (:class:`~.pubsub.CreateSnapshotRequest`):
@@ -1513,6 +1530,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
         existing subscription to the state captured by a
         snapshot.
 
+
         Args:
             request (:class:`~.pubsub.UpdateSnapshotRequest`):
                 The request object. Request for the UpdateSnapshot
@@ -1593,6 +1611,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
         or its subscription, unless the same subscription is
         specified.
 
+
         Args:
             request (:class:`~.pubsub.DeleteSnapshotRequest`):
                 The request object. Request for the `DeleteSnapshot`
@@ -1671,6 +1690,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
         snapshot. Note that both the subscription and the
         snapshot must be on the same topic.
 
+
         Args:
             request (:class:`~.pubsub.SeekRequest`):
                 The request object. Request for the `Seek` method.
@@ -1733,6 +1753,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
     ) -> policy.Policy:
         r"""Sets the IAM access control policy on the specified
         function. Replaces any existing policy.
+
         Args:
             request (:class:`~.iam_policy.SetIamPolicyRequest`):
                 The request object. Request message for `SetIamPolicy`
@@ -1757,8 +1778,9 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
                 expression that further constrains the role binding
                 based on attributes about the request and/or target
                 resource.
-                **JSON Example**
-                ::
+
+                **JSON Example**::
+
                     {
                       "bindings": [
                         {
@@ -1782,8 +1804,9 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
                         }
                       ]
                     }
-                **YAML Example**
-                ::
+
+                **YAML Example**::
+
                     bindings:
                     - members:
                       - user:mike@example.com
@@ -1798,6 +1821,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
                         title: expirable access
                         description: Does not grant access after Sep 2020
                         expression: request.time < timestamp('2020-10-01T00:00:00.000Z')
+
                 For a description of IAM and its features, see the `IAM
                 developer's
                 guide <https://cloud.google.com/iam/docs>`__.
@@ -1840,6 +1864,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
         r"""Gets the IAM access control policy for a function.
         Returns an empty policy if the function exists and does
         not have a policy set.
+
         Args:
             request (:class:`~.iam_policy.GetIamPolicyRequest`):
                 The request object. Request message for `GetIamPolicy`
@@ -1864,8 +1889,9 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
                 expression that further constrains the role binding
                 based on attributes about the request and/or target
                 resource.
-                **JSON Example**
-                ::
+
+                **JSON Example**::
+
                     {
                       "bindings": [
                         {
@@ -1889,8 +1915,9 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
                         }
                       ]
                     }
-                **YAML Example**
-                ::
+
+                **YAML Example**::
+
                     bindings:
                     - members:
                       - user:mike@example.com
@@ -1905,6 +1932,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
                         title: expirable access
                         description: Does not grant access after Sep 2020
                         expression: request.time < timestamp('2020-10-01T00:00:00.000Z')
+
                 For a description of IAM and its features, see the `IAM
                 developer's
                 guide <https://cloud.google.com/iam/docs>`__.
@@ -1947,6 +1975,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
         r"""Tests the specified permissions against the IAM access control
         policy for a function. If the function does not exist, this will
         return an empty set of permissions, not a NOT_FOUND error.
+
         Args:
             request (:class:`~.iam_policy.TestIamPermissionsRequest`):
                 The request object. Request message for
