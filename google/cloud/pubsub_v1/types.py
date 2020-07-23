@@ -181,7 +181,7 @@ _shared_modules = [
 _local_modules = [pubsub_pb2]
 
 
-names = ["BatchSettings", "FlowControl"]
+names = ["BatchSettings", "FlowControl", "PublisherOptions"]
 
 
 for module in _shared_modules:
