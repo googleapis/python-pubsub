@@ -335,7 +335,7 @@ def test_listing_topic_subscriptions(publisher, subscriber, project, cleanup):
 
     # retrieve subscriptions and check that the list matches the expected
     response = publisher.list_topic_subscriptions(topic=topic_paths[0])
-    subscriptions = set(response.subscriptions)
+    subscriptions = set(response)
 
     assert subscriptions == {subscription_paths[0], subscription_paths[2]}
 
@@ -747,12 +747,14 @@ class TestBasicRBAC(object):
         # NOTE: At least one topic exists.
         topic = next(iter(viewer_only_publisher.list_topics(project=project_path)))
 
-        response = viewer_only_publisher.list_topic_subscriptions(topic=topic.name)
-        next(iter(response.subscriptions), None)
+        next(
+            iter(viewer_only_publisher.list_topic_subscriptions(topic=topic.name)), None
+        )
 
         next(
             iter(viewer_only_subscriber.list_subscriptions(project=project_path)), None
         )
+
         next(iter(viewer_only_subscriber.list_snapshots(project=project_path)), None)
 
     def test_editor_role_can_create_resources(

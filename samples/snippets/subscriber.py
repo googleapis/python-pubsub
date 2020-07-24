@@ -37,7 +37,7 @@ def list_subscriptions_in_topic(project_id, topic_id):
     topic_path = publisher.topic_path(project_id, topic_id)
 
     response = publisher.list_topic_subscriptions(request={"topic": topic_path})
-    for subscription in response.subscriptions:
+    for subscription in response:
         print(subscription)
     # [END pubsub_list_topic_subscriptions]
 
