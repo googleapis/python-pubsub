@@ -285,7 +285,13 @@ def publish_with_ordering_keys(project_id, topic_id):
     publisher_options = pubsub_v1.types.PublisherOptions(
         enable_message_ordering=True
     )
-    publisher = pubsub_v1.PublisherClient(publisher_options=publisher_options)
+    # Sending messages to the same region ensures they are received in order
+    # even when multiple publishers are used.
+    client_options = {"api_endpoint": " us-east1-pubsub.googleapis.com:443"}
+    publisher = pubsub_v1.PublisherClient(
+        publisher_options=publisher_options,
+        client_options=client_options
+    )
     # The `topic_path` method creates a fully qualified identifier
     # in the form `projects/{project_id}/topics/{topic_id}`
     topic_path = publisher.topic_path(project_id, topic_id)
@@ -321,7 +327,13 @@ def resume_publish_with_ordering_keys(project_id, topic_id):
     publisher_options = pubsub_v1.types.PublisherOptions(
         enable_message_ordering=True
     )
-    publisher = pubsub_v1.PublisherClient(publisher_options=publisher_options)
+    # Sending messages to the same region ensures they are received in order
+    # even when multiple publishers are used.
+    client_options = {"api_endpoint": " us-east1-pubsub.googleapis.com:443"}
+    publisher = pubsub_v1.PublisherClient(
+        publisher_options=publisher_options,
+        client_options=client_options
+    )
     # The `topic_path` method creates a fully qualified identifier
     # in the form `projects/{project_id}/topics/{topic_id}`
     topic_path = publisher.topic_path(project_id, topic_id)
