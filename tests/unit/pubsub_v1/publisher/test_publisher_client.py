@@ -15,6 +15,8 @@
 from __future__ import absolute_import
 from __future__ import division
 
+import inspect
+
 from google.auth import credentials
 
 import mock
@@ -510,3 +512,39 @@ def test_resume_publish_ordering_keys_not_enabled():
     # Throw on calling resume_publish() when enable_message_ordering is False.
     with pytest.raises(ValueError):
         client.resume_publish("topic", "ord_key")
+
+
+def test_extracted_publish_retry():
+    MISSING = object()
+
+    extracted_retry = getattr(
+        publisher_client.PublisherClient, "_DEFAULT_PUBLISH_RETRY", MISSING
+    )
+    assert (
+        extracted_retry is not MISSING
+    ), "gapic publisher client missing _DEFAULT_PUBLISH_RETRY class attribute"
+
+    client = publisher_client.PublisherClient()
+    fake_rpc = mock.Mock()
+    wrap_method_patcher = mock.patch(
+        "google.api_core.gapic_v1.method.wrap_method", return_value=fake_rpc
+    )
+
+    with wrap_method_patcher as patched_wrap:
+        client.publish(topic="projects/foo/topics/bar", messages=[{"data": b"Hello!"}])
+
+    fake_rpc.assert_called_once()
+    patched_wrap.assert_called_once()
+    _, kwargs = patched_wrap.call_args
+    default_rpc_retry = kwargs["default_retry"]
+
+    # Retry instances cannot be directly compared, because their predicates are
+    # different instances of the same function. We thus manually compare their other
+    # attributes, and then heuristically compare their predicates.
+    for attr in ("_deadline", "_initial", "_maximum", "_multiplier"):
+        getattr(extracted_retry, attr) == getattr(default_rpc_retry, attr)
+
+    pred = extracted_retry._predicate
+    pred2 = default_rpc_retry._predicate
+    assert inspect.getsource(pred) == inspect.getsource(pred2)
+    assert inspect.getclosurevars(pred) == inspect.getclosurevars(pred2)

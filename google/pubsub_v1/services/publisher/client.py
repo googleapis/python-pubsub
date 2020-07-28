@@ -114,6 +114,23 @@ class PublisherClient(metaclass=PublisherClientMeta):
         "https://www.googleapis.com/auth/pubsub",
     )
 
+    # Copied from the publish() method with synth, do not inject it
+    # into the class by e.g. hardcoding it somewhere.
+    _DEFAULT_PUBLISH_RETRY = retries.Retry(
+        initial=0.1,
+        maximum=60.0,
+        multiplier=1.3,
+        predicate=retries.if_exception_type(
+            exceptions.Aborted,
+            exceptions.DeadlineExceeded,
+            exceptions.InternalServerError,
+            exceptions.ResourceExhausted,
+            exceptions.ServiceUnavailable,
+            exceptions.Unknown,
+            exceptions.Cancelled,
+        ),
+    )
+
     SERVICE_ADDRESS = "pubsub.googleapis.com:443"
     """The default address of the service."""
 
@@ -536,9 +553,9 @@ class PublisherClient(metaclass=PublisherClientMeta):
                 maximum=60.0,
                 multiplier=1.3,
                 predicate=retries.if_exception_type(
+                    exceptions.Aborted,
                     exceptions.ServiceUnavailable,
                     exceptions.Unknown,
-                    exceptions.Aborted,
                 ),
             ),
             default_timeout=60.0,
@@ -619,9 +636,9 @@ class PublisherClient(metaclass=PublisherClientMeta):
                 maximum=60.0,
                 multiplier=1.3,
                 predicate=retries.if_exception_type(
+                    exceptions.Aborted,
                     exceptions.ServiceUnavailable,
                     exceptions.Unknown,
-                    exceptions.Aborted,
                 ),
             ),
             default_timeout=60.0,
@@ -711,9 +728,9 @@ class PublisherClient(metaclass=PublisherClientMeta):
                 maximum=60.0,
                 multiplier=1.3,
                 predicate=retries.if_exception_type(
+                    exceptions.Aborted,
                     exceptions.ServiceUnavailable,
                     exceptions.Unknown,
-                    exceptions.Aborted,
                 ),
             ),
             default_timeout=60.0,
@@ -809,9 +826,9 @@ class PublisherClient(metaclass=PublisherClientMeta):
                 maximum=60.0,
                 multiplier=1.3,
                 predicate=retries.if_exception_type(
+                    exceptions.Aborted,
                     exceptions.ServiceUnavailable,
                     exceptions.Unknown,
-                    exceptions.Aborted,
                 ),
             ),
             default_timeout=60.0,
