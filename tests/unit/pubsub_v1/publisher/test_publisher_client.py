@@ -23,6 +23,7 @@ import mock
 import pytest
 import time
 
+from google.api_core import gapic_v1
 from google.cloud.pubsub_v1 import publisher
 from google.cloud.pubsub_v1 import types
 
@@ -201,6 +202,39 @@ def test_publish_empty_ordering_key_when_message_ordering_enabled():
     assert client.publish(topic, b"bytestring body", ordering_key="") is not None
 
 
+def test_publish_with_ordering_key_uses_extended_retry_deadline():
+    creds = mock.Mock(spec=credentials.Credentials)
+    client = publisher.Client(
+        credentials=creds,
+        publisher_options=types.PublisherOptions(enable_message_ordering=True),
+    )
+
+    # Use mocks in lieu of the actual batch class.
+    batch = mock.Mock(spec=client._batch_class)
+    future = mock.sentinel.future
+    future.add_done_callback = mock.Mock(spec=["__call__"])
+    batch.publish.return_value = future
+
+    topic = "topic/path"
+    client._set_batch(topic, batch)
+
+    # Actually mock the batch class now.
+    batch_class = mock.Mock(spec=(), return_value=batch)
+    client._set_batch_class(batch_class)
+
+    # Publish a message.
+    future = client.publish(topic, b"foo", ordering_key="first")
+    assert future is mock.sentinel.future
+
+    # Check the retry settings used for the batch.
+    batch_class.assert_called_once()
+    _, kwargs = batch_class.call_args
+
+    retry = kwargs["commit_retry"]
+    assert retry is not gapic_v1.method.DEFAULT
+    assert retry.deadline == 2.0 ** 32
+
+
 def test_publish_attrs_bytestring():
     creds = mock.Mock(spec=credentials.Credentials)
     client = publisher.Client(credentials=creds)
@@ -256,6 +290,7 @@ def test_publish_new_batch_needed():
         settings=client.batch_settings,
         batch_done_callback=None,
         commit_when_full=True,
+        commit_retry=gapic_v1.method.DEFAULT,
     )
     message_pb = gapic_types.PubsubMessage(data=b"foo", attributes={"bar": u"baz"})
     batch1.publish.assert_called_once_with(message_pb)

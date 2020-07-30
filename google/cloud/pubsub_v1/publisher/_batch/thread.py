@@ -21,6 +21,7 @@ import time
 import six
 
 import google.api_core.exceptions
+from google.api_core import gapic_v1
 from google.cloud.pubsub_v1.publisher import exceptions
 from google.cloud.pubsub_v1.publisher import futures
 from google.cloud.pubsub_v1.publisher._batch import base
@@ -69,10 +70,19 @@ class Batch(base.Batch):
             at a lower level.
         commit_when_full (bool): Whether to commit the batch when the batch
             is full.
+        commit_retry (Optional[google.api_core.retry.Retry]): Designation of what
+            errors, if any, should be retried when commiting the batch. If not
+            provided, a default retry is used.
     """
 
     def __init__(
-        self, client, topic, settings, batch_done_callback=None, commit_when_full=True
+        self,
+        client,
+        topic,
+        settings,
+        batch_done_callback=None,
+        commit_when_full=True,
+        commit_retry=gapic_v1.method.DEFAULT,
     ):
         self._client = client
         self._topic = topic
@@ -94,6 +104,8 @@ class Batch(base.Batch):
         # of the PublishRequest message itself.
         self._base_request_size = gapic_types.PublishRequest(topic=topic)._pb.ByteSize()
         self._size = self._base_request_size
+
+        self._commit_retry = commit_retry
 
     @staticmethod
     def make_lock():
@@ -245,10 +257,9 @@ class Batch(base.Batch):
 
         batch_transport_succeeded = True
         try:
-            # Performs retries for errors defined in retry_codes.publish in the
-            # publisher_client_config.py file.
+            # Performs retries for errors defined by the retry configuration.
             response = self._client.api.publish(
-                topic=self._topic, messages=self._messages,
+                topic=self._topic, messages=self._messages, retry=self._commit_retry
             )
         except google.api_core.exceptions.GoogleAPIError as exc:
             # We failed to publish, even after retries, so set the exception on

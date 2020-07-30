@@ -78,11 +78,8 @@ class Client(object):
             arguments to the underlying
             :class:`~google.cloud.pubsub_v1.gapic.publisher_client.PublisherClient`.
             Generally you should not need to set additional keyword
-            arguments. Optionally, publish retry settings can be set via
-            ``client_config`` where user-provided retry configurations are
-            applied to default retry settings. And regional endpoints can be
-            set via ``client_options`` that takes a single key-value pair that
-            defines the endpoint.
+            arguments. Regional endpoints can be set via ``client_options`` that
+            takes a single key-value pair that defines the endpoint.
 
     Example:
 
@@ -105,19 +102,6 @@ class Client(object):
                     limit_exceeded_behavior=pubsub_v1.types.LimitExceededBehavior.BLOCK,
                 ),
             ),
-
-            # Optional
-            client_config = {
-                "interfaces": {
-                    "google.pubsub.v1.Publisher": {
-                        "retry_params": {
-                            "messaging": {
-                                'total_timeout_millis': 650000,  # default: 600000
-                            }
-                        }
-                    }
-                }
-            },
 
             # Optional
             client_options = {
@@ -377,10 +361,18 @@ class Client(object):
             if self._is_stopped:
                 raise RuntimeError("Cannot publish on a stopped publisher.")
 
-            sequencer = self._get_or_create_sequencer(topic, ordering_key)
+            # Set retry timeout to "infinite" when message ordering is enabled.
+            # Note that this then also impacts messages added with an empty
+            # ordering key.
+            if self._enable_message_ordering:
+                custom_retry = self.api._DEFAULT_PUBLISH_RETRY.with_deadline(2.0 ** 32)
+                kwargs = {"retry": custom_retry}
+            else:
+                kwargs = {}
 
             # Delegate the publishing to the sequencer.
-            future = sequencer.publish(message)
+            sequencer = self._get_or_create_sequencer(topic, ordering_key)
+            future = sequencer.publish(message, **kwargs)
             future.add_done_callback(on_publish_done)
 
             # Create a timer thread if necessary to enforce the batching

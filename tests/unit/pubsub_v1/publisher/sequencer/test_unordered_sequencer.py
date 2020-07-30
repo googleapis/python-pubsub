@@ -89,6 +89,17 @@ def test_basic_publish():
     batch.publish.assert_called_once_with(message)
 
 
+def test_publish_custom_retry():
+    client = create_client()
+    message = create_message()
+    sequencer = unordered_sequencer.UnorderedSequencer(client, "topic_name")
+
+    sequencer.publish(message, retry=mock.sentinel.custom_retry)
+
+    assert sequencer._current_batch is not None
+    assert sequencer._current_batch._commit_retry is mock.sentinel.custom_retry
+
+
 def test_publish_batch_full():
     client = create_client()
     message = create_message()
