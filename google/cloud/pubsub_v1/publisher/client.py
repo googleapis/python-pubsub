@@ -263,7 +263,14 @@ class Client(object):
             else:
                 sequencer.unpause()
 
-    def publish(self, topic, data, ordering_key="", **attrs):
+    def publish(
+        self,
+        topic,
+        data,
+        ordering_key="",
+        retry=publisher_client.PublisherClient._DEFAULT_PUBLISH_RETRY,
+        **attrs
+    ):
         """Publish a single message.
 
         .. note::
@@ -298,6 +305,9 @@ class Client(object):
                 enabled for this client to use this feature.
                 EXPERIMENTAL: This feature is currently available in a closed
                 alpha. Please contact the Cloud Pub/Sub team to use it.
+            retry (Optional[google.api_core.retry.Retry]): Designation of what
+                errors, if any, should be retried. If `ordering_key` is specified,
+                the total retry deadline will be changed to "infinity".
             attrs (Mapping[str, str]): A dictionary of attributes to be
                 sent as metadata. (These may be text strings or byte strings.)
 
@@ -365,14 +375,11 @@ class Client(object):
             # Note that this then also impacts messages added with an empty
             # ordering key.
             if self._enable_message_ordering:
-                custom_retry = self.api._DEFAULT_PUBLISH_RETRY.with_deadline(2.0 ** 32)
-                kwargs = {"retry": custom_retry}
-            else:
-                kwargs = {}
+                retry = retry.with_deadline(2.0 ** 32)
 
             # Delegate the publishing to the sequencer.
             sequencer = self._get_or_create_sequencer(topic, ordering_key)
-            future = sequencer.publish(message, **kwargs)
+            future = sequencer.publish(message, retry=retry)
             future.add_done_callback(on_publish_done)
 
             # Create a timer thread if necessary to enforce the batching

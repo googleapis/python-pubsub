@@ -23,7 +23,7 @@ import mock
 import pytest
 import time
 
-from google.api_core import gapic_v1
+from google.api_core import retry as retries
 from google.cloud.pubsub_v1 import publisher
 from google.cloud.pubsub_v1 import types
 
@@ -33,6 +33,19 @@ from google.cloud.pubsub_v1.publisher._sequencer import ordered_sequencer
 from google.pubsub_v1 import types as gapic_types
 from google.pubsub_v1.services.publisher import client as publisher_client
 from google.pubsub_v1.services.publisher.transports.base import PublisherTransport
+
+
+def _assert_retries_equal(retry, retry2):
+    # Retry instances cannot be directly compared, because their predicates are
+    # different instances of the same function. We thus manually compare their other
+    # attributes, and then heuristically compare their predicates.
+    for attr in ("_deadline", "_initial", "_maximum", "_multiplier"):
+        assert getattr(retry, attr) == getattr(retry2, attr)
+
+    pred = retry._predicate
+    pred2 = retry2._predicate
+    assert inspect.getsource(pred) == inspect.getsource(pred2)
+    assert inspect.getclosurevars(pred) == inspect.getclosurevars(pred2)
 
 
 def test_init():
@@ -222,17 +235,24 @@ def test_publish_with_ordering_key_uses_extended_retry_deadline():
     batch_class = mock.Mock(spec=(), return_value=batch)
     client._set_batch_class(batch_class)
 
-    # Publish a message.
-    future = client.publish(topic, b"foo", ordering_key="first")
+    # Publish a message with custom retry settings.
+    custom_retry = retries.Retry(
+        initial=1,
+        maximum=20,
+        multiplier=3.3,
+        deadline=999,
+        predicate=retries.if_exception_type(TimeoutError, KeyboardInterrupt),
+    )
+    future = client.publish(topic, b"foo", ordering_key="first", retry=custom_retry)
     assert future is mock.sentinel.future
 
     # Check the retry settings used for the batch.
     batch_class.assert_called_once()
     _, kwargs = batch_class.call_args
 
-    retry = kwargs["commit_retry"]
-    assert retry is not gapic_v1.method.DEFAULT
-    assert retry.deadline == 2.0 ** 32
+    batch_commit_retry = kwargs["commit_retry"]
+    expected_retry = custom_retry.with_deadline(2.0 ** 32)
+    _assert_retries_equal(batch_commit_retry, expected_retry)
 
 
 def test_publish_attrs_bytestring():
@@ -290,11 +310,17 @@ def test_publish_new_batch_needed():
         settings=client.batch_settings,
         batch_done_callback=None,
         commit_when_full=True,
-        commit_retry=gapic_v1.method.DEFAULT,
+        commit_retry=mock.ANY,
     )
     message_pb = gapic_types.PubsubMessage(data=b"foo", attributes={"bar": u"baz"})
     batch1.publish.assert_called_once_with(message_pb)
     batch2.publish.assert_called_once_with(message_pb)
+
+    _, kwargs = batch_class.call_args
+    batch_commit_retry = kwargs["commit_retry"]
+    _assert_retries_equal(
+        batch_commit_retry, publisher_client.PublisherClient._DEFAULT_PUBLISH_RETRY
+    )
 
 
 def test_publish_attrs_type_error():
@@ -569,17 +595,8 @@ def test_extracted_publish_retry():
         client.publish(topic="projects/foo/topics/bar", messages=[{"data": b"Hello!"}])
 
     fake_rpc.assert_called_once()
+
     patched_wrap.assert_called_once()
     _, kwargs = patched_wrap.call_args
     default_rpc_retry = kwargs["default_retry"]
-
-    # Retry instances cannot be directly compared, because their predicates are
-    # different instances of the same function. We thus manually compare their other
-    # attributes, and then heuristically compare their predicates.
-    for attr in ("_deadline", "_initial", "_maximum", "_multiplier"):
-        getattr(extracted_retry, attr) == getattr(default_rpc_retry, attr)
-
-    pred = extracted_retry._predicate
-    pred2 = default_rpc_retry._predicate
-    assert inspect.getsource(pred) == inspect.getsource(pred2)
-    assert inspect.getclosurevars(pred) == inspect.getclosurevars(pred2)
+    _assert_retries_equal(extracted_retry, default_rpc_retry)
