@@ -224,10 +224,10 @@ def publish_messages_with_retry_settings(project_id, topic_id):
 
     # Configure the retry settings.
     custom_retry = api_core.retry.Retry(
-        initial=0.250,  # seconds
-        maximum=90.0,  # seconds
-        multiplier=1.45,
-        deadline=300.0,  # seconds
+        initial=0.250,  # seconds (default: 0.1)
+        maximum=90.0,  # seconds (default: 60.0)
+        multiplier=1.45,  # default: 1.3
+        deadline=300.0,  # seconds (default: 600.0)
         predicate=api_core.retry.if_exception_type(
             api_core.exceptions.Aborted,
             api_core.exceptions.DeadlineExceeded,
