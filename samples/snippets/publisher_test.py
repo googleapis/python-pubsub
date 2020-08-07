@@ -147,7 +147,7 @@ def test_publish_with_error_handler(topic_publish, capsys):
 
 
 def test_publish_with_ordering_keys(topic_publish, capsys):
-    publisher.publish_messages_with_ordering_keys(PROJECT, TOPIC_PUBLISH)
+    publisher.publish_with_ordering_keys(PROJECT, TOPIC_PUBLISH)
 
     out, _ = capsys.readouterr()
     assert "Published messages with ordering keys." in out
