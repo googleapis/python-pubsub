@@ -287,7 +287,7 @@ def publish_with_ordering_keys(project_id, topic_id):
     )
     # Sending messages to the same region ensures they are received in order
     # even when multiple publishers are used.
-    client_options = {"api_endpoint": " us-east1-pubsub.googleapis.com:443"}
+    client_options = {"api_endpoint": "us-east1-pubsub.googleapis.com:443"}
     publisher = pubsub_v1.PublisherClient(
         publisher_options=publisher_options,
         client_options=client_options
@@ -329,7 +329,7 @@ def resume_publish_with_ordering_keys(project_id, topic_id):
     )
     # Sending messages to the same region ensures they are received in order
     # even when multiple publishers are used.
-    client_options = {"api_endpoint": " us-east1-pubsub.googleapis.com:443"}
+    client_options = {"api_endpoint": "us-east1-pubsub.googleapis.com:443"}
     publisher = pubsub_v1.PublisherClient(
         publisher_options=publisher_options,
         client_options=client_options
