@@ -637,7 +637,7 @@ class StreamingPullManager(object):
                     "delivery_attempt": received_message.delivery_attempt,
                 }
                 with create_span(
-                    "subscriber",
+                    self._subscription,
                     attributes=span_attributes,
                     parent=publisher_span_context,
                 ):
