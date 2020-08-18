@@ -186,13 +186,18 @@ def create_subscription_with_ordering(project_id, topic_id, subscription_id):
     # topic_id = "your-topic-id"
     # subscription_id = "your-subscription-id"
 
+    publisher = pubsub_v1.PublisherClient()
     subscriber = pubsub_v1.SubscriberClient()
-    topic_path = subscriber.topic_path(project_id, topic_id)
+    topic_path = publisher.topic_path(project_id, topic_id)
     subscription_path = subscriber.subscription_path(project_id, subscription_id)
 
     with subscriber:
         subscription = subscriber.create_subscription(
-            subscription_path, topic_path, enable_message_ordering=True
+            request={
+                "name": subscription_path,
+                "topic": topic_path,
+                "enable_message_ordering": True,
+            }
         )
         print("Created subscription with ordering: {}".format(subscription))
     # [END pubsub_enable_subscription_ordering]

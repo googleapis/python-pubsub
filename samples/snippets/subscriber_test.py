@@ -235,7 +235,7 @@ def test_create_subscription_with_ordering(subscriber_client, capsys):
     assert "enable_message_ordering: true" in out
 
     subscription_path = subscriber_client.subscription_path(PROJECT, SUBSCRIPTION_ORDERING)
-    subscriber_client.delete_subscription(subscription_path)
+    subscriber_client.delete_subscription(request={"subscription": subscription_path})
 
 
 def test_update(subscriber_client, subscription_admin, capsys):
