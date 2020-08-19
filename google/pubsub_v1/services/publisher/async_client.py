@@ -107,8 +107,9 @@ class PublisherAsyncClient:
         timeout: float = None,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pubsub.Topic:
-        r"""Creates the given topic with the given name. See the resource
-        name rules.
+        r"""Creates the given topic with the given name. See the `resource
+        name
+        rules <https://cloud.google.com/pubsub/docs/admin#resource_names>`__.
 
         Args:
             request (:class:`~.pubsub.Topic`):
@@ -385,9 +386,9 @@ class PublisherAsyncClient:
                 maximum=60.0,
                 multiplier=1.3,
                 predicate=retries.if_exception_type(
+                    exceptions.Aborted,
                     exceptions.ServiceUnavailable,
                     exceptions.Unknown,
-                    exceptions.Aborted,
                 ),
             ),
             default_timeout=60.0,
@@ -467,9 +468,9 @@ class PublisherAsyncClient:
                 maximum=60.0,
                 multiplier=1.3,
                 predicate=retries.if_exception_type(
+                    exceptions.Aborted,
                     exceptions.ServiceUnavailable,
                     exceptions.Unknown,
-                    exceptions.Aborted,
                 ),
             ),
             default_timeout=60.0,
@@ -558,9 +559,9 @@ class PublisherAsyncClient:
                 maximum=60.0,
                 multiplier=1.3,
                 predicate=retries.if_exception_type(
+                    exceptions.Aborted,
                     exceptions.ServiceUnavailable,
                     exceptions.Unknown,
-                    exceptions.Aborted,
                 ),
             ),
             default_timeout=60.0,
@@ -594,14 +595,12 @@ class PublisherAsyncClient:
         timeout: float = None,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pagers.ListTopicSnapshotsAsyncPager:
-        r"""Lists the names of the snapshots on this topic.
-        Snapshots are used in <a
-        href="https://cloud.google.com/pubsub/docs/replay-
-        overview">Seek</a> operations, which allow
-        you to manage message acknowledgments in bulk. That is,
-        you can set the acknowledgment state of messages in an
-        existing subscription to the state captured by a
-        snapshot.
+        r"""Lists the names of the snapshots on this topic. Snapshots are
+        used in
+        `Seek <https://cloud.google.com/pubsub/docs/replay-overview>`__
+        operations, which allow you to manage message acknowledgments in
+        bulk. That is, you can set the acknowledgment state of messages
+        in an existing subscription to the state captured by a snapshot.
 
         Args:
             request (:class:`~.pubsub.ListTopicSnapshotsRequest`):
@@ -655,9 +654,9 @@ class PublisherAsyncClient:
                 maximum=60.0,
                 multiplier=1.3,
                 predicate=retries.if_exception_type(
+                    exceptions.Aborted,
                     exceptions.ServiceUnavailable,
                     exceptions.Unknown,
-                    exceptions.Aborted,
                 ),
             ),
             default_timeout=60.0,

@@ -106,9 +106,8 @@ class Topic(proto.Message):
             255 characters in length, and it must not start with
             ``"goog"``.
         labels (Sequence[~.pubsub.Topic.LabelsEntry]):
-            See <a
-            href="https://cloud.google.com/pubsub/docs/labels">
-            Creating and managing labels</a>.
+            See [Creating and managing labels]
+            (https://cloud.google.com/pubsub/docs/labels).
         message_storage_policy (~.pubsub.MessageStoragePolicy):
             Policy constraining the set of Google Cloud
             Platform regions where messages published to the
@@ -135,15 +134,14 @@ class Topic(proto.Message):
 
 class PubsubMessage(proto.Message):
     r"""A message that is published by publishers and consumed by
-    subscribers. The message must contain either a non-empty data
-    field or at least one attribute. Note that client libraries
-    represent this object differently depending on the language. See
-    the corresponding
-    <a
-    href="https://cloud.google.com/pubsub/docs/reference/libraries">client
-    library documentation</a> for more information. See <a
-    href="https://cloud.google.com/pubsub/quotas">Quotas and
-    limits</a> for more information about message limits.
+    subscribers. The message must contain either a non-empty data field
+    or at least one attribute. Note that client libraries represent this
+    object differently depending on the language. See the corresponding
+    `client library
+    documentation <https://cloud.google.com/pubsub/docs/reference/libraries>`__
+    for more information. See [quotas and limits]
+    (https://cloud.google.com/pubsub/quotas) for more information about
+    message limits.
 
     Attributes:
         data (bytes):
@@ -174,11 +172,7 @@ class PubsubMessage(proto.Message):
             will be delivered to subscribers in the order in which they
             are received by the Pub/Sub system. All ``PubsubMessage``\ s
             published in a given ``PublishRequest`` must specify the
-            same ``ordering_key`` value. EXPERIMENTAL: This feature is
-            part of a closed alpha release. This API might be changed in
-            backward-incompatible ways and is not recommended for
-            production use. It is not subject to any SLA or deprecation
-            policy.
+            same ``ordering_key`` value.
     """
 
     data = proto.Field(proto.BYTES, number=1)
@@ -473,7 +467,8 @@ class Subscription(proto.Message):
             then messages are not expunged from the subscription's
             backlog, even if they are acknowledged, until they fall out
             of the ``message_retention_duration`` window. This must be
-            true if you would like to Seek to a timestamp.
+            true if you would like to [Seek to a timestamp]
+            (https://cloud.google.com/pubsub/docs/replay-overview#seek_to_a_time).
         message_retention_duration (~.duration.Duration):
             How long to retain unacknowledged messages in the
             subscription's backlog, from the moment a message is
@@ -490,11 +485,7 @@ class Subscription(proto.Message):
             If true, messages published with the same ``ordering_key``
             in ``PubsubMessage`` will be delivered to the subscribers in
             the order in which they are received by the Pub/Sub system.
-            Otherwise, they may be delivered in any order. EXPERIMENTAL:
-            This feature is part of a closed alpha release. This API
-            might be changed in backward-incompatible ways and is not
-            recommended for production use. It is not subject to any SLA
-            or deprecation policy.
+            Otherwise, they may be delivered in any order.
         expiration_policy (~.pubsub.ExpirationPolicy):
             A policy that specifies the conditions for this
             subscription's expiration. A subscription is considered
@@ -1159,11 +1150,10 @@ class UpdateSnapshotRequest(proto.Message):
 
 class Snapshot(proto.Message):
     r"""A snapshot resource. Snapshots are used in
-    <a href="https://cloud.google.com/pubsub/docs/replay-
-    overview">Seek</a> operations, which allow
-    you to manage message acknowledgments in bulk. That is, you can
-    set the acknowledgment state of messages in an existing
-    subscription to the state captured by a snapshot.
+    `Seek <https://cloud.google.com/pubsub/docs/replay-overview>`__
+    operations, which allow you to manage message acknowledgments in
+    bulk. That is, you can set the acknowledgment state of messages in
+    an existing subscription to the state captured by a snapshot.
 
     Attributes:
         name (str):
@@ -1186,9 +1176,8 @@ class Snapshot(proto.Message):
             snapshot that would expire in less than 1 hour after
             creation.
         labels (Sequence[~.pubsub.Snapshot.LabelsEntry]):
-            See <a
-            href="https://cloud.google.com/pubsub/docs/labels">
-            Creating and managing labels</a>.
+            See [Creating and managing labels]
+            (https://cloud.google.com/pubsub/docs/labels).
     """
 
     name = proto.Field(proto.STRING, number=1)

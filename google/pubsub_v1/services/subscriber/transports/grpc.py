@@ -136,6 +136,8 @@ class SubscriberGrpcTransport(SubscriberTransport):
                 quota_project_id=quota_project_id,
             )
 
+        self._stubs = {}  # type: Dict[str, Callable]
+
         # Run the base constructor.
         super().__init__(
             host=host,
@@ -144,8 +146,6 @@ class SubscriberGrpcTransport(SubscriberTransport):
             scopes=scopes or self.AUTH_SCOPES,
             quota_project_id=quota_project_id,
         )
-
-        self._stubs = {}  # type: Dict[str, Callable]
 
     @classmethod
     def create_channel(
@@ -215,18 +215,19 @@ class SubscriberGrpcTransport(SubscriberTransport):
     ) -> Callable[[pubsub.Subscription], pubsub.Subscription]:
         r"""Return a callable for the create subscription method over gRPC.
 
-        Creates a subscription to a given topic. See the resource name
-        rules. If the subscription already exists, returns
-        ``ALREADY_EXISTS``. If the corresponding topic doesn't exist,
-        returns ``NOT_FOUND``.
+        Creates a subscription to a given topic. See the [resource name
+        rules]
+        (https://cloud.google.com/pubsub/docs/admin#resource_names). If
+        the subscription already exists, returns ``ALREADY_EXISTS``. If
+        the corresponding topic doesn't exist, returns ``NOT_FOUND``.
 
         If the name is not provided in the request, the server will
         assign a random name for this subscription on the same project
-        as the topic, conforming to the `resource name
-        format <https://cloud.google.com/pubsub/docs/admin#resource_names>`__.
-        The generated name is populated in the returned Subscription
-        object. Note that for REST API requests, you must specify a name
-        in the request.
+        as the topic, conforming to the [resource name format]
+        (https://cloud.google.com/pubsub/docs/admin#resource_names). The
+        generated name is populated in the returned Subscription object.
+        Note that for REST API requests, you must specify a name in the
+        request.
 
         Returns:
             Callable[[~.Subscription],
@@ -547,12 +548,10 @@ class SubscriberGrpcTransport(SubscriberTransport):
         r"""Return a callable for the list snapshots method over gRPC.
 
         Lists the existing snapshots. Snapshots are used in
-        <a href="https://cloud.google.com/pubsub/docs/replay-
-        overview">Seek</a> operations, which allow
-        you to manage message acknowledgments in bulk. That is,
-        you can set the acknowledgment state of messages in an
-        existing subscription to the state captured by a
-        snapshot.
+        `Seek <https://cloud.google.com/pubsub/docs/replay-overview>`__
+        operations, which allow you to manage message acknowledgments in
+        bulk. That is, you can set the acknowledgment state of messages
+        in an existing subscription to the state captured by a snapshot.
 
         Returns:
             Callable[[~.ListSnapshotsRequest],
@@ -579,20 +578,22 @@ class SubscriberGrpcTransport(SubscriberTransport):
         r"""Return a callable for the create snapshot method over gRPC.
 
         Creates a snapshot from the requested subscription. Snapshots
-        are used in Seek operations, which allow you to manage message
-        acknowledgments in bulk. That is, you can set the acknowledgment
-        state of messages in an existing subscription to the state
-        captured by a snapshot. If the snapshot already exists, returns
-        ``ALREADY_EXISTS``. If the requested subscription doesn't exist,
-        returns ``NOT_FOUND``. If the backlog in the subscription is too
-        old -- and the resulting snapshot would expire in less than 1
-        hour -- then ``FAILED_PRECONDITION`` is returned. See also the
+        are used in
+        `Seek <https://cloud.google.com/pubsub/docs/replay-overview>`__
+        operations, which allow you to manage message acknowledgments in
+        bulk. That is, you can set the acknowledgment state of messages
+        in an existing subscription to the state captured by a snapshot.
+        If the snapshot already exists, returns ``ALREADY_EXISTS``. If
+        the requested subscription doesn't exist, returns ``NOT_FOUND``.
+        If the backlog in the subscription is too old -- and the
+        resulting snapshot would expire in less than 1 hour -- then
+        ``FAILED_PRECONDITION`` is returned. See also the
         ``Snapshot.expire_time`` field. If the name is not provided in
         the request, the server will assign a random name for this
         snapshot on the same project as the subscription, conforming to
-        the `resource name
-        format <https://cloud.google.com/pubsub/docs/admin#resource_names>`__.
-        The generated name is populated in the returned Snapshot object.
+        the [resource name format]
+        (https://cloud.google.com/pubsub/docs/admin#resource_names). The
+        generated name is populated in the returned Snapshot object.
         Note that for REST API requests, you must specify a name in the
         request.
 
@@ -650,19 +651,16 @@ class SubscriberGrpcTransport(SubscriberTransport):
     def delete_snapshot(self) -> Callable[[pubsub.DeleteSnapshotRequest], empty.Empty]:
         r"""Return a callable for the delete snapshot method over gRPC.
 
-        Removes an existing snapshot. Snapshots are used in
-        <a href="https://cloud.google.com/pubsub/docs/replay-
-        overview">Seek</a> operations, which allow
-        you to manage message acknowledgments in bulk. That is,
-        you can set the acknowledgment state of messages in an
-        existing subscription to the state captured by a
-        snapshot.<br><br>
-        When the snapshot is deleted, all messages retained in
-        the snapshot are immediately dropped. After a snapshot
-        is deleted, a new one may be created with the same name,
-        but the new one has no association with the old snapshot
-        or its subscription, unless the same subscription is
-        specified.
+        Removes an existing snapshot. Snapshots are used in [Seek]
+        (https://cloud.google.com/pubsub/docs/replay-overview)
+        operations, which allow you to manage message acknowledgments in
+        bulk. That is, you can set the acknowledgment state of messages
+        in an existing subscription to the state captured by a snapshot.
+        When the snapshot is deleted, all messages retained in the
+        snapshot are immediately dropped. After a snapshot is deleted, a
+        new one may be created with the same name, but the new one has
+        no association with the old snapshot or its subscription, unless
+        the same subscription is specified.
 
         Returns:
             Callable[[~.DeleteSnapshotRequest],
@@ -686,16 +684,15 @@ class SubscriberGrpcTransport(SubscriberTransport):
     def seek(self) -> Callable[[pubsub.SeekRequest], pubsub.SeekResponse]:
         r"""Return a callable for the seek method over gRPC.
 
-        Seeks an existing subscription to a point in time or
-        to a given snapshot, whichever is provided in the
-        request. Snapshots are used in <a
-        href="https://cloud.google.com/pubsub/docs/replay-
-        overview">Seek</a> operations, which allow
-        you to manage message acknowledgments in bulk. That is,
-        you can set the acknowledgment state of messages in an
-        existing subscription to the state captured by a
-        snapshot. Note that both the subscription and the
-        snapshot must be on the same topic.
+        Seeks an existing subscription to a point in time or to a given
+        snapshot, whichever is provided in the request. Snapshots are
+        used in
+        `Seek <https://cloud.google.com/pubsub/docs/replay-overview>`__
+        operations, which allow you to manage message acknowledgments in
+        bulk. That is, you can set the acknowledgment state of messages
+        in an existing subscription to the state captured by a snapshot.
+        Note that both the subscription and the snapshot must be on the
+        same topic.
 
         Returns:
             Callable[[~.SeekRequest],

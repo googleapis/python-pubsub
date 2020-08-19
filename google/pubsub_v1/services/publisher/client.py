@@ -114,23 +114,6 @@ class PublisherClient(metaclass=PublisherClientMeta):
         "https://www.googleapis.com/auth/pubsub",
     )
 
-    # Copied from the publish() method with synth, do not inject it
-    # into the class by e.g. hardcoding it somewhere.
-    _DEFAULT_PUBLISH_RETRY = retries.Retry(
-        initial=0.1,
-        maximum=60.0,
-        multiplier=1.3,
-        predicate=retries.if_exception_type(
-            exceptions.Aborted,
-            exceptions.DeadlineExceeded,
-            exceptions.InternalServerError,
-            exceptions.ResourceExhausted,
-            exceptions.ServiceUnavailable,
-            exceptions.Unknown,
-            exceptions.Cancelled,
-        ),
-    )
-
     SERVICE_ADDRESS = "pubsub.googleapis.com:443"
     """The default address of the service."""
 
@@ -271,8 +254,9 @@ class PublisherClient(metaclass=PublisherClientMeta):
         timeout: float = None,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pubsub.Topic:
-        r"""Creates the given topic with the given name. See the resource
-        name rules.
+        r"""Creates the given topic with the given name. See the `resource
+        name
+        rules <https://cloud.google.com/pubsub/docs/admin#resource_names>`__.
 
 
         Args:
@@ -304,33 +288,29 @@ class PublisherClient(metaclass=PublisherClientMeta):
         # Create or coerce a protobuf request object.
         # Sanity check: If we got a request object, we should *not* have
         # gotten any keyword arguments that map to the request.
-        if request is not None and any([name]):
+        has_flattened_params = any([name])
+        if request is not None and has_flattened_params:
             raise ValueError(
                 "If the `request` argument is set, then none of "
                 "the individual field arguments should be set."
             )
 
-        request = pubsub.Topic(request)
+        # Minor optimization to avoid making a copy if the user passes
+        # in a pubsub.Topic.
+        # There's no risk of modifying the input as we've already verified
+        # there are no flattened fields.
+        if not isinstance(request, pubsub.Topic):
+            request = pubsub.Topic(request)
 
-        # If we have keyword arguments corresponding to fields on the
-        # request, apply these.
+            # If we have keyword arguments corresponding to fields on the
+            # request, apply these.
 
-        if name is not None:
-            request.name = name
+            if name is not None:
+                request.name = name
 
         # Wrap the RPC method; this adds retry and timeout information,
         # and friendly error handling.
-        rpc = gapic_v1.method.wrap_method(
-            self._transport.create_topic,
-            default_retry=retries.Retry(
-                initial=0.1,
-                maximum=60.0,
-                multiplier=1.3,
-                predicate=retries.if_exception_type(exceptions.ServiceUnavailable,),
-            ),
-            default_timeout=60.0,
-            client_info=_client_info,
-        )
+        rpc = self._transport._wrapped_methods[self._transport.create_topic]
 
         # Certain fields should be provided within the metadata header;
         # add these here.
@@ -372,21 +352,16 @@ class PublisherClient(metaclass=PublisherClientMeta):
         """
         # Create or coerce a protobuf request object.
 
-        request = pubsub.UpdateTopicRequest(request)
+        # Minor optimization to avoid making a copy if the user passes
+        # in a pubsub.UpdateTopicRequest.
+        # There's no risk of modifying the input as we've already verified
+        # there are no flattened fields.
+        if not isinstance(request, pubsub.UpdateTopicRequest):
+            request = pubsub.UpdateTopicRequest(request)
 
         # Wrap the RPC method; this adds retry and timeout information,
         # and friendly error handling.
-        rpc = gapic_v1.method.wrap_method(
-            self._transport.update_topic,
-            default_retry=retries.Retry(
-                initial=0.1,
-                maximum=60.0,
-                multiplier=1.3,
-                predicate=retries.if_exception_type(exceptions.ServiceUnavailable,),
-            ),
-            default_timeout=60.0,
-            client_info=_client_info,
-        )
+        rpc = self._transport._wrapped_methods[self._transport.update_topic]
 
         # Certain fields should be provided within the metadata header;
         # add these here.
@@ -445,43 +420,31 @@ class PublisherClient(metaclass=PublisherClientMeta):
         # Create or coerce a protobuf request object.
         # Sanity check: If we got a request object, we should *not* have
         # gotten any keyword arguments that map to the request.
-        if request is not None and any([topic, messages]):
+        has_flattened_params = any([topic, messages])
+        if request is not None and has_flattened_params:
             raise ValueError(
                 "If the `request` argument is set, then none of "
                 "the individual field arguments should be set."
             )
 
-        request = pubsub.PublishRequest(request)
+        # Minor optimization to avoid making a copy if the user passes
+        # in a pubsub.PublishRequest.
+        # There's no risk of modifying the input as we've already verified
+        # there are no flattened fields.
+        if not isinstance(request, pubsub.PublishRequest):
+            request = pubsub.PublishRequest(request)
 
-        # If we have keyword arguments corresponding to fields on the
-        # request, apply these.
+            # If we have keyword arguments corresponding to fields on the
+            # request, apply these.
 
-        if topic is not None:
-            request.topic = topic
-        if messages is not None:
-            request.messages = messages
+            if topic is not None:
+                request.topic = topic
+            if messages is not None:
+                request.messages = messages
 
         # Wrap the RPC method; this adds retry and timeout information,
         # and friendly error handling.
-        rpc = gapic_v1.method.wrap_method(
-            self._transport.publish,
-            default_retry=retries.Retry(
-                initial=0.1,
-                maximum=60.0,
-                multiplier=1.3,
-                predicate=retries.if_exception_type(
-                    exceptions.Aborted,
-                    exceptions.DeadlineExceeded,
-                    exceptions.InternalServerError,
-                    exceptions.ResourceExhausted,
-                    exceptions.ServiceUnavailable,
-                    exceptions.Unknown,
-                    exceptions.Cancelled,
-                ),
-            ),
-            default_timeout=60.0,
-            client_info=_client_info,
-        )
+        rpc = self._transport._wrapped_methods[self._transport.publish]
 
         # Certain fields should be provided within the metadata header;
         # add these here.
@@ -530,37 +493,29 @@ class PublisherClient(metaclass=PublisherClientMeta):
         # Create or coerce a protobuf request object.
         # Sanity check: If we got a request object, we should *not* have
         # gotten any keyword arguments that map to the request.
-        if request is not None and any([topic]):
+        has_flattened_params = any([topic])
+        if request is not None and has_flattened_params:
             raise ValueError(
                 "If the `request` argument is set, then none of "
                 "the individual field arguments should be set."
             )
 
-        request = pubsub.GetTopicRequest(request)
+        # Minor optimization to avoid making a copy if the user passes
+        # in a pubsub.GetTopicRequest.
+        # There's no risk of modifying the input as we've already verified
+        # there are no flattened fields.
+        if not isinstance(request, pubsub.GetTopicRequest):
+            request = pubsub.GetTopicRequest(request)
 
-        # If we have keyword arguments corresponding to fields on the
-        # request, apply these.
+            # If we have keyword arguments corresponding to fields on the
+            # request, apply these.
 
-        if topic is not None:
-            request.topic = topic
+            if topic is not None:
+                request.topic = topic
 
         # Wrap the RPC method; this adds retry and timeout information,
         # and friendly error handling.
-        rpc = gapic_v1.method.wrap_method(
-            self._transport.get_topic,
-            default_retry=retries.Retry(
-                initial=0.1,
-                maximum=60.0,
-                multiplier=1.3,
-                predicate=retries.if_exception_type(
-                    exceptions.Aborted,
-                    exceptions.ServiceUnavailable,
-                    exceptions.Unknown,
-                ),
-            ),
-            default_timeout=60.0,
-            client_info=_client_info,
-        )
+        rpc = self._transport._wrapped_methods[self._transport.get_topic]
 
         # Certain fields should be provided within the metadata header;
         # add these here.
@@ -613,37 +568,29 @@ class PublisherClient(metaclass=PublisherClientMeta):
         # Create or coerce a protobuf request object.
         # Sanity check: If we got a request object, we should *not* have
         # gotten any keyword arguments that map to the request.
-        if request is not None and any([project]):
+        has_flattened_params = any([project])
+        if request is not None and has_flattened_params:
             raise ValueError(
                 "If the `request` argument is set, then none of "
                 "the individual field arguments should be set."
             )
 
-        request = pubsub.ListTopicsRequest(request)
+        # Minor optimization to avoid making a copy if the user passes
+        # in a pubsub.ListTopicsRequest.
+        # There's no risk of modifying the input as we've already verified
+        # there are no flattened fields.
+        if not isinstance(request, pubsub.ListTopicsRequest):
+            request = pubsub.ListTopicsRequest(request)
 
-        # If we have keyword arguments corresponding to fields on the
-        # request, apply these.
+            # If we have keyword arguments corresponding to fields on the
+            # request, apply these.
 
-        if project is not None:
-            request.project = project
+            if project is not None:
+                request.project = project
 
         # Wrap the RPC method; this adds retry and timeout information,
         # and friendly error handling.
-        rpc = gapic_v1.method.wrap_method(
-            self._transport.list_topics,
-            default_retry=retries.Retry(
-                initial=0.1,
-                maximum=60.0,
-                multiplier=1.3,
-                predicate=retries.if_exception_type(
-                    exceptions.Aborted,
-                    exceptions.ServiceUnavailable,
-                    exceptions.Unknown,
-                ),
-            ),
-            default_timeout=60.0,
-            client_info=_client_info,
-        )
+        rpc = self._transport._wrapped_methods[self._transport.list_topics]
 
         # Certain fields should be provided within the metadata header;
         # add these here.
@@ -705,37 +652,29 @@ class PublisherClient(metaclass=PublisherClientMeta):
         # Create or coerce a protobuf request object.
         # Sanity check: If we got a request object, we should *not* have
         # gotten any keyword arguments that map to the request.
-        if request is not None and any([topic]):
+        has_flattened_params = any([topic])
+        if request is not None and has_flattened_params:
             raise ValueError(
                 "If the `request` argument is set, then none of "
                 "the individual field arguments should be set."
             )
 
-        request = pubsub.ListTopicSubscriptionsRequest(request)
+        # Minor optimization to avoid making a copy if the user passes
+        # in a pubsub.ListTopicSubscriptionsRequest.
+        # There's no risk of modifying the input as we've already verified
+        # there are no flattened fields.
+        if not isinstance(request, pubsub.ListTopicSubscriptionsRequest):
+            request = pubsub.ListTopicSubscriptionsRequest(request)
 
-        # If we have keyword arguments corresponding to fields on the
-        # request, apply these.
+            # If we have keyword arguments corresponding to fields on the
+            # request, apply these.
 
-        if topic is not None:
-            request.topic = topic
+            if topic is not None:
+                request.topic = topic
 
         # Wrap the RPC method; this adds retry and timeout information,
         # and friendly error handling.
-        rpc = gapic_v1.method.wrap_method(
-            self._transport.list_topic_subscriptions,
-            default_retry=retries.Retry(
-                initial=0.1,
-                maximum=60.0,
-                multiplier=1.3,
-                predicate=retries.if_exception_type(
-                    exceptions.Aborted,
-                    exceptions.ServiceUnavailable,
-                    exceptions.Unknown,
-                ),
-            ),
-            default_timeout=60.0,
-            client_info=_client_info,
-        )
+        rpc = self._transport._wrapped_methods[self._transport.list_topic_subscriptions]
 
         # Certain fields should be provided within the metadata header;
         # add these here.
@@ -764,14 +703,12 @@ class PublisherClient(metaclass=PublisherClientMeta):
         timeout: float = None,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pagers.ListTopicSnapshotsPager:
-        r"""Lists the names of the snapshots on this topic.
-        Snapshots are used in <a
-        href="https://cloud.google.com/pubsub/docs/replay-
-        overview">Seek</a> operations, which allow
-        you to manage message acknowledgments in bulk. That is,
-        you can set the acknowledgment state of messages in an
-        existing subscription to the state captured by a
-        snapshot.
+        r"""Lists the names of the snapshots on this topic. Snapshots are
+        used in
+        `Seek <https://cloud.google.com/pubsub/docs/replay-overview>`__
+        operations, which allow you to manage message acknowledgments in
+        bulk. That is, you can set the acknowledgment state of messages
+        in an existing subscription to the state captured by a snapshot.
 
 
         Args:
@@ -803,37 +740,29 @@ class PublisherClient(metaclass=PublisherClientMeta):
         # Create or coerce a protobuf request object.
         # Sanity check: If we got a request object, we should *not* have
         # gotten any keyword arguments that map to the request.
-        if request is not None and any([topic]):
+        has_flattened_params = any([topic])
+        if request is not None and has_flattened_params:
             raise ValueError(
                 "If the `request` argument is set, then none of "
                 "the individual field arguments should be set."
             )
 
-        request = pubsub.ListTopicSnapshotsRequest(request)
+        # Minor optimization to avoid making a copy if the user passes
+        # in a pubsub.ListTopicSnapshotsRequest.
+        # There's no risk of modifying the input as we've already verified
+        # there are no flattened fields.
+        if not isinstance(request, pubsub.ListTopicSnapshotsRequest):
+            request = pubsub.ListTopicSnapshotsRequest(request)
 
-        # If we have keyword arguments corresponding to fields on the
-        # request, apply these.
+            # If we have keyword arguments corresponding to fields on the
+            # request, apply these.
 
-        if topic is not None:
-            request.topic = topic
+            if topic is not None:
+                request.topic = topic
 
         # Wrap the RPC method; this adds retry and timeout information,
         # and friendly error handling.
-        rpc = gapic_v1.method.wrap_method(
-            self._transport.list_topic_snapshots,
-            default_retry=retries.Retry(
-                initial=0.1,
-                maximum=60.0,
-                multiplier=1.3,
-                predicate=retries.if_exception_type(
-                    exceptions.Aborted,
-                    exceptions.ServiceUnavailable,
-                    exceptions.Unknown,
-                ),
-            ),
-            default_timeout=60.0,
-            client_info=_client_info,
-        )
+        rpc = self._transport._wrapped_methods[self._transport.list_topic_snapshots]
 
         # Certain fields should be provided within the metadata header;
         # add these here.
@@ -890,33 +819,29 @@ class PublisherClient(metaclass=PublisherClientMeta):
         # Create or coerce a protobuf request object.
         # Sanity check: If we got a request object, we should *not* have
         # gotten any keyword arguments that map to the request.
-        if request is not None and any([topic]):
+        has_flattened_params = any([topic])
+        if request is not None and has_flattened_params:
             raise ValueError(
                 "If the `request` argument is set, then none of "
                 "the individual field arguments should be set."
             )
 
-        request = pubsub.DeleteTopicRequest(request)
+        # Minor optimization to avoid making a copy if the user passes
+        # in a pubsub.DeleteTopicRequest.
+        # There's no risk of modifying the input as we've already verified
+        # there are no flattened fields.
+        if not isinstance(request, pubsub.DeleteTopicRequest):
+            request = pubsub.DeleteTopicRequest(request)
 
-        # If we have keyword arguments corresponding to fields on the
-        # request, apply these.
+            # If we have keyword arguments corresponding to fields on the
+            # request, apply these.
 
-        if topic is not None:
-            request.topic = topic
+            if topic is not None:
+                request.topic = topic
 
         # Wrap the RPC method; this adds retry and timeout information,
         # and friendly error handling.
-        rpc = gapic_v1.method.wrap_method(
-            self._transport.delete_topic,
-            default_retry=retries.Retry(
-                initial=0.1,
-                maximum=60.0,
-                multiplier=1.3,
-                predicate=retries.if_exception_type(exceptions.ServiceUnavailable,),
-            ),
-            default_timeout=60.0,
-            client_info=_client_info,
-        )
+        rpc = self._transport._wrapped_methods[self._transport.delete_topic]
 
         # Certain fields should be provided within the metadata header;
         # add these here.
@@ -963,21 +888,16 @@ class PublisherClient(metaclass=PublisherClientMeta):
         """
         # Create or coerce a protobuf request object.
 
-        request = pubsub.DetachSubscriptionRequest(request)
+        # Minor optimization to avoid making a copy if the user passes
+        # in a pubsub.DetachSubscriptionRequest.
+        # There's no risk of modifying the input as we've already verified
+        # there are no flattened fields.
+        if not isinstance(request, pubsub.DetachSubscriptionRequest):
+            request = pubsub.DetachSubscriptionRequest(request)
 
         # Wrap the RPC method; this adds retry and timeout information,
         # and friendly error handling.
-        rpc = gapic_v1.method.wrap_method(
-            self._transport.detach_subscription,
-            default_retry=retries.Retry(
-                initial=0.1,
-                maximum=60.0,
-                multiplier=1.3,
-                predicate=retries.if_exception_type(exceptions.ServiceUnavailable,),
-            ),
-            default_timeout=60.0,
-            client_info=_client_info,
-        )
+        rpc = self._transport._wrapped_methods[self._transport.detach_subscription]
 
         # Certain fields should be provided within the metadata header;
         # add these here.

@@ -204,8 +204,9 @@ class PublisherGrpcAsyncIOTransport(PublisherTransport):
     def create_topic(self) -> Callable[[pubsub.Topic], Awaitable[pubsub.Topic]]:
         r"""Return a callable for the create topic method over gRPC.
 
-        Creates the given topic with the given name. See the resource
-        name rules.
+        Creates the given topic with the given name. See the `resource
+        name
+        rules <https://cloud.google.com/pubsub/docs/admin#resource_names>`__.
 
         Returns:
             Callable[[~.Topic],
@@ -367,14 +368,12 @@ class PublisherGrpcAsyncIOTransport(PublisherTransport):
     ]:
         r"""Return a callable for the list topic snapshots method over gRPC.
 
-        Lists the names of the snapshots on this topic.
-        Snapshots are used in <a
-        href="https://cloud.google.com/pubsub/docs/replay-
-        overview">Seek</a> operations, which allow
-        you to manage message acknowledgments in bulk. That is,
-        you can set the acknowledgment state of messages in an
-        existing subscription to the state captured by a
-        snapshot.
+        Lists the names of the snapshots on this topic. Snapshots are
+        used in
+        `Seek <https://cloud.google.com/pubsub/docs/replay-overview>`__
+        operations, which allow you to manage message acknowledgments in
+        bulk. That is, you can set the acknowledgment state of messages
+        in an existing subscription to the state captured by a snapshot.
 
         Returns:
             Callable[[~.ListTopicSnapshotsRequest],

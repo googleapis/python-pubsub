@@ -278,18 +278,19 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
         timeout: float = None,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pubsub.Subscription:
-        r"""Creates a subscription to a given topic. See the resource name
-        rules. If the subscription already exists, returns
-        ``ALREADY_EXISTS``. If the corresponding topic doesn't exist,
-        returns ``NOT_FOUND``.
+        r"""Creates a subscription to a given topic. See the [resource name
+        rules]
+        (https://cloud.google.com/pubsub/docs/admin#resource_names). If
+        the subscription already exists, returns ``ALREADY_EXISTS``. If
+        the corresponding topic doesn't exist, returns ``NOT_FOUND``.
 
         If the name is not provided in the request, the server will
         assign a random name for this subscription on the same project
-        as the topic, conforming to the `resource name
-        format <https://cloud.google.com/pubsub/docs/admin#resource_names>`__.
-        The generated name is populated in the returned Subscription
-        object. Note that for REST API requests, you must specify a name
-        in the request.
+        as the topic, conforming to the [resource name format]
+        (https://cloud.google.com/pubsub/docs/admin#resource_names). The
+        generated name is populated in the returned Subscription object.
+        Note that for REST API requests, you must specify a name in the
+        request.
 
 
         Args:
@@ -367,45 +368,35 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
         # Create or coerce a protobuf request object.
         # Sanity check: If we got a request object, we should *not* have
         # gotten any keyword arguments that map to the request.
-        if request is not None and any(
-            [name, topic, push_config, ack_deadline_seconds]
-        ):
+        has_flattened_params = any([name, topic, push_config, ack_deadline_seconds])
+        if request is not None and has_flattened_params:
             raise ValueError(
                 "If the `request` argument is set, then none of "
                 "the individual field arguments should be set."
             )
 
-        request = pubsub.Subscription(request)
+        # Minor optimization to avoid making a copy if the user passes
+        # in a pubsub.Subscription.
+        # There's no risk of modifying the input as we've already verified
+        # there are no flattened fields.
+        if not isinstance(request, pubsub.Subscription):
+            request = pubsub.Subscription(request)
 
-        # If we have keyword arguments corresponding to fields on the
-        # request, apply these.
+            # If we have keyword arguments corresponding to fields on the
+            # request, apply these.
 
-        if name is not None:
-            request.name = name
-        if topic is not None:
-            request.topic = topic
-        if push_config is not None:
-            request.push_config = push_config
-        if ack_deadline_seconds is not None:
-            request.ack_deadline_seconds = ack_deadline_seconds
+            if name is not None:
+                request.name = name
+            if topic is not None:
+                request.topic = topic
+            if push_config is not None:
+                request.push_config = push_config
+            if ack_deadline_seconds is not None:
+                request.ack_deadline_seconds = ack_deadline_seconds
 
         # Wrap the RPC method; this adds retry and timeout information,
         # and friendly error handling.
-        rpc = gapic_v1.method.wrap_method(
-            self._transport.create_subscription,
-            default_retry=retries.Retry(
-                initial=0.1,
-                maximum=60.0,
-                multiplier=1.3,
-                predicate=retries.if_exception_type(
-                    exceptions.ServiceUnavailable,
-                    exceptions.Unknown,
-                    exceptions.Aborted,
-                ),
-            ),
-            default_timeout=60.0,
-            client_info=_client_info,
-        )
+        rpc = self._transport._wrapped_methods[self._transport.create_subscription]
 
         # Certain fields should be provided within the metadata header;
         # add these here.
@@ -455,37 +446,29 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
         # Create or coerce a protobuf request object.
         # Sanity check: If we got a request object, we should *not* have
         # gotten any keyword arguments that map to the request.
-        if request is not None and any([subscription]):
+        has_flattened_params = any([subscription])
+        if request is not None and has_flattened_params:
             raise ValueError(
                 "If the `request` argument is set, then none of "
                 "the individual field arguments should be set."
             )
 
-        request = pubsub.GetSubscriptionRequest(request)
+        # Minor optimization to avoid making a copy if the user passes
+        # in a pubsub.GetSubscriptionRequest.
+        # There's no risk of modifying the input as we've already verified
+        # there are no flattened fields.
+        if not isinstance(request, pubsub.GetSubscriptionRequest):
+            request = pubsub.GetSubscriptionRequest(request)
 
-        # If we have keyword arguments corresponding to fields on the
-        # request, apply these.
+            # If we have keyword arguments corresponding to fields on the
+            # request, apply these.
 
-        if subscription is not None:
-            request.subscription = subscription
+            if subscription is not None:
+                request.subscription = subscription
 
         # Wrap the RPC method; this adds retry and timeout information,
         # and friendly error handling.
-        rpc = gapic_v1.method.wrap_method(
-            self._transport.get_subscription,
-            default_retry=retries.Retry(
-                initial=0.1,
-                maximum=60.0,
-                multiplier=1.3,
-                predicate=retries.if_exception_type(
-                    exceptions.ServiceUnavailable,
-                    exceptions.Unknown,
-                    exceptions.Aborted,
-                ),
-            ),
-            default_timeout=60.0,
-            client_info=_client_info,
-        )
+        rpc = self._transport._wrapped_methods[self._transport.get_subscription]
 
         # Certain fields should be provided within the metadata header;
         # add these here.
@@ -531,21 +514,16 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
         """
         # Create or coerce a protobuf request object.
 
-        request = pubsub.UpdateSubscriptionRequest(request)
+        # Minor optimization to avoid making a copy if the user passes
+        # in a pubsub.UpdateSubscriptionRequest.
+        # There's no risk of modifying the input as we've already verified
+        # there are no flattened fields.
+        if not isinstance(request, pubsub.UpdateSubscriptionRequest):
+            request = pubsub.UpdateSubscriptionRequest(request)
 
         # Wrap the RPC method; this adds retry and timeout information,
         # and friendly error handling.
-        rpc = gapic_v1.method.wrap_method(
-            self._transport.update_subscription,
-            default_retry=retries.Retry(
-                initial=0.1,
-                maximum=60.0,
-                multiplier=1.3,
-                predicate=retries.if_exception_type(exceptions.ServiceUnavailable,),
-            ),
-            default_timeout=60.0,
-            client_info=_client_info,
-        )
+        rpc = self._transport._wrapped_methods[self._transport.update_subscription]
 
         # Certain fields should be provided within the metadata header;
         # add these here.
@@ -601,37 +579,29 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
         # Create or coerce a protobuf request object.
         # Sanity check: If we got a request object, we should *not* have
         # gotten any keyword arguments that map to the request.
-        if request is not None and any([project]):
+        has_flattened_params = any([project])
+        if request is not None and has_flattened_params:
             raise ValueError(
                 "If the `request` argument is set, then none of "
                 "the individual field arguments should be set."
             )
 
-        request = pubsub.ListSubscriptionsRequest(request)
+        # Minor optimization to avoid making a copy if the user passes
+        # in a pubsub.ListSubscriptionsRequest.
+        # There's no risk of modifying the input as we've already verified
+        # there are no flattened fields.
+        if not isinstance(request, pubsub.ListSubscriptionsRequest):
+            request = pubsub.ListSubscriptionsRequest(request)
 
-        # If we have keyword arguments corresponding to fields on the
-        # request, apply these.
+            # If we have keyword arguments corresponding to fields on the
+            # request, apply these.
 
-        if project is not None:
-            request.project = project
+            if project is not None:
+                request.project = project
 
         # Wrap the RPC method; this adds retry and timeout information,
         # and friendly error handling.
-        rpc = gapic_v1.method.wrap_method(
-            self._transport.list_subscriptions,
-            default_retry=retries.Retry(
-                initial=0.1,
-                maximum=60.0,
-                multiplier=1.3,
-                predicate=retries.if_exception_type(
-                    exceptions.ServiceUnavailable,
-                    exceptions.Unknown,
-                    exceptions.Aborted,
-                ),
-            ),
-            default_timeout=60.0,
-            client_info=_client_info,
-        )
+        rpc = self._transport._wrapped_methods[self._transport.list_subscriptions]
 
         # Certain fields should be provided within the metadata header;
         # add these here.
@@ -688,33 +658,29 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
         # Create or coerce a protobuf request object.
         # Sanity check: If we got a request object, we should *not* have
         # gotten any keyword arguments that map to the request.
-        if request is not None and any([subscription]):
+        has_flattened_params = any([subscription])
+        if request is not None and has_flattened_params:
             raise ValueError(
                 "If the `request` argument is set, then none of "
                 "the individual field arguments should be set."
             )
 
-        request = pubsub.DeleteSubscriptionRequest(request)
+        # Minor optimization to avoid making a copy if the user passes
+        # in a pubsub.DeleteSubscriptionRequest.
+        # There's no risk of modifying the input as we've already verified
+        # there are no flattened fields.
+        if not isinstance(request, pubsub.DeleteSubscriptionRequest):
+            request = pubsub.DeleteSubscriptionRequest(request)
 
-        # If we have keyword arguments corresponding to fields on the
-        # request, apply these.
+            # If we have keyword arguments corresponding to fields on the
+            # request, apply these.
 
-        if subscription is not None:
-            request.subscription = subscription
+            if subscription is not None:
+                request.subscription = subscription
 
         # Wrap the RPC method; this adds retry and timeout information,
         # and friendly error handling.
-        rpc = gapic_v1.method.wrap_method(
-            self._transport.delete_subscription,
-            default_retry=retries.Retry(
-                initial=0.1,
-                maximum=60.0,
-                multiplier=1.3,
-                predicate=retries.if_exception_type(exceptions.ServiceUnavailable,),
-            ),
-            default_timeout=60.0,
-            client_info=_client_info,
-        )
+        rpc = self._transport._wrapped_methods[self._transport.delete_subscription]
 
         # Certain fields should be provided within the metadata header;
         # add these here.
@@ -788,37 +754,33 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
         # Create or coerce a protobuf request object.
         # Sanity check: If we got a request object, we should *not* have
         # gotten any keyword arguments that map to the request.
-        if request is not None and any([subscription, ack_ids, ack_deadline_seconds]):
+        has_flattened_params = any([subscription, ack_ids, ack_deadline_seconds])
+        if request is not None and has_flattened_params:
             raise ValueError(
                 "If the `request` argument is set, then none of "
                 "the individual field arguments should be set."
             )
 
-        request = pubsub.ModifyAckDeadlineRequest(request)
+        # Minor optimization to avoid making a copy if the user passes
+        # in a pubsub.ModifyAckDeadlineRequest.
+        # There's no risk of modifying the input as we've already verified
+        # there are no flattened fields.
+        if not isinstance(request, pubsub.ModifyAckDeadlineRequest):
+            request = pubsub.ModifyAckDeadlineRequest(request)
 
-        # If we have keyword arguments corresponding to fields on the
-        # request, apply these.
+            # If we have keyword arguments corresponding to fields on the
+            # request, apply these.
 
-        if subscription is not None:
-            request.subscription = subscription
-        if ack_ids is not None:
-            request.ack_ids = ack_ids
-        if ack_deadline_seconds is not None:
-            request.ack_deadline_seconds = ack_deadline_seconds
+            if subscription is not None:
+                request.subscription = subscription
+            if ack_ids is not None:
+                request.ack_ids = ack_ids
+            if ack_deadline_seconds is not None:
+                request.ack_deadline_seconds = ack_deadline_seconds
 
         # Wrap the RPC method; this adds retry and timeout information,
         # and friendly error handling.
-        rpc = gapic_v1.method.wrap_method(
-            self._transport.modify_ack_deadline,
-            default_retry=retries.Retry(
-                initial=0.1,
-                maximum=60.0,
-                multiplier=1.3,
-                predicate=retries.if_exception_type(exceptions.ServiceUnavailable,),
-            ),
-            default_timeout=60.0,
-            client_info=_client_info,
-        )
+        rpc = self._transport._wrapped_methods[self._transport.modify_ack_deadline]
 
         # Certain fields should be provided within the metadata header;
         # add these here.
@@ -880,35 +842,31 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
         # Create or coerce a protobuf request object.
         # Sanity check: If we got a request object, we should *not* have
         # gotten any keyword arguments that map to the request.
-        if request is not None and any([subscription, ack_ids]):
+        has_flattened_params = any([subscription, ack_ids])
+        if request is not None and has_flattened_params:
             raise ValueError(
                 "If the `request` argument is set, then none of "
                 "the individual field arguments should be set."
             )
 
-        request = pubsub.AcknowledgeRequest(request)
+        # Minor optimization to avoid making a copy if the user passes
+        # in a pubsub.AcknowledgeRequest.
+        # There's no risk of modifying the input as we've already verified
+        # there are no flattened fields.
+        if not isinstance(request, pubsub.AcknowledgeRequest):
+            request = pubsub.AcknowledgeRequest(request)
 
-        # If we have keyword arguments corresponding to fields on the
-        # request, apply these.
+            # If we have keyword arguments corresponding to fields on the
+            # request, apply these.
 
-        if subscription is not None:
-            request.subscription = subscription
-        if ack_ids is not None:
-            request.ack_ids = ack_ids
+            if subscription is not None:
+                request.subscription = subscription
+            if ack_ids is not None:
+                request.ack_ids = ack_ids
 
         # Wrap the RPC method; this adds retry and timeout information,
         # and friendly error handling.
-        rpc = gapic_v1.method.wrap_method(
-            self._transport.acknowledge,
-            default_retry=retries.Retry(
-                initial=0.1,
-                maximum=60.0,
-                multiplier=1.3,
-                predicate=retries.if_exception_type(exceptions.ServiceUnavailable,),
-            ),
-            default_timeout=60.0,
-            client_info=_client_info,
-        )
+        rpc = self._transport._wrapped_methods[self._transport.acknowledge]
 
         # Certain fields should be provided within the metadata header;
         # add these here.
@@ -985,43 +943,33 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
         # Create or coerce a protobuf request object.
         # Sanity check: If we got a request object, we should *not* have
         # gotten any keyword arguments that map to the request.
-        if request is not None and any(
-            [subscription, return_immediately, max_messages]
-        ):
+        has_flattened_params = any([subscription, return_immediately, max_messages])
+        if request is not None and has_flattened_params:
             raise ValueError(
                 "If the `request` argument is set, then none of "
                 "the individual field arguments should be set."
             )
 
-        request = pubsub.PullRequest(request)
+        # Minor optimization to avoid making a copy if the user passes
+        # in a pubsub.PullRequest.
+        # There's no risk of modifying the input as we've already verified
+        # there are no flattened fields.
+        if not isinstance(request, pubsub.PullRequest):
+            request = pubsub.PullRequest(request)
 
-        # If we have keyword arguments corresponding to fields on the
-        # request, apply these.
+            # If we have keyword arguments corresponding to fields on the
+            # request, apply these.
 
-        if subscription is not None:
-            request.subscription = subscription
-        if return_immediately is not None:
-            request.return_immediately = return_immediately
-        if max_messages is not None:
-            request.max_messages = max_messages
+            if subscription is not None:
+                request.subscription = subscription
+            if return_immediately is not None:
+                request.return_immediately = return_immediately
+            if max_messages is not None:
+                request.max_messages = max_messages
 
         # Wrap the RPC method; this adds retry and timeout information,
         # and friendly error handling.
-        rpc = gapic_v1.method.wrap_method(
-            self._transport.pull,
-            default_retry=retries.Retry(
-                initial=0.1,
-                maximum=60.0,
-                multiplier=1.3,
-                predicate=retries.if_exception_type(
-                    exceptions.ServiceUnavailable,
-                    exceptions.Unknown,
-                    exceptions.Aborted,
-                ),
-            ),
-            default_timeout=60.0,
-            client_info=_client_info,
-        )
+        rpc = self._transport._wrapped_methods[self._transport.pull]
 
         # Certain fields should be provided within the metadata header;
         # add these here.
@@ -1075,6 +1023,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
                 client.
 
         """
+
         # Wrappers in api-core should not automatically pre-fetch the first
         # stream result, as this breaks the stream when re-opening it.
         # https://github.com/googleapis/python-pubsub/issues/93#issuecomment-630762257
@@ -1082,23 +1031,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
 
         # Wrap the RPC method; this adds retry and timeout information,
         # and friendly error handling.
-        rpc = gapic_v1.method.wrap_method(
-            self._transport.streaming_pull,
-            default_retry=retries.Retry(
-                initial=0.1,
-                maximum=60.0,
-                multiplier=1.3,
-                predicate=retries.if_exception_type(
-                    exceptions.DeadlineExceeded,
-                    exceptions.InternalServerError,
-                    exceptions.ResourceExhausted,
-                    exceptions.ServiceUnavailable,
-                    exceptions.Aborted,
-                ),
-            ),
-            default_timeout=900.0,
-            client_info=_client_info,
-        )
+        rpc = self._transport._wrapped_methods[self._transport.streaming_pull]
 
         # Send the request.
         response = rpc(requests, retry=retry, timeout=timeout, metadata=metadata,)
@@ -1156,35 +1089,31 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
         # Create or coerce a protobuf request object.
         # Sanity check: If we got a request object, we should *not* have
         # gotten any keyword arguments that map to the request.
-        if request is not None and any([subscription, push_config]):
+        has_flattened_params = any([subscription, push_config])
+        if request is not None and has_flattened_params:
             raise ValueError(
                 "If the `request` argument is set, then none of "
                 "the individual field arguments should be set."
             )
 
-        request = pubsub.ModifyPushConfigRequest(request)
+        # Minor optimization to avoid making a copy if the user passes
+        # in a pubsub.ModifyPushConfigRequest.
+        # There's no risk of modifying the input as we've already verified
+        # there are no flattened fields.
+        if not isinstance(request, pubsub.ModifyPushConfigRequest):
+            request = pubsub.ModifyPushConfigRequest(request)
 
-        # If we have keyword arguments corresponding to fields on the
-        # request, apply these.
+            # If we have keyword arguments corresponding to fields on the
+            # request, apply these.
 
-        if subscription is not None:
-            request.subscription = subscription
-        if push_config is not None:
-            request.push_config = push_config
+            if subscription is not None:
+                request.subscription = subscription
+            if push_config is not None:
+                request.push_config = push_config
 
         # Wrap the RPC method; this adds retry and timeout information,
         # and friendly error handling.
-        rpc = gapic_v1.method.wrap_method(
-            self._transport.modify_push_config,
-            default_retry=retries.Retry(
-                initial=0.1,
-                maximum=60.0,
-                multiplier=1.3,
-                predicate=retries.if_exception_type(exceptions.ServiceUnavailable,),
-            ),
-            default_timeout=60.0,
-            client_info=_client_info,
-        )
+        rpc = self._transport._wrapped_methods[self._transport.modify_push_config]
 
         # Certain fields should be provided within the metadata header;
         # add these here.
@@ -1235,52 +1164,40 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
 
         Returns:
             ~.pubsub.Snapshot:
-                A snapshot resource. Snapshots are
-                used in <a
-                href="https://cloud.google.com/pubsub/docs/replay-
-                overview">Seek</a> operations, which
-                allow
-                you to manage message acknowledgments in
-                bulk. That is, you can set the
-                acknowledgment state of messages in an
-                existing subscription to the state
-                captured by a snapshot.
+                A snapshot resource. Snapshots are used in
+                `Seek <https://cloud.google.com/pubsub/docs/replay-overview>`__
+                operations, which allow you to manage message
+                acknowledgments in bulk. That is, you can set the
+                acknowledgment state of messages in an existing
+                subscription to the state captured by a snapshot.
 
         """
         # Create or coerce a protobuf request object.
         # Sanity check: If we got a request object, we should *not* have
         # gotten any keyword arguments that map to the request.
-        if request is not None and any([snapshot]):
+        has_flattened_params = any([snapshot])
+        if request is not None and has_flattened_params:
             raise ValueError(
                 "If the `request` argument is set, then none of "
                 "the individual field arguments should be set."
             )
 
-        request = pubsub.GetSnapshotRequest(request)
+        # Minor optimization to avoid making a copy if the user passes
+        # in a pubsub.GetSnapshotRequest.
+        # There's no risk of modifying the input as we've already verified
+        # there are no flattened fields.
+        if not isinstance(request, pubsub.GetSnapshotRequest):
+            request = pubsub.GetSnapshotRequest(request)
 
-        # If we have keyword arguments corresponding to fields on the
-        # request, apply these.
+            # If we have keyword arguments corresponding to fields on the
+            # request, apply these.
 
-        if snapshot is not None:
-            request.snapshot = snapshot
+            if snapshot is not None:
+                request.snapshot = snapshot
 
         # Wrap the RPC method; this adds retry and timeout information,
         # and friendly error handling.
-        rpc = gapic_v1.method.wrap_method(
-            self._transport.get_snapshot,
-            default_retry=retries.Retry(
-                initial=0.1,
-                maximum=60.0,
-                multiplier=1.3,
-                predicate=retries.if_exception_type(
-                    exceptions.ServiceUnavailable,
-                    exceptions.Unknown,
-                    exceptions.Aborted,
-                ),
-            ),
-            default_timeout=60.0,
-            client_info=_client_info,
-        )
+        rpc = self._transport._wrapped_methods[self._transport.get_snapshot]
 
         # Certain fields should be provided within the metadata header;
         # add these here.
@@ -1304,12 +1221,10 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pagers.ListSnapshotsPager:
         r"""Lists the existing snapshots. Snapshots are used in
-        <a href="https://cloud.google.com/pubsub/docs/replay-
-        overview">Seek</a> operations, which allow
-        you to manage message acknowledgments in bulk. That is,
-        you can set the acknowledgment state of messages in an
-        existing subscription to the state captured by a
-        snapshot.
+        `Seek <https://cloud.google.com/pubsub/docs/replay-overview>`__
+        operations, which allow you to manage message acknowledgments in
+        bulk. That is, you can set the acknowledgment state of messages
+        in an existing subscription to the state captured by a snapshot.
 
 
         Args:
@@ -1340,37 +1255,29 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
         # Create or coerce a protobuf request object.
         # Sanity check: If we got a request object, we should *not* have
         # gotten any keyword arguments that map to the request.
-        if request is not None and any([project]):
+        has_flattened_params = any([project])
+        if request is not None and has_flattened_params:
             raise ValueError(
                 "If the `request` argument is set, then none of "
                 "the individual field arguments should be set."
             )
 
-        request = pubsub.ListSnapshotsRequest(request)
+        # Minor optimization to avoid making a copy if the user passes
+        # in a pubsub.ListSnapshotsRequest.
+        # There's no risk of modifying the input as we've already verified
+        # there are no flattened fields.
+        if not isinstance(request, pubsub.ListSnapshotsRequest):
+            request = pubsub.ListSnapshotsRequest(request)
 
-        # If we have keyword arguments corresponding to fields on the
-        # request, apply these.
+            # If we have keyword arguments corresponding to fields on the
+            # request, apply these.
 
-        if project is not None:
-            request.project = project
+            if project is not None:
+                request.project = project
 
         # Wrap the RPC method; this adds retry and timeout information,
         # and friendly error handling.
-        rpc = gapic_v1.method.wrap_method(
-            self._transport.list_snapshots,
-            default_retry=retries.Retry(
-                initial=0.1,
-                maximum=60.0,
-                multiplier=1.3,
-                predicate=retries.if_exception_type(
-                    exceptions.ServiceUnavailable,
-                    exceptions.Unknown,
-                    exceptions.Aborted,
-                ),
-            ),
-            default_timeout=60.0,
-            client_info=_client_info,
-        )
+        rpc = self._transport._wrapped_methods[self._transport.list_snapshots]
 
         # Certain fields should be provided within the metadata header;
         # add these here.
@@ -1401,20 +1308,22 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pubsub.Snapshot:
         r"""Creates a snapshot from the requested subscription. Snapshots
-        are used in Seek operations, which allow you to manage message
-        acknowledgments in bulk. That is, you can set the acknowledgment
-        state of messages in an existing subscription to the state
-        captured by a snapshot. If the snapshot already exists, returns
-        ``ALREADY_EXISTS``. If the requested subscription doesn't exist,
-        returns ``NOT_FOUND``. If the backlog in the subscription is too
-        old -- and the resulting snapshot would expire in less than 1
-        hour -- then ``FAILED_PRECONDITION`` is returned. See also the
+        are used in
+        `Seek <https://cloud.google.com/pubsub/docs/replay-overview>`__
+        operations, which allow you to manage message acknowledgments in
+        bulk. That is, you can set the acknowledgment state of messages
+        in an existing subscription to the state captured by a snapshot.
+        If the snapshot already exists, returns ``ALREADY_EXISTS``. If
+        the requested subscription doesn't exist, returns ``NOT_FOUND``.
+        If the backlog in the subscription is too old -- and the
+        resulting snapshot would expire in less than 1 hour -- then
+        ``FAILED_PRECONDITION`` is returned. See also the
         ``Snapshot.expire_time`` field. If the name is not provided in
         the request, the server will assign a random name for this
         snapshot on the same project as the subscription, conforming to
-        the `resource name
-        format <https://cloud.google.com/pubsub/docs/admin#resource_names>`__.
-        The generated name is populated in the returned Snapshot object.
+        the [resource name format]
+        (https://cloud.google.com/pubsub/docs/admin#resource_names). The
+        generated name is populated in the returned Snapshot object.
         Note that for REST API requests, you must specify a name in the
         request.
 
@@ -1457,50 +1366,42 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
 
         Returns:
             ~.pubsub.Snapshot:
-                A snapshot resource. Snapshots are
-                used in <a
-                href="https://cloud.google.com/pubsub/docs/replay-
-                overview">Seek</a> operations, which
-                allow
-                you to manage message acknowledgments in
-                bulk. That is, you can set the
-                acknowledgment state of messages in an
-                existing subscription to the state
-                captured by a snapshot.
+                A snapshot resource. Snapshots are used in
+                `Seek <https://cloud.google.com/pubsub/docs/replay-overview>`__
+                operations, which allow you to manage message
+                acknowledgments in bulk. That is, you can set the
+                acknowledgment state of messages in an existing
+                subscription to the state captured by a snapshot.
 
         """
         # Create or coerce a protobuf request object.
         # Sanity check: If we got a request object, we should *not* have
         # gotten any keyword arguments that map to the request.
-        if request is not None and any([name, subscription]):
+        has_flattened_params = any([name, subscription])
+        if request is not None and has_flattened_params:
             raise ValueError(
                 "If the `request` argument is set, then none of "
                 "the individual field arguments should be set."
             )
 
-        request = pubsub.CreateSnapshotRequest(request)
+        # Minor optimization to avoid making a copy if the user passes
+        # in a pubsub.CreateSnapshotRequest.
+        # There's no risk of modifying the input as we've already verified
+        # there are no flattened fields.
+        if not isinstance(request, pubsub.CreateSnapshotRequest):
+            request = pubsub.CreateSnapshotRequest(request)
 
-        # If we have keyword arguments corresponding to fields on the
-        # request, apply these.
+            # If we have keyword arguments corresponding to fields on the
+            # request, apply these.
 
-        if name is not None:
-            request.name = name
-        if subscription is not None:
-            request.subscription = subscription
+            if name is not None:
+                request.name = name
+            if subscription is not None:
+                request.subscription = subscription
 
         # Wrap the RPC method; this adds retry and timeout information,
         # and friendly error handling.
-        rpc = gapic_v1.method.wrap_method(
-            self._transport.create_snapshot,
-            default_retry=retries.Retry(
-                initial=0.1,
-                maximum=60.0,
-                multiplier=1.3,
-                predicate=retries.if_exception_type(exceptions.ServiceUnavailable,),
-            ),
-            default_timeout=60.0,
-            client_info=_client_info,
-        )
+        rpc = self._transport._wrapped_methods[self._transport.create_snapshot]
 
         # Certain fields should be provided within the metadata header;
         # add these here.
@@ -1544,35 +1445,26 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
 
         Returns:
             ~.pubsub.Snapshot:
-                A snapshot resource. Snapshots are
-                used in <a
-                href="https://cloud.google.com/pubsub/docs/replay-
-                overview">Seek</a> operations, which
-                allow
-                you to manage message acknowledgments in
-                bulk. That is, you can set the
-                acknowledgment state of messages in an
-                existing subscription to the state
-                captured by a snapshot.
+                A snapshot resource. Snapshots are used in
+                `Seek <https://cloud.google.com/pubsub/docs/replay-overview>`__
+                operations, which allow you to manage message
+                acknowledgments in bulk. That is, you can set the
+                acknowledgment state of messages in an existing
+                subscription to the state captured by a snapshot.
 
         """
         # Create or coerce a protobuf request object.
 
-        request = pubsub.UpdateSnapshotRequest(request)
+        # Minor optimization to avoid making a copy if the user passes
+        # in a pubsub.UpdateSnapshotRequest.
+        # There's no risk of modifying the input as we've already verified
+        # there are no flattened fields.
+        if not isinstance(request, pubsub.UpdateSnapshotRequest):
+            request = pubsub.UpdateSnapshotRequest(request)
 
         # Wrap the RPC method; this adds retry and timeout information,
         # and friendly error handling.
-        rpc = gapic_v1.method.wrap_method(
-            self._transport.update_snapshot,
-            default_retry=retries.Retry(
-                initial=0.1,
-                maximum=60.0,
-                multiplier=1.3,
-                predicate=retries.if_exception_type(exceptions.ServiceUnavailable,),
-            ),
-            default_timeout=60.0,
-            client_info=_client_info,
-        )
+        rpc = self._transport._wrapped_methods[self._transport.update_snapshot]
 
         # Certain fields should be provided within the metadata header;
         # add these here.
@@ -1597,19 +1489,16 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
         timeout: float = None,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> None:
-        r"""Removes an existing snapshot. Snapshots are used in
-        <a href="https://cloud.google.com/pubsub/docs/replay-
-        overview">Seek</a> operations, which allow
-        you to manage message acknowledgments in bulk. That is,
-        you can set the acknowledgment state of messages in an
-        existing subscription to the state captured by a
-        snapshot.<br><br>
-        When the snapshot is deleted, all messages retained in
-        the snapshot are immediately dropped. After a snapshot
-        is deleted, a new one may be created with the same name,
-        but the new one has no association with the old snapshot
-        or its subscription, unless the same subscription is
-        specified.
+        r"""Removes an existing snapshot. Snapshots are used in [Seek]
+        (https://cloud.google.com/pubsub/docs/replay-overview)
+        operations, which allow you to manage message acknowledgments in
+        bulk. That is, you can set the acknowledgment state of messages
+        in an existing subscription to the state captured by a snapshot.
+        When the snapshot is deleted, all messages retained in the
+        snapshot are immediately dropped. After a snapshot is deleted, a
+        new one may be created with the same name, but the new one has
+        no association with the old snapshot or its subscription, unless
+        the same subscription is specified.
 
 
         Args:
@@ -1632,33 +1521,29 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
         # Create or coerce a protobuf request object.
         # Sanity check: If we got a request object, we should *not* have
         # gotten any keyword arguments that map to the request.
-        if request is not None and any([snapshot]):
+        has_flattened_params = any([snapshot])
+        if request is not None and has_flattened_params:
             raise ValueError(
                 "If the `request` argument is set, then none of "
                 "the individual field arguments should be set."
             )
 
-        request = pubsub.DeleteSnapshotRequest(request)
+        # Minor optimization to avoid making a copy if the user passes
+        # in a pubsub.DeleteSnapshotRequest.
+        # There's no risk of modifying the input as we've already verified
+        # there are no flattened fields.
+        if not isinstance(request, pubsub.DeleteSnapshotRequest):
+            request = pubsub.DeleteSnapshotRequest(request)
 
-        # If we have keyword arguments corresponding to fields on the
-        # request, apply these.
+            # If we have keyword arguments corresponding to fields on the
+            # request, apply these.
 
-        if snapshot is not None:
-            request.snapshot = snapshot
+            if snapshot is not None:
+                request.snapshot = snapshot
 
         # Wrap the RPC method; this adds retry and timeout information,
         # and friendly error handling.
-        rpc = gapic_v1.method.wrap_method(
-            self._transport.delete_snapshot,
-            default_retry=retries.Retry(
-                initial=0.1,
-                maximum=60.0,
-                multiplier=1.3,
-                predicate=retries.if_exception_type(exceptions.ServiceUnavailable,),
-            ),
-            default_timeout=60.0,
-            client_info=_client_info,
-        )
+        rpc = self._transport._wrapped_methods[self._transport.delete_snapshot]
 
         # Certain fields should be provided within the metadata header;
         # add these here.
@@ -1679,16 +1564,15 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
         timeout: float = None,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pubsub.SeekResponse:
-        r"""Seeks an existing subscription to a point in time or
-        to a given snapshot, whichever is provided in the
-        request. Snapshots are used in <a
-        href="https://cloud.google.com/pubsub/docs/replay-
-        overview">Seek</a> operations, which allow
-        you to manage message acknowledgments in bulk. That is,
-        you can set the acknowledgment state of messages in an
-        existing subscription to the state captured by a
-        snapshot. Note that both the subscription and the
-        snapshot must be on the same topic.
+        r"""Seeks an existing subscription to a point in time or to a given
+        snapshot, whichever is provided in the request. Snapshots are
+        used in
+        `Seek <https://cloud.google.com/pubsub/docs/replay-overview>`__
+        operations, which allow you to manage message acknowledgments in
+        bulk. That is, you can set the acknowledgment state of messages
+        in an existing subscription to the state captured by a snapshot.
+        Note that both the subscription and the snapshot must be on the
+        same topic.
 
 
         Args:
@@ -1709,25 +1593,16 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
         """
         # Create or coerce a protobuf request object.
 
-        request = pubsub.SeekRequest(request)
+        # Minor optimization to avoid making a copy if the user passes
+        # in a pubsub.SeekRequest.
+        # There's no risk of modifying the input as we've already verified
+        # there are no flattened fields.
+        if not isinstance(request, pubsub.SeekRequest):
+            request = pubsub.SeekRequest(request)
 
         # Wrap the RPC method; this adds retry and timeout information,
         # and friendly error handling.
-        rpc = gapic_v1.method.wrap_method(
-            self._transport.seek,
-            default_retry=retries.Retry(
-                initial=0.1,
-                maximum=60.0,
-                multiplier=1.3,
-                predicate=retries.if_exception_type(
-                    exceptions.ServiceUnavailable,
-                    exceptions.Unknown,
-                    exceptions.Aborted,
-                ),
-            ),
-            default_timeout=60.0,
-            client_info=_client_info,
-        )
+        rpc = self._transport._wrapped_methods[self._transport.seek]
 
         # Certain fields should be provided within the metadata header;
         # add these here.

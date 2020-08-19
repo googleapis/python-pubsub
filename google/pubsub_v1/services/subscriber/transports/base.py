@@ -17,15 +17,26 @@
 
 import abc
 import typing
+import pkg_resources
 
 from google import auth
 from google.api_core import exceptions  # type: ignore
+from google.api_core import gapic_v1  # type: ignore
+from google.api_core import retry as retries  # type: ignore
 from google.auth import credentials  # type: ignore
 
 from google.iam.v1 import iam_policy_pb2 as iam_policy  # type: ignore
 from google.iam.v1 import policy_pb2 as policy  # type: ignore
 from google.protobuf import empty_pb2 as empty  # type: ignore
 from google.pubsub_v1.types import pubsub
+
+
+try:
+    _client_info = gapic_v1.client_info.ClientInfo(
+        gapic_version=pkg_resources.get_distribution("google-pubsub",).version,
+    )
+except pkg_resources.DistributionNotFound:
+    _client_info = gapic_v1.client_info.ClientInfo()
 
 
 class SubscriberTransport(abc.ABC):
@@ -86,6 +97,224 @@ class SubscriberTransport(abc.ABC):
 
         # Save the credentials.
         self._credentials = credentials
+
+        # Lifted into its own function so it can be stubbed out during tests.
+        self._prep_wrapped_messages()
+
+    def _prep_wrapped_messages(self):
+        # Precompute the wrapped methods.
+        self._wrapped_methods = {
+            self.create_subscription: gapic_v1.method.wrap_method(
+                self.create_subscription,
+                default_retry=retries.Retry(
+                    initial=0.1,
+                    maximum=60.0,
+                    multiplier=1.3,
+                    predicate=retries.if_exception_type(
+                        exceptions.Aborted,
+                        exceptions.ServiceUnavailable,
+                        exceptions.Unknown,
+                    ),
+                ),
+                default_timeout=60.0,
+                client_info=_client_info,
+            ),
+            self.get_subscription: gapic_v1.method.wrap_method(
+                self.get_subscription,
+                default_retry=retries.Retry(
+                    initial=0.1,
+                    maximum=60.0,
+                    multiplier=1.3,
+                    predicate=retries.if_exception_type(
+                        exceptions.Aborted,
+                        exceptions.ServiceUnavailable,
+                        exceptions.Unknown,
+                    ),
+                ),
+                default_timeout=60.0,
+                client_info=_client_info,
+            ),
+            self.update_subscription: gapic_v1.method.wrap_method(
+                self.update_subscription,
+                default_retry=retries.Retry(
+                    initial=0.1,
+                    maximum=60.0,
+                    multiplier=1.3,
+                    predicate=retries.if_exception_type(exceptions.ServiceUnavailable,),
+                ),
+                default_timeout=60.0,
+                client_info=_client_info,
+            ),
+            self.list_subscriptions: gapic_v1.method.wrap_method(
+                self.list_subscriptions,
+                default_retry=retries.Retry(
+                    initial=0.1,
+                    maximum=60.0,
+                    multiplier=1.3,
+                    predicate=retries.if_exception_type(
+                        exceptions.Aborted,
+                        exceptions.ServiceUnavailable,
+                        exceptions.Unknown,
+                    ),
+                ),
+                default_timeout=60.0,
+                client_info=_client_info,
+            ),
+            self.delete_subscription: gapic_v1.method.wrap_method(
+                self.delete_subscription,
+                default_retry=retries.Retry(
+                    initial=0.1,
+                    maximum=60.0,
+                    multiplier=1.3,
+                    predicate=retries.if_exception_type(exceptions.ServiceUnavailable,),
+                ),
+                default_timeout=60.0,
+                client_info=_client_info,
+            ),
+            self.modify_ack_deadline: gapic_v1.method.wrap_method(
+                self.modify_ack_deadline,
+                default_retry=retries.Retry(
+                    initial=0.1,
+                    maximum=60.0,
+                    multiplier=1.3,
+                    predicate=retries.if_exception_type(exceptions.ServiceUnavailable,),
+                ),
+                default_timeout=60.0,
+                client_info=_client_info,
+            ),
+            self.acknowledge: gapic_v1.method.wrap_method(
+                self.acknowledge,
+                default_retry=retries.Retry(
+                    initial=0.1,
+                    maximum=60.0,
+                    multiplier=1.3,
+                    predicate=retries.if_exception_type(exceptions.ServiceUnavailable,),
+                ),
+                default_timeout=60.0,
+                client_info=_client_info,
+            ),
+            self.pull: gapic_v1.method.wrap_method(
+                self.pull,
+                default_retry=retries.Retry(
+                    initial=0.1,
+                    maximum=60.0,
+                    multiplier=1.3,
+                    predicate=retries.if_exception_type(
+                        exceptions.Aborted,
+                        exceptions.ServiceUnavailable,
+                        exceptions.Unknown,
+                    ),
+                ),
+                default_timeout=60.0,
+                client_info=_client_info,
+            ),
+            self.streaming_pull: gapic_v1.method.wrap_method(
+                self.streaming_pull,
+                default_retry=retries.Retry(
+                    initial=0.1,
+                    maximum=60.0,
+                    multiplier=1.3,
+                    predicate=retries.if_exception_type(
+                        exceptions.DeadlineExceeded,
+                        exceptions.InternalServerError,
+                        exceptions.ResourceExhausted,
+                        exceptions.ServiceUnavailable,
+                        exceptions.Aborted,
+                    ),
+                ),
+                default_timeout=900.0,
+                client_info=_client_info,
+            ),
+            self.modify_push_config: gapic_v1.method.wrap_method(
+                self.modify_push_config,
+                default_retry=retries.Retry(
+                    initial=0.1,
+                    maximum=60.0,
+                    multiplier=1.3,
+                    predicate=retries.if_exception_type(exceptions.ServiceUnavailable,),
+                ),
+                default_timeout=60.0,
+                client_info=_client_info,
+            ),
+            self.get_snapshot: gapic_v1.method.wrap_method(
+                self.get_snapshot,
+                default_retry=retries.Retry(
+                    initial=0.1,
+                    maximum=60.0,
+                    multiplier=1.3,
+                    predicate=retries.if_exception_type(
+                        exceptions.Aborted,
+                        exceptions.ServiceUnavailable,
+                        exceptions.Unknown,
+                    ),
+                ),
+                default_timeout=60.0,
+                client_info=_client_info,
+            ),
+            self.list_snapshots: gapic_v1.method.wrap_method(
+                self.list_snapshots,
+                default_retry=retries.Retry(
+                    initial=0.1,
+                    maximum=60.0,
+                    multiplier=1.3,
+                    predicate=retries.if_exception_type(
+                        exceptions.Aborted,
+                        exceptions.ServiceUnavailable,
+                        exceptions.Unknown,
+                    ),
+                ),
+                default_timeout=60.0,
+                client_info=_client_info,
+            ),
+            self.create_snapshot: gapic_v1.method.wrap_method(
+                self.create_snapshot,
+                default_retry=retries.Retry(
+                    initial=0.1,
+                    maximum=60.0,
+                    multiplier=1.3,
+                    predicate=retries.if_exception_type(exceptions.ServiceUnavailable,),
+                ),
+                default_timeout=60.0,
+                client_info=_client_info,
+            ),
+            self.update_snapshot: gapic_v1.method.wrap_method(
+                self.update_snapshot,
+                default_retry=retries.Retry(
+                    initial=0.1,
+                    maximum=60.0,
+                    multiplier=1.3,
+                    predicate=retries.if_exception_type(exceptions.ServiceUnavailable,),
+                ),
+                default_timeout=60.0,
+                client_info=_client_info,
+            ),
+            self.delete_snapshot: gapic_v1.method.wrap_method(
+                self.delete_snapshot,
+                default_retry=retries.Retry(
+                    initial=0.1,
+                    maximum=60.0,
+                    multiplier=1.3,
+                    predicate=retries.if_exception_type(exceptions.ServiceUnavailable,),
+                ),
+                default_timeout=60.0,
+                client_info=_client_info,
+            ),
+            self.seek: gapic_v1.method.wrap_method(
+                self.seek,
+                default_retry=retries.Retry(
+                    initial=0.1,
+                    maximum=60.0,
+                    multiplier=1.3,
+                    predicate=retries.if_exception_type(
+                        exceptions.Aborted,
+                        exceptions.ServiceUnavailable,
+                        exceptions.Unknown,
+                    ),
+                ),
+                default_timeout=60.0,
+                client_info=_client_info,
+            ),
+        }
 
     @property
     def create_subscription(
