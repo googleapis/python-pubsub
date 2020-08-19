@@ -19,7 +19,7 @@ from google.cloud.pubsub_v1 import subscriber
 from google.cloud.pubsub_v1 import types
 from google.cloud.pubsub_v1.subscriber import futures
 from google.pubsub_v1.services.subscriber import client as subscriber_client
-from google.pubsub_v1.services.subscriber.transports.base import SubscriberTransport
+from google.pubsub_v1.services.subscriber.transports.grpc import SubscriberGrpcTransport
 
 
 def test_init():
@@ -29,7 +29,7 @@ def test_init():
 
 
 def test_init_w_custom_transport():
-    transport = SubscriberTransport()
+    transport = SubscriberGrpcTransport()
     client = subscriber.Client(transport=transport)
     assert isinstance(client.api, subscriber_client.SubscriberClient)
     assert client.api._transport is transport

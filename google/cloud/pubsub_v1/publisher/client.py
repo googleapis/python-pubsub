@@ -24,6 +24,7 @@ import time
 import grpc
 import six
 
+from google.api_core import gapic_v1
 from google.api_core import grpc_helpers
 from google.oauth2 import service_account
 
@@ -264,12 +265,7 @@ class Client(object):
                 sequencer.unpause()
 
     def publish(
-        self,
-        topic,
-        data,
-        ordering_key="",
-        retry=publisher_client.PublisherClient._DEFAULT_PUBLISH_RETRY,
-        **attrs
+        self, topic, data, ordering_key="", retry=gapic_v1.method.DEFAULT, **attrs
     ):
         """Publish a single message.
 
@@ -375,6 +371,10 @@ class Client(object):
             # Note that this then also impacts messages added with an empty
             # ordering key.
             if self._enable_message_ordering:
+                if retry is gapic_v1.method.DEFAULT:
+                    # use the default retry for the publish GRPC method as a base
+                    transport = self.api._transport
+                    retry = transport._wrapped_methods[transport.publish]._retry
                 retry = retry.with_deadline(2.0 ** 32)
 
             # Delegate the publishing to the sequencer.

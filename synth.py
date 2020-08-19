@@ -14,7 +14,6 @@
 
 """This script is used to synthesize generated parts of this library."""
 
-import re
 import textwrap
 
 import synthtool as s
@@ -68,56 +67,18 @@ s.replace(
 # results.
 s.replace(
     "google/pubsub_v1/services/subscriber/client.py",
-    r"(\s+#.+\n){2}\s+rpc = gapic_v1\.method\.wrap_method\(\s+self\._transport\.streaming_pull,",
+    (
+        r"# Wrap the RPC method.*\n"
+        r"\s+# and friendly error.*\n"
+        r"\s+rpc = self\._transport\._wrapped_methods\[self\._transport\.streaming_pull\]"
+    ),
     """
         # Wrappers in api-core should not automatically pre-fetch the first
         # stream result, as this breaks the stream when re-opening it.
         # https://github.com/googleapis/python-pubsub/issues/93#issuecomment-630762257
         self._transport.streaming_pull._prefetch_first_result_ = False
 
-    \g<0>""",
-)
-
-
-# In Rertry config predicates, the last exception item lacks indentation.
-s.replace(
-    "google/pubsub_v1/services/publisher/client.py",
-    r"^exceptions\.\w+,\n",
-    " " * 20 + "\g<0>",
-)
-
-# Extract default publish() retry to a class variable for easier customization.
-#
-# The idea is to match several sections of the file that together form all of
-# its contents. One of the subsections is the match that represents the default
-# Retry object in the publish() method, and when concatenating the main file
-# sections back together, the matched Retry definition is injected between them
-# at the right place.
-s.replace(
-    "google/pubsub_v1/services/publisher/client.py",
-    r"""
-    (?P<part_1>.+?)
-    (?P<part_2>^\s+SERVICE_ADDRESS\ =)
-    (?P<part_3>.+?)
-    (?P<matches_in_publish>
-        (?P<before_match>
-            \s+ self\._transport\.publish,\n
-            \s+ default_retry=)
-        (?P<default_retry>retries\.Retry\(
-                             .+?
-                             \),
-                    .+?  \)),
-    )
-    (?P<part_5>.+?)
-    """,
-    (
-        "\g<part_1>\n"
-        "    # Copied from the publish() method with synth, do not inject it\n"
-        "    # into the class by e.g. hardcoding it somewhere.\n"
-        "    _DEFAULT_PUBLISH_RETRY = \g<default_retry>\n"
-        "\g<part_2>\g<part_3>\g<matches_in_publish>\g<part_5>"
-    ),
-    re.VERBOSE | re.MULTILINE | re.DOTALL,
+        \g<0>""",
 )
 
 # Docstrings of *_iam_policy() methods are formatted poorly and must be fixed

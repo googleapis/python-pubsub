@@ -23,6 +23,7 @@ import mock
 import pytest
 import time
 
+from google.api_core import gapic_v1
 from google.api_core import retry as retries
 from google.cloud.pubsub_v1 import publisher
 from google.cloud.pubsub_v1 import types
@@ -32,7 +33,7 @@ from google.cloud.pubsub_v1.publisher._sequencer import ordered_sequencer
 
 from google.pubsub_v1 import types as gapic_types
 from google.pubsub_v1.services.publisher import client as publisher_client
-from google.pubsub_v1.services.publisher.transports.base import PublisherTransport
+from google.pubsub_v1.services.publisher.transports.grpc import PublisherGrpcTransport
 
 
 def _assert_retries_equal(retry, retry2):
@@ -61,7 +62,7 @@ def test_init():
 
 
 def test_init_w_custom_transport():
-    transport = PublisherTransport()
+    transport = PublisherGrpcTransport()
     client = publisher.Client(transport=transport)
 
     # A plain client should have an `api` (the underlying GAPIC) and a
@@ -310,17 +311,11 @@ def test_publish_new_batch_needed():
         settings=client.batch_settings,
         batch_done_callback=None,
         commit_when_full=True,
-        commit_retry=mock.ANY,
+        commit_retry=gapic_v1.method.DEFAULT,
     )
     message_pb = gapic_types.PubsubMessage(data=b"foo", attributes={"bar": u"baz"})
     batch1.publish.assert_called_once_with(message_pb)
     batch2.publish.assert_called_once_with(message_pb)
-
-    _, kwargs = batch_class.call_args
-    batch_commit_retry = kwargs["commit_retry"]
-    _assert_retries_equal(
-        batch_commit_retry, publisher_client.PublisherClient._DEFAULT_PUBLISH_RETRY
-    )
 
 
 def test_publish_attrs_type_error():
@@ -356,16 +351,21 @@ def test_stop():
 def test_gapic_instance_method():
     creds = mock.Mock(spec=credentials.Credentials)
     client = publisher.Client(credentials=creds)
-    patcher = mock.patch.object(client.api, "_transport")
+
+    transport_mock = mock.Mock(create_topic=mock.sentinel)
+    fake_create_topic_rpc = mock.Mock()
+    transport_mock._wrapped_methods = {
+        transport_mock.create_topic: fake_create_topic_rpc
+    }
+    patcher = mock.patch.object(client.api, "_transport", new=transport_mock)
 
     topic = gapic_types.Topic(name="projects/foo/topics/bar")
 
-    with patcher as fake_transport:
+    with patcher:
         client.create_topic(topic)
 
-    fake_create_topic = fake_transport.create_topic
-    assert fake_create_topic.call_count == 1
-    _, args, _ = fake_create_topic.mock_calls[0]
+    assert fake_create_topic_rpc.call_count == 1
+    _, args, _ = fake_create_topic_rpc.mock_calls[0]
     assert args[0] == gapic_types.Topic(name="projects/foo/topics/bar")
 
 
@@ -573,30 +573,3 @@ def test_resume_publish_ordering_keys_not_enabled():
     # Throw on calling resume_publish() when enable_message_ordering is False.
     with pytest.raises(ValueError):
         client.resume_publish("topic", "ord_key")
-
-
-def test_extracted_publish_retry():
-    MISSING = object()
-
-    extracted_retry = getattr(
-        publisher_client.PublisherClient, "_DEFAULT_PUBLISH_RETRY", MISSING
-    )
-    assert (
-        extracted_retry is not MISSING
-    ), "gapic publisher client missing _DEFAULT_PUBLISH_RETRY class attribute"
-
-    client = publisher_client.PublisherClient()
-    fake_rpc = mock.Mock()
-    wrap_method_patcher = mock.patch(
-        "google.api_core.gapic_v1.method.wrap_method", return_value=fake_rpc
-    )
-
-    with wrap_method_patcher as patched_wrap:
-        client.publish(topic="projects/foo/topics/bar", messages=[{"data": b"Hello!"}])
-
-    fake_rpc.assert_called_once()
-
-    patched_wrap.assert_called_once()
-    _, kwargs = patched_wrap.call_args
-    default_rpc_retry = kwargs["default_retry"]
-    _assert_retries_equal(extracted_retry, default_rpc_retry)
