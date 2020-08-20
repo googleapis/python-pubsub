@@ -52,6 +52,8 @@ _BLACKLISTED_METHODS = (
     "from_service_account_json",
 )
 
+_raw_proto_pubbsub_message = gapic_types.PubsubMessage.pb()
+
 
 def _set_nested_value(container, value, keys):
     current = container
@@ -346,10 +348,13 @@ class Client(object):
                 "be sent as text strings."
             )
 
-        # Create the Pub/Sub message object.
-        message = gapic_types.PubsubMessage(
+        # Create the Pub/Sub message object. For performance reasons, the message
+        # should be constructed by directly using the raw protobuf class, and only
+        # then wrapping it into the higher-level PubsubMessage class.
+        vanilla_pb = _raw_proto_pubbsub_message(
             data=data, ordering_key=ordering_key, attributes=attrs
         )
+        message = gapic_types.PubsubMessage.wrap(vanilla_pb)
 
         # Messages should go through flow control to prevent excessive
         # queuing on the client side (depending on the settings).

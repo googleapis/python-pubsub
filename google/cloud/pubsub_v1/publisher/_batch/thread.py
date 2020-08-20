@@ -32,6 +32,8 @@ _LOGGER = logging.getLogger(__name__)
 _CAN_COMMIT = (base.BatchStatus.ACCEPTING_MESSAGES, base.BatchStatus.STARTING)
 _SERVER_PUBLISH_MAX_BYTES = 10 * 1000 * 1000  # max accepted size of PublishRequest
 
+_raw_proto_pubbsub_message = gapic_types.PubsubMessage.pb()
+
 
 class Batch(base.Batch):
     """A batch of messages.
@@ -337,7 +339,11 @@ class Batch(base.Batch):
 
         # Coerce the type, just in case.
         if not isinstance(message, gapic_types.PubsubMessage):
-            message = gapic_types.PubsubMessage(**message)
+            # For performance reasons, the message should be constructed by directly
+            # using the raw protobuf class, and only then wrapping it into the
+            # higher-level PubsubMessage class.
+            vanilla_pb = _raw_proto_pubbsub_message(**message)
+            message = gapic_types.PubsubMessage.wrap(vanilla_pb)
 
         future = None
 

@@ -602,9 +602,13 @@ class StreamingPullManager(object):
             )
             return
 
+        # IMPORTANT: Circumvent the wrapper class and operate on the raw underlying
+        # protobuf message to significantly gain on attribute access performance.
+        received_messages = response._pb.received_messages
+
         _LOGGER.debug(
             "Processing %s received message(s), currently on hold %s (bytes %s).",
-            len(response.received_messages),
+            len(received_messages),
             self._messages_on_hold.size,
             self._on_hold_bytes,
         )
@@ -614,12 +618,12 @@ class StreamingPullManager(object):
         # received them.
         items = [
             requests.ModAckRequest(message.ack_id, self._ack_histogram.percentile(99))
-            for message in response.received_messages
+            for message in received_messages
         ]
         self._dispatcher.modify_ack_deadline(items)
 
         with self._pause_resume_lock:
-            for received_message in response.received_messages:
+            for received_message in received_messages:
                 message = google.cloud.pubsub_v1.subscriber.message.Message(
                     received_message.message,
                     received_message.ack_id,
