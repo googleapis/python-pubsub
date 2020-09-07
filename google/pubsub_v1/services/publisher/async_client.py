@@ -33,7 +33,7 @@ from google.iam.v1 import policy_pb2 as policy  # type: ignore
 from google.pubsub_v1.services.publisher import pagers
 from google.pubsub_v1.types import pubsub
 
-from .transports.base import PublisherTransport
+from .transports.base import PublisherTransport, DEFAULT_CLIENT_INFO
 from .transports.grpc_asyncio import PublisherGrpcAsyncIOTransport
 from .client import PublisherClient
 
@@ -63,6 +63,7 @@ class PublisherAsyncClient:
         credentials: credentials.Credentials = None,
         transport: Union[str, PublisherTransport] = "grpc_asyncio",
         client_options: ClientOptions = None,
+        client_info: gapic_v1.client_info.ClientInfo = DEFAULT_CLIENT_INFO,
     ) -> None:
         """Instantiate the publisher client.
 
@@ -95,7 +96,10 @@ class PublisherAsyncClient:
         """
 
         self._client = PublisherClient(
-            credentials=credentials, transport=transport, client_options=client_options,
+            credentials=credentials,
+            transport=transport,
+            client_options=client_options,
+            client_info=client_info,
         )
 
     async def create_topic(
@@ -165,7 +169,7 @@ class PublisherAsyncClient:
                 predicate=retries.if_exception_type(exceptions.ServiceUnavailable,),
             ),
             default_timeout=60.0,
-            client_info=_client_info,
+            client_info=DEFAULT_CLIENT_INFO,
         )
 
         # Certain fields should be provided within the metadata header;
@@ -220,7 +224,7 @@ class PublisherAsyncClient:
                 predicate=retries.if_exception_type(exceptions.ServiceUnavailable,),
             ),
             default_timeout=60.0,
-            client_info=_client_info,
+            client_info=DEFAULT_CLIENT_INFO,
         )
 
         # Certain fields should be provided within the metadata header;
@@ -305,16 +309,16 @@ class PublisherAsyncClient:
                 multiplier=1.3,
                 predicate=retries.if_exception_type(
                     exceptions.Aborted,
+                    exceptions.Cancelled,
                     exceptions.DeadlineExceeded,
-                    exceptions.InternalServerError,
                     exceptions.ResourceExhausted,
                     exceptions.ServiceUnavailable,
                     exceptions.Unknown,
-                    exceptions.Cancelled,
+                    exceptions.InternalServerError,
                 ),
             ),
             default_timeout=60.0,
-            client_info=_client_info,
+            client_info=DEFAULT_CLIENT_INFO,
         )
 
         # Certain fields should be provided within the metadata header;
@@ -392,7 +396,7 @@ class PublisherAsyncClient:
                 ),
             ),
             default_timeout=60.0,
-            client_info=_client_info,
+            client_info=DEFAULT_CLIENT_INFO,
         )
 
         # Certain fields should be provided within the metadata header;
@@ -474,7 +478,7 @@ class PublisherAsyncClient:
                 ),
             ),
             default_timeout=60.0,
-            client_info=_client_info,
+            client_info=DEFAULT_CLIENT_INFO,
         )
 
         # Certain fields should be provided within the metadata header;
@@ -565,7 +569,7 @@ class PublisherAsyncClient:
                 ),
             ),
             default_timeout=60.0,
-            client_info=_client_info,
+            client_info=DEFAULT_CLIENT_INFO,
         )
 
         # Certain fields should be provided within the metadata header;
@@ -660,7 +664,7 @@ class PublisherAsyncClient:
                 ),
             ),
             default_timeout=60.0,
-            client_info=_client_info,
+            client_info=DEFAULT_CLIENT_INFO,
         )
 
         # Certain fields should be provided within the metadata header;
@@ -742,7 +746,7 @@ class PublisherAsyncClient:
                 predicate=retries.if_exception_type(exceptions.ServiceUnavailable,),
             ),
             default_timeout=60.0,
-            client_info=_client_info,
+            client_info=DEFAULT_CLIENT_INFO,
         )
 
         # Certain fields should be provided within the metadata header;
@@ -802,7 +806,7 @@ class PublisherAsyncClient:
                 predicate=retries.if_exception_type(exceptions.ServiceUnavailable,),
             ),
             default_timeout=60.0,
-            client_info=_client_info,
+            client_info=DEFAULT_CLIENT_INFO,
         )
 
         # Certain fields should be provided within the metadata header;
@@ -910,7 +914,7 @@ class PublisherAsyncClient:
         rpc = gapic_v1.method_async.wrap_method(
             self._client._transport.set_iam_policy,
             default_timeout=None,
-            client_info=_client_info,
+            client_info=DEFAULT_CLIENT_INFO,
         )
 
         # Certain fields should be provided within the metadata header;
@@ -1017,7 +1021,7 @@ class PublisherAsyncClient:
         rpc = gapic_v1.method_async.wrap_method(
             self._client._transport.get_iam_policy,
             default_timeout=None,
-            client_info=_client_info,
+            client_info=DEFAULT_CLIENT_INFO,
         )
 
         # Certain fields should be provided within the metadata header;
@@ -1068,7 +1072,7 @@ class PublisherAsyncClient:
         rpc = gapic_v1.method_async.wrap_method(
             self._client._transport.test_iam_permissions,
             default_timeout=None,
-            client_info=_client_info,
+            client_info=DEFAULT_CLIENT_INFO,
         )
 
         # Certain fields should be provided within the metadata header;
@@ -1085,11 +1089,11 @@ class PublisherAsyncClient:
 
 
 try:
-    _client_info = gapic_v1.client_info.ClientInfo(
+    DEFAULT_CLIENT_INFO = gapic_v1.client_info.ClientInfo(
         gapic_version=pkg_resources.get_distribution("google-pubsub",).version,
     )
 except pkg_resources.DistributionNotFound:
-    _client_info = gapic_v1.client_info.ClientInfo()
+    DEFAULT_CLIENT_INFO = gapic_v1.client_info.ClientInfo()
 
 
 __all__ = ("PublisherAsyncClient",)

@@ -157,6 +157,7 @@ def test_subscriber_client_client_options(
             api_mtls_endpoint="squid.clam.whelk",
             client_cert_source=None,
             quota_project_id=None,
+            client_info=transports.base.DEFAULT_CLIENT_INFO,
         )
 
     # Check the case api_endpoint is not provided and GOOGLE_API_USE_MTLS is
@@ -173,6 +174,7 @@ def test_subscriber_client_client_options(
                 api_mtls_endpoint=client.DEFAULT_ENDPOINT,
                 client_cert_source=None,
                 quota_project_id=None,
+                client_info=transports.base.DEFAULT_CLIENT_INFO,
             )
 
     # Check the case api_endpoint is not provided and GOOGLE_API_USE_MTLS is
@@ -189,6 +191,7 @@ def test_subscriber_client_client_options(
                 api_mtls_endpoint=client.DEFAULT_MTLS_ENDPOINT,
                 client_cert_source=None,
                 quota_project_id=None,
+                client_info=transports.base.DEFAULT_CLIENT_INFO,
             )
 
     # Check the case api_endpoint is not provided, GOOGLE_API_USE_MTLS is
@@ -208,6 +211,7 @@ def test_subscriber_client_client_options(
                 api_mtls_endpoint=client.DEFAULT_MTLS_ENDPOINT,
                 client_cert_source=client_cert_source_callback,
                 quota_project_id=None,
+                client_info=transports.base.DEFAULT_CLIENT_INFO,
             )
 
     # Check the case api_endpoint is not provided, GOOGLE_API_USE_MTLS is
@@ -228,6 +232,7 @@ def test_subscriber_client_client_options(
                     api_mtls_endpoint=client.DEFAULT_MTLS_ENDPOINT,
                     client_cert_source=None,
                     quota_project_id=None,
+                    client_info=transports.base.DEFAULT_CLIENT_INFO,
                 )
 
     # Check the case api_endpoint is not provided, GOOGLE_API_USE_MTLS is
@@ -248,6 +253,7 @@ def test_subscriber_client_client_options(
                     api_mtls_endpoint=client.DEFAULT_ENDPOINT,
                     client_cert_source=None,
                     quota_project_id=None,
+                    client_info=transports.base.DEFAULT_CLIENT_INFO,
                 )
 
     # Check the case api_endpoint is not provided and GOOGLE_API_USE_MTLS has
@@ -269,6 +275,7 @@ def test_subscriber_client_client_options(
             api_mtls_endpoint=client.DEFAULT_ENDPOINT,
             client_cert_source=None,
             quota_project_id="octopus",
+            client_info=transports.base.DEFAULT_CLIENT_INFO,
         )
 
 
@@ -299,6 +306,7 @@ def test_subscriber_client_client_options_scopes(
             api_mtls_endpoint=client.DEFAULT_ENDPOINT,
             client_cert_source=None,
             quota_project_id=None,
+            client_info=transports.base.DEFAULT_CLIENT_INFO,
         )
 
 
@@ -329,6 +337,7 @@ def test_subscriber_client_client_options_credentials_file(
             api_mtls_endpoint=client.DEFAULT_ENDPOINT,
             client_cert_source=None,
             quota_project_id=None,
+            client_info=transports.base.DEFAULT_CLIENT_INFO,
         )
 
 
@@ -346,6 +355,7 @@ def test_subscriber_client_client_options_from_dict():
             api_mtls_endpoint="squid.clam.whelk",
             client_cert_source=None,
             quota_project_id=None,
+            client_info=transports.base.DEFAULT_CLIENT_INFO,
         )
 
 
@@ -1279,8 +1289,8 @@ def test_list_subscriptions_pages():
             RuntimeError,
         )
         pages = list(client.list_subscriptions(request={}).pages)
-        for page, token in zip(pages, ["abc", "def", "ghi", ""]):
-            assert page.raw_page.next_page_token == token
+        for page_, token in zip(pages, ["abc", "def", "ghi", ""]):
+            assert page_.raw_page.next_page_token == token
 
 
 @pytest.mark.asyncio
@@ -1352,10 +1362,10 @@ async def test_list_subscriptions_async_pages():
             RuntimeError,
         )
         pages = []
-        async for page in (await client.list_subscriptions(request={})).pages:
-            pages.append(page)
-        for page, token in zip(pages, ["abc", "def", "ghi", ""]):
-            assert page.raw_page.next_page_token == token
+        async for page_ in (await client.list_subscriptions(request={})).pages:
+            pages.append(page_)
+        for page_, token in zip(pages, ["abc", "def", "ghi", ""]):
+            assert page_.raw_page.next_page_token == token
 
 
 def test_delete_subscription(
@@ -2858,8 +2868,8 @@ def test_list_snapshots_pages():
             RuntimeError,
         )
         pages = list(client.list_snapshots(request={}).pages)
-        for page, token in zip(pages, ["abc", "def", "ghi", ""]):
-            assert page.raw_page.next_page_token == token
+        for page_, token in zip(pages, ["abc", "def", "ghi", ""]):
+            assert page_.raw_page.next_page_token == token
 
 
 @pytest.mark.asyncio
@@ -2923,10 +2933,10 @@ async def test_list_snapshots_async_pages():
             RuntimeError,
         )
         pages = []
-        async for page in (await client.list_snapshots(request={})).pages:
-            pages.append(page)
-        for page, token in zip(pages, ["abc", "def", "ghi", ""]):
-            assert page.raw_page.next_page_token == token
+        async for page_ in (await client.list_snapshots(request={})).pages:
+            pages.append(page_)
+        for page_, token in zip(pages, ["abc", "def", "ghi", ""]):
+            assert page_.raw_page.next_page_token == token
 
 
 def test_create_snapshot(
@@ -3915,6 +3925,29 @@ def test_subscriber_grpc_asyncio_transport_channel_mtls_with_adc(
         assert transport.grpc_channel == mock_grpc_channel
 
 
+def test_snapshot_path():
+    project = "squid"
+    snapshot = "clam"
+
+    expected = "projects/{project}/snapshots/{snapshot}".format(
+        project=project, snapshot=snapshot,
+    )
+    actual = SubscriberClient.snapshot_path(project, snapshot)
+    assert expected == actual
+
+
+def test_parse_snapshot_path():
+    expected = {
+        "project": "whelk",
+        "snapshot": "octopus",
+    }
+    path = SubscriberClient.snapshot_path(**expected)
+
+    # Check that the path construction is reversible.
+    actual = SubscriberClient.parse_snapshot_path(path)
+    assert expected == actual
+
+
 def test_subscription_path():
     project = "squid"
     subscription = "clam"
@@ -3938,27 +3971,25 @@ def test_parse_subscription_path():
     assert expected == actual
 
 
-def test_snapshot_path():
-    project = "squid"
-    snapshot = "clam"
+def test_client_withDEFAULT_CLIENT_INFO():
+    client_info = gapic_v1.client_info.ClientInfo()
 
-    expected = "projects/{project}/snapshots/{snapshot}".format(
-        project=project, snapshot=snapshot,
-    )
-    actual = SubscriberClient.snapshot_path(project, snapshot)
-    assert expected == actual
+    with mock.patch.object(
+        transports.SubscriberTransport, "_prep_wrapped_messages"
+    ) as prep:
+        client = SubscriberClient(
+            credentials=credentials.AnonymousCredentials(), client_info=client_info,
+        )
+        prep.assert_called_once_with(client_info)
 
-
-def test_parse_snapshot_path():
-    expected = {
-        "project": "whelk",
-        "snapshot": "octopus",
-    }
-    path = SubscriberClient.snapshot_path(**expected)
-
-    # Check that the path construction is reversible.
-    actual = SubscriberClient.parse_snapshot_path(path)
-    assert expected == actual
+    with mock.patch.object(
+        transports.SubscriberTransport, "_prep_wrapped_messages"
+    ) as prep:
+        transport_class = SubscriberClient.get_transport_class()
+        transport = transport_class(
+            credentials=credentials.AnonymousCredentials(), client_info=client_info,
+        )
+        prep.assert_called_once_with(client_info)
 
 
 def test_set_iam_policy(transport: str = "grpc"):

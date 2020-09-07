@@ -35,7 +35,7 @@ from google.protobuf import timestamp_pb2 as timestamp  # type: ignore
 from google.pubsub_v1.services.subscriber import pagers
 from google.pubsub_v1.types import pubsub
 
-from .transports.base import SubscriberTransport
+from .transports.base import SubscriberTransport, DEFAULT_CLIENT_INFO
 from .transports.grpc_asyncio import SubscriberGrpcAsyncIOTransport
 from .client import SubscriberClient
 
@@ -52,9 +52,9 @@ class SubscriberAsyncClient:
     DEFAULT_ENDPOINT = SubscriberClient.DEFAULT_ENDPOINT
     DEFAULT_MTLS_ENDPOINT = SubscriberClient.DEFAULT_MTLS_ENDPOINT
 
-    subscription_path = staticmethod(SubscriberClient.subscription_path)
-
     snapshot_path = staticmethod(SubscriberClient.snapshot_path)
+
+    subscription_path = staticmethod(SubscriberClient.subscription_path)
 
     from_service_account_file = SubscriberClient.from_service_account_file
     from_service_account_json = from_service_account_file
@@ -69,6 +69,7 @@ class SubscriberAsyncClient:
         credentials: credentials.Credentials = None,
         transport: Union[str, SubscriberTransport] = "grpc_asyncio",
         client_options: ClientOptions = None,
+        client_info: gapic_v1.client_info.ClientInfo = DEFAULT_CLIENT_INFO,
     ) -> None:
         """Instantiate the subscriber client.
 
@@ -101,7 +102,10 @@ class SubscriberAsyncClient:
         """
 
         self._client = SubscriberClient(
-            credentials=credentials, transport=transport, client_options=client_options,
+            credentials=credentials,
+            transport=transport,
+            client_options=client_options,
+            client_info=client_info,
         )
 
     async def create_subscription(
@@ -242,7 +246,7 @@ class SubscriberAsyncClient:
                 ),
             ),
             default_timeout=60.0,
-            client_info=_client_info,
+            client_info=DEFAULT_CLIENT_INFO,
         )
 
         # Certain fields should be provided within the metadata header;
@@ -321,7 +325,7 @@ class SubscriberAsyncClient:
                 ),
             ),
             default_timeout=60.0,
-            client_info=_client_info,
+            client_info=DEFAULT_CLIENT_INFO,
         )
 
         # Certain fields should be provided within the metadata header;
@@ -380,7 +384,7 @@ class SubscriberAsyncClient:
                 predicate=retries.if_exception_type(exceptions.ServiceUnavailable,),
             ),
             default_timeout=60.0,
-            client_info=_client_info,
+            client_info=DEFAULT_CLIENT_INFO,
         )
 
         # Certain fields should be provided within the metadata header;
@@ -465,7 +469,7 @@ class SubscriberAsyncClient:
                 ),
             ),
             default_timeout=60.0,
-            client_info=_client_info,
+            client_info=DEFAULT_CLIENT_INFO,
         )
 
         # Certain fields should be provided within the metadata header;
@@ -547,7 +551,7 @@ class SubscriberAsyncClient:
                 predicate=retries.if_exception_type(exceptions.ServiceUnavailable,),
             ),
             default_timeout=60.0,
-            client_info=_client_info,
+            client_info=DEFAULT_CLIENT_INFO,
         )
 
         # Certain fields should be provided within the metadata header;
@@ -650,7 +654,7 @@ class SubscriberAsyncClient:
                 predicate=retries.if_exception_type(exceptions.ServiceUnavailable,),
             ),
             default_timeout=60.0,
-            client_info=_client_info,
+            client_info=DEFAULT_CLIENT_INFO,
         )
 
         # Certain fields should be provided within the metadata header;
@@ -739,7 +743,7 @@ class SubscriberAsyncClient:
                 predicate=retries.if_exception_type(exceptions.ServiceUnavailable,),
             ),
             default_timeout=60.0,
-            client_info=_client_info,
+            client_info=DEFAULT_CLIENT_INFO,
         )
 
         # Certain fields should be provided within the metadata header;
@@ -851,7 +855,7 @@ class SubscriberAsyncClient:
                 ),
             ),
             default_timeout=60.0,
-            client_info=_client_info,
+            client_info=DEFAULT_CLIENT_INFO,
         )
 
         # Certain fields should be provided within the metadata header;
@@ -915,15 +919,15 @@ class SubscriberAsyncClient:
                 maximum=60.0,
                 multiplier=1.3,
                 predicate=retries.if_exception_type(
+                    exceptions.Aborted,
                     exceptions.DeadlineExceeded,
-                    exceptions.InternalServerError,
                     exceptions.ResourceExhausted,
                     exceptions.ServiceUnavailable,
-                    exceptions.Aborted,
+                    exceptions.InternalServerError,
                 ),
             ),
             default_timeout=900.0,
-            client_info=_client_info,
+            client_info=DEFAULT_CLIENT_INFO,
         )
 
         # Send the request.
@@ -1008,7 +1012,7 @@ class SubscriberAsyncClient:
                 predicate=retries.if_exception_type(exceptions.ServiceUnavailable,),
             ),
             default_timeout=60.0,
-            client_info=_client_info,
+            client_info=DEFAULT_CLIENT_INFO,
         )
 
         # Certain fields should be provided within the metadata header;
@@ -1099,7 +1103,7 @@ class SubscriberAsyncClient:
                 ),
             ),
             default_timeout=60.0,
-            client_info=_client_info,
+            client_info=DEFAULT_CLIENT_INFO,
         )
 
         # Certain fields should be provided within the metadata header;
@@ -1186,7 +1190,7 @@ class SubscriberAsyncClient:
                 ),
             ),
             default_timeout=60.0,
-            client_info=_client_info,
+            client_info=DEFAULT_CLIENT_INFO,
         )
 
         # Certain fields should be provided within the metadata header;
@@ -1313,7 +1317,7 @@ class SubscriberAsyncClient:
                 predicate=retries.if_exception_type(exceptions.ServiceUnavailable,),
             ),
             default_timeout=60.0,
-            client_info=_client_info,
+            client_info=DEFAULT_CLIENT_INFO,
         )
 
         # Certain fields should be provided within the metadata header;
@@ -1380,7 +1384,7 @@ class SubscriberAsyncClient:
                 predicate=retries.if_exception_type(exceptions.ServiceUnavailable,),
             ),
             default_timeout=60.0,
-            client_info=_client_info,
+            client_info=DEFAULT_CLIENT_INFO,
         )
 
         # Certain fields should be provided within the metadata header;
@@ -1462,7 +1466,7 @@ class SubscriberAsyncClient:
                 predicate=retries.if_exception_type(exceptions.ServiceUnavailable,),
             ),
             default_timeout=60.0,
-            client_info=_client_info,
+            client_info=DEFAULT_CLIENT_INFO,
         )
 
         # Certain fields should be provided within the metadata header;
@@ -1529,7 +1533,7 @@ class SubscriberAsyncClient:
                 ),
             ),
             default_timeout=60.0,
-            client_info=_client_info,
+            client_info=DEFAULT_CLIENT_INFO,
         )
 
         # Certain fields should be provided within the metadata header;
@@ -1637,7 +1641,7 @@ class SubscriberAsyncClient:
         rpc = gapic_v1.method_async.wrap_method(
             self._client._transport.set_iam_policy,
             default_timeout=None,
-            client_info=_client_info,
+            client_info=DEFAULT_CLIENT_INFO,
         )
 
         # Certain fields should be provided within the metadata header;
@@ -1744,7 +1748,7 @@ class SubscriberAsyncClient:
         rpc = gapic_v1.method_async.wrap_method(
             self._client._transport.get_iam_policy,
             default_timeout=None,
-            client_info=_client_info,
+            client_info=DEFAULT_CLIENT_INFO,
         )
 
         # Certain fields should be provided within the metadata header;
@@ -1795,7 +1799,7 @@ class SubscriberAsyncClient:
         rpc = gapic_v1.method_async.wrap_method(
             self._client._transport.test_iam_permissions,
             default_timeout=None,
-            client_info=_client_info,
+            client_info=DEFAULT_CLIENT_INFO,
         )
 
         # Certain fields should be provided within the metadata header;
@@ -1812,11 +1816,11 @@ class SubscriberAsyncClient:
 
 
 try:
-    _client_info = gapic_v1.client_info.ClientInfo(
+    DEFAULT_CLIENT_INFO = gapic_v1.client_info.ClientInfo(
         gapic_version=pkg_resources.get_distribution("google-pubsub",).version,
     )
 except pkg_resources.DistributionNotFound:
-    _client_info = gapic_v1.client_info.ClientInfo()
+    DEFAULT_CLIENT_INFO = gapic_v1.client_info.ClientInfo()
 
 
 __all__ = ("SubscriberAsyncClient",)

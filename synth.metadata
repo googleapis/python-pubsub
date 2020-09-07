@@ -4,28 +4,28 @@
       "git": {
         "name": ".",
         "remote": "git@github.com:plamut/python-pubsub.git",
-        "sha": "9f5aeee6975bbf56cfe734f7e6b88754a7c2c04a"
+        "sha": "c29d7f891c776e1a3fcb1cbfc7f549ca0772f38e"
       }
     },
     {
       "git": {
         "name": "synthtool",
         "remote": "https://github.com/googleapis/synthtool.git",
-        "sha": "1a60ff2a3975c2f5054431588bd95db9c3b862ba"
+        "sha": "b2c32f1c8a4094f0f47fcf5d10f0b6f2bfb3387d"
       }
     },
     {
       "git": {
         "name": "synthtool",
         "remote": "https://github.com/googleapis/synthtool.git",
-        "sha": "1a60ff2a3975c2f5054431588bd95db9c3b862ba"
+        "sha": "b2c32f1c8a4094f0f47fcf5d10f0b6f2bfb3387d"
       }
     },
     {
       "git": {
         "name": "synthtool",
         "remote": "https://github.com/googleapis/synthtool.git",
-        "sha": "1a60ff2a3975c2f5054431588bd95db9c3b862ba"
+        "sha": "b2c32f1c8a4094f0f47fcf5d10f0b6f2bfb3387d"
       }
     }
   ],
