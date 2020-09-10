@@ -19,21 +19,21 @@
       "git": {
         "name": "synthtool",
         "remote": "https://github.com/googleapis/synthtool.git",
-        "sha": "b2c32f1c8a4094f0f47fcf5d10f0b6f2bfb3387d"
+        "sha": "d302f93d7f47e2852e585ac35ab2d15585717ec0"
       }
     },
     {
       "git": {
         "name": "synthtool",
         "remote": "https://github.com/googleapis/synthtool.git",
-        "sha": "b2c32f1c8a4094f0f47fcf5d10f0b6f2bfb3387d"
+        "sha": "d302f93d7f47e2852e585ac35ab2d15585717ec0"
       }
     },
     {
       "git": {
         "name": "synthtool",
         "remote": "https://github.com/googleapis/synthtool.git",
-        "sha": "b2c32f1c8a4094f0f47fcf5d10f0b6f2bfb3387d"
+        "sha": "d302f93d7f47e2852e585ac35ab2d15585717ec0"
       }
     }
   ],
