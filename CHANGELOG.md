@@ -5,6 +5,13 @@
 [1]: https://pypi.org/project/google-cloud-pubsub/#history
 
 
+### [1.7.1](https://www.github.com/googleapis/python-pubsub/compare/v1.7.0...v1.7.1) (2020-09-10)
+
+
+### Reverts
+
+* Revert "chore(deps): update dependency google-cloud-pubsub to v1.7.0 (#155)" ([bd54ef5](https://www.github.com/googleapis/python-pubsub/commit/bd54ef5de4d7691cb37955aba3f0cab98db84e3a)), closes [#155](https://www.github.com/googleapis/python-pubsub/issues/155)
+
 ## [1.7.0](https://www.github.com/googleapis/python-pubsub/compare/v1.6.1...v1.7.0) (2020-07-13)
 
 ### New Features
