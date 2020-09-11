@@ -18,7 +18,7 @@
 
 ### Documentation
 
-- Add samples for using ordering keys. ([#156](hittps://github.com/googleapis/python-pubsub/pull/156))
+- Add samples for using ordering keys. ([#156](https://github.com/googleapis/python-pubsub/pull/156))
 - Remove extra white space in delivery attempt sample. ([#159](https://github.com/googleapis/python-pubsub/pull/159))
 
 ### Internal / Testing Changes
