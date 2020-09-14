@@ -4,7 +4,47 @@
 
 [1]: https://pypi.org/project/google-cloud-pubsub/#history
 
-### [1.6.1](https://www.github.com/googleapis/python-pubsub/compare/v1.6.0...v1.6.1) (2020-06-30)
+
+## 2.0.0
+
+09-11-2020 05:03 PDT
+
+
+### Implementation Changes
+
+- Transition the library to microgenerator. ([#158](https://github.com/googleapis/python-pubsub/pull/158))
+  This is a **breaking change** that introduces several **method signature changes** and **drops support
+  for Python 2.7 and 3.5**.
+
+### Documentation
+
+- Add samples for using ordering keys. ([#156](https://github.com/googleapis/python-pubsub/pull/156))
+- Remove extra white space in delivery attempt sample. ([#159](https://github.com/googleapis/python-pubsub/pull/159))
+
+### Internal / Testing Changes
+
+- Fix flaky sequencer unit tests. ([#187](https://github.com/googleapis/python-pubsub/pull/187))
+
+## [1.7.0](https://www.github.com/googleapis/python-pubsub/compare/v1.6.1...v1.7.0) (2020-07-13)
+
+This is the last release that supports Python 2.7 and 3.5.
+
+### New Features
+
+- Add support for server-side flow control. ([#143](https://github.com/googleapis/python-pubsub/pull/143)) ([04e261c](https://www.github.com/googleapis/python-pubsub/commit/04e261c602a2919cc75b3efa3dab099fb2cf704c))
+
+### Dependencies
+
+- Update samples dependency `google-cloud-pubsub` to `v1.6.1`. ([#144](https://github.com/googleapis/python-pubsub/pull/144)) ([1cb6746](https://github.com/googleapis/python-pubsub/commit/1cb6746b00ebb23dbf1663bae301b32c3fc65a88))
+
+### Documentation
+
+- Add pubsub/cloud-client samples from the common samples repo (with commit history). ([#151](https://github.com/googleapis/python-pubsub/pull/151)) 
+- Add flow control section to publish overview. ([#129](https://github.com/googleapis/python-pubsub/pull/129)) ([acc19eb](https://www.github.com/googleapis/python-pubsub/commit/acc19eb048eef067d9818ef3e310b165d9c6307e))
+- Add a link to Pub/Sub filtering language public documentation to `pubsub.proto`. ([#121](https://github.com/googleapis/python-pubsub/pull/121)) ([8802d81](https://www.github.com/googleapis/python-pubsub/commit/8802d8126247f22e26057e68a42f5b5a82dcbf0d))
+
+
+## [1.6.1](https://www.github.com/googleapis/python-pubsub/compare/v1.6.0...v1.6.1) (2020-06-30)
 
 
 ### Documentation

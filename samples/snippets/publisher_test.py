@@ -39,9 +39,9 @@ def topic_admin(client):
     topic_path = client.topic_path(PROJECT, TOPIC_ADMIN)
 
     try:
-        topic = client.get_topic(topic_path)
+        topic = client.get_topic(request={"topic": topic_path})
     except:  # noqa
-        topic = client.create_topic(topic_path)
+        topic = client.create_topic(request={"name": topic_path})
 
     yield topic.name
     # Teardown of `topic_admin` is handled in `test_delete()`.
@@ -52,13 +52,13 @@ def topic_publish(client):
     topic_path = client.topic_path(PROJECT, TOPIC_PUBLISH)
 
     try:
-        topic = client.get_topic(topic_path)
+        topic = client.get_topic(request={"topic": topic_path})
     except:  # noqa
-        topic = client.create_topic(topic_path)
+        topic = client.create_topic(request={"name": topic_path})
 
     yield topic.name
 
-    client.delete_topic(topic.name)
+    client.delete_topic(request={"topic": topic.name})
 
 
 def _make_sleep_patch():
@@ -87,7 +87,7 @@ def test_list(client, topic_admin, capsys):
 def test_create(client):
     topic_path = client.topic_path(PROJECT, TOPIC_ADMIN)
     try:
-        client.delete_topic(topic_path)
+        client.delete_topic(request={"topic": topic_path})
     except Exception:
         pass
 
@@ -95,7 +95,7 @@ def test_create(client):
 
     @backoff.on_exception(backoff.expo, AssertionError, max_time=60)
     def eventually_consistent_test():
-        assert client.get_topic(topic_path)
+        assert client.get_topic(request={"topic": topic_path})
 
     eventually_consistent_test()
 
@@ -106,7 +106,7 @@ def test_delete(client, topic_admin):
     @backoff.on_exception(backoff.expo, AssertionError, max_time=60)
     def eventually_consistent_test():
         with pytest.raises(Exception):
-            client.get_topic(client.topic_path(PROJECT, TOPIC_ADMIN))
+            client.get_topic(request={"topic": client.topic_path(PROJECT, TOPIC_ADMIN)})
 
     eventually_consistent_test()
 
@@ -144,3 +144,17 @@ def test_publish_with_error_handler(topic_publish, capsys):
 
     out, _ = capsys.readouterr()
     assert "Published" in out
+
+
+def test_publish_with_ordering_keys(topic_publish, capsys):
+    publisher.publish_with_ordering_keys(PROJECT, TOPIC_PUBLISH)
+
+    out, _ = capsys.readouterr()
+    assert "Published messages with ordering keys." in out
+
+
+def test_resume_publish_with_error_handler(topic_publish, capsys):
+    publisher.resume_publish_with_ordering_keys(PROJECT, TOPIC_PUBLISH)
+
+    out, _ = capsys.readouterr()
+    assert "Published messages with ordering keys." in out
