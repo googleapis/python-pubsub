@@ -34,6 +34,7 @@ from google.cloud.pubsub_v1.subscriber._protocol import messages_on_hold
 from google.cloud.pubsub_v1.subscriber._protocol import requests
 import google.cloud.pubsub_v1.subscriber.message
 import google.cloud.pubsub_v1.subscriber.scheduler
+from google.pubsub_v1 import types as gapic_types
 
 _LOGGER = logging.getLogger(__name__)
 _RPC_ERROR_THREAD_NAME = "Thread-OnRpcTerminated"
@@ -380,7 +381,7 @@ class StreamingPullManager(object):
         stream.
 
         Args:
-            request (types.StreamingPullRequest): The stream request to be
+            request (gapic_types.StreamingPullRequest): The stream request to be
                 mapped into unary requests.
         """
         if request.ack_ids:
@@ -441,7 +442,7 @@ class StreamingPullManager(object):
         ``self._UNARY_REQUESTS`` is set or not.
         """
         if self._rpc is not None and self._rpc.is_active:
-            self._rpc.send(types.StreamingPullRequest())
+            self._rpc.send(gapic_types.StreamingPullRequest())
 
     def open(self, callback, on_callback_error):
         """Begin consuming messages.
@@ -566,7 +567,7 @@ class StreamingPullManager(object):
                 The default message acknowledge deadline for the stream.
 
         Returns:
-            google.cloud.pubsub_v1.types.StreamingPullRequest: A request
+            google.pubsub_v1.types.StreamingPullRequest: A request
             suitable for being the first request on the stream (and not
             suitable for any other purpose).
         """
@@ -580,7 +581,7 @@ class StreamingPullManager(object):
             lease_ids = []
 
         # Put the request together.
-        request = types.StreamingPullRequest(
+        request = gapic_types.StreamingPullRequest(
             modify_deadline_ack_ids=list(lease_ids),
             modify_deadline_seconds=[self.ack_deadline] * len(lease_ids),
             stream_ack_deadline_seconds=stream_ack_deadline_seconds,
@@ -612,9 +613,13 @@ class StreamingPullManager(object):
             )
             return
 
+        # IMPORTANT: Circumvent the wrapper class and operate on the raw underlying
+        # protobuf message to significantly gain on attribute access performance.
+        received_messages = response._pb.received_messages
+
         _LOGGER.debug(
             "Processing %s received message(s), currently on hold %s (bytes %s).",
-            len(response.received_messages),
+            len(received_messages),
             self._messages_on_hold.size,
             self._on_hold_bytes,
         )
@@ -624,12 +629,12 @@ class StreamingPullManager(object):
         # received them.
         items = [
             requests.ModAckRequest(message.ack_id, self._ack_histogram.percentile(99))
-            for message in response.received_messages
+            for message in received_messages
         ]
         self._dispatcher.modify_ack_deadline(items)
 
         with self._pause_resume_lock:
-            for received_message in response.received_messages:
+            for received_message in received_messages:
                 message = google.cloud.pubsub_v1.subscriber.message.Message(
                     received_message.message,
                     received_message.ack_id,
