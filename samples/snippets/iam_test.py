@@ -127,4 +127,4 @@ def test_detach_subscription(subscription, capsys):
 
     out, _ = capsys.readouterr()
 
-    assert "Subscription is detached" in out
+    assert "Subscription is detached." in out

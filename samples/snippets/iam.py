@@ -196,11 +196,15 @@ def detach_subscription(project_id, subscription_id):
     subscription_path = subscriber_client.subscription_path(project_id, subscription_id)
 
     try:
-        publisher_client.detach_subscription(subscription_path)
+        publisher_client.detach_subscription(
+            request={"subscription": subscription_path}
+        )
     except (GoogleAPICallError, RetryError, ValueError, Exception) as err:
         print(err)
 
-    subscription = subscriber_client.get_subscription(subscription_path)
+    subscription = subscriber_client.get_subscription(
+        request={"subscription": subscription_path}
+    )
     if subscription.detached:
         print("Subscription is detached.")
     else:
