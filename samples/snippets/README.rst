@@ -5,7 +5,7 @@ Google Cloud Pub/Sub Python Samples
 ===============================================================================
 
 .. image:: https://gstatic.com/cloudssh/images/open-btn.png
-   :target: https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/python-pubsub&page=editor&open_in_editor=samples/snippets/README.rst
+   :target: https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/GoogleCloudPlatform/python-docs-samples&page=editor&open_in_editor=samples/snippets/README.rst
 
 
 This directory contains samples for Google Cloud Pub/Sub. `Google Cloud Pub/Sub`_ is a fully-managed real-time messaging service that allows you to send and receive messages between independent applications.
@@ -41,7 +41,7 @@ Install Dependencies
 
     .. code-block:: bash
 
-        $ git clone https://github.com/googleapis/python-pubsub.git
+        $ git clone https://github.com/GoogleCloudPlatform/python-docs-samples.git
 
 #. Install `pip`_ and `virtualenv`_ if you do not already have them. You may want to refer to the `Python Development Environment Setup Guide`_ for Google Cloud Platform for instructions.
 
@@ -77,7 +77,7 @@ Quickstart (Publisher)
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 .. image:: https://gstatic.com/cloudssh/images/open-btn.png
-   :target: https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com//googleapis/python-pubsub&page=editor&open_in_editor=samples/snippets/quickstart/pub.py,samples/snippets/README.rst
+   :target: https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/GoogleCloudPlatform/python-docs-samples&page=editor&open_in_editor=samples/snippets/quickstart/pub.py,samples/snippets/README.rst
 
 
 
@@ -95,7 +95,7 @@ Quickstart (Subscriber)
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 .. image:: https://gstatic.com/cloudssh/images/open-btn.png
-   :target: https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com//googleapis/python-pubsub&page=editor&open_in_editor=samples/snippets/quickstart/sub.py,samples/snippets/README.rst
+   :target: https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/GoogleCloudPlatform/python-docs-samples&page=editor&open_in_editor=samples/snippets/quickstart/sub.py,samples/snippets/README.rst
 
 
 
@@ -113,7 +113,7 @@ Publisher
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 .. image:: https://gstatic.com/cloudssh/images/open-btn.png
-   :target: https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com//googleapis/python-pubsub&page=editor&open_in_editor=samples/snippets/publisher.py,samples/snippets/README.rst
+   :target: https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/GoogleCloudPlatform/python-docs-samples&page=editor&open_in_editor=samples/snippets/publisher.py,samples/snippets/README.rst
 
 
 
@@ -171,7 +171,7 @@ Subscribers
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 .. image:: https://gstatic.com/cloudssh/images/open-btn.png
-   :target: https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com//googleapis/python-pubsub&page=editor&open_in_editor=samples/snippets/subscriber.py,samples/snippets/README.rst
+   :target: https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/GoogleCloudPlatform/python-docs-samples&page=editor&open_in_editor=samples/snippets/subscriber.py,samples/snippets/README.rst
 
 
 
@@ -238,7 +238,7 @@ Identity and Access Management
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 .. image:: https://gstatic.com/cloudssh/images/open-btn.png
-   :target: https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com//googleapis/python-pubsub&page=editor&open_in_editor=samples/snippets/iam.py,samples/snippets/README.rst
+   :target: https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/GoogleCloudPlatform/python-docs-samples&page=editor&open_in_editor=samples/snippets/iam.py,samples/snippets/README.rst
 
 
 
