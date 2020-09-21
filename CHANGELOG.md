@@ -5,6 +5,24 @@
 [1]: https://pypi.org/project/google-cloud-pubsub/#history
 
 
+## [2.1.0](https://www.github.com/googleapis/python-pubsub/compare/v2.0.0...v2.1.0) (2020-09-21)
+
+
+### Features
+
+* regenerate the client lib to pick new mtls env ([#197](https://www.github.com/googleapis/python-pubsub/issues/197)) ([9667ef1](https://www.github.com/googleapis/python-pubsub/commit/9667ef10dd9364b6a50ede02907dd5cc64e9109c))
+
+
+### Bug Fixes
+
+* convert all RPC error types to exceptions ([#170](https://www.github.com/googleapis/python-pubsub/issues/170)) ([89c671a](https://www.github.com/googleapis/python-pubsub/commit/89c671aeb4de2c47f45ca1e438b91c440bead958))
+* pass client options to publisher and subscriber clients ([#166](https://www.github.com/googleapis/python-pubsub/issues/166)) ([#190](https://www.github.com/googleapis/python-pubsub/issues/190)) ([049ae7d](https://www.github.com/googleapis/python-pubsub/commit/049ae7d6338dff8820c67ce675431175b8f96df4))
+
+
+### Documentation
+
+* use new call syntax in subscriber docs ([#203](https://www.github.com/googleapis/python-pubsub/issues/203)) ([ff46bec](https://www.github.com/googleapis/python-pubsub/commit/ff46bec42ef75c477b46ea5de41703dc30ae40de)), closes [#198](https://www.github.com/googleapis/python-pubsub/issues/198)
+
 ## 2.0.0
 
 09-11-2020 05:03 PDT
