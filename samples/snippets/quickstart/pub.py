@@ -19,6 +19,7 @@ import time
 
 from google.cloud import pubsub_v1
 
+
 def get_callback(api_future, data, ref):
     """Wrap message data in the context of the callback function."""
 

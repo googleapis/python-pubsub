@@ -18,6 +18,7 @@ import argparse
 
 from google.cloud import pubsub_v1
 
+
 def sub(project_id, subscription_id):
     """Receives messages from a Pub/Sub subscription."""
     # Initialize a Subscriber client
