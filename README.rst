@@ -110,7 +110,7 @@ messages to it
         project_id=os.getenv('GOOGLE_CLOUD_PROJECT'),
         topic='MY_TOPIC_NAME',  # Set this to something appropriate.
     )
-    publisher.create_topic(topic_name)
+    publisher.create_topic(request={"name": topic_name})
     publisher.publish(topic_name, b'My first message!', spam='eggs')
 
 To learn more, consult the `publishing documentation`_.
@@ -138,8 +138,7 @@ the topic, and subscribe to that, passing a callback function.
         project_id=os.getenv('GOOGLE_CLOUD_PROJECT'),
         sub='MY_SUBSCRIPTION_NAME',  # Set this to something appropriate.
     )
-    subscriber.create_subscription(
-        name=subscription_name, topic=topic_name)
+    subscriber.create_subscription(request={"name": subscription_name, "topic": topic_name})
 
     def callback(message):
         print(message.data)
