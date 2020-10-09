@@ -32,7 +32,7 @@ independently written applications.
 Quick Start
 -----------
 
-In order to use this library, you first need to go through the following steps:
+To use this library, you first need to go through the following steps:
 
 1. `Select or create a Cloud Platform project.`_
 2. `Enable billing for your project.`_
@@ -49,7 +49,7 @@ Installation
 
 Install this library in a `virtualenv`_ using pip. `virtualenv`_ is a tool to
 create isolated Python environments. The basic problem it addresses is one of
-dependencies and versions, and indirectly permissions.
+dependencies and versions and indirect permissions.
 
 With `virtualenv`_, it's possible to install this library without needing system
 install permissions, and without clashing with the installed system
@@ -121,7 +121,7 @@ To learn more, consult the `publishing documentation`_.
 Subscribing
 ^^^^^^^^^^^
 
-To subscribe to data in Cloud Pub/Sub, you create a subscription based on
+To subscribe to data in Cloud Pub/Sub, you create a subscription-based on
 the topic, and subscribe to that, passing a callback function.
 
 .. code-block:: python
@@ -218,7 +218,7 @@ Community
 ---------
 
 Google Cloud Platform Python developers hang out in `Slack`_ in the ``#python``
-channel, click here to `get an invitation`_.
+the channel, click here to `get an invitation`_.
 
 .. _Slack: https://googlecloud-community.slack.com
 .. _get an invitation: https://gcp-slack.appspot.com/
