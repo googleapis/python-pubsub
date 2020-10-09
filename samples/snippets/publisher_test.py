@@ -27,6 +27,8 @@ UUID = uuid.uuid4().hex
 PROJECT = os.environ["GOOGLE_CLOUD_PROJECT"]
 TOPIC_ADMIN = "publisher-test-topic-admin-" + UUID
 TOPIC_PUBLISH = "publisher-test-topic-publish-" + UUID
+# Allow 120s for tests to finish.
+max_time = 120
 
 
 @pytest.fixture
@@ -75,7 +77,7 @@ def _make_sleep_patch():
 
 
 def test_list(client, topic_admin, capsys):
-    @backoff.on_exception(backoff.expo, AssertionError, max_time=60)
+    @backoff.on_exception(backoff.expo, AssertionError, max_time=max_time)
     def eventually_consistent_test():
         publisher.list_topics(PROJECT)
         out, _ = capsys.readouterr()
@@ -93,7 +95,7 @@ def test_create(client):
 
     publisher.create_topic(PROJECT, TOPIC_ADMIN)
 
-    @backoff.on_exception(backoff.expo, AssertionError, max_time=60)
+    @backoff.on_exception(backoff.expo, AssertionError, max_time=max_time)
     def eventually_consistent_test():
         assert client.get_topic(request={"topic": topic_path})
 
@@ -103,7 +105,7 @@ def test_create(client):
 def test_delete(client, topic_admin):
     publisher.delete_topic(PROJECT, TOPIC_ADMIN)
 
-    @backoff.on_exception(backoff.expo, AssertionError, max_time=60)
+    @backoff.on_exception(backoff.expo, AssertionError, max_time=max_time)
     def eventually_consistent_test():
         with pytest.raises(Exception):
             client.get_topic(request={"topic": client.topic_path(PROJECT, TOPIC_ADMIN)})

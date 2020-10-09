@@ -15,6 +15,7 @@
 import os
 import uuid
 
+import backoff
 from google.cloud import pubsub_v1
 import pytest
 
@@ -24,6 +25,8 @@ UUID = uuid.uuid4().hex
 PROJECT_ID = os.environ["GOOGLE_CLOUD_PROJECT"]
 TOPIC_ID = "iam-test-topic-" + UUID
 SUBSCRIPTION_ID = "iam-test-subscription-" + UUID
+# Allow 60 s for tests to finish.
+max_time = 60
 
 
 @pytest.fixture(scope="module")
@@ -75,56 +78,74 @@ def subscription(subscriber_client, topic):
 
 
 def test_get_topic_policy(topic, capsys):
-    iam.get_topic_policy(PROJECT_ID, TOPIC_ID)
-
-    out, _ = capsys.readouterr()
-    assert topic in out
+    @backoff.on_exception(backoff.expo, AssertionError, max_time=max_time)
+    def eventually_consistent_test():
+        iam.get_topic_policy(PROJECT_ID, TOPIC_ID)
+        out, _ = capsys.readouterr()
+        assert topic in out
+    
+    eventually_consistent_test()
 
 
 def test_get_subscription_policy(subscription, capsys):
-    iam.get_subscription_policy(PROJECT_ID, SUBSCRIPTION_ID)
-
-    out, _ = capsys.readouterr()
-    assert subscription in out
+    @backoff.on_exception(backoff.expo, AssertionError, max_time=max_time)
+    def eventually_consistent_test():
+        iam.get_subscription_policy(PROJECT_ID, SUBSCRIPTION_ID)
+        out, _ = capsys.readouterr()
+        assert subscription in out
+    
+    eventually_consistent_test()
 
 
 def test_set_topic_policy(publisher_client, topic):
-    iam.set_topic_policy(PROJECT_ID, TOPIC_ID)
-
-    policy = publisher_client.get_iam_policy(request={"resource": topic})
-    assert "roles/pubsub.publisher" in str(policy)
-    assert "allUsers" in str(policy)
+    @backoff.on_exception(backoff.expo, AssertionError, max_time=max_time)
+    def eventually_consistent_test():
+        iam.set_topic_policy(PROJECT_ID, TOPIC_ID)
+        policy = publisher_client.get_iam_policy(request={"resource": topic})
+        assert "roles/pubsub.publisher" in str(policy)
+        assert "allUsers" in str(policy)
+    
+    eventually_consistent_test()
 
 
 def test_set_subscription_policy(subscriber_client, subscription):
-    iam.set_subscription_policy(PROJECT_ID, SUBSCRIPTION_ID)
-
-    policy = subscriber_client.get_iam_policy(request={"resource": subscription})
-    assert "roles/pubsub.viewer" in str(policy)
-    assert "allUsers" in str(policy)
+    @backoff.on_exception(backoff.expo, AssertionError, max_time=max_time)
+    def eventually_consistent_test():
+        iam.set_subscription_policy(PROJECT_ID, SUBSCRIPTION_ID)
+        policy = subscriber_client.get_iam_policy(request={"resource": subscription})
+        assert "roles/pubsub.viewer" in str(policy)
+        assert "allUsers" in str(policy)
+    
+    eventually_consistent_test()
 
 
 def test_check_topic_permissions(topic, capsys):
-    iam.check_topic_permissions(PROJECT_ID, TOPIC_ID)
-
-    out, _ = capsys.readouterr()
-
-    assert topic in out
-    assert "pubsub.topics.publish" in out
+    @backoff.on_exception(backoff.expo, AssertionError, max_time=max_time)
+    def eventually_consistent_test():
+        iam.check_topic_permissions(PROJECT_ID, TOPIC_ID)
+        out, _ = capsys.readouterr()
+        assert topic in out
+        assert "pubsub.topics.publish" in out
+    
+    eventually_consistent_test()
 
 
 def test_check_subscription_permissions(subscription, capsys):
-    iam.check_subscription_permissions(PROJECT_ID, SUBSCRIPTION_ID)
+    @backoff.on_exception(backoff.expo, AssertionError, max_time=max_time)
+    def eventually_consistent_test():
+        iam.check_subscription_permissions(PROJECT_ID, SUBSCRIPTION_ID)
+        out, _ = capsys.readouterr()
+        assert subscription in out
+        assert "pubsub.subscriptions.consume" in out
+    
+    eventually_consistent_test()
 
-    out, _ = capsys.readouterr()
 
-    assert subscription in out
-    assert "pubsub.subscriptions.consume" in out
-
-
-def test_detach_subscription(subscription, capsys):
-    iam.detach_subscription(PROJECT_ID, SUBSCRIPTION_ID)
-
-    out, _ = capsys.readouterr()
-
-    assert "Subscription is detached." in out
+def test_detach_subscription(capsys):
+    @backoff.on_exception(backoff.expo, AssertionError, max_time=max_time)
+    def eventually_consistent_test():
+        iam.detach_subscription(PROJECT_ID, SUBSCRIPTION_ID)
+        out, _ = capsys.readouterr()
+        assert "Subscription is detached." in out
+    
+    eventually_consistent_test()
