@@ -83,7 +83,7 @@ def test_get_topic_policy(topic, capsys):
         iam.get_topic_policy(PROJECT_ID, TOPIC_ID)
         out, _ = capsys.readouterr()
         assert topic in out
-    
+
     eventually_consistent_test()
 
 
@@ -93,7 +93,7 @@ def test_get_subscription_policy(subscription, capsys):
         iam.get_subscription_policy(PROJECT_ID, SUBSCRIPTION_ID)
         out, _ = capsys.readouterr()
         assert subscription in out
-    
+
     eventually_consistent_test()
 
 
@@ -104,7 +104,7 @@ def test_set_topic_policy(publisher_client, topic):
         policy = publisher_client.get_iam_policy(request={"resource": topic})
         assert "roles/pubsub.publisher" in str(policy)
         assert "allUsers" in str(policy)
-    
+
     eventually_consistent_test()
 
 
@@ -115,7 +115,7 @@ def test_set_subscription_policy(subscriber_client, subscription):
         policy = subscriber_client.get_iam_policy(request={"resource": subscription})
         assert "roles/pubsub.viewer" in str(policy)
         assert "allUsers" in str(policy)
-    
+
     eventually_consistent_test()
 
 
@@ -126,7 +126,7 @@ def test_check_topic_permissions(topic, capsys):
         out, _ = capsys.readouterr()
         assert topic in out
         assert "pubsub.topics.publish" in out
-    
+
     eventually_consistent_test()
 
 
@@ -137,7 +137,7 @@ def test_check_subscription_permissions(subscription, capsys):
         out, _ = capsys.readouterr()
         assert subscription in out
         assert "pubsub.subscriptions.consume" in out
-    
+
     eventually_consistent_test()
 
 
@@ -147,5 +147,5 @@ def test_detach_subscription(capsys):
         iam.detach_subscription(PROJECT_ID, SUBSCRIPTION_ID)
         out, _ = capsys.readouterr()
         assert "Subscription is detached." in out
-    
+
     eventually_consistent_test()

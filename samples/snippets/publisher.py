@@ -262,15 +262,12 @@ def publish_with_ordering_keys(project_id, topic_id):
     # project_id = "your-project-id"
     # topic_id = "your-topic-id"
 
-    publisher_options = pubsub_v1.types.PublisherOptions(
-        enable_message_ordering=True
-    )
+    publisher_options = pubsub_v1.types.PublisherOptions(enable_message_ordering=True)
     # Sending messages to the same region ensures they are received in order
     # even when multiple publishers are used.
     client_options = {"api_endpoint": "us-east1-pubsub.googleapis.com:443"}
     publisher = pubsub_v1.PublisherClient(
-        publisher_options=publisher_options,
-        client_options=client_options
+        publisher_options=publisher_options, client_options=client_options
     )
     # The `topic_path` method creates a fully qualified identifier
     # in the form `projects/{project_id}/topics/{topic_id}`
@@ -286,9 +283,7 @@ def publish_with_ordering_keys(project_id, topic_id):
         data = message[0].encode("utf-8")
         ordering_key = message[1]
         # When you publish a message, the client returns a future.
-        future = publisher.publish(
-            topic_path, data=data, ordering_key=ordering_key
-        )
+        future = publisher.publish(topic_path, data=data, ordering_key=ordering_key)
         print(future.result())
 
     print("Published messages with ordering keys.")
@@ -304,15 +299,12 @@ def resume_publish_with_ordering_keys(project_id, topic_id):
     # project_id = "your-project-id"
     # topic_id = "your-topic-id"
 
-    publisher_options = pubsub_v1.types.PublisherOptions(
-        enable_message_ordering=True
-    )
+    publisher_options = pubsub_v1.types.PublisherOptions(enable_message_ordering=True)
     # Sending messages to the same region ensures they are received in order
     # even when multiple publishers are used.
     client_options = {"api_endpoint": "us-east1-pubsub.googleapis.com:443"}
     publisher = pubsub_v1.PublisherClient(
-        publisher_options=publisher_options,
-        client_options=client_options
+        publisher_options=publisher_options, client_options=client_options
     )
     # The `topic_path` method creates a fully qualified identifier
     # in the form `projects/{project_id}/topics/{topic_id}`
@@ -328,9 +320,7 @@ def resume_publish_with_ordering_keys(project_id, topic_id):
         data = message[0].encode("utf-8")
         ordering_key = message[1]
         # When you publish a message, the client returns a future.
-        future = publisher.publish(
-            topic_path, data=data, ordering_key=ordering_key
-        )
+        future = publisher.publish(topic_path, data=data, ordering_key=ordering_key)
         try:
             print(future.result())
         except RuntimeError:
@@ -356,9 +346,7 @@ if __name__ == "__main__":
     delete_parser = subparsers.add_parser("delete", help=delete_topic.__doc__)
     delete_parser.add_argument("topic_id")
 
-    publish_parser = subparsers.add_parser(
-        "publish", help=publish_messages.__doc__
-    )
+    publish_parser = subparsers.add_parser("publish", help=publish_messages.__doc__)
     publish_parser.add_argument("topic_id")
 
     publish_with_custom_attributes_parser = subparsers.add_parser(
@@ -368,8 +356,7 @@ if __name__ == "__main__":
     publish_with_custom_attributes_parser.add_argument("topic_id")
 
     publish_with_error_handler_parser = subparsers.add_parser(
-        "publish-with-error-handler",
-        help=publish_messages_with_error_handler.__doc__,
+        "publish-with-error-handler", help=publish_messages_with_error_handler.__doc__,
     )
     publish_with_error_handler_parser.add_argument("topic_id")
 
