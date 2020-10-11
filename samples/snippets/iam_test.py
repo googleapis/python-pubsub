@@ -15,7 +15,7 @@
 import os
 import uuid
 
-import backoff
+from google.api_core.exceptions import NotFound
 from google.cloud import pubsub_v1
 import pytest
 
@@ -25,8 +25,6 @@ UUID = uuid.uuid4().hex
 PROJECT_ID = os.environ["GOOGLE_CLOUD_PROJECT"]
 TOPIC_ID = "iam-test-topic-" + UUID
 SUBSCRIPTION_ID = "iam-test-subscription-" + UUID
-# Allow 60 s for tests to finish.
-max_time = 60
 
 
 @pytest.fixture(scope="module")
@@ -35,19 +33,20 @@ def publisher_client():
 
 
 @pytest.fixture(scope="module")
-def topic(publisher_client):
+def topic_path(publisher_client):
     topic_path = publisher_client.topic_path(PROJECT_ID, TOPIC_ID)
 
     try:
-        publisher_client.delete_topic(request={"topic": topic_path})
-    except Exception:
+        topic = publisher_client.get_topic(request={"topic": topic_path})
+    except NotFound:
+        topic = publisher_client.create_topic(request={"name": topic_path})
+
+    yield topic.name
+
+    try:
+        publisher_client.delete_topic(request={"topic": topic.name})
+    except NotFound:
         pass
-
-    publisher_client.create_topic(request={"name": topic_path})
-
-    yield topic_path
-
-    publisher_client.delete_topic(request={"topic": topic_path})
 
 
 @pytest.fixture(scope="module")
@@ -57,95 +56,57 @@ def subscriber_client():
     subscriber_client.close()
 
 
-@pytest.fixture
-def subscription(subscriber_client, topic):
+@pytest.fixture(scope="module")
+def subscription_path(subscriber_client, topic_path):
     subscription_path = subscriber_client.subscription_path(PROJECT_ID, SUBSCRIPTION_ID)
+    subscription = subscriber_client.create_subscription(
+        request={"name": subscription_path, "topic": topic_path}
+    )
+    yield subscription.name
 
     try:
         subscriber_client.delete_subscription(
             request={"subscription": subscription_path}
         )
-    except Exception:
+    except NotFound:
         pass
 
-    subscriber_client.create_subscription(
-        request={"name": subscription_path, "topic": topic}
-    )
 
-    yield subscription_path
-
-    subscriber_client.delete_subscription(request={"subscription": subscription_path})
+def test_get_topic_policy(topic_path, capsys):
+    iam.get_topic_policy(PROJECT_ID, TOPIC_ID)
+    out, _ = capsys.readouterr()
+    assert topic_path in out
 
 
-def test_get_topic_policy(topic, capsys):
-    @backoff.on_exception(backoff.expo, AssertionError, max_time=max_time)
-    def eventually_consistent_test():
-        iam.get_topic_policy(PROJECT_ID, TOPIC_ID)
-        out, _ = capsys.readouterr()
-        assert topic in out
-
-    eventually_consistent_test()
+def test_get_subscription_policy(subscription_path, capsys):
+    iam.get_subscription_policy(PROJECT_ID, SUBSCRIPTION_ID)
+    out, _ = capsys.readouterr()
+    assert subscription_path in out
 
 
-def test_get_subscription_policy(subscription, capsys):
-    @backoff.on_exception(backoff.expo, AssertionError, max_time=max_time)
-    def eventually_consistent_test():
-        iam.get_subscription_policy(PROJECT_ID, SUBSCRIPTION_ID)
-        out, _ = capsys.readouterr()
-        assert subscription in out
-
-    eventually_consistent_test()
+def test_set_topic_policy(publisher_client, topic_path):
+    iam.set_topic_policy(PROJECT_ID, TOPIC_ID)
+    policy = publisher_client.get_iam_policy(request={"resource": topic_path})
+    assert "roles/pubsub.publisher" in str(policy)
+    assert "allUsers" in str(policy)
 
 
-def test_set_topic_policy(publisher_client, topic):
-    @backoff.on_exception(backoff.expo, AssertionError, max_time=max_time)
-    def eventually_consistent_test():
-        iam.set_topic_policy(PROJECT_ID, TOPIC_ID)
-        policy = publisher_client.get_iam_policy(request={"resource": topic})
-        assert "roles/pubsub.publisher" in str(policy)
-        assert "allUsers" in str(policy)
-
-    eventually_consistent_test()
+def test_set_subscription_policy(subscriber_client, subscription_path):
+    iam.set_subscription_policy(PROJECT_ID, SUBSCRIPTION_ID)
+    policy = subscriber_client.get_iam_policy(request={"resource": subscription_path})
+    assert "roles/pubsub.viewer" in str(policy)
+    assert "allUsers" in str(policy)
 
 
-def test_set_subscription_policy(subscriber_client, subscription):
-    @backoff.on_exception(backoff.expo, AssertionError, max_time=max_time)
-    def eventually_consistent_test():
-        iam.set_subscription_policy(PROJECT_ID, SUBSCRIPTION_ID)
-        policy = subscriber_client.get_iam_policy(request={"resource": subscription})
-        assert "roles/pubsub.viewer" in str(policy)
-        assert "allUsers" in str(policy)
-
-    eventually_consistent_test()
+def test_check_topic_permissions(topic_path, capsys):
+    iam.check_topic_permissions(PROJECT_ID, TOPIC_ID)
+    out, _ = capsys.readouterr()
+    assert topic_path in out
+    assert "pubsub.topics.publish" in out
 
 
-def test_check_topic_permissions(topic, capsys):
-    @backoff.on_exception(backoff.expo, AssertionError, max_time=max_time)
-    def eventually_consistent_test():
-        iam.check_topic_permissions(PROJECT_ID, TOPIC_ID)
-        out, _ = capsys.readouterr()
-        assert topic in out
-        assert "pubsub.topics.publish" in out
-
-    eventually_consistent_test()
-
-
-def test_check_subscription_permissions(subscription, capsys):
-    @backoff.on_exception(backoff.expo, AssertionError, max_time=max_time)
-    def eventually_consistent_test():
-        iam.check_subscription_permissions(PROJECT_ID, SUBSCRIPTION_ID)
-        out, _ = capsys.readouterr()
-        assert subscription in out
-        assert "pubsub.subscriptions.consume" in out
-
-    eventually_consistent_test()
-
-
-def test_detach_subscription(capsys):
-    @backoff.on_exception(backoff.expo, AssertionError, max_time=max_time)
-    def eventually_consistent_test():
-        iam.detach_subscription(PROJECT_ID, SUBSCRIPTION_ID)
-        out, _ = capsys.readouterr()
-        assert "Subscription is detached." in out
-
-    eventually_consistent_test()
+def test_check_subscription_permissions(subscription_path, capsys):
+    iam.check_subscription_permissions(PROJECT_ID, SUBSCRIPTION_ID)
+    out, _ = capsys.readouterr()
+    assert subscription_path in out
+    assert "pubsub.subscriptions.consume" in out
