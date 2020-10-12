@@ -29,7 +29,7 @@ PROJECT_ID = os.environ["GOOGLE_CLOUD_PROJECT"]
 TOPIC_ID = "publisher-test-topic-" + UUID
 SUBSCRIPTION_ID = "publisher-test-subscription-" + UUID
 # Allow 60s for tests to finish.
-max_time = 60
+MAX_TIME = 60
 
 
 @pytest.fixture(scope="module")
@@ -172,7 +172,7 @@ def test_detach_subscription(subscription_path, capsys):
 def test_delete(publisher_client):
     publisher.delete_topic(PROJECT_ID, TOPIC_ID)
 
-    @backoff.on_exception(backoff.expo, AssertionError, max_time=max_time)
+    @backoff.on_exception(backoff.expo, AssertionError, max_time=MAX_TIME)
     def eventually_consistent_test():
         with pytest.raises(Exception):
             publisher_client.get_topic(

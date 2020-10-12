@@ -210,9 +210,7 @@ def test_create_subscription_with_dead_letter_policy(
     assert "After 10 delivery attempts." in out
 
 
-def test_update_dead_letter_policy(
-    subscriber_client, topic, subscription_dlq, dead_letter_topic, capsys
-):
+def test_update_dead_letter_policy(capsys):
     _ = subscriber.update_subscription_with_dead_letter_policy(
         PROJECT_ID, TOPIC, SUBSCRIPTION_DLQ, DEAD_LETTER_TOPIC
     )

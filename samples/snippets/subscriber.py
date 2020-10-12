@@ -560,7 +560,7 @@ def synchronous_pull_with_lease_management(project_id, subscription_id):
                     request={
                         "subscription": subscription_path,
                         "ack_ids": [ack_id],
-                        # `Must be between 10 and 600.
+                        # Must be between 10 and 600.
                         "ack_deadline_seconds": 15,
                     }
                 )
