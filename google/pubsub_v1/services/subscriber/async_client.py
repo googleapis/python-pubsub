@@ -18,16 +18,7 @@
 from collections import OrderedDict
 import functools
 import re
-from typing import (
-    Dict,
-    AsyncIterable,
-    Awaitable,
-    AsyncIterator,
-    Sequence,
-    Tuple,
-    Type,
-    Union,
-)
+from typing import Dict, AsyncIterable, AsyncIterator, Sequence, Tuple, Type, Union
 import pkg_resources
 
 import google.api_core.client_options as ClientOptions  # type: ignore
@@ -65,43 +56,9 @@ class SubscriberAsyncClient:
     parse_snapshot_path = staticmethod(SubscriberClient.parse_snapshot_path)
     subscription_path = staticmethod(SubscriberClient.subscription_path)
     parse_subscription_path = staticmethod(SubscriberClient.parse_subscription_path)
-    topic_path = staticmethod(SubscriberClient.topic_path)
-    parse_topic_path = staticmethod(SubscriberClient.parse_topic_path)
-
-    common_billing_account_path = staticmethod(
-        SubscriberClient.common_billing_account_path
-    )
-    parse_common_billing_account_path = staticmethod(
-        SubscriberClient.parse_common_billing_account_path
-    )
-
-    common_folder_path = staticmethod(SubscriberClient.common_folder_path)
-    parse_common_folder_path = staticmethod(SubscriberClient.parse_common_folder_path)
-
-    common_organization_path = staticmethod(SubscriberClient.common_organization_path)
-    parse_common_organization_path = staticmethod(
-        SubscriberClient.parse_common_organization_path
-    )
-
-    common_project_path = staticmethod(SubscriberClient.common_project_path)
-    parse_common_project_path = staticmethod(SubscriberClient.parse_common_project_path)
-
-    common_location_path = staticmethod(SubscriberClient.common_location_path)
-    parse_common_location_path = staticmethod(
-        SubscriberClient.parse_common_location_path
-    )
 
     from_service_account_file = SubscriberClient.from_service_account_file
     from_service_account_json = from_service_account_file
-
-    @property
-    def transport(self) -> SubscriberTransport:
-        """Return the transport used by the client instance.
-
-        Returns:
-            SubscriberTransport: The transport used by the client instance.
-        """
-        return self._client.transport
 
     get_transport_class = functools.partial(
         type(SubscriberClient).get_transport_class, type(SubscriberClient)
@@ -256,8 +213,9 @@ class SubscriberAsyncClient:
         # Create or coerce a protobuf request object.
         # Sanity check: If we got a request object, we should *not* have
         # gotten any keyword arguments that map to the request.
-        has_flattened_params = any([name, topic, push_config, ack_deadline_seconds])
-        if request is not None and has_flattened_params:
+        if request is not None and any(
+            [name, topic, push_config, ack_deadline_seconds]
+        ):
             raise ValueError(
                 "If the `request` argument is set, then none of "
                 "the individual field arguments should be set."
@@ -342,8 +300,7 @@ class SubscriberAsyncClient:
         # Create or coerce a protobuf request object.
         # Sanity check: If we got a request object, we should *not* have
         # gotten any keyword arguments that map to the request.
-        has_flattened_params = any([subscription])
-        if request is not None and has_flattened_params:
+        if request is not None and any([subscription]):
             raise ValueError(
                 "If the `request` argument is set, then none of "
                 "the individual field arguments should be set."
@@ -487,8 +444,7 @@ class SubscriberAsyncClient:
         # Create or coerce a protobuf request object.
         # Sanity check: If we got a request object, we should *not* have
         # gotten any keyword arguments that map to the request.
-        has_flattened_params = any([project])
-        if request is not None and has_flattened_params:
+        if request is not None and any([project]):
             raise ValueError(
                 "If the `request` argument is set, then none of "
                 "the individual field arguments should be set."
@@ -574,8 +530,7 @@ class SubscriberAsyncClient:
         # Create or coerce a protobuf request object.
         # Sanity check: If we got a request object, we should *not* have
         # gotten any keyword arguments that map to the request.
-        has_flattened_params = any([subscription])
-        if request is not None and has_flattened_params:
+        if request is not None and any([subscription]):
             raise ValueError(
                 "If the `request` argument is set, then none of "
                 "the individual field arguments should be set."
@@ -674,8 +629,7 @@ class SubscriberAsyncClient:
         # Create or coerce a protobuf request object.
         # Sanity check: If we got a request object, we should *not* have
         # gotten any keyword arguments that map to the request.
-        has_flattened_params = any([subscription, ack_ids, ack_deadline_seconds])
-        if request is not None and has_flattened_params:
+        if request is not None and any([subscription, ack_ids, ack_deadline_seconds]):
             raise ValueError(
                 "If the `request` argument is set, then none of "
                 "the individual field arguments should be set."
@@ -688,11 +642,10 @@ class SubscriberAsyncClient:
 
         if subscription is not None:
             request.subscription = subscription
+        if ack_ids is not None:
+            request.ack_ids = ack_ids
         if ack_deadline_seconds is not None:
             request.ack_deadline_seconds = ack_deadline_seconds
-
-        if ack_ids:
-            request.ack_ids.extend(ack_ids)
 
         # Wrap the RPC method; this adds retry and timeout information,
         # and friendly error handling.
@@ -767,8 +720,7 @@ class SubscriberAsyncClient:
         # Create or coerce a protobuf request object.
         # Sanity check: If we got a request object, we should *not* have
         # gotten any keyword arguments that map to the request.
-        has_flattened_params = any([subscription, ack_ids])
-        if request is not None and has_flattened_params:
+        if request is not None and any([subscription, ack_ids]):
             raise ValueError(
                 "If the `request` argument is set, then none of "
                 "the individual field arguments should be set."
@@ -781,9 +733,8 @@ class SubscriberAsyncClient:
 
         if subscription is not None:
             request.subscription = subscription
-
-        if ack_ids:
-            request.ack_ids.extend(ack_ids)
+        if ack_ids is not None:
+            request.ack_ids = ack_ids
 
         # Wrap the RPC method; this adds retry and timeout information,
         # and friendly error handling.
@@ -873,8 +824,9 @@ class SubscriberAsyncClient:
         # Create or coerce a protobuf request object.
         # Sanity check: If we got a request object, we should *not* have
         # gotten any keyword arguments that map to the request.
-        has_flattened_params = any([subscription, return_immediately, max_messages])
-        if request is not None and has_flattened_params:
+        if request is not None and any(
+            [subscription, return_immediately, max_messages]
+        ):
             raise ValueError(
                 "If the `request` argument is set, then none of "
                 "the individual field arguments should be set."
@@ -931,7 +883,7 @@ class SubscriberAsyncClient:
         retry: retries.Retry = gapic_v1.method.DEFAULT,
         timeout: float = None,
         metadata: Sequence[Tuple[str, str]] = (),
-    ) -> Awaitable[AsyncIterable[pubsub.StreamingPullResponse]]:
+    ) -> AsyncIterable[pubsub.StreamingPullResponse]:
         r"""Establishes a stream with the server, which sends messages down
         to the client. The client streams acknowledgements and ack
         deadline modifications back to the server. The server will close
@@ -971,11 +923,11 @@ class SubscriberAsyncClient:
                 maximum=60.0,
                 multiplier=1.3,
                 predicate=retries.if_exception_type(
-                    exceptions.Aborted,
                     exceptions.DeadlineExceeded,
                     exceptions.InternalServerError,
                     exceptions.ResourceExhausted,
                     exceptions.ServiceUnavailable,
+                    exceptions.Aborted,
                 ),
             ),
             default_timeout=900.0,
@@ -1037,8 +989,7 @@ class SubscriberAsyncClient:
         # Create or coerce a protobuf request object.
         # Sanity check: If we got a request object, we should *not* have
         # gotten any keyword arguments that map to the request.
-        has_flattened_params = any([subscription, push_config])
-        if request is not None and has_flattened_params:
+        if request is not None and any([subscription, push_config]):
             raise ValueError(
                 "If the `request` argument is set, then none of "
                 "the individual field arguments should be set."
@@ -1127,8 +1078,7 @@ class SubscriberAsyncClient:
         # Create or coerce a protobuf request object.
         # Sanity check: If we got a request object, we should *not* have
         # gotten any keyword arguments that map to the request.
-        has_flattened_params = any([snapshot])
-        if request is not None and has_flattened_params:
+        if request is not None and any([snapshot]):
             raise ValueError(
                 "If the `request` argument is set, then none of "
                 "the individual field arguments should be set."
@@ -1215,8 +1165,7 @@ class SubscriberAsyncClient:
         # Create or coerce a protobuf request object.
         # Sanity check: If we got a request object, we should *not* have
         # gotten any keyword arguments that map to the request.
-        has_flattened_params = any([project])
-        if request is not None and has_flattened_params:
+        if request is not None and any([project]):
             raise ValueError(
                 "If the `request` argument is set, then none of "
                 "the individual field arguments should be set."
@@ -1345,8 +1294,7 @@ class SubscriberAsyncClient:
         # Create or coerce a protobuf request object.
         # Sanity check: If we got a request object, we should *not* have
         # gotten any keyword arguments that map to the request.
-        has_flattened_params = any([name, subscription])
-        if request is not None and has_flattened_params:
+        if request is not None and any([name, subscription]):
             raise ValueError(
                 "If the `request` argument is set, then none of "
                 "the individual field arguments should be set."
@@ -1497,8 +1445,7 @@ class SubscriberAsyncClient:
         # Create or coerce a protobuf request object.
         # Sanity check: If we got a request object, we should *not* have
         # gotten any keyword arguments that map to the request.
-        has_flattened_params = any([snapshot])
-        if request is not None and has_flattened_params:
+        if request is not None and any([snapshot]):
             raise ValueError(
                 "If the `request` argument is set, then none of "
                 "the individual field arguments should be set."

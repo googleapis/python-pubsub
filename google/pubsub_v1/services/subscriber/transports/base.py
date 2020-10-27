@@ -221,11 +221,11 @@ class SubscriberTransport(abc.ABC):
                     maximum=60.0,
                     multiplier=1.3,
                     predicate=retries.if_exception_type(
-                        exceptions.Aborted,
                         exceptions.DeadlineExceeded,
                         exceptions.InternalServerError,
                         exceptions.ResourceExhausted,
                         exceptions.ServiceUnavailable,
+                        exceptions.Aborted,
                     ),
                 ),
                 default_timeout=900.0,
