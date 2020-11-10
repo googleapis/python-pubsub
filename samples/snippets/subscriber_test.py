@@ -159,6 +159,13 @@ def subscription_dlq(subscriber_client, topic, dead_letter_topic):
     subscriber_client.delete_subscription(request={"subscription": subscription.name})
 
 
+def _publish_messages(publisher_client, topic, **attrs):
+    for n in range(5):
+        data = "message {}".format(n).encode("utf-8")
+        publish_future = publisher_client.publish(topic, data, **attrs)
+        publish_future.result()
+
+
 def test_list_in_topic(subscription_admin, capsys):
     @backoff.on_exception(backoff.expo, AssertionError, max_time=60)
     def eventually_consistent_test():
@@ -218,11 +225,13 @@ def test_create_subscription_with_dead_letter_policy(
 
 
 def test_receive_with_delivery_attempts(
-    publisher_client, topic, subscription_dlq, capsys
+    publisher_client, topic, dead_letter_topic, subscription_dlq, capsys
 ):
     _publish_messages(publisher_client, topic)
 
-    subscriber.receive_messages_with_delivery_attempts(PROJECT_ID, SUBSCRIPTION_DLQ, 30)
+    subscriber.receive_messages_with_delivery_attempts(
+        PROJECT_ID, SUBSCRIPTION_DLQ, 20
+    )
 
     out, _ = capsys.readouterr()
     assert f"Listening for messages on {subscription_dlq}.." in out
@@ -312,13 +321,6 @@ def test_delete(subscriber_client, subscription_admin):
     eventually_consistent_test()
 
 
-def _publish_messages(publisher_client, topic, **attrs):
-    for n in range(5):
-        data = "message {}".format(n).encode("utf-8")
-        publish_future = publisher_client.publish(topic, data, **attrs)
-        publish_future.result()
-
-
 def test_receive(publisher_client, topic, subscription_async, capsys):
     _publish_messages(publisher_client, topic)
 
@@ -359,6 +361,17 @@ def test_receive_with_flow_control(publisher_client, topic, subscription_async, 
     assert "message" in out
 
 
+def test_listen_for_errors(publisher_client, topic, subscription_async, capsys):
+
+    _publish_messages(publisher_client, topic)
+
+    subscriber.listen_for_errors(PROJECT_ID, SUBSCRIPTION_ASYNC, 5)
+
+    out, _ = capsys.readouterr()
+    assert subscription_async in out
+    assert "threw an exception" in out
+
+
 def test_receive_synchronously(publisher_client, topic, subscription_sync, capsys):
     _publish_messages(publisher_client, topic)
 
@@ -379,14 +392,3 @@ def test_receive_synchronously_with_lease(
 
     out, _ = capsys.readouterr()
     assert f"Received and acknowledged 3 messages from {subscription_sync}." in out
-
-
-def test_listen_for_errors(publisher_client, topic, subscription_async, capsys):
-
-    _publish_messages(publisher_client, topic)
-
-    subscriber.listen_for_errors(PROJECT_ID, SUBSCRIPTION_ASYNC, 5)
-
-    out, _ = capsys.readouterr()
-    assert subscription_async in out
-    assert "threw an exception" in out
