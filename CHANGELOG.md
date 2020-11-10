@@ -5,6 +5,20 @@
 [1]: https://pypi.org/project/google-cloud-pubsub/#history
 
 
+### [2.1.1](https://www.github.com/googleapis/python-pubsub/compare/v2.1.0...v2.1.1) (2020-11-10)
+
+
+### Bug Fixes
+
+* fix mtls issue in handwritten layer ([#226](https://www.github.com/googleapis/python-pubsub/issues/226)) ([09a409c](https://www.github.com/googleapis/python-pubsub/commit/09a409c6240a74dcb46d8f3f86d4fb95a52274a7))
+* make fixup script consistent with migration docs ([#208](https://www.github.com/googleapis/python-pubsub/issues/208)) ([b64e218](https://www.github.com/googleapis/python-pubsub/commit/b64e2187ab0810437575580d6ddb5315ff60e274))
+
+
+### Documentation
+
+* document potentially unexpected blocking behavior of publish() method ([#214](https://www.github.com/googleapis/python-pubsub/issues/214)) ([b6d9bd7](https://www.github.com/googleapis/python-pubsub/commit/b6d9bd7c38d4fe597c25b7b5869fd4a1259c7687))
+* fix get topic_path in subscriber sample ([#210](https://www.github.com/googleapis/python-pubsub/issues/210)) ([7228f6c](https://www.github.com/googleapis/python-pubsub/commit/7228f6c9a4c050bf22bb4bc3582b89b04eaa8702))
+
 ## 2.1.0
 
 09-21-2020 02:19 PDT
