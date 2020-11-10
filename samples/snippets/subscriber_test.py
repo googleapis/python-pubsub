@@ -228,6 +228,28 @@ def test_update_dead_letter_policy(subscription_dlq, dead_letter_topic, capsys):
     assert "max_delivery_attempts: 20" in out
 
 
+def test_receive_with_delivery_attempts(
+    publisher_client, topic, subscription_dlq, capsys
+):
+    _publish_messages(publisher_client, topic)
+
+    subscriber.receive_messages_with_delivery_attempts(PROJECT_ID, SUBSCRIPTION_DLQ, 15)
+
+    out, _ = capsys.readouterr()
+    assert f"Listening for messages on {subscription_dlq}.." in out
+    assert "With delivery attempts: " in out
+
+
+def test_remove_dead_letter_policy(subscription_dlq, capsys):
+    subscription_after_update = subscriber.remove_dead_letter_policy(
+        PROJECT_ID, TOPIC, SUBSCRIPTION_DLQ
+    )
+
+    out, _ = capsys.readouterr()
+    assert subscription_dlq in out
+    assert subscription_after_update.dead_letter_policy.dead_letter_topic == ""
+
+
 def test_create_subscription_with_ordering(
     subscriber_client, subscription_admin, capsys
 ):
@@ -368,25 +390,3 @@ def test_listen_for_errors(publisher_client, topic, subscription_async, capsys):
     out, _ = capsys.readouterr()
     assert subscription_async in out
     assert "threw an exception" in out
-
-
-def test_receive_with_delivery_attempts(
-    publisher_client, topic, subscription_dlq, capsys
-):
-    _publish_messages(publisher_client, topic)
-
-    subscriber.receive_messages_with_delivery_attempts(PROJECT_ID, SUBSCRIPTION_DLQ, 15)
-
-    out, _ = capsys.readouterr()
-    assert f"Listening for messages on {subscription_dlq}.." in out
-    assert "With delivery attempts: " in out
-
-
-def test_remove_dead_letter_policy(subscription_dlq, capsys):
-    subscription_after_update = subscriber.remove_dead_letter_policy(
-        PROJECT_ID, TOPIC, SUBSCRIPTION_DLQ
-    )
-
-    out, _ = capsys.readouterr()
-    assert subscription_dlq in out
-    assert subscription_after_update.dead_letter_policy.dead_letter_topic == ""
