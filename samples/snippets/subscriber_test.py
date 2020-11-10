@@ -217,6 +217,18 @@ def test_create_subscription_with_dead_letter_policy(
     assert "After 10 delivery attempts." in out
 
 
+def test_receive_with_delivery_attempts(
+    publisher_client, topic, subscription_dlq, capsys
+):
+    _publish_messages(publisher_client, topic)
+
+    subscriber.receive_messages_with_delivery_attempts(PROJECT_ID, SUBSCRIPTION_DLQ, 30)
+
+    out, _ = capsys.readouterr()
+    assert f"Listening for messages on {subscription_dlq}.." in out
+    assert "With delivery attempts: " in out
+
+
 def test_update_dead_letter_policy(subscription_dlq, dead_letter_topic, capsys):
     _ = subscriber.update_subscription_with_dead_letter_policy(
         PROJECT_ID, TOPIC, SUBSCRIPTION_DLQ, DEAD_LETTER_TOPIC
@@ -226,18 +238,6 @@ def test_update_dead_letter_policy(subscription_dlq, dead_letter_topic, capsys):
     assert dead_letter_topic in out
     assert subscription_dlq in out
     assert "max_delivery_attempts: 20" in out
-
-
-def test_receive_with_delivery_attempts(
-    publisher_client, topic, subscription_dlq, capsys
-):
-    _publish_messages(publisher_client, topic)
-
-    subscriber.receive_messages_with_delivery_attempts(PROJECT_ID, SUBSCRIPTION_DLQ, 15)
-
-    out, _ = capsys.readouterr()
-    assert f"Listening for messages on {subscription_dlq}.." in out
-    assert "With delivery attempts: " in out
 
 
 def test_remove_dead_letter_policy(subscription_dlq, capsys):
