@@ -681,7 +681,12 @@ if __name__ == "__main__":
     create_with_dead_letter_policy_parser.add_argument("topic_id")
     create_with_dead_letter_policy_parser.add_argument("subscription_id")
     create_with_dead_letter_policy_parser.add_argument("dead_letter_topic_id")
-    create_with_dead_letter_policy_parser.add_argument("max_delivery_attempts",type=int)
+    create_with_dead_letter_policy_parser.add_argument(
+        "max_delivery_attempts",
+        type=int,
+        nargs="?",
+        default=5
+    )
 
     create_push_parser = subparsers.add_parser(
         "create-push", help=create_push_subscription.__doc__
@@ -713,7 +718,12 @@ if __name__ == "__main__":
     update_dead_letter_policy_parser.add_argument("topic_id")
     update_dead_letter_policy_parser.add_argument("subscription_id")
     update_dead_letter_policy_parser.add_argument("dead_letter_topic_id")
-    update_dead_letter_policy_parser.add_argument("max_delivery_attempts",type=int)
+    update_dead_letter_policy_parser.add_argument(
+        "max_delivery_attempts",
+        type=int,
+        nargs="?",
+        default=5
+    )
 
     remove_dead_letter_policy_parser = subparsers.add_parser(
         "remove-dead-letter-policy", help=remove_dead_letter_policy.__doc__
