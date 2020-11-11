@@ -208,7 +208,7 @@ def test_create_subscription_with_dead_letter_policy(
         pass
 
     subscriber.create_subscription_with_dead_letter_topic(
-        PROJECT_ID, TOPIC, SUBSCRIPTION_DLQ, DEAD_LETTER_TOPIC
+        PROJECT_ID, TOPIC, SUBSCRIPTION_DLQ, DEAD_LETTER_TOPIC, 10
     )
 
     out, _ = capsys.readouterr()
@@ -219,7 +219,7 @@ def test_create_subscription_with_dead_letter_policy(
 
 def test_update_dead_letter_policy(subscription_dlq, dead_letter_topic, capsys):
     _ = subscriber.update_subscription_with_dead_letter_policy(
-        PROJECT_ID, TOPIC, SUBSCRIPTION_DLQ, DEAD_LETTER_TOPIC
+        PROJECT_ID, TOPIC, SUBSCRIPTION_DLQ, DEAD_LETTER_TOPIC, 20
     )
 
     out, _ = capsys.readouterr()
