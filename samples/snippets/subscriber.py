@@ -91,7 +91,7 @@ def create_subscription(project_id, topic_id, subscription_id):
 
 def create_subscription_with_dead_letter_topic(
     project_id, topic_id, subscription_id, dead_letter_topic_id,
-    max_delivery_attempts
+    max_delivery_attempts=5
 ):
     """Create a subscription with dead letter policy."""
     # [START pubsub_dead_letter_create_subscription]
@@ -109,7 +109,7 @@ def create_subscription_with_dead_letter_topic(
     # TODO(developer): This is an existing dead letter topic that the subscription
     # with dead letter policy will forward dead letter messages to.
     # dead_letter_topic_id = "your-dead-letter-topic-id"
-    # TODO(developer): This is an the maximum number of delivery attempts allowed 
+    # TODO(developer): This is an the maximum number of delivery attempts allowed
     # before a message gets dead lettered.
     # max_delivery_attempts = "your-max-delivery-attempts"
 
@@ -265,7 +265,7 @@ def update_push_subscription(project_id, topic_id, subscription_id, endpoint):
 
 def update_subscription_with_dead_letter_policy(
     project_id, topic_id, subscription_id, dead_letter_topic_id,
-    max_delivery_attempts
+    max_delivery_attempts=5
 ):
     """Update a subscription's dead letter policy."""
     # [START pubsub_dead_letter_update_subscription]
