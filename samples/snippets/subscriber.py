@@ -110,8 +110,8 @@ def create_subscription_with_dead_letter_topic(
     # with dead letter policy will forward dead letter messages to.
     # dead_letter_topic_id = "your-dead-letter-topic-id"
     # TODO(developer): This is an the maximum number of delivery attempts allowed
-    # before a message gets dead lettered.
-    # max_delivery_attempts = "your-max-delivery-attempts"
+    # for a message before it gets delivered to a dead letter topic.
+    # max_delivery_attempts = 5
 
     publisher = pubsub_v1.PublisherClient()
     subscriber = pubsub_v1.SubscriberClient()
@@ -283,8 +283,8 @@ def update_subscription_with_dead_letter_policy(
     # with dead letter policy will forward dead letter messages to.
     # dead_letter_topic_id = "your-dead-letter-topic-id"
     # TODO(developer): This is an the maximum number of delivery attempts allowed
-    # before a message gets dead lettered.
-    # max_delivery_attempts = "your-max-delivery-attempts"
+    # for a message before it gets delivered to a dead letter topic.
+    # max_delivery_attempts = 5
 
     publisher = pubsub_v1.PublisherClient()
     subscriber = pubsub_v1.SubscriberClient()
