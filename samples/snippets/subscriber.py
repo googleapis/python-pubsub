@@ -109,7 +109,7 @@ def create_subscription_with_dead_letter_topic(
     # TODO(developer): This is an existing dead letter topic that the subscription
     # with dead letter policy will forward dead letter messages to.
     # dead_letter_topic_id = "your-dead-letter-topic-id"
-    # TODO(developer): This is an the maximum number of delivery attempts allowed
+    # TODO(developer): This is the maximum number of delivery attempts allowed
     # for a message before it gets delivered to a dead letter topic.
     # max_delivery_attempts = 5
 
@@ -282,7 +282,7 @@ def update_subscription_with_dead_letter_policy(
     # TODO(developer): This is an existing dead letter topic that the subscription
     # with dead letter policy will forward dead letter messages to.
     # dead_letter_topic_id = "your-dead-letter-topic-id"
-    # TODO(developer): This is an the maximum number of delivery attempts allowed
+    # TODO(developer): This is the maximum number of delivery attempts allowed
     # for a message before it gets delivered to a dead letter topic.
     # max_delivery_attempts = 5
 
