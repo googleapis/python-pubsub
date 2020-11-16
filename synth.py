@@ -104,6 +104,21 @@ s.replace(
     "\n\g<0>",
 )
 
+# Allow timeout to be an instance of google.api_core.timeout.*
+s.replace(
+    "google/pubsub_v1/services/publisher/client.py",
+    r"from google.api_core import retry as retries.*\n",
+    "\g<0>from google.api_core import timeout as timeouts  # type: ignore\n"
+)
+s.replace(
+    "google/pubsub_v1/services/publisher/client.py",
+    r"(\s+)timeout: float = None.*\n",
+    """
+        \g<1>timeout: Union[
+        \g<1>    timeouts.ConstantTimeout, timeouts.ExponentialTimeout
+        \g<1>] = gapic_v1.method.DEFAULT,""",
+)
+
 # ----------------------------------------------------------------------------
 # Add templated files
 # ----------------------------------------------------------------------------
