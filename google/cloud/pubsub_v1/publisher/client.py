@@ -272,7 +272,13 @@ class Client(object):
                 sequencer.unpause()
 
     def publish(
-        self, topic, data, ordering_key="", retry=gapic_v1.method.DEFAULT, **attrs
+        self,
+        topic,
+        data,
+        ordering_key="",
+        retry=gapic_v1.method.DEFAULT,
+        timeout=gapic_v1.method.DEFAULT,
+        **attrs
     ):
         """Publish a single message.
 

@@ -26,6 +26,7 @@ from google.api_core import client_options as client_options_lib  # type: ignore
 from google.api_core import exceptions  # type: ignore
 from google.api_core import gapic_v1  # type: ignore
 from google.api_core import retry as retries  # type: ignore
+from google.api_core import timeout as timeouts  # type: ignore
 from google.auth import credentials  # type: ignore
 from google.auth.transport import mtls  # type: ignore
 from google.auth.transport.grpc import SslCredentials  # type: ignore
@@ -363,7 +364,9 @@ class PublisherClient(metaclass=PublisherClientMeta):
         *,
         name: str = None,
         retry: retries.Retry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        timeout: Union[
+            timeouts.ConstantTimeout, timeouts.ExponentialTimeout
+        ] = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pubsub.Topic:
         r"""Creates the given topic with the given name. See the `resource
@@ -441,7 +444,9 @@ class PublisherClient(metaclass=PublisherClientMeta):
         request: pubsub.UpdateTopicRequest = None,
         *,
         retry: retries.Retry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        timeout: Union[
+            timeouts.ConstantTimeout, timeouts.ExponentialTimeout
+        ] = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pubsub.Topic:
         r"""Updates an existing topic. Note that certain
@@ -496,7 +501,9 @@ class PublisherClient(metaclass=PublisherClientMeta):
         topic: str = None,
         messages: Sequence[pubsub.PubsubMessage] = None,
         retry: retries.Retry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        timeout: Union[
+            timeouts.ConstantTimeout, timeouts.ExponentialTimeout
+        ] = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pubsub.PublishResponse:
         r"""Adds one or more messages to the topic. Returns ``NOT_FOUND`` if
@@ -577,7 +584,9 @@ class PublisherClient(metaclass=PublisherClientMeta):
         *,
         topic: str = None,
         retry: retries.Retry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        timeout: Union[
+            timeouts.ConstantTimeout, timeouts.ExponentialTimeout
+        ] = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pubsub.Topic:
         r"""Gets the configuration of a topic.
@@ -648,7 +657,9 @@ class PublisherClient(metaclass=PublisherClientMeta):
         *,
         project: str = None,
         retry: retries.Retry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        timeout: Union[
+            timeouts.ConstantTimeout, timeouts.ExponentialTimeout
+        ] = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pagers.ListTopicsPager:
         r"""Lists matching topics.
@@ -729,7 +740,9 @@ class PublisherClient(metaclass=PublisherClientMeta):
         *,
         topic: str = None,
         retry: retries.Retry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        timeout: Union[
+            timeouts.ConstantTimeout, timeouts.ExponentialTimeout
+        ] = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pagers.ListTopicSubscriptionsPager:
         r"""Lists the names of the attached subscriptions on this
@@ -813,7 +826,9 @@ class PublisherClient(metaclass=PublisherClientMeta):
         *,
         topic: str = None,
         retry: retries.Retry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        timeout: Union[
+            timeouts.ConstantTimeout, timeouts.ExponentialTimeout
+        ] = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pagers.ListTopicSnapshotsPager:
         r"""Lists the names of the snapshots on this topic. Snapshots are
@@ -901,7 +916,9 @@ class PublisherClient(metaclass=PublisherClientMeta):
         *,
         topic: str = None,
         retry: retries.Retry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        timeout: Union[
+            timeouts.ConstantTimeout, timeouts.ExponentialTimeout
+        ] = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> None:
         r"""Deletes the topic with the given name. Returns ``NOT_FOUND`` if
@@ -972,7 +989,9 @@ class PublisherClient(metaclass=PublisherClientMeta):
         request: pubsub.DetachSubscriptionRequest = None,
         *,
         retry: retries.Retry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        timeout: Union[
+            timeouts.ConstantTimeout, timeouts.ExponentialTimeout
+        ] = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pubsub.DetachSubscriptionResponse:
         r"""Detaches a subscription from this topic. All messages retained
@@ -1031,7 +1050,9 @@ class PublisherClient(metaclass=PublisherClientMeta):
         request: iam_policy.SetIamPolicyRequest = None,
         *,
         retry: retries.Retry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        timeout: Union[
+            timeouts.ConstantTimeout, timeouts.ExponentialTimeout
+        ] = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> policy.Policy:
         r"""Sets the IAM access control policy on the specified
@@ -1141,7 +1162,9 @@ class PublisherClient(metaclass=PublisherClientMeta):
         request: iam_policy.GetIamPolicyRequest = None,
         *,
         retry: retries.Retry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        timeout: Union[
+            timeouts.ConstantTimeout, timeouts.ExponentialTimeout
+        ] = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> policy.Policy:
         r"""Gets the IAM access control policy for a function.
@@ -1252,7 +1275,9 @@ class PublisherClient(metaclass=PublisherClientMeta):
         request: iam_policy.TestIamPermissionsRequest = None,
         *,
         retry: retries.Retry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        timeout: Union[
+            timeouts.ConstantTimeout, timeouts.ExponentialTimeout
+        ] = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> iam_policy.TestIamPermissionsResponse:
         r"""Tests the specified permissions against the IAM access control
