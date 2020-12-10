@@ -32,6 +32,8 @@ SUBSCRIPTION_SYNC = "subscription-test-subscription-sync-" + UUID
 SUBSCRIPTION_DLQ = "subscription-test-subscription-dlq-" + UUID
 ENDPOINT = "https://{}.appspot.com/push".format(PROJECT_ID)
 NEW_ENDPOINT = "https://{}.appspot.com/push2".format(PROJECT_ID)
+DEFAULT_MAX_DELIVERY_ATTEMPTS = 5
+UPDATED_MAX_DELIVERY_ATTEMPTS = 20
 
 
 @pytest.fixture(scope="module")
@@ -221,7 +223,7 @@ def test_create_subscription_with_dead_letter_policy(
     out, _ = capsys.readouterr()
     assert f"Subscription created: {subscription_dlq}" in out
     assert f"It will forward dead letter messages to: {dead_letter_topic}" in out
-    assert "After 10 delivery attempts." in out
+    assert f"After {DEFAULT_MAX_DELIVERY_ATTEMPTS} delivery attempts." in out
 
 
 def test_receive_with_delivery_attempts(
@@ -240,13 +242,14 @@ def test_receive_with_delivery_attempts(
 
 def test_update_dead_letter_policy(subscription_dlq, dead_letter_topic, capsys):
     _ = subscriber.update_subscription_with_dead_letter_policy(
-        PROJECT_ID, TOPIC, SUBSCRIPTION_DLQ, DEAD_LETTER_TOPIC
+        PROJECT_ID, TOPIC, SUBSCRIPTION_DLQ, DEAD_LETTER_TOPIC,
+        UPDATED_MAX_DELIVERY_ATTEMPTS
     )
 
     out, _ = capsys.readouterr()
     assert dead_letter_topic in out
     assert subscription_dlq in out
-    assert "max_delivery_attempts: 20" in out
+    assert f"max_delivery_attempts: {UPDATED_MAX_DELIVERY_ATTEMPTS}" in out
 
 
 def test_remove_dead_letter_policy(subscription_dlq, capsys):
