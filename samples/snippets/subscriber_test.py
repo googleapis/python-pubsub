@@ -26,14 +26,14 @@ import subscriber
 UUID = uuid.uuid4().hex
 PY_VERSION = f"{sys.version_info.major}.{sys.version_info.minor}"
 PROJECT_ID = os.environ["GOOGLE_CLOUD_PROJECT"]
-TOPIC = "subscription-test-topic-" + UUID + PY_VERSION
-DEAD_LETTER_TOPIC = "subscription-test-dead-letter-topic-" + PY_VERSION + "-" + UUID
-SUBSCRIPTION_ADMIN = "subscription-test-subscription-admin-" + PY_VERSION + "-" + UUID
-SUBSCRIPTION_ASYNC = "subscription-test-subscription-async-" + PY_VERSION + "-" + UUID
-SUBSCRIPTION_SYNC = "subscription-test-subscription-sync-" + PY_VERSION + "-" + UUID
-SUBSCRIPTION_DLQ = "subscription-test-subscription-dlq-" + PY_VERSION + "-" + UUID
-ENDPOINT = "https://{}.appspot.com/push".format(PROJECT_ID)
-NEW_ENDPOINT = "https://{}.appspot.com/push2".format(PROJECT_ID)
+TOPIC = f"subscription-test-topic-{PY_VERSION}-{UUID}"
+DEAD_LETTER_TOPIC = f"subscription-test-dead-letter-topic-{PY_VERSION}-{UUID}"
+SUBSCRIPTION_ADMIN = f"subscription-test-subscription-admin-{PY_VERSION}-{UUID}"
+SUBSCRIPTION_ASYNC = f"subscription-test-subscription-async-{PY_VERSION}-{UUID}"
+SUBSCRIPTION_SYNC = f"subscription-test-subscription-sync-{PY_VERSION}-{UUID}"
+SUBSCRIPTION_DLQ = f"subscription-test-subscription-dlq-{PY_VERSION}-{UUID}"
+ENDPOINT = f"https://{PROJECT_ID}.appspot.com/push"
+NEW_ENDPOINT = f"https://{PROJECT_ID}.appspot.com/push2"
 DEFAULT_MAX_DELIVERY_ATTEMPTS = 5
 UPDATED_MAX_DELIVERY_ATTEMPTS = 20
 
@@ -165,7 +165,7 @@ def subscription_dlq(subscriber_client, topic, dead_letter_topic):
 
 def _publish_messages(publisher_client, topic, **attrs):
     for n in range(5):
-        data = "message {}".format(n).encode("utf-8")
+        data = f"message {n}".encode("utf-8")
         publish_future = publisher_client.publish(topic, data, **attrs)
         publish_future.result()
 
