@@ -148,7 +148,16 @@ def lint(session):
         "."
     ]
     session.run("flake8", *args)
+#
+# Black
+#
 
+@nox.session
+def blacken(session):
+    session.install("black")
+    python_files = [path for path in os.listdir(".") if path.endswith(".py")]
+
+    session.run("black", *python_files)
 
 #
 # Sample Tests
