@@ -152,6 +152,7 @@ def lint(session):
 # Black
 #
 
+
 @nox.session
 def blacken(session):
     session.install("black")
