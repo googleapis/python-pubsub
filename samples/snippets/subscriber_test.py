@@ -233,9 +233,7 @@ def test_receive_with_delivery_attempts(
 ):
     _publish_messages(publisher_client, topic)
 
-    subscriber.receive_messages_with_delivery_attempts(
-        PROJECT_ID, SUBSCRIPTION_DLQ, 20
-    )
+    subscriber.receive_messages_with_delivery_attempts(PROJECT_ID, SUBSCRIPTION_DLQ, 90)
 
     out, _ = capsys.readouterr()
     assert f"Listening for messages on {subscription_dlq}.." in out
@@ -244,8 +242,11 @@ def test_receive_with_delivery_attempts(
 
 def test_update_dead_letter_policy(subscription_dlq, dead_letter_topic, capsys):
     _ = subscriber.update_subscription_with_dead_letter_policy(
-        PROJECT_ID, TOPIC, SUBSCRIPTION_DLQ, DEAD_LETTER_TOPIC,
-        UPDATED_MAX_DELIVERY_ATTEMPTS
+        PROJECT_ID,
+        TOPIC,
+        SUBSCRIPTION_DLQ,
+        DEAD_LETTER_TOPIC,
+        UPDATED_MAX_DELIVERY_ATTEMPTS,
     )
 
     out, _ = capsys.readouterr()

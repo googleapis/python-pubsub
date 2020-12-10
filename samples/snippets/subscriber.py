@@ -90,8 +90,7 @@ def create_subscription(project_id, topic_id, subscription_id):
 
 
 def create_subscription_with_dead_letter_topic(
-    project_id, topic_id, subscription_id, dead_letter_topic_id,
-    max_delivery_attempts=5
+    project_id, topic_id, subscription_id, dead_letter_topic_id, max_delivery_attempts=5
 ):
     """Create a subscription with dead letter policy."""
     # [START pubsub_dead_letter_create_subscription]
@@ -122,7 +121,7 @@ def create_subscription_with_dead_letter_topic(
 
     dead_letter_policy = DeadLetterPolicy(
         dead_letter_topic=dead_letter_topic_path,
-        max_delivery_attempts=max_delivery_attempts
+        max_delivery_attempts=max_delivery_attempts,
     )
 
     with subscriber:
@@ -264,8 +263,7 @@ def update_push_subscription(project_id, topic_id, subscription_id, endpoint):
 
 
 def update_subscription_with_dead_letter_policy(
-    project_id, topic_id, subscription_id, dead_letter_topic_id,
-    max_delivery_attempts=5
+    project_id, topic_id, subscription_id, dead_letter_topic_id, max_delivery_attempts=5
 ):
     """Update a subscription's dead letter policy."""
     # [START pubsub_dead_letter_update_subscription]
@@ -304,7 +302,7 @@ def update_subscription_with_dead_letter_policy(
     # Construct a dead letter policy you expect to have after the update.
     dead_letter_policy = DeadLetterPolicy(
         dead_letter_topic=dead_letter_topic_path,
-        max_delivery_attempts=max_delivery_attempts
+        max_delivery_attempts=max_delivery_attempts,
     )
 
     # Construct the subscription with the dead letter policy you expect to have
@@ -502,7 +500,7 @@ def synchronous_pull(project_id, subscription_id):
         # number of messages pulled may be smaller than max_messages.
         response = subscriber.pull(
             request={"subscription": subscription_path, "max_messages": NUM_MESSAGES},
-            retry = retry.Retry(deadline=300),
+            retry=retry.Retry(deadline=300),
         )
 
         ack_ids = []
@@ -545,8 +543,8 @@ def synchronous_pull_with_lease_management(project_id, subscription_id):
     subscription_path = subscriber.subscription_path(project_id, subscription_id)
 
     response = subscriber.pull(
-        request={"subscription": subscription_path, "max_messages": 3}, 
-        retry = retry.Retry(deadline=300),
+        request={"subscription": subscription_path, "max_messages": 3},
+        retry=retry.Retry(deadline=300),
     )
 
     # Start a process for each message based on its size modulo 10.
@@ -687,10 +685,7 @@ if __name__ == "__main__":
     create_with_dead_letter_policy_parser.add_argument("subscription_id")
     create_with_dead_letter_policy_parser.add_argument("dead_letter_topic_id")
     create_with_dead_letter_policy_parser.add_argument(
-        "max_delivery_attempts",
-        type=int,
-        nargs="?",
-        default=5
+        "max_delivery_attempts", type=int, nargs="?", default=5
     )
 
     create_push_parser = subparsers.add_parser(
@@ -724,10 +719,7 @@ if __name__ == "__main__":
     update_dead_letter_policy_parser.add_argument("subscription_id")
     update_dead_letter_policy_parser.add_argument("dead_letter_topic_id")
     update_dead_letter_policy_parser.add_argument(
-        "max_delivery_attempts",
-        type=int,
-        nargs="?",
-        default=5
+        "max_delivery_attempts", type=int, nargs="?", default=5
     )
 
     remove_dead_letter_policy_parser = subparsers.add_parser(
