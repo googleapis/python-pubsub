@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import os
+import sys
 import uuid
 
 import backoff
@@ -23,13 +24,14 @@ import pytest
 import subscriber
 
 UUID = uuid.uuid4().hex
+PY_VERSION = f"{sys.version_info.major}.{sys.version_info.minor}"
 PROJECT_ID = os.environ["GOOGLE_CLOUD_PROJECT"]
-TOPIC = "subscription-test-topic-" + UUID
-DEAD_LETTER_TOPIC = "subscription-test-dead-letter-topic-" + UUID
-SUBSCRIPTION_ADMIN = "subscription-test-subscription-admin-" + UUID
-SUBSCRIPTION_ASYNC = "subscription-test-subscription-async-" + UUID
-SUBSCRIPTION_SYNC = "subscription-test-subscription-sync-" + UUID
-SUBSCRIPTION_DLQ = "subscription-test-subscription-dlq-" + UUID
+TOPIC = "subscription-test-topic-" + UUID + PY_VERSION
+DEAD_LETTER_TOPIC = "subscription-test-dead-letter-topic-" + PY_VERSION + "-" + UUID
+SUBSCRIPTION_ADMIN = "subscription-test-subscription-admin-" + PY_VERSION + "-" + UUID
+SUBSCRIPTION_ASYNC = "subscription-test-subscription-async-" + PY_VERSION + "-" + UUID
+SUBSCRIPTION_SYNC = "subscription-test-subscription-sync-" + PY_VERSION + "-" + UUID
+SUBSCRIPTION_DLQ = "subscription-test-subscription-dlq-" + PY_VERSION + "-" + UUID
 ENDPOINT = "https://{}.appspot.com/push".format(PROJECT_ID)
 NEW_ENDPOINT = "https://{}.appspot.com/push2".format(PROJECT_ID)
 DEFAULT_MAX_DELIVERY_ATTEMPTS = 5
