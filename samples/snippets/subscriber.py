@@ -494,13 +494,17 @@ def synchronous_pull(project_id, subscription_id):
 
     NUM_MESSAGES = 3
 
+    response = None
+
     # Wrap the subscriber in a 'with' block to automatically call close() to
     # close the underlying gRPC channel when done.
     with subscriber:
-        # The subscriber pulls a specific number of messages.
-        response = subscriber.pull(
-            request={"subscription": subscription_path, "max_messages": NUM_MESSAGES}
-        )
+        while not response:
+            # The subscriber pulls a specific number of messages. The actual
+            # number of messages pulled may be smaller than max_messages.
+            response = subscriber.pull(
+                request={"subscription": subscription_path, "max_messages": NUM_MESSAGES}
+            )
 
         ack_ids = []
         for received_message in response.received_messages:
@@ -532,6 +536,7 @@ def synchronous_pull_with_lease_management(project_id, subscription_id):
     logger = multiprocessing.get_logger()
     logger.setLevel(logging.INFO)
     processes = dict()
+    response = None
 
     # TODO(developer)
     # project_id = "your-project-id"
@@ -540,9 +545,10 @@ def synchronous_pull_with_lease_management(project_id, subscription_id):
     subscriber = pubsub_v1.SubscriberClient()
     subscription_path = subscriber.subscription_path(project_id, subscription_id)
 
-    response = subscriber.pull(
-        request={"subscription": subscription_path, "max_messages": 3}
-    )
+    while not response:
+        response = subscriber.pull(
+            request={"subscription": subscription_path, "max_messages": 3}
+        )
 
     # Start a process for each message based on its size modulo 10.
     for message in response.received_messages:
