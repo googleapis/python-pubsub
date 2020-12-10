@@ -483,6 +483,7 @@ def receive_messages_with_flow_control(project_id, subscription_id, timeout=None
 def synchronous_pull(project_id, subscription_id):
     """Pulling messages synchronously."""
     # [START pubsub_subscriber_sync_pull]
+    from google.api_core import retry
     from google.cloud import pubsub_v1
 
     # TODO(developer)
@@ -494,17 +495,15 @@ def synchronous_pull(project_id, subscription_id):
 
     NUM_MESSAGES = 3
 
-    response = None
-
     # Wrap the subscriber in a 'with' block to automatically call close() to
     # close the underlying gRPC channel when done.
     with subscriber:
-        while not response:
-            # The subscriber pulls a specific number of messages. The actual
-            # number of messages pulled may be smaller than max_messages.
-            response = subscriber.pull(
-                request={"subscription": subscription_path, "max_messages": NUM_MESSAGES}
-            )
+        # The subscriber pulls a specific number of messages. The actual
+        # number of messages pulled may be smaller than max_messages.
+        response = subscriber.pull(
+            request={"subscription": subscription_path, "max_messages": NUM_MESSAGES},
+            retry = retry.Retry(deadline=300),
+        )
 
         ack_ids = []
         for received_message in response.received_messages:
@@ -530,13 +529,13 @@ def synchronous_pull_with_lease_management(project_id, subscription_id):
     import sys
     import time
 
+    from google.api_core import retry
     from google.cloud import pubsub_v1
 
     multiprocessing.log_to_stderr()
     logger = multiprocessing.get_logger()
     logger.setLevel(logging.INFO)
     processes = dict()
-    response = None
 
     # TODO(developer)
     # project_id = "your-project-id"
@@ -545,10 +544,10 @@ def synchronous_pull_with_lease_management(project_id, subscription_id):
     subscriber = pubsub_v1.SubscriberClient()
     subscription_path = subscriber.subscription_path(project_id, subscription_id)
 
-    while not response:
-        response = subscriber.pull(
-            request={"subscription": subscription_path, "max_messages": 3}
-        )
+    response = subscriber.pull(
+        request={"subscription": subscription_path, "max_messages": 3}, 
+        retry = retry.Retry(deadline=300),
+    )
 
     # Start a process for each message based on its size modulo 10.
     for message in response.received_messages:

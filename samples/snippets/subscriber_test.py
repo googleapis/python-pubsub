@@ -38,12 +38,12 @@ DEFAULT_MAX_DELIVERY_ATTEMPTS = 5
 UPDATED_MAX_DELIVERY_ATTEMPTS = 20
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="session")
 def publisher_client():
     yield pubsub_v1.PublisherClient()
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="session")
 def topic(publisher_client):
     topic_path = publisher_client.topic_path(PROJECT_ID, TOPIC)
 
@@ -57,7 +57,7 @@ def topic(publisher_client):
     publisher_client.delete_topic(request={"topic": topic.name})
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="session")
 def dead_letter_topic(publisher_client):
     topic_path = publisher_client.topic_path(PROJECT_ID, DEAD_LETTER_TOPIC)
 
@@ -71,14 +71,14 @@ def dead_letter_topic(publisher_client):
     publisher_client.delete_topic(request={"topic": dead_letter_topic.name})
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="session")
 def subscriber_client():
     subscriber_client = pubsub_v1.SubscriberClient()
     yield subscriber_client
     subscriber_client.close()
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="session")
 def subscription_admin(subscriber_client, topic):
     subscription_path = subscriber_client.subscription_path(
         PROJECT_ID, SUBSCRIPTION_ADMIN
@@ -96,7 +96,7 @@ def subscription_admin(subscriber_client, topic):
     yield subscription.name
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="session")
 def subscription_sync(subscriber_client, topic):
     subscription_path = subscriber_client.subscription_path(
         PROJECT_ID, SUBSCRIPTION_SYNC
@@ -116,7 +116,7 @@ def subscription_sync(subscriber_client, topic):
     subscriber_client.delete_subscription(request={"subscription": subscription.name})
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="session")
 def subscription_async(subscriber_client, topic):
     subscription_path = subscriber_client.subscription_path(
         PROJECT_ID, SUBSCRIPTION_ASYNC
@@ -136,7 +136,7 @@ def subscription_async(subscriber_client, topic):
     subscriber_client.delete_subscription(request={"subscription": subscription.name})
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="session")
 def subscription_dlq(subscriber_client, topic, dead_letter_topic):
     from google.cloud.pubsub_v1.types import DeadLetterPolicy
 
