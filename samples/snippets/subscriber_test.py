@@ -14,6 +14,7 @@
 
 import os
 import sys
+import time
 import uuid
 
 import backoff
@@ -36,6 +37,11 @@ ENDPOINT = f"https://{PROJECT_ID}.appspot.com/push"
 NEW_ENDPOINT = f"https://{PROJECT_ID}.appspot.com/push2"
 DEFAULT_MAX_DELIVERY_ATTEMPTS = 5
 UPDATED_MAX_DELIVERY_ATTEMPTS = 20
+
+
+def delay_rerun(*args):
+    time.sleep(5)
+    return True
 
 
 @pytest.fixture(scope="session")
@@ -228,6 +234,7 @@ def test_create_subscription_with_dead_letter_policy(
     assert f"After {DEFAULT_MAX_DELIVERY_ATTEMPTS} delivery attempts." in out
 
 
+@pytest.mark.flaky(max_runs=3, min_passes=1, rerun_filter=delay_rerun)
 def test_receive_with_delivery_attempts(
     publisher_client, topic, dead_letter_topic, subscription_dlq, capsys
 ):
@@ -255,6 +262,7 @@ def test_update_dead_letter_policy(subscription_dlq, dead_letter_topic, capsys):
     assert f"max_delivery_attempts: {UPDATED_MAX_DELIVERY_ATTEMPTS}" in out
 
 
+@pytest.mark.flaky(max_runs=3, min_passes=1, rerun_filter=delay_rerun)
 def test_remove_dead_letter_policy(subscription_dlq, capsys):
     subscription_after_update = subscriber.remove_dead_letter_policy(
         PROJECT_ID, TOPIC, SUBSCRIPTION_DLQ
