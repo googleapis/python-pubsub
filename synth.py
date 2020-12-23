@@ -63,6 +63,18 @@ s.replace(
     \g<0>""",
 )
 
+# Modify GRPC options in transports.
+s.replace(
+    ["google/pubsub_v1/services/*/transports/grpc*",
+     "tests/unit/gapic/pubsub_v1/*"],
+    "options=[.*]",
+    """options=[
+                    ("grpc.max_send_message_length", -1),
+                    ("grpc.max_receive_message_length", -1),
+                    ("grpc.keepalive_time_ms": 30000),
+    ]"""
+)
+
 # Monkey patch the streaming_pull() GAPIC method to disable pre-fetching stream
 # results.
 s.replace(
