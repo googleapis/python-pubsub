@@ -198,6 +198,7 @@ class PublisherGrpcAsyncIOTransport(PublisherTransport):
                 options=[
                     ("grpc.max_send_message_length", -1),
                     ("grpc.max_receive_message_length", -1),
+                    ("grpc.keepalive_time_ms", 30000),
                 ],
             )
             self._ssl_channel_credentials = ssl_credentials
@@ -220,6 +221,7 @@ class PublisherGrpcAsyncIOTransport(PublisherTransport):
                 options=[
                     ("grpc.max_send_message_length", -1),
                     ("grpc.max_receive_message_length", -1),
+                    ("grpc.keepalive_time_ms", 30000),
                 ],
             )
 
@@ -249,9 +251,9 @@ class PublisherGrpcAsyncIOTransport(PublisherTransport):
     def create_topic(self) -> Callable[[pubsub.Topic], Awaitable[pubsub.Topic]]:
         r"""Return a callable for the create topic method over gRPC.
 
-        Creates the given topic with the given name. See the `resource
-        name
-        rules <https://cloud.google.com/pubsub/docs/admin#resource_names>`__.
+        Creates the given topic with the given name. See the [resource
+        name rules]
+        (https://cloud.google.com/pubsub/docs/admin#resource_names).
 
         Returns:
             Callable[[~.Topic],

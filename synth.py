@@ -14,6 +14,7 @@
 
 """This script is used to synthesize generated parts of this library."""
 
+import re
 import textwrap
 
 import synthtool as s
@@ -65,14 +66,14 @@ s.replace(
 
 # Modify GRPC options in transports.
 s.replace(
-    ["google/pubsub_v1/services/*/transports/grpc*",
-     "tests/unit/gapic/pubsub_v1/*"],
-    "options=[.*]",
+    ["google/pubsub_v1/services/*/transports/grpc*", "tests/unit/gapic/pubsub_v1/*"],
+    "options=\[.*?\]",
     """options=[
                     ("grpc.max_send_message_length", -1),
                     ("grpc.max_receive_message_length", -1),
-                    ("grpc.keepalive_time_ms": 30000),
-    ]"""
+                    ("grpc.keepalive_time_ms", 30000),
+                ]""",
+    flags=re.MULTILINE | re.DOTALL,
 )
 
 # Monkey patch the streaming_pull() GAPIC method to disable pre-fetching stream
@@ -95,11 +96,7 @@ s.replace(
 
 # Docstrings of *_iam_policy() methods are formatted poorly and must be fixed
 # in order to avoid docstring format warnings in docs.
-s.replace(
-    "google/pubsub_v1/services/*er/client.py",
-    r"(\s+)Args:",
-    "\n\g<1>Args:"
-)
+s.replace("google/pubsub_v1/services/*er/client.py", r"(\s+)Args:", "\n\g<1>Args:")
 s.replace(
     "google/pubsub_v1/services/*er/client.py",
     r"(\s+)\*\*JSON Example\*\*\s+::",
