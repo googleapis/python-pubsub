@@ -65,7 +65,7 @@ s.replace(
 )
 
 # Modify GRPC options in transports.
-s.replace(
+count = s.replace(
     ["google/pubsub_v1/services/*/transports/grpc*", "tests/unit/gapic/pubsub_v1/*"],
     "options=\[.*?\]",
     """options=[
@@ -75,6 +75,9 @@ s.replace(
                 ]""",
     flags=re.MULTILINE | re.DOTALL,
 )
+
+if count < 18:
+    raise Exception("Expected replacements for gRPC channel options not made.")
 
 # Monkey patch the streaming_pull() GAPIC method to disable pre-fetching stream
 # results.
