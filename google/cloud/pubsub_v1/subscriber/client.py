@@ -17,8 +17,6 @@ from __future__ import absolute_import
 import os
 import pkg_resources
 
-import grpc
-
 from google.auth.credentials import AnonymousCredentials
 from google.oauth2 import service_account
 

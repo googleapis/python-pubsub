@@ -21,7 +21,6 @@ import pkg_resources
 import threading
 import time
 
-import grpc
 import six
 
 from google.api_core import gapic_v1
