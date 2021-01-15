@@ -26,6 +26,7 @@ import time
 
 from google.api_core import gapic_v1
 from google.api_core import retry as retries
+from google.api_core.gapic_v1.client_info import METRICS_METADATA_KEY
 from google.cloud.pubsub_v1 import publisher
 from google.cloud.pubsub_v1 import types
 
@@ -60,6 +61,26 @@ def test_init():
     assert client.batch_settings.max_bytes == 1 * 1000 * 1000
     assert client.batch_settings.max_latency == 0.01
     assert client.batch_settings.max_messages == 100
+
+
+def test_init_default_client_info():
+    creds = mock.Mock(spec=credentials.Credentials)
+    client = publisher.Client(credentials=creds)
+
+    installed_version = publisher.client.__version__
+    expected_client_info = f"gccl/{installed_version}"
+
+    for wrapped_method in client.api.transport._wrapped_methods.values():
+        user_agent = next(
+            (
+                header_value
+                for header, header_value in wrapped_method._metadata
+                if header == METRICS_METADATA_KEY
+            ),
+            None,
+        )
+        assert user_agent is not None
+        assert expected_client_info in user_agent
 
 
 def test_init_w_custom_transport():
