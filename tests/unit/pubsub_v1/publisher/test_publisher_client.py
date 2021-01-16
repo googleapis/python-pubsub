@@ -107,7 +107,7 @@ def test_init_w_api_endpoint():
 
 
 def test_init_w_unicode_api_endpoint():
-    client_options = {"api_endpoint": u"testendpoint.google.com"}
+    client_options = {"api_endpoint": "testendpoint.google.com"}
     client = publisher.Client(client_options=client_options)
 
     assert isinstance(client.api, publisher_client.PublisherClient)
@@ -240,7 +240,7 @@ def test_publish_data_not_bytestring_error():
     client = publisher.Client(credentials=creds)
     topic = "topic/path"
     with pytest.raises(TypeError):
-        client.publish(topic, u"This is a text string.")
+        client.publish(topic, "This is a text string.")
     with pytest.raises(TypeError):
         client.publish(topic, 42)
 
@@ -321,7 +321,7 @@ def test_publish_attrs_bytestring():
 
     # The attributes should have been sent as text.
     batch.publish.assert_called_once_with(
-        gapic_types.PubsubMessage(data=b"foo", attributes={"bar": u"baz"})
+        gapic_types.PubsubMessage(data=b"foo", attributes={"bar": "baz"})
     )
 
 
@@ -360,7 +360,7 @@ def test_publish_new_batch_needed():
         commit_when_full=True,
         commit_retry=gapic_v1.method.DEFAULT,
     )
-    message_pb = gapic_types.PubsubMessage(data=b"foo", attributes={"bar": u"baz"})
+    message_pb = gapic_types.PubsubMessage(data=b"foo", attributes={"bar": "baz"})
     batch1.publish.assert_called_once_with(message_pb)
     batch2.publish.assert_called_once_with(message_pb)
 

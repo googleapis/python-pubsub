@@ -68,7 +68,7 @@ def test_init_w_api_endpoint():
 
 
 def test_init_w_unicode_api_endpoint():
-    client_options = {"api_endpoint": u"testendpoint.google.com"}
+    client_options = {"api_endpoint": "testendpoint.google.com"}
     client = subscriber.Client(client_options=client_options)
 
     assert isinstance(client.api, subscriber_client.SubscriberClient)
