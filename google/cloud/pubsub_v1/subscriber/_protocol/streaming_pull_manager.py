@@ -113,10 +113,6 @@ class StreamingPullManager(object):
             scheduler will be used.
     """
 
-    _UNARY_REQUESTS = True
-    """If set to True, this class will make requests over a separate unary
-    RPC instead of over the streaming RPC."""
-
     def __init__(
         self,
         client,
@@ -421,34 +417,27 @@ class StreamingPullManager(object):
         If a RetryError occurs, the manager shutdown is triggered, and the
         error is re-raised.
         """
-        if self._UNARY_REQUESTS:
-            try:
-                self._send_unary_request(request)
-            except exceptions.GoogleAPICallError:
-                _LOGGER.debug(
-                    "Exception while sending unary RPC. This is typically "
-                    "non-fatal as stream requests are best-effort.",
-                    exc_info=True,
-                )
-            except exceptions.RetryError as exc:
-                _LOGGER.debug(
-                    "RetryError while sending unary RPC. Waiting on a transient "
-                    "error resolution for too long, will now trigger shutdown.",
-                    exc_info=False,
-                )
-                # The underlying channel has been suffering from a retryable error
-                # for too long, time to give up and shut the streaming pull down.
-                self._on_rpc_done(exc)
-                raise
-
-        else:
-            self._rpc.send(request)
+        try:
+            self._send_unary_request(request)
+        except exceptions.GoogleAPICallError:
+            _LOGGER.debug(
+                "Exception while sending unary RPC. This is typically "
+                "non-fatal as stream requests are best-effort.",
+                exc_info=True,
+            )
+        except exceptions.RetryError as exc:
+            _LOGGER.debug(
+                "RetryError while sending unary RPC. Waiting on a transient "
+                "error resolution for too long, will now trigger shutdown.",
+                exc_info=False,
+            )
+            # The underlying channel has been suffering from a retryable error
+            # for too long, time to give up and shut the streaming pull down.
+            self._on_rpc_done(exc)
+            raise
 
     def heartbeat(self):
         """Sends an empty request over the streaming pull RPC.
-
-        This always sends over the stream, regardless of if
-        ``self._UNARY_REQUESTS`` is set or not.
         """
         if self._rpc is not None and self._rpc.is_active:
             self._rpc.send(gapic_types.StreamingPullRequest())

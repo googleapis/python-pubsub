@@ -372,7 +372,6 @@ def test__maybe_release_messages_negative_on_hold_bytes_warning(caplog):
 
 def test_send_unary():
     manager = make_manager()
-    manager._UNARY_REQUESTS = True
 
     manager.send(
         gapic_types.StreamingPullRequest(
@@ -405,7 +404,6 @@ def test_send_unary():
 
 def test_send_unary_empty():
     manager = make_manager()
-    manager._UNARY_REQUESTS = True
 
     manager.send(gapic_types.StreamingPullRequest())
 
@@ -417,7 +415,6 @@ def test_send_unary_api_call_error(caplog):
     caplog.set_level(logging.DEBUG)
 
     manager = make_manager()
-    manager._UNARY_REQUESTS = True
 
     error = exceptions.GoogleAPICallError("The front fell off")
     manager._client.acknowledge.side_effect = error
@@ -431,7 +428,6 @@ def test_send_unary_retry_error(caplog):
     caplog.set_level(logging.DEBUG)
 
     manager, _, _, _, _, _ = make_running_manager()
-    manager._UNARY_REQUESTS = True
 
     error = exceptions.RetryError(
         "Too long a transient error", cause=Exception("Out of time!")
@@ -443,16 +439,6 @@ def test_send_unary_retry_error(caplog):
 
     assert "RetryError while sending unary RPC" in caplog.text
     assert "signaled streaming pull manager shutdown" in caplog.text
-
-
-def test_send_streaming():
-    manager = make_manager()
-    manager._UNARY_REQUESTS = False
-    manager._rpc = mock.create_autospec(bidi.BidiRpc, instance=True)
-
-    manager.send(mock.sentinel.request)
-
-    manager._rpc.send.assert_called_once_with(mock.sentinel.request)
 
 
 def test_heartbeat():
