@@ -65,6 +65,13 @@ class Scheduler(object):
                 If ``True``, the method will block until all currently executing
                 callbacks are done processing. If ``False`` (default), the
                 method will not wait for the currently running callbacks to complete.
+
+        Returns:
+            List[pubsub_v1.subscriber.message.Message]:
+                The messages submitted to the scheduler that were not yet dispatched
+                to their callbacks.
+                It is assumed that each message was submitted to the scheduler as the
+                first positional argument to the provided callback.
         """
         raise NotImplementedError
 
@@ -120,7 +127,16 @@ class ThreadScheduler(Scheduler):
                 If ``True``, the method will block until all currently executing
                 executor threads are done processing. If ``False`` (default), the
                 method will not wait for the currently running threads to complete.
+
+        Returns:
+            List[pubsub_v1.subscriber.message.Message]:
+                The messages submitted to the scheduler that were not yet dispatched
+                to their callbacks.
+                It is assumed that each message was submitted to the scheduler as the
+                first positional argument to the provided callback.
         """
+        dropped_messages = []
+
         # Drop all pending item from the executor. Without this, the executor will also
         # try to process any pending work items before termination, which is undesirable.
         #
@@ -128,7 +144,10 @@ class ThreadScheduler(Scheduler):
         # once we only need to support Python 3.9+.
         try:
             while True:
-                self._executor._work_queue.get(block=False)
+                work_item = self._executor._work_queue.get(block=False)
+                dropped_messages.append(work_item.args[0])
         except queue.Empty:
             pass
+
         self._executor.shutdown(wait=await_msg_callbacks)
+        return dropped_messages

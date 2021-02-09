@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import functools
 import logging
 import threading
 import time
@@ -620,14 +621,14 @@ class FakeDispatcher(object):
         while not self._stop:
             try:
                 self._manager.leaser.add([mock.Mock()])
-            except Exception as exc:
+            except Exception as exc:  # pragma: NO COVER
                 self._error_callback(exc)
             time.sleep(0.1)
 
         # also try to interact with the leaser after the stop flag has been set
         try:
             self._manager.leaser.remove([mock.Mock()])
-        except Exception as exc:
+        except Exception as exc:  # pragma: NO COVER
             self._error_callback(exc)
 
 
@@ -652,6 +653,27 @@ def test_close_callbacks():
     manager.close(reason="meep")
 
     callback.assert_called_once_with(manager, "meep")
+
+
+def test_close_nacks_internally_queued_messages():
+    nacked_messages = []
+
+    def fake_nack(self):
+        nacked_messages.append(self.data)
+
+    MockMsg = functools.partial(mock.create_autospec, message.Message, instance=True)
+    messages = [MockMsg(data=b"msg1"), MockMsg(data=b"msg2"), MockMsg(data=b"msg3")]
+    for msg in messages:
+        msg.nack = stdlib_types.MethodType(fake_nack, msg)
+
+    manager, _, _, _, _, _ = make_running_manager()
+    dropped_by_scheduler = messages[:2]
+    manager._scheduler.shutdown.return_value = dropped_by_scheduler
+    manager._messages_on_hold._messages_on_hold.append(messages[2])
+
+    manager.close()
+
+    assert sorted(nacked_messages) == [b"msg1", b"msg2", b"msg3"]
 
 
 def test__get_initial_request():
@@ -967,3 +989,15 @@ def test_activate_ordering_keys():
     manager._messages_on_hold.activate_ordering_keys.assert_called_once_with(
         ["key1", "key2"], mock.ANY
     )
+
+
+def test_activate_ordering_keys_stopped_scheduler():
+    manager = make_manager()
+    manager._messages_on_hold = mock.create_autospec(
+        messages_on_hold.MessagesOnHold, instance=True
+    )
+    manager._scheduler = None
+
+    manager.activate_ordering_keys(["key1", "key2"])
+
+    manager._messages_on_hold.activate_ordering_keys.assert_not_called()

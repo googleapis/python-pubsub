@@ -16,6 +16,7 @@ from __future__ import division
 
 import collections
 import functools
+import itertools
 import logging
 import threading
 import uuid
@@ -288,6 +289,9 @@ class StreamingPullManager(object):
                 activate. May be empty.
         """
         with self._pause_resume_lock:
+            if self._scheduler is None:
+                return  # We are shutting down, don't try to dispatch any more messages.
+
             self._messages_on_hold.activate_ordering_keys(
                 ordering_keys, self._schedule_message_on_hold
             )
@@ -539,7 +543,9 @@ class StreamingPullManager(object):
 
             # Shutdown all helper threads
             _LOGGER.debug("Stopping scheduler.")
-            self._scheduler.shutdown(await_msg_callbacks=await_msg_callbacks)
+            dropped_messages = self._scheduler.shutdown(
+                await_msg_callbacks=await_msg_callbacks
+            )
             self._scheduler = None
 
             # Leaser and dispatcher reference each other through the shared
@@ -553,11 +559,23 @@ class StreamingPullManager(object):
             # because the consumer gets shut down first.
             _LOGGER.debug("Stopping leaser.")
             self._leaser.stop()
+
+            total = len(dropped_messages) + len(
+                self._messages_on_hold._messages_on_hold
+            )
+            _LOGGER.debug(f"NACK-ing all not-yet-dispatched messages (total: {total}).")
+            messages_to_nack = itertools.chain(
+                dropped_messages, self._messages_on_hold._messages_on_hold
+            )
+            for msg in messages_to_nack:
+                msg.nack()
+
             _LOGGER.debug("Stopping dispatcher.")
             self._dispatcher.stop()
             self._dispatcher = None
             # dispatcher terminated, OK to dispose the leaser reference now
             self._leaser = None
+
             _LOGGER.debug("Stopping heartbeater.")
             self._heartbeater.stop()
             self._heartbeater = None
