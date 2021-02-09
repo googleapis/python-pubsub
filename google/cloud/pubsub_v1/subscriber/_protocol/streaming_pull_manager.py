@@ -438,9 +438,15 @@ class StreamingPullManager(object):
 
     def heartbeat(self):
         """Sends an empty request over the streaming pull RPC.
+
+        Returns:
+            bool: If a heartbeat request has actually been sent.
         """
         if self._rpc is not None and self._rpc.is_active:
             self._rpc.send(gapic_types.StreamingPullRequest())
+            return True
+
+        return False
 
     def open(self, callback, on_callback_error):
         """Begin consuming messages.

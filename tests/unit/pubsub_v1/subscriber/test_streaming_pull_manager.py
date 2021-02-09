@@ -446,9 +446,10 @@ def test_heartbeat():
     manager._rpc = mock.create_autospec(bidi.BidiRpc, instance=True)
     manager._rpc.is_active = True
 
-    manager.heartbeat()
+    result = manager.heartbeat()
 
     manager._rpc.send.assert_called_once_with(gapic_types.StreamingPullRequest())
+    assert result
 
 
 def test_heartbeat_inactive():
@@ -458,7 +459,8 @@ def test_heartbeat_inactive():
 
     manager.heartbeat()
 
-    manager._rpc.send.assert_not_called()
+    result = manager._rpc.send.assert_not_called()
+    assert not result
 
 
 @mock.patch("google.api_core.bidi.ResumableBidiRpc", autospec=True)
