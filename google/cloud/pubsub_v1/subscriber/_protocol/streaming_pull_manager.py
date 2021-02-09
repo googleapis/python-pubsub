@@ -502,7 +502,7 @@ class StreamingPullManager(object):
         # Start the stream heartbeater thread.
         self._heartbeater.start()
 
-    def close(self, reason=None):
+    def close(self, reason=None, await_msg_callbacks=False):
         """Stop consuming messages and shutdown all helper threads.
 
         This method is idempotent. Additional calls will have no effect.
@@ -511,6 +511,15 @@ class StreamingPullManager(object):
             reason (Any): The reason to close this. If None, this is considered
                 an "intentional" shutdown. This is passed to the callbacks
                 specified via :meth:`add_close_callback`.
+
+            await_msg_callbacks (bool):
+                If ``True``, the method will wait until all scheduler threads terminate
+                and only then proceed with the shutdown with the remaining shutdown
+                tasks,
+
+                If ``False`` (default), the method will shut down the scheduler in a
+                non-blocking fashion, i.e. it will not wait for the currently executing
+                scheduler threads to terminate.
         """
         with self._closing:
             if self._closed:
@@ -524,7 +533,7 @@ class StreamingPullManager(object):
 
             # Shutdown all helper threads
             _LOGGER.debug("Stopping scheduler.")
-            self._scheduler.shutdown()
+            self._scheduler.shutdown(await_msg_callbacks=await_msg_callbacks)
             self._scheduler = None
 
             # Leaser and dispatcher reference each other through the shared
