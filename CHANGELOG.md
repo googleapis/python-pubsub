@@ -5,6 +5,18 @@
 [1]: https://pypi.org/project/google-cloud-pubsub/#history
 
 
+## [2.4.0](https://www.github.com/googleapis/python-pubsub/compare/v2.3.0...v2.4.0) (2021-02-17)
+
+
+### Features
+
+* add graceful streaming pull shutdown ([#292](https://www.github.com/googleapis/python-pubsub/issues/292)) ([00874fe](https://www.github.com/googleapis/python-pubsub/commit/00874fef4929a3a9e6ee0a8950f252b1851359c2))
+
+
+### Documentation
+
+* update samples in documentation ([#254](https://www.github.com/googleapis/python-pubsub/issues/254)) ([999a42f](https://www.github.com/googleapis/python-pubsub/commit/999a42f2175181ff8401b0a1e17607bd9a8bdf49))
+
 ## [2.3.0](https://www.github.com/googleapis/python-pubsub/compare/v2.2.0...v2.3.0) (2021-02-08)
 
 
