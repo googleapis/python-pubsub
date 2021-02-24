@@ -17,6 +17,7 @@
 
 from collections import OrderedDict
 from distutils import util
+import functools
 import os
 import re
 from typing import (
@@ -48,6 +49,8 @@ from google.protobuf import duration_pb2 as duration  # type: ignore
 from google.protobuf import timestamp_pb2 as timestamp  # type: ignore
 from google.pubsub_v1.services.subscriber import pagers
 from google.pubsub_v1.types import pubsub
+
+import grpc
 
 from .transports.base import SubscriberTransport, DEFAULT_CLIENT_INFO
 from .transports.grpc import SubscriberGrpcTransport
@@ -374,6 +377,15 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
             self._transport = transport
         else:
             Transport = type(self).get_transport_class(transport)
+
+            emulator_host = os.environ.get("PUBSUB_EMULATOR_HOST")
+            if emulator_host:
+                if issubclass(Transport, type(self)._transport_registry["grpc"]):
+                    channel = grpc.insecure_channel(target=emulator_host)
+                else:
+                    channel = grpc.aio.insecure_channel(target=emulator_host)
+                Transport = functools.partial(Transport, channel=channel)
+
             self._transport = Transport(
                 credentials=credentials,
                 credentials_file=client_options.credentials_file,
