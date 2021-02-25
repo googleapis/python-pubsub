@@ -18,18 +18,18 @@
 from collections import OrderedDict
 from typing import Dict, Type
 
-from .base import SubscriberTransport
-from .grpc import SubscriberGrpcTransport
-from .grpc_asyncio import SubscriberGrpcAsyncIOTransport
+from .base import SchemaServiceTransport
+from .grpc import SchemaServiceGrpcTransport
+from .grpc_asyncio import SchemaServiceGrpcAsyncIOTransport
 
 
 # Compile a registry of transports.
-_transport_registry = OrderedDict()  # type: Dict[str, Type[SubscriberTransport]]
-_transport_registry["grpc"] = SubscriberGrpcTransport
-_transport_registry["grpc_asyncio"] = SubscriberGrpcAsyncIOTransport
+_transport_registry = OrderedDict()  # type: Dict[str, Type[SchemaServiceTransport]]
+_transport_registry["grpc"] = SchemaServiceGrpcTransport
+_transport_registry["grpc_asyncio"] = SchemaServiceGrpcAsyncIOTransport
 
 __all__ = (
-    "SubscriberTransport",
-    "SubscriberGrpcTransport",
-    "SubscriberGrpcAsyncIOTransport",
+    "SchemaServiceTransport",
+    "SchemaServiceGrpcTransport",
+    "SchemaServiceGrpcAsyncIOTransport",
 )

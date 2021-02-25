@@ -15,21 +15,10 @@
 # limitations under the License.
 #
 
-from collections import OrderedDict
-from typing import Dict, Type
-
-from .base import SubscriberTransport
-from .grpc import SubscriberGrpcTransport
-from .grpc_asyncio import SubscriberGrpcAsyncIOTransport
-
-
-# Compile a registry of transports.
-_transport_registry = OrderedDict()  # type: Dict[str, Type[SubscriberTransport]]
-_transport_registry["grpc"] = SubscriberGrpcTransport
-_transport_registry["grpc_asyncio"] = SubscriberGrpcAsyncIOTransport
+from .client import SchemaServiceClient
+from .async_client import SchemaServiceAsyncClient
 
 __all__ = (
-    "SubscriberTransport",
-    "SubscriberGrpcTransport",
-    "SubscriberGrpcAsyncIOTransport",
+    "SchemaServiceClient",
+    "SchemaServiceAsyncClient",
 )

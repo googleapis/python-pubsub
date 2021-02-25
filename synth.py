@@ -14,6 +14,7 @@
 
 """This script is used to synthesize generated parts of this library."""
 
+import re
 import textwrap
 
 import synthtool as s
@@ -63,6 +64,21 @@ s.replace(
     \g<0>""",
 )
 
+# Modify GRPC options in transports.
+count = s.replace(
+    ["google/pubsub_v1/services/*/transports/grpc*", "tests/unit/gapic/pubsub_v1/*"],
+    "options=\[.*?\]",
+    """options=[
+                    ("grpc.max_send_message_length", -1),
+                    ("grpc.max_receive_message_length", -1),
+                    ("grpc.keepalive_time_ms", 30000),
+                ]""",
+    flags=re.MULTILINE | re.DOTALL,
+)
+
+if count < 18:
+    raise Exception("Expected replacements for gRPC channel options not made.")
+
 # Monkey patch the streaming_pull() GAPIC method to disable pre-fetching stream
 # results.
 s.replace(
@@ -81,13 +97,26 @@ s.replace(
         \g<0>""",
 )
 
+# Make sure that client library version is present in user agent header.
+s.replace(
+    [
+        "google/pubsub_v1/services/publisher/async_client.py",
+        "google/pubsub_v1/services/publisher/client.py",
+        "google/pubsub_v1/services/publisher/transports/base.py",
+        "google/pubsub_v1/services/schema_service/async_client.py",
+        "google/pubsub_v1/services/schema_service/client.py",
+        "google/pubsub_v1/services/schema_service/transports/base.py",
+        "google/pubsub_v1/services/subscriber/async_client.py",
+        "google/pubsub_v1/services/subscriber/client.py",
+        "google/pubsub_v1/services/subscriber/transports/base.py",
+    ],
+    r"""gapic_version=(pkg_resources\.get_distribution\(\s+)['"]google-pubsub['"]""",
+    "client_library_version=\g<1>'google-cloud-pubsub'",
+)
+
 # Docstrings of *_iam_policy() methods are formatted poorly and must be fixed
 # in order to avoid docstring format warnings in docs.
-s.replace(
-    "google/pubsub_v1/services/*er/client.py",
-    r"(\s+)Args:",
-    "\n\g<1>Args:"
-)
+s.replace("google/pubsub_v1/services/*er/client.py", r"(\s+)Args:", "\n\g<1>Args:")
 s.replace(
     "google/pubsub_v1/services/*er/client.py",
     r"(\s+)\*\*JSON Example\*\*\s+::",

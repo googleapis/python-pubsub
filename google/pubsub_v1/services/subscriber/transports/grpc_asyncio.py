@@ -197,6 +197,11 @@ class SubscriberGrpcAsyncIOTransport(SubscriberTransport):
                 ssl_credentials=ssl_credentials,
                 scopes=scopes or self.AUTH_SCOPES,
                 quota_project_id=quota_project_id,
+                options=[
+                    ("grpc.max_send_message_length", -1),
+                    ("grpc.max_receive_message_length", -1),
+                    ("grpc.keepalive_time_ms", 30000),
+                ],
             )
             self._ssl_channel_credentials = ssl_credentials
         else:
@@ -215,6 +220,11 @@ class SubscriberGrpcAsyncIOTransport(SubscriberTransport):
                 ssl_credentials=ssl_channel_credentials,
                 scopes=scopes or self.AUTH_SCOPES,
                 quota_project_id=quota_project_id,
+                options=[
+                    ("grpc.max_send_message_length", -1),
+                    ("grpc.max_receive_message_length", -1),
+                    ("grpc.keepalive_time_ms", 30000),
+                ],
             )
 
         # Run the base constructor.
@@ -728,8 +738,8 @@ class SubscriberGrpcAsyncIOTransport(SubscriberTransport):
 
         Seeks an existing subscription to a point in time or to a given
         snapshot, whichever is provided in the request. Snapshots are
-        used in
-        `Seek <https://cloud.google.com/pubsub/docs/replay-overview>`__
+        used in [Seek]
+        (https://cloud.google.com/pubsub/docs/replay-overview)
         operations, which allow you to manage message acknowledgments in
         bulk. That is, you can set the acknowledgment state of messages
         in an existing subscription to the state captured by a snapshot.
