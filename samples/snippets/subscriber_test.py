@@ -17,10 +17,10 @@ import sys
 import uuid
 
 import backoff
+from flaky import flaky
 from google.api_core.exceptions import NotFound
 from google.cloud import pubsub_v1
 import pytest
-from flaky import flaky
 
 import subscriber
 
