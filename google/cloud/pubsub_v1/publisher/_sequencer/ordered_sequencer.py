@@ -226,13 +226,22 @@ class OrderedSequencer(sequencer_base.Sequencer):
                 raise RuntimeError("Ordering key is not paused.")
             self._state = _OrderedSequencerStatus.ACCEPTING_MESSAGES
 
-    def _create_batch(self, commit_retry=gapic_v1.method.DEFAULT):
+    def _create_batch(
+        self,
+        commit_retry=gapic_v1.method.DEFAULT,
+        commit_timeout=gapic_v1.method.DEFAULT,
+    ):
         """ Create a new batch using the client's batch class and other stored
             settings.
 
         Args:
             commit_retry (Optional[google.api_core.retry.Retry]):
                 The retry settings to apply when publishing the batch.
+            commit_timeout (Union[ \
+                googole.api_core.timeout.ConstantTimeout, \
+                googole.api_core.timeout.ExponentialTimeout \
+            ]):
+                The timeout to apply when publishing the batch.
         """
         return self._client._batch_class(
             client=self._client,
@@ -241,9 +250,12 @@ class OrderedSequencer(sequencer_base.Sequencer):
             batch_done_callback=self._batch_done_callback,
             commit_when_full=False,
             commit_retry=commit_retry,
+            commit_timeout=commit_timeout,
         )
 
-    def publish(self, message, retry=gapic_v1.method.DEFAULT):
+    def publish(
+        self, message, retry=gapic_v1.method.DEFAULT, timeout=gapic_v1.method.DEFAULT
+    ):
         """ Publish message for this ordering key.
 
         Args:
@@ -251,6 +263,11 @@ class OrderedSequencer(sequencer_base.Sequencer):
                 The Pub/Sub message.
             retry (Optional[google.api_core.retry.Retry]):
                 The retry settings to apply when publishing the message.
+            timeout (Union[ \
+                googole.api_core.timeout.ConstantTimeout, \
+                googole.api_core.timeout.ExponentialTimeout \
+            ]):
+                The timeout to apply when publishing the message.
 
         Returns:
             A class instance that conforms to Python Standard library's
@@ -287,13 +304,15 @@ class OrderedSequencer(sequencer_base.Sequencer):
             ), "Publish is only allowed in accepting-messages state."
 
             if not self._ordered_batches:
-                new_batch = self._create_batch(commit_retry=retry)
+                new_batch = self._create_batch(
+                    commit_retry=retry, commit_timeout=timeout
+                )
                 self._ordered_batches.append(new_batch)
 
             batch = self._ordered_batches[-1]
             future = batch.publish(message)
             while future is None:
-                batch = self._create_batch(commit_retry=retry)
+                batch = self._create_batch(commit_retry=retry, commit_timeout=timeout)
                 self._ordered_batches.append(batch)
                 future = batch.publish(message)
 

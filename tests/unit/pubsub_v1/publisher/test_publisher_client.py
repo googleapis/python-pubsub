@@ -359,6 +359,7 @@ def test_publish_new_batch_needed():
         batch_done_callback=None,
         commit_when_full=True,
         commit_retry=gapic_v1.method.DEFAULT,
+        commit_timeout=gapic_v1.method.DEFAULT,
     )
     message_pb = gapic_types.PubsubMessage(data=b"foo", attributes={"bar": "baz"})
     batch1.publish.assert_called_once_with(message_pb)

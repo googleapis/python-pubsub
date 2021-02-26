@@ -48,7 +48,7 @@ class Sequencer(object):
 
     @staticmethod
     @abc.abstractmethod
-    def publish(self, message, retry=None):
+    def publish(self, message, retry=None, timeout=None):
         """ Publish message for this ordering key.
 
         Args:
@@ -56,6 +56,11 @@ class Sequencer(object):
                 The Pub/Sub message.
             retry (Optional[google.api_core.retry.Retry]):
                 The retry settings to apply when publishing the message.
+            timeout (Union[ \
+                googole.api_core.timeout.ConstantTimeout, \
+                googole.api_core.timeout.ExponentialTimeout \
+            ]):
+                The timeout to apply when publishing the message.
 
         Returns:
             A class instance that conforms to Python Standard library's

@@ -77,13 +77,22 @@ class UnorderedSequencer(base.Sequencer):
         """ Not relevant for this class. """
         raise NotImplementedError
 
-    def _create_batch(self, commit_retry=gapic_v1.method.DEFAULT):
+    def _create_batch(
+        self,
+        commit_retry=gapic_v1.method.DEFAULT,
+        commit_timeout=gapic_v1.method.DEFAULT,
+    ):
         """ Create a new batch using the client's batch class and other stored
             settings.
 
         Args:
             commit_retry (Optional[google.api_core.retry.Retry]):
                 The retry settings to apply when publishing the batch.
+            commit_timeout (Union[ \
+                googole.api_core.timeout.ConstantTimeout, \
+                googole.api_core.timeout.ExponentialTimeout \
+            ]):
+                The timeout to apply when publishing the batch.
         """
         return self._client._batch_class(
             client=self._client,
@@ -92,9 +101,12 @@ class UnorderedSequencer(base.Sequencer):
             batch_done_callback=None,
             commit_when_full=True,
             commit_retry=commit_retry,
+            commit_timeout=commit_timeout,
         )
 
-    def publish(self, message, retry=gapic_v1.method.DEFAULT):
+    def publish(
+        self, message, retry=gapic_v1.method.DEFAULT, timeout=gapic_v1.method.DEFAULT
+    ):
         """ Batch message into existing or new batch.
 
         Args:
@@ -102,6 +114,11 @@ class UnorderedSequencer(base.Sequencer):
                 The Pub/Sub message.
             retry (Optional[google.api_core.retry.Retry]):
                 The retry settings to apply when publishing the message.
+            timeout (Union[ \
+                googole.api_core.timeout.ConstantTimeout, \
+                googole.api_core.timeout.ExponentialTimeout \
+            ]):
+                The timeout to apply when publishing the message.
 
         Returns:
             ~google.api_core.future.Future: An object conforming to
@@ -119,7 +136,7 @@ class UnorderedSequencer(base.Sequencer):
             raise RuntimeError("Unordered sequencer already stopped.")
 
         if not self._current_batch:
-            newbatch = self._create_batch(commit_retry=retry)
+            newbatch = self._create_batch(commit_retry=retry, commit_timeout=timeout)
             self._current_batch = newbatch
 
         batch = self._current_batch
@@ -129,7 +146,7 @@ class UnorderedSequencer(base.Sequencer):
             future = batch.publish(message)
             # batch is full, triggering commit_when_full
             if future is None:
-                batch = self._create_batch(commit_retry=retry)
+                batch = self._create_batch(commit_retry=retry, commit_timeout=timeout)
                 # At this point, we lose track of the old batch, but we don't
                 # care since it's already committed (because it was full.)
                 self._current_batch = batch
