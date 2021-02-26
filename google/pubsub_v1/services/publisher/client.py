@@ -405,7 +405,8 @@ class PublisherClient(metaclass=PublisherClientMeta):
 
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
-            timeout (float): The timeout for this request.
+            timeout (Union[timeouts.ConstantTimeout, timeouts.ExponentialTimeout]):
+                The timeout for this request.
             metadata (Sequence[Tuple[str, str]]): Strings which should be
                 sent along with the request as metadata.
 
@@ -472,7 +473,8 @@ class PublisherClient(metaclass=PublisherClientMeta):
 
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
-            timeout (float): The timeout for this request.
+            timeout (Union[timeouts.ConstantTimeout, timeouts.ExponentialTimeout]):
+                The timeout for this request.
             metadata (Sequence[Tuple[str, str]]): Strings which should be
                 sent along with the request as metadata.
 
@@ -541,7 +543,8 @@ class PublisherClient(metaclass=PublisherClientMeta):
 
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
-            timeout (float): The timeout for this request.
+            timeout (Union[timeouts.ConstantTimeout, timeouts.ExponentialTimeout]):
+                The timeout for this request.
             metadata (Sequence[Tuple[str, str]]): Strings which should be
                 sent along with the request as metadata.
 
@@ -617,7 +620,8 @@ class PublisherClient(metaclass=PublisherClientMeta):
 
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
-            timeout (float): The timeout for this request.
+            timeout (Union[timeouts.ConstantTimeout, timeouts.ExponentialTimeout]):
+                The timeout for this request.
             metadata (Sequence[Tuple[str, str]]): Strings which should be
                 sent along with the request as metadata.
 
@@ -690,7 +694,8 @@ class PublisherClient(metaclass=PublisherClientMeta):
 
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
-            timeout (float): The timeout for this request.
+            timeout (Union[timeouts.ConstantTimeout, timeouts.ExponentialTimeout]):
+                The timeout for this request.
             metadata (Sequence[Tuple[str, str]]): Strings which should be
                 sent along with the request as metadata.
 
@@ -776,7 +781,8 @@ class PublisherClient(metaclass=PublisherClientMeta):
 
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
-            timeout (float): The timeout for this request.
+            timeout (Union[timeouts.ConstantTimeout, timeouts.ExponentialTimeout]):
+                The timeout for this request.
             metadata (Sequence[Tuple[str, str]]): Strings which should be
                 sent along with the request as metadata.
 
@@ -866,7 +872,8 @@ class PublisherClient(metaclass=PublisherClientMeta):
 
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
-            timeout (float): The timeout for this request.
+            timeout (Union[timeouts.ConstantTimeout, timeouts.ExponentialTimeout]):
+                The timeout for this request.
             metadata (Sequence[Tuple[str, str]]): Strings which should be
                 sent along with the request as metadata.
 
@@ -955,7 +962,8 @@ class PublisherClient(metaclass=PublisherClientMeta):
 
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
-            timeout (float): The timeout for this request.
+            timeout (Union[timeouts.ConstantTimeout, timeouts.ExponentialTimeout]):
+                The timeout for this request.
             metadata (Sequence[Tuple[str, str]]): Strings which should be
                 sent along with the request as metadata.
         """
@@ -1021,7 +1029,8 @@ class PublisherClient(metaclass=PublisherClientMeta):
 
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
-            timeout (float): The timeout for this request.
+            timeout (Union[timeouts.ConstantTimeout, timeouts.ExponentialTimeout]):
+                The timeout for this request.
             metadata (Sequence[Tuple[str, str]]): Strings which should be
                 sent along with the request as metadata.
 
@@ -1077,7 +1086,8 @@ class PublisherClient(metaclass=PublisherClientMeta):
                 method.
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
-            timeout (float): The timeout for this request.
+            timeout (Union[timeouts.ConstantTimeout, timeouts.ExponentialTimeout]):
+                The timeout for this request.
             metadata (Sequence[Tuple[str, str]]): Strings which should be
                 sent along with the request as metadata.
         Returns:
@@ -1190,7 +1200,8 @@ class PublisherClient(metaclass=PublisherClientMeta):
                 method.
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
-            timeout (float): The timeout for this request.
+            timeout (Union[timeouts.ConstantTimeout, timeouts.ExponentialTimeout]):
+                The timeout for this request.
             metadata (Sequence[Tuple[str, str]]): Strings which should be
                 sent along with the request as metadata.
         Returns:
@@ -1303,7 +1314,8 @@ class PublisherClient(metaclass=PublisherClientMeta):
                 `TestIamPermissions` method.
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
-            timeout (float): The timeout for this request.
+            timeout (Union[timeouts.ConstantTimeout, timeouts.ExponentialTimeout]):
+                The timeout for this request.
             metadata (Sequence[Tuple[str, str]]): Strings which should be
                 sent along with the request as metadata.
         Returns:

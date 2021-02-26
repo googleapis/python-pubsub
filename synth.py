@@ -147,6 +147,14 @@ s.replace(
         \g<1>    timeouts.ConstantTimeout, timeouts.ExponentialTimeout
         \g<1>] = gapic_v1.method.DEFAULT,""",
 )
+s.replace(
+    "google/pubsub_v1/services/publisher/client.py",
+    r"([^\S\r\n]+)timeout \(float\): (.*)\n",
+    (
+        "\g<1>timeout (Union[timeouts.ConstantTimeout, timeouts.ExponentialTimeout]):\n"
+        "\g<1>    \g<2>\n"
+    ),
+)
 
 # ----------------------------------------------------------------------------
 # Add templated files
