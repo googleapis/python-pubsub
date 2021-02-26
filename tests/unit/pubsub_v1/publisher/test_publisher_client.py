@@ -374,6 +374,46 @@ def test_publish_attrs_type_error():
         client.publish(topic, b"foo", answer=42)
 
 
+def test_publish_custom_retry_overrides_configured_retry():
+    creds = mock.Mock(spec=credentials.Credentials)
+    client = publisher.Client(
+        credentials=creds,
+        publisher_options=types.PublisherOptions(retry=mock.sentinel.publish_retry),
+    )
+
+    topic = "topic/path"
+    client._flow_controller = mock.Mock()
+    fake_sequencer = mock.Mock()
+    client._get_or_create_sequencer = mock.Mock(return_value=fake_sequencer)
+    client.publish(topic, b"hello!", retry=mock.sentinel.custom_retry)
+
+    fake_sequencer.publish.assert_called_once_with(
+        mock.ANY, retry=mock.sentinel.custom_retry, timeout=mock.ANY
+    )
+    message = fake_sequencer.publish.call_args.args[0]
+    assert message.data == b"hello!"
+
+
+def test_publish_custom_timeout_overrides_configured_timeout():
+    creds = mock.Mock(spec=credentials.Credentials)
+    client = publisher.Client(
+        credentials=creds,
+        publisher_options=types.PublisherOptions(timeout=mock.sentinel.publish_timeout),
+    )
+
+    topic = "topic/path"
+    client._flow_controller = mock.Mock()
+    fake_sequencer = mock.Mock()
+    client._get_or_create_sequencer = mock.Mock(return_value=fake_sequencer)
+    client.publish(topic, b"hello!", timeout=mock.sentinel.custom_timeout)
+
+    fake_sequencer.publish.assert_called_once_with(
+        mock.ANY, retry=mock.ANY, timeout=mock.sentinel.custom_timeout
+    )
+    message = fake_sequencer.publish.call_args.args[0]
+    assert message.data == b"hello!"
+
+
 def test_stop():
     creds = mock.Mock(spec=credentials.Credentials)
     client = publisher.Client(credentials=creds)
