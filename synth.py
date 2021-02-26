@@ -135,12 +135,12 @@ s.replace(
 
 # Allow timeout to be an instance of google.api_core.timeout.*
 s.replace(
-    "google/pubsub_v1/services/publisher/client.py",
+    "google/pubsub_v1/services/publisher/*client.py",
     r"from google.api_core import retry as retries.*\n",
     "\g<0>from google.api_core import timeout as timeouts  # type: ignore\n"
 )
 s.replace(
-    "google/pubsub_v1/services/publisher/client.py",
+    "google/pubsub_v1/services/publisher/*client.py",
     r"(\s+)timeout: float = None.*\n",
     """
         \g<1>timeout: Union[
@@ -148,7 +148,7 @@ s.replace(
         \g<1>] = gapic_v1.method.DEFAULT,""",
 )
 s.replace(
-    "google/pubsub_v1/services/publisher/client.py",
+    "google/pubsub_v1/services/publisher/*client.py",
     r"([^\S\r\n]+)timeout \(float\): (.*)\n",
     (
         "\g<1>timeout (Union[timeouts.ConstantTimeout, timeouts.ExponentialTimeout]):\n"
