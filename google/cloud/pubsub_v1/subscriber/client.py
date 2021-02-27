@@ -200,8 +200,10 @@ class Client(object):
                 how callbacks are executed concurrently. This object must not be shared
                 across multiple SubscriberClients.
             use_legacy_flow_control (bool):
-                If set to ``True``, it disables flow control on the Cloud PubSub server.
-                Defaults to ``False``.
+                If set to ``True``, it disables enforcing flow control settings on the
+                Cloud PubSub server. Defaults to ``False``.
+                The less accurate method of enforcing flow control on the client side
+                is still enabled in both cases.
 
         Returns:
             A :class:`~google.cloud.pubsub_v1.subscriber.futures.StreamingPullFuture`
