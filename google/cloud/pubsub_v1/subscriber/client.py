@@ -199,6 +199,9 @@ class Client(object):
                 *scheduler* to use when executing the callback. This controls
                 how callbacks are executed concurrently. This object must not be shared
                 across multiple SubscriberClients.
+            use_legacy_flow_control (bool):
+                If set to ``True``, it disables flow control on the Cloud PubSub server.
+                Defaults to ``False``.
 
         Returns:
             A :class:`~google.cloud.pubsub_v1.subscriber.futures.StreamingPullFuture`
