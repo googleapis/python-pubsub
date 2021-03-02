@@ -117,7 +117,12 @@ def subscription_sync(subscriber_client, topic):
 
     @backoff.on_exception(backoff.expo, Unknown, max_time=300)
     def delete_subscription():
-        subscriber_client.delete_subscription(request={"subscription": subscription.name})
+        try:
+            subscriber_client.delete_subscription(request={"subscription": subscription.name})
+        except NotFound:
+            print("When Unknown error happens, the server might have
+            successfully deleted the subscription under the cover, so
+            we ignore NotFound")
     delete_subscription()
 
 
