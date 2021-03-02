@@ -237,7 +237,8 @@ def test_receive_with_delivery_attempts(
     publisher_client, topic, dead_letter_topic, subscription_dlq, capsys
 ):
 
-    @backoff.on_exception(backoff.expo, Unknown, max_time=300)
+    # The dlq subscription raises 404 before it's ready.
+    @backoff.on_exception(backoff.expo, (Unknown, NotFound), max_time=300)
     def run_sample():
         _publish_messages(publisher_client, topic)
 
