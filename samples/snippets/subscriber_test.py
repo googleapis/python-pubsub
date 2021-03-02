@@ -120,9 +120,9 @@ def subscription_sync(subscriber_client, topic):
         try:
             subscriber_client.delete_subscription(request={"subscription": subscription.name})
         except NotFound:
-            print("When Unknown error happens, the server might have
-            successfully deleted the subscription under the cover, so
-            we ignore NotFound")
+            print("When Unknown error happens, the server might have"
+                  " successfully deleted the subscription under the cover, so"
+                  " we ignore NotFound")
     delete_subscription()
 
 
