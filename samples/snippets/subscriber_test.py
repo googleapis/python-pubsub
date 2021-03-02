@@ -400,6 +400,7 @@ def test_receive_synchronously(publisher_client, topic, subscription_sync, capsy
     assert "Received" in out
     assert f"{subscription_sync}" in out
 
+
 def test_receive_synchronously_with_lease(
     publisher_client, topic, subscription_sync, capsys
 ):
