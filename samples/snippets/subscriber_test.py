@@ -413,5 +413,5 @@ def test_receive_synchronously_with_lease(
 
     # Sometimes the subscriber only gets 1 or 2 messages and test fails.
     # I think it's ok to consider those cases as passing.
-    assert f"Received and acknowledged" in out
+    assert "Received and acknowledged" in out
     assert f"messages from {subscription_sync}." in out
