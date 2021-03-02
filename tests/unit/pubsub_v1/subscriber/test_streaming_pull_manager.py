@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import functools
 import logging
 import threading
 import time
@@ -23,7 +24,6 @@ import pytest
 from google.api_core import bidi
 from google.api_core import exceptions
 from google.cloud.pubsub_v1 import types
-from google.cloud.pubsub_v1.gapic import subscriber_client_config
 from google.cloud.pubsub_v1.subscriber import client
 from google.cloud.pubsub_v1.subscriber import message
 from google.cloud.pubsub_v1.subscriber import scheduler
@@ -33,6 +33,7 @@ from google.cloud.pubsub_v1.subscriber._protocol import leaser
 from google.cloud.pubsub_v1.subscriber._protocol import messages_on_hold
 from google.cloud.pubsub_v1.subscriber._protocol import requests
 from google.cloud.pubsub_v1.subscriber._protocol import streaming_pull_manager
+from google.pubsub_v1 import types as gapic_types
 import grpc
 
 
@@ -44,11 +45,13 @@ import grpc
             mock.create_autospec(grpc.RpcError, instance=True),
             exceptions.GoogleAPICallError,
         ),
+        ({"error": "RPC terminated"}, Exception),
+        ("something broke", Exception),
     ],
 )
-def test__maybe_wrap_exception(exception, expected_cls):
+def test__wrap_as_exception(exception, expected_cls):
     assert isinstance(
-        streaming_pull_manager._maybe_wrap_exception(exception), expected_cls
+        streaming_pull_manager._wrap_as_exception(exception), expected_cls
     )
 
 
@@ -166,6 +169,16 @@ def test_streaming_flow_control():
     request = manager._get_initial_request(stream_ack_deadline_seconds=10)
     assert request.max_outstanding_messages == 10
     assert request.max_outstanding_bytes == 1000
+
+
+def test_streaming_flow_control_use_legacy_flow_control():
+    manager = make_manager(
+        flow_control=types.FlowControl(max_messages=10, max_bytes=1000),
+        use_legacy_flow_control=True,
+    )
+    request = manager._get_initial_request(stream_ack_deadline_seconds=10)
+    assert request.max_outstanding_messages == 0
+    assert request.max_outstanding_bytes == 0
 
 
 def test_ack_deadline_with_max_duration_per_lease_extension():
@@ -360,10 +373,9 @@ def test__maybe_release_messages_negative_on_hold_bytes_warning(caplog):
 
 def test_send_unary():
     manager = make_manager()
-    manager._UNARY_REQUESTS = True
 
     manager.send(
-        types.StreamingPullRequest(
+        gapic_types.StreamingPullRequest(
             ack_ids=["ack_id1", "ack_id2"],
             modify_deadline_ack_ids=["ack_id3", "ack_id4", "ack_id5"],
             modify_deadline_seconds=[10, 20, 20],
@@ -393,9 +405,8 @@ def test_send_unary():
 
 def test_send_unary_empty():
     manager = make_manager()
-    manager._UNARY_REQUESTS = True
 
-    manager.send(types.StreamingPullRequest())
+    manager.send(gapic_types.StreamingPullRequest())
 
     manager._client.acknowledge.assert_not_called()
     manager._client.modify_ack_deadline.assert_not_called()
@@ -405,12 +416,11 @@ def test_send_unary_api_call_error(caplog):
     caplog.set_level(logging.DEBUG)
 
     manager = make_manager()
-    manager._UNARY_REQUESTS = True
 
     error = exceptions.GoogleAPICallError("The front fell off")
     manager._client.acknowledge.side_effect = error
 
-    manager.send(types.StreamingPullRequest(ack_ids=["ack_id1", "ack_id2"]))
+    manager.send(gapic_types.StreamingPullRequest(ack_ids=["ack_id1", "ack_id2"]))
 
     assert "The front fell off" in caplog.text
 
@@ -419,7 +429,6 @@ def test_send_unary_retry_error(caplog):
     caplog.set_level(logging.DEBUG)
 
     manager, _, _, _, _, _ = make_running_manager()
-    manager._UNARY_REQUESTS = True
 
     error = exceptions.RetryError(
         "Too long a transient error", cause=Exception("Out of time!")
@@ -427,20 +436,10 @@ def test_send_unary_retry_error(caplog):
     manager._client.acknowledge.side_effect = error
 
     with pytest.raises(exceptions.RetryError):
-        manager.send(types.StreamingPullRequest(ack_ids=["ack_id1", "ack_id2"]))
+        manager.send(gapic_types.StreamingPullRequest(ack_ids=["ack_id1", "ack_id2"]))
 
     assert "RetryError while sending unary RPC" in caplog.text
     assert "signaled streaming pull manager shutdown" in caplog.text
-
-
-def test_send_streaming():
-    manager = make_manager()
-    manager._UNARY_REQUESTS = False
-    manager._rpc = mock.create_autospec(bidi.BidiRpc, instance=True)
-
-    manager.send(mock.sentinel.request)
-
-    manager._rpc.send.assert_called_once_with(mock.sentinel.request)
 
 
 def test_heartbeat():
@@ -448,9 +447,10 @@ def test_heartbeat():
     manager._rpc = mock.create_autospec(bidi.BidiRpc, instance=True)
     manager._rpc.is_active = True
 
-    manager.heartbeat()
+    result = manager.heartbeat()
 
-    manager._rpc.send.assert_called_once_with(types.StreamingPullRequest())
+    manager._rpc.send.assert_called_once_with(gapic_types.StreamingPullRequest())
+    assert result
 
 
 def test_heartbeat_inactive():
@@ -460,7 +460,8 @@ def test_heartbeat_inactive():
 
     manager.heartbeat()
 
-    manager._rpc.send.assert_not_called()
+    result = manager._rpc.send.assert_not_called()
+    assert not result
 
 
 @mock.patch("google.api_core.bidi.ResumableBidiRpc", autospec=True)
@@ -620,14 +621,14 @@ class FakeDispatcher(object):
         while not self._stop:
             try:
                 self._manager.leaser.add([mock.Mock()])
-            except Exception as exc:
+            except Exception as exc:  # pragma: NO COVER
                 self._error_callback(exc)
             time.sleep(0.1)
 
         # also try to interact with the leaser after the stop flag has been set
         try:
             self._manager.leaser.remove([mock.Mock()])
-        except Exception as exc:
+        except Exception as exc:  # pragma: NO COVER
             self._error_callback(exc)
 
 
@@ -654,6 +655,27 @@ def test_close_callbacks():
     callback.assert_called_once_with(manager, "meep")
 
 
+def test_close_nacks_internally_queued_messages():
+    nacked_messages = []
+
+    def fake_nack(self):
+        nacked_messages.append(self.data)
+
+    MockMsg = functools.partial(mock.create_autospec, message.Message, instance=True)
+    messages = [MockMsg(data=b"msg1"), MockMsg(data=b"msg2"), MockMsg(data=b"msg3")]
+    for msg in messages:
+        msg.nack = stdlib_types.MethodType(fake_nack, msg)
+
+    manager, _, _, _, _, _ = make_running_manager()
+    dropped_by_scheduler = messages[:2]
+    manager._scheduler.shutdown.return_value = dropped_by_scheduler
+    manager._messages_on_hold._messages_on_hold.append(messages[2])
+
+    manager.close()
+
+    assert sorted(nacked_messages) == [b"msg1", b"msg2", b"msg3"]
+
+
 def test__get_initial_request():
     manager = make_manager()
     manager._leaser = mock.create_autospec(leaser.Leaser, instance=True)
@@ -661,7 +683,7 @@ def test__get_initial_request():
 
     initial_request = manager._get_initial_request(123)
 
-    assert isinstance(initial_request, types.StreamingPullRequest)
+    assert isinstance(initial_request, gapic_types.StreamingPullRequest)
     assert initial_request.subscription == "subscription-name"
     assert initial_request.stream_ack_deadline_seconds == 123
     assert initial_request.modify_deadline_ack_ids == ["1", "2"]
@@ -674,7 +696,7 @@ def test__get_initial_request_wo_leaser():
 
     initial_request = manager._get_initial_request(123)
 
-    assert isinstance(initial_request, types.StreamingPullRequest)
+    assert isinstance(initial_request, gapic_types.StreamingPullRequest)
     assert initial_request.subscription == "subscription-name"
     assert initial_request.stream_ack_deadline_seconds == 123
     assert initial_request.modify_deadline_ack_ids == []
@@ -686,14 +708,15 @@ def test__on_response_delivery_attempt():
     manager._callback = mock.sentinel.callback
 
     # Set up the messages.
-    response = types.StreamingPullResponse(
+    response = gapic_types.StreamingPullResponse(
         received_messages=[
-            types.ReceivedMessage(
-                ack_id="fack", message=types.PubsubMessage(data=b"foo", message_id="1")
+            gapic_types.ReceivedMessage(
+                ack_id="fack",
+                message=gapic_types.PubsubMessage(data=b"foo", message_id="1"),
             ),
-            types.ReceivedMessage(
+            gapic_types.ReceivedMessage(
                 ack_id="back",
-                message=types.PubsubMessage(data=b"bar", message_id="2"),
+                message=gapic_types.PubsubMessage(data=b"bar", message_id="2"),
                 delivery_attempt=6,
             ),
         ]
@@ -717,13 +740,15 @@ def test__on_response_no_leaser_overload():
     manager._callback = mock.sentinel.callback
 
     # Set up the messages.
-    response = types.StreamingPullResponse(
+    response = gapic_types.StreamingPullResponse(
         received_messages=[
-            types.ReceivedMessage(
-                ack_id="fack", message=types.PubsubMessage(data=b"foo", message_id="1")
+            gapic_types.ReceivedMessage(
+                ack_id="fack",
+                message=gapic_types.PubsubMessage(data=b"foo", message_id="1"),
             ),
-            types.ReceivedMessage(
-                ack_id="back", message=types.PubsubMessage(data=b"bar", message_id="2")
+            gapic_types.ReceivedMessage(
+                ack_id="back",
+                message=gapic_types.PubsubMessage(data=b"bar", message_id="2"),
             ),
         ]
     )
@@ -754,16 +779,19 @@ def test__on_response_with_leaser_overload():
     manager._callback = mock.sentinel.callback
 
     # Set up the messages.
-    response = types.StreamingPullResponse(
+    response = gapic_types.StreamingPullResponse(
         received_messages=[
-            types.ReceivedMessage(
-                ack_id="fack", message=types.PubsubMessage(data=b"foo", message_id="1")
+            gapic_types.ReceivedMessage(
+                ack_id="fack",
+                message=gapic_types.PubsubMessage(data=b"foo", message_id="1"),
             ),
-            types.ReceivedMessage(
-                ack_id="back", message=types.PubsubMessage(data=b"bar", message_id="2")
+            gapic_types.ReceivedMessage(
+                ack_id="back",
+                message=gapic_types.PubsubMessage(data=b"bar", message_id="2"),
             ),
-            types.ReceivedMessage(
-                ack_id="zack", message=types.PubsubMessage(data=b"baz", message_id="3")
+            gapic_types.ReceivedMessage(
+                ack_id="zack",
+                message=gapic_types.PubsubMessage(data=b"baz", message_id="3"),
             ),
         ]
     )
@@ -825,23 +853,23 @@ def test__on_response_with_ordering_keys():
     manager._callback = mock.sentinel.callback
 
     # Set up the messages.
-    response = types.StreamingPullResponse(
+    response = gapic_types.StreamingPullResponse(
         received_messages=[
-            types.ReceivedMessage(
+            gapic_types.ReceivedMessage(
                 ack_id="fack",
-                message=types.PubsubMessage(
+                message=gapic_types.PubsubMessage(
                     data=b"foo", message_id="1", ordering_key=""
                 ),
             ),
-            types.ReceivedMessage(
+            gapic_types.ReceivedMessage(
                 ack_id="back",
-                message=types.PubsubMessage(
+                message=gapic_types.PubsubMessage(
                     data=b"bar", message_id="2", ordering_key="key1"
                 ),
             ),
-            types.ReceivedMessage(
+            gapic_types.ReceivedMessage(
                 ack_id="zack",
-                message=types.PubsubMessage(
+                message=gapic_types.PubsubMessage(
                     data=b"baz", message_id="3", ordering_key="key1"
                 ),
             ),
@@ -901,20 +929,6 @@ def test__on_response_with_ordering_keys():
     assert manager._messages_on_hold.get() is None
 
 
-def test_retryable_stream_errors():
-    # Make sure the config matches our hard-coded tuple of exceptions.
-    interfaces = subscriber_client_config.config["interfaces"]
-    retry_codes = interfaces["google.pubsub.v1.Subscriber"]["retry_codes"]
-    idempotent = retry_codes["idempotent"]
-
-    status_codes = tuple(getattr(grpc.StatusCode, name, None) for name in idempotent)
-    expected = tuple(
-        exceptions.exception_class_for_grpc_status(status_code)
-        for status_code in status_codes
-    )
-    assert set(expected).issubset(set(streaming_pull_manager._RETRYABLE_STREAM_ERRORS))
-
-
 def test__should_recover_true():
     manager = make_manager()
 
@@ -956,8 +970,12 @@ def test__on_rpc_done(thread):
     manager._on_rpc_done(mock.sentinel.error)
 
     thread.assert_called_once_with(
-        name=mock.ANY, target=manager.close, kwargs={"reason": mock.sentinel.error}
+        name=mock.ANY, target=manager.close, kwargs={"reason": mock.ANY}
     )
+    _, kwargs = thread.call_args
+    reason = kwargs["kwargs"]["reason"]
+    assert isinstance(reason, Exception)
+    assert reason.args == (mock.sentinel.error,)  # Exception wraps the original error
 
 
 def test_activate_ordering_keys():
@@ -971,3 +989,15 @@ def test_activate_ordering_keys():
     manager._messages_on_hold.activate_ordering_keys.assert_called_once_with(
         ["key1", "key2"], mock.ANY
     )
+
+
+def test_activate_ordering_keys_stopped_scheduler():
+    manager = make_manager()
+    manager._messages_on_hold = mock.create_autospec(
+        messages_on_hold.MessagesOnHold, instance=True
+    )
+    manager._scheduler = None
+
+    manager.activate_ordering_keys(["key1", "key2"])
+
+    manager._messages_on_hold.activate_ordering_keys.assert_not_called()

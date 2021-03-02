@@ -24,19 +24,19 @@ at https://cloud.google.com/pubsub/docs.
 import argparse
 
 
-def get_topic_policy(project, topic_id):
+def get_topic_policy(project_id, topic_id):
     """Prints the IAM policy for the given topic."""
     # [START pubsub_get_topic_policy]
     from google.cloud import pubsub_v1
 
-    # TODO(developer)
+    # TODO(developer): Choose an existing topic.
     # project_id = "your-project-id"
     # topic_id = "your-topic-id"
 
     client = pubsub_v1.PublisherClient()
-    topic_path = client.topic_path(project, topic_id)
+    topic_path = client.topic_path(project_id, topic_id)
 
-    policy = client.get_iam_policy(topic_path)
+    policy = client.get_iam_policy(request={"resource": topic_path})
 
     print("Policy for topic {}:".format(topic_path))
     for binding in policy.bindings:
@@ -44,19 +44,19 @@ def get_topic_policy(project, topic_id):
     # [END pubsub_get_topic_policy]
 
 
-def get_subscription_policy(project, subscription_id):
+def get_subscription_policy(project_id, subscription_id):
     """Prints the IAM policy for the given subscription."""
     # [START pubsub_get_subscription_policy]
     from google.cloud import pubsub_v1
 
-    # TODO(developer)
+    # TODO(developer): Choose an existing subscription.
     # project_id = "your-project-id"
     # subscription_id = "your-subscription-id"
 
     client = pubsub_v1.SubscriberClient()
-    subscription_path = client.subscription_path(project, subscription_id)
+    subscription_path = client.subscription_path(project_id, subscription_id)
 
-    policy = client.get_iam_policy(subscription_path)
+    policy = client.get_iam_policy(request={"resource": subscription_path})
 
     print("Policy for subscription {}:".format(subscription_path))
     for binding in policy.bindings:
@@ -66,19 +66,19 @@ def get_subscription_policy(project, subscription_id):
     # [END pubsub_get_subscription_policy]
 
 
-def set_topic_policy(project, topic_id):
+def set_topic_policy(project_id, topic_id):
     """Sets the IAM policy for a topic."""
     # [START pubsub_set_topic_policy]
     from google.cloud import pubsub_v1
 
-    # TODO(developer)
+    # TODO(developer): Choose an existing topic.
     # project_id = "your-project-id"
     # topic_id = "your-topic-id"
 
     client = pubsub_v1.PublisherClient()
-    topic_path = client.topic_path(project, topic_id)
+    topic_path = client.topic_path(project_id, topic_id)
 
-    policy = client.get_iam_policy(topic_path)
+    policy = client.get_iam_policy(request={"resource": topic_path})
 
     # Add all users as viewers.
     policy.bindings.add(role="roles/pubsub.viewer", members=["allUsers"])
@@ -89,25 +89,25 @@ def set_topic_policy(project, topic_id):
     )
 
     # Set the policy
-    policy = client.set_iam_policy(topic_path, policy)
+    policy = client.set_iam_policy(request={"resource": topic_path, "policy": policy})
 
     print("IAM policy for topic {} set: {}".format(topic_id, policy))
     # [END pubsub_set_topic_policy]
 
 
-def set_subscription_policy(project, subscription_id):
+def set_subscription_policy(project_id, subscription_id):
     """Sets the IAM policy for a topic."""
     # [START pubsub_set_subscription_policy]
     from google.cloud import pubsub_v1
 
-    # TODO(developer)
+    # TODO(developer): Choose an existing subscription.
     # project_id = "your-project-id"
     # subscription_id = "your-subscription-id"
 
     client = pubsub_v1.SubscriberClient()
-    subscription_path = client.subscription_path(project, subscription_id)
+    subscription_path = client.subscription_path(project_id, subscription_id)
 
-    policy = client.get_iam_policy(subscription_path)
+    policy = client.get_iam_policy(request={"resource": subscription_path})
 
     # Add all users as viewers.
     policy.bindings.add(role="roles/pubsub.viewer", members=["allUsers"])
@@ -116,7 +116,9 @@ def set_subscription_policy(project, subscription_id):
     policy.bindings.add(role="roles/editor", members=["group:cloud-logs@google.com"])
 
     # Set the policy
-    policy = client.set_iam_policy(subscription_path, policy)
+    policy = client.set_iam_policy(
+        request={"resource": subscription_path, "policy": policy}
+    )
 
     print("IAM policy for subscription {} set: {}".format(subscription_id, policy))
 
@@ -124,21 +126,23 @@ def set_subscription_policy(project, subscription_id):
     # [END pubsub_set_subscription_policy]
 
 
-def check_topic_permissions(project, topic_id):
+def check_topic_permissions(project_id, topic_id):
     """Checks to which permissions are available on the given topic."""
     # [START pubsub_test_topic_permissions]
     from google.cloud import pubsub_v1
 
-    # TODO(developer)
+    # TODO(developer): Choose an existing topic.
     # project_id = "your-project-id"
     # topic_id = "your-topic-id"
 
     client = pubsub_v1.PublisherClient()
-    topic_path = client.topic_path(project, topic_id)
+    topic_path = client.topic_path(project_id, topic_id)
 
     permissions_to_check = ["pubsub.topics.publish", "pubsub.topics.update"]
 
-    allowed_permissions = client.test_iam_permissions(topic_path, permissions_to_check)
+    allowed_permissions = client.test_iam_permissions(
+        request={"resource": topic_path, "permissions": permissions_to_check}
+    )
 
     print(
         "Allowed permissions for topic {}: {}".format(topic_path, allowed_permissions)
@@ -146,17 +150,17 @@ def check_topic_permissions(project, topic_id):
     # [END pubsub_test_topic_permissions]
 
 
-def check_subscription_permissions(project, subscription_id):
+def check_subscription_permissions(project_id, subscription_id):
     """Checks to which permissions are available on the given subscription."""
     # [START pubsub_test_subscription_permissions]
     from google.cloud import pubsub_v1
 
-    # TODO(developer)
+    # TODO(developer): Choose an existing subscription.
     # project_id = "your-project-id"
     # subscription_id = "your-subscription-id"
 
     client = pubsub_v1.SubscriberClient()
-    subscription_path = client.subscription_path(project, subscription_id)
+    subscription_path = client.subscription_path(project_id, subscription_id)
 
     permissions_to_check = [
         "pubsub.subscriptions.consume",
@@ -164,7 +168,7 @@ def check_subscription_permissions(project, subscription_id):
     ]
 
     allowed_permissions = client.test_iam_permissions(
-        subscription_path, permissions_to_check
+        request={"resource": subscription_path, "permissions": permissions_to_check}
     )
 
     print(
@@ -181,7 +185,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    parser.add_argument("project", help="Your Google Cloud project ID")
+    parser.add_argument("project_id", help="Your Google Cloud project ID")
 
     subparsers = parser.add_subparsers(dest="command")
 
@@ -218,14 +222,14 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.command == "get-topic-policy":
-        get_topic_policy(args.project, args.topic_id)
+        get_topic_policy(args.project_id, args.topic_id)
     elif args.command == "get-subscription-policy":
-        get_subscription_policy(args.project, args.subscription_id)
+        get_subscription_policy(args.project_id, args.subscription_id)
     elif args.command == "set-topic-policy":
-        set_topic_policy(args.project, args.topic_id)
+        set_topic_policy(args.project_id, args.topic_id)
     elif args.command == "set-subscription-policy":
-        set_subscription_policy(args.project, args.subscription_id)
+        set_subscription_policy(args.project_id, args.subscription_id)
     elif args.command == "check-topic-permissions":
-        check_topic_permissions(args.project, args.topic_id)
+        check_topic_permissions(args.project_id, args.topic_id)
     elif args.command == "check-subscription-permissions":
-        check_subscription_permissions(args.project, args.subscription_id)
+        check_subscription_permissions(args.project_id, args.subscription_id)

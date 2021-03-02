@@ -4,7 +4,125 @@
 
 [1]: https://pypi.org/project/google-cloud-pubsub/#history
 
-### [1.6.1](https://www.github.com/googleapis/python-pubsub/compare/v1.6.0...v1.6.1) (2020-06-30)
+
+## 2.4.0
+
+02-22-2021 05:02 PST
+
+
+### Implementation Changes
+
+### New Features
+
+- Add graceful streaming pull shutdown. ([#292](https://github.com/googleapis/python-pubsub/pull/292))
+
+### Documentation
+
+- Update samples with using the subscriber client as a context manager. ([#254](https://github.com/googleapis/python-pubsub/pull/254))
+
+## [2.3.0](https://www.github.com/googleapis/python-pubsub/compare/v2.2.0...v2.3.0) (2021-02-08)
+
+
+### Features
+
+* surface SchemaServiceClient in google.cloud.pubsub ([#281](https://www.github.com/googleapis/python-pubsub/issues/281)) ([8751bcc](https://www.github.com/googleapis/python-pubsub/commit/8751bcc5eb782df55769b48253629a3bde3d4661))
+
+
+### Bug Fixes
+
+* client version missing from the user agent header ([#275](https://www.github.com/googleapis/python-pubsub/issues/275)) ([b112f4f](https://www.github.com/googleapis/python-pubsub/commit/b112f4fcbf6f2bce8dcf37871bdc540b11f54fe3))
+* Don't open the google.cloud package by adding pubsub.py ([#269](https://www.github.com/googleapis/python-pubsub/issues/269)) ([542d79d](https://www.github.com/googleapis/python-pubsub/commit/542d79d7c5fb7403016150ba477485756cd4097b))
+* flaky samples tests ([#263](https://www.github.com/googleapis/python-pubsub/issues/263)) ([3d6a29d](https://www.github.com/googleapis/python-pubsub/commit/3d6a29de07cc09be663c90a3333f4cd33633994f))
+* Modify synth.py to update grpc transport options ([#266](https://www.github.com/googleapis/python-pubsub/issues/266)) ([41dcd30](https://www.github.com/googleapis/python-pubsub/commit/41dcd30636168f3dd1248f1d99170d531fc9bcb8))
+* pass anonymous credentials for emulator ([#250](https://www.github.com/googleapis/python-pubsub/issues/250)) ([8eed8e1](https://www.github.com/googleapis/python-pubsub/commit/8eed8e16019510dc8b20fb6b009d61a7ac532d26))
+* remove grpc send/recieve limits ([#259](https://www.github.com/googleapis/python-pubsub/issues/259)) ([fd2840c](https://www.github.com/googleapis/python-pubsub/commit/fd2840c10f92b03da7f4b40ac69c602220757c0a))
+
+## [2.2.0](https://www.github.com/googleapis/python-pubsub/compare/v2.1.0...v2.2.0) (2020-11-16)
+
+
+### Features
+
+* Add dead lettering max delivery attempts argument ([#236](https://www.github.com/googleapis/python-pubsub/issues/236)) ([7687ae5](https://www.github.com/googleapis/python-pubsub/commit/7687ae500bdb9c76e3ffb23302b4f32dc9627d81))
+* Enable server side flow control by default with the option to turn it off ([#231](https://www.github.com/googleapis/python-pubsub/issues/231)) ([94d738c](https://www.github.com/googleapis/python-pubsub/commit/94d738c07c6404a152c6729f5ba4b106b1fe9355))
+
+
+### Bug Fixes
+
+* fix mtls issue in handwritten layer ([#226](https://www.github.com/googleapis/python-pubsub/issues/226)) ([09a409c](https://www.github.com/googleapis/python-pubsub/commit/09a409c6240a74dcb46d8f3f86d4fb95a52274a7))
+* make fixup script consistent with migration docs ([#208](https://www.github.com/googleapis/python-pubsub/issues/208)) ([b64e218](https://www.github.com/googleapis/python-pubsub/commit/b64e2187ab0810437575580d6ddb5315ff60e274))
+
+
+### Documentation
+
+* document potentially unexpected blocking behavior of publish() method ([#214](https://www.github.com/googleapis/python-pubsub/issues/214)) ([b6d9bd7](https://www.github.com/googleapis/python-pubsub/commit/b6d9bd7c38d4fe597c25b7b5869fd4a1259c7687))
+* fix get topic_path in subscriber sample ([#210](https://www.github.com/googleapis/python-pubsub/issues/210)) ([7228f6c](https://www.github.com/googleapis/python-pubsub/commit/7228f6c9a4c050bf22bb4bc3582b89b04eaa8702))
+
+## 2.1.0
+
+09-21-2020 02:19 PDT
+
+
+### Implementation Changes
+
+- Convert all RPC error types to exceptions. ([#163](https://github.com/googleapis/python-pubsub/issues/163)) ([#170](https://github.com/googleapis/python-pubsub/pull/170))
+- Pass client options to publisher and subscriber clients. ([#166](https://github.com/googleapis/python-pubsub/issues/166)) ([#190](https://github.com/googleapis/python-pubsub/pull/190))
+
+
+### New Features
+
+- Regenerate the client lib to pick new mtls env (via synth). ([#197](https://github.com/googleapis/python-pubsub/pull/197))
+
+
+### Documentation
+
+- Add subscription detachment sample. ([#152](https://github.com/googleapis/python-pubsub/pull/152))
+- Use new call syntax in subscriber docs. ([#198](https://github.com/googleapis/python-pubsub/issues/198)) ([#203](https://github.com/googleapis/python-pubsub/pull/203))
+
+
+### Internal / Testing Changes
+
+- Update CODEOWNERS. ([#193](https://github.com/googleapis/python-pubsub/pull/193))
+
+## 2.0.0
+
+09-11-2020 05:03 PDT
+
+
+### Implementation Changes
+
+- Transition the library to microgenerator. ([#158](https://github.com/googleapis/python-pubsub/pull/158))
+  This is a **breaking change** that introduces several **method signature changes** and **drops support
+  for Python 2.7 and 3.5**.
+
+### Documentation
+
+- Add samples for using ordering keys. ([#156](https://github.com/googleapis/python-pubsub/pull/156))
+- Remove extra white space in delivery attempt sample. ([#159](https://github.com/googleapis/python-pubsub/pull/159))
+
+### Internal / Testing Changes
+
+- Fix flaky sequencer unit tests. ([#187](https://github.com/googleapis/python-pubsub/pull/187))
+
+## [1.7.0](https://www.github.com/googleapis/python-pubsub/compare/v1.6.1...v1.7.0) (2020-07-13)
+
+This is the last release that supports Python 2.7 and 3.5.
+
+### New Features
+
+- Add support for server-side flow control. ([#143](https://github.com/googleapis/python-pubsub/pull/143)) ([04e261c](https://www.github.com/googleapis/python-pubsub/commit/04e261c602a2919cc75b3efa3dab099fb2cf704c))
+
+### Dependencies
+
+- Update samples dependency `google-cloud-pubsub` to `v1.6.1`. ([#144](https://github.com/googleapis/python-pubsub/pull/144)) ([1cb6746](https://github.com/googleapis/python-pubsub/commit/1cb6746b00ebb23dbf1663bae301b32c3fc65a88))
+
+### Documentation
+
+- Add pubsub/cloud-client samples from the common samples repo (with commit history). ([#151](https://github.com/googleapis/python-pubsub/pull/151)) 
+- Add flow control section to publish overview. ([#129](https://github.com/googleapis/python-pubsub/pull/129)) ([acc19eb](https://www.github.com/googleapis/python-pubsub/commit/acc19eb048eef067d9818ef3e310b165d9c6307e))
+- Add a link to Pub/Sub filtering language public documentation to `pubsub.proto`. ([#121](https://github.com/googleapis/python-pubsub/pull/121)) ([8802d81](https://www.github.com/googleapis/python-pubsub/commit/8802d8126247f22e26057e68a42f5b5a82dcbf0d))
+
+
+## [1.6.1](https://www.github.com/googleapis/python-pubsub/compare/v1.6.0...v1.6.1) (2020-06-30)
 
 
 ### Documentation

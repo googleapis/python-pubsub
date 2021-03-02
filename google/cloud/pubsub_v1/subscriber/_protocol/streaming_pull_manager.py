@@ -16,6 +16,7 @@ from __future__ import division
 
 import collections
 import functools
+import itertools
 import logging
 import threading
 import uuid
@@ -34,6 +35,7 @@ from google.cloud.pubsub_v1.subscriber._protocol import messages_on_hold
 from google.cloud.pubsub_v1.subscriber._protocol import requests
 import google.cloud.pubsub_v1.subscriber.message
 import google.cloud.pubsub_v1.subscriber.scheduler
+from google.pubsub_v1 import types as gapic_types
 
 _LOGGER = logging.getLogger(__name__)
 _RPC_ERROR_THREAD_NAME = "Thread-OnRpcTerminated"
@@ -53,11 +55,22 @@ _RESUME_THRESHOLD = 0.8
 """The load threshold below which to resume the incoming message stream."""
 
 
-def _maybe_wrap_exception(exception):
-    """Wraps a gRPC exception class, if needed."""
-    if isinstance(exception, grpc.RpcError):
-        return exceptions.from_grpc_error(exception)
-    return exception
+def _wrap_as_exception(maybe_exception):
+    """Wrap an object as a Python exception, if needed.
+
+    Args:
+        maybe_exception (Any): The object to wrap, usually a gRPC exception class.
+
+    Returns:
+         The argument itself if an instance of ``BaseException``, otherwise
+         the argument represented as an instance of ``Exception`` (sub)class.
+    """
+    if isinstance(maybe_exception, grpc.RpcError):
+        return exceptions.from_grpc_error(maybe_exception)
+    elif isinstance(maybe_exception, BaseException):
+        return maybe_exception
+
+    return Exception(maybe_exception)
 
 
 def _wrap_callback_errors(callback, on_callback_error, message):
@@ -93,21 +106,26 @@ class StreamingPullManager(object):
             ``projects/{project}/subscriptions/{subscription}``.
         flow_control (~google.cloud.pubsub_v1.types.FlowControl): The flow
             control settings.
+        use_legacy_flow_control (bool): Disables enforcing flow control settings
+            at the Cloud PubSub server and uses the less accurate method of only
+            enforcing flow control at the client side.
         scheduler (~google.cloud.pubsub_v1.scheduler.Scheduler): The scheduler
             to use to process messages. If not provided, a thread pool-based
             scheduler will be used.
     """
 
-    _UNARY_REQUESTS = True
-    """If set to True, this class will make requests over a separate unary
-    RPC instead of over the streaming RPC."""
-
     def __init__(
-        self, client, subscription, flow_control=types.FlowControl(), scheduler=None
+        self,
+        client,
+        subscription,
+        flow_control=types.FlowControl(),
+        scheduler=None,
+        use_legacy_flow_control=False,
     ):
         self._client = client
         self._subscription = subscription
         self._flow_control = flow_control
+        self._use_legacy_flow_control = use_legacy_flow_control
         self._ack_histogram = histogram.Histogram()
         self._last_histogram_size = 0
         self._ack_deadline = 10
@@ -271,6 +289,9 @@ class StreamingPullManager(object):
                 activate. May be empty.
         """
         with self._pause_resume_lock:
+            if self._scheduler is None:
+                return  # We are shutting down, don't try to dispatch any more messages.
+
             self._messages_on_hold.activate_ordering_keys(
                 ordering_keys, self._schedule_message_on_hold
             )
@@ -369,7 +390,7 @@ class StreamingPullManager(object):
         stream.
 
         Args:
-            request (types.StreamingPullRequest): The stream request to be
+            request (gapic_types.StreamingPullRequest): The stream request to be
                 mapped into unary requests.
         """
         if request.ack_ids:
@@ -400,37 +421,36 @@ class StreamingPullManager(object):
         If a RetryError occurs, the manager shutdown is triggered, and the
         error is re-raised.
         """
-        if self._UNARY_REQUESTS:
-            try:
-                self._send_unary_request(request)
-            except exceptions.GoogleAPICallError:
-                _LOGGER.debug(
-                    "Exception while sending unary RPC. This is typically "
-                    "non-fatal as stream requests are best-effort.",
-                    exc_info=True,
-                )
-            except exceptions.RetryError as exc:
-                _LOGGER.debug(
-                    "RetryError while sending unary RPC. Waiting on a transient "
-                    "error resolution for too long, will now trigger shutdown.",
-                    exc_info=False,
-                )
-                # The underlying channel has been suffering from a retryable error
-                # for too long, time to give up and shut the streaming pull down.
-                self._on_rpc_done(exc)
-                raise
-
-        else:
-            self._rpc.send(request)
+        try:
+            self._send_unary_request(request)
+        except exceptions.GoogleAPICallError:
+            _LOGGER.debug(
+                "Exception while sending unary RPC. This is typically "
+                "non-fatal as stream requests are best-effort.",
+                exc_info=True,
+            )
+        except exceptions.RetryError as exc:
+            _LOGGER.debug(
+                "RetryError while sending unary RPC. Waiting on a transient "
+                "error resolution for too long, will now trigger shutdown.",
+                exc_info=False,
+            )
+            # The underlying channel has been suffering from a retryable error
+            # for too long, time to give up and shut the streaming pull down.
+            self._on_rpc_done(exc)
+            raise
 
     def heartbeat(self):
         """Sends an empty request over the streaming pull RPC.
 
-        This always sends over the stream, regardless of if
-        ``self._UNARY_REQUESTS`` is set or not.
+        Returns:
+            bool: If a heartbeat request has actually been sent.
         """
         if self._rpc is not None and self._rpc.is_active:
-            self._rpc.send(types.StreamingPullRequest())
+            self._rpc.send(gapic_types.StreamingPullRequest())
+            return True
+
+        return False
 
     def open(self, callback, on_callback_error):
         """Begin consuming messages.
@@ -492,7 +512,7 @@ class StreamingPullManager(object):
         # Start the stream heartbeater thread.
         self._heartbeater.start()
 
-    def close(self, reason=None):
+    def close(self, reason=None, await_msg_callbacks=False):
         """Stop consuming messages and shutdown all helper threads.
 
         This method is idempotent. Additional calls will have no effect.
@@ -501,6 +521,15 @@ class StreamingPullManager(object):
             reason (Any): The reason to close this. If None, this is considered
                 an "intentional" shutdown. This is passed to the callbacks
                 specified via :meth:`add_close_callback`.
+
+            await_msg_callbacks (bool):
+                If ``True``, the method will wait until all scheduler threads terminate
+                and only then proceed with the shutdown with the remaining shutdown
+                tasks,
+
+                If ``False`` (default), the method will shut down the scheduler in a
+                non-blocking fashion, i.e. it will not wait for the currently executing
+                scheduler threads to terminate.
         """
         with self._closing:
             if self._closed:
@@ -514,7 +543,9 @@ class StreamingPullManager(object):
 
             # Shutdown all helper threads
             _LOGGER.debug("Stopping scheduler.")
-            self._scheduler.shutdown()
+            dropped_messages = self._scheduler.shutdown(
+                await_msg_callbacks=await_msg_callbacks
+            )
             self._scheduler = None
 
             # Leaser and dispatcher reference each other through the shared
@@ -528,11 +559,23 @@ class StreamingPullManager(object):
             # because the consumer gets shut down first.
             _LOGGER.debug("Stopping leaser.")
             self._leaser.stop()
+
+            total = len(dropped_messages) + len(
+                self._messages_on_hold._messages_on_hold
+            )
+            _LOGGER.debug(f"NACK-ing all not-yet-dispatched messages (total: {total}).")
+            messages_to_nack = itertools.chain(
+                dropped_messages, self._messages_on_hold._messages_on_hold
+            )
+            for msg in messages_to_nack:
+                msg.nack()
+
             _LOGGER.debug("Stopping dispatcher.")
             self._dispatcher.stop()
             self._dispatcher = None
             # dispatcher terminated, OK to dispose the leaser reference now
             self._leaser = None
+
             _LOGGER.debug("Stopping heartbeater.")
             self._heartbeater.stop()
             self._heartbeater = None
@@ -555,7 +598,7 @@ class StreamingPullManager(object):
                 The default message acknowledge deadline for the stream.
 
         Returns:
-            google.cloud.pubsub_v1.types.StreamingPullRequest: A request
+            google.pubsub_v1.types.StreamingPullRequest: A request
             suitable for being the first request on the stream (and not
             suitable for any other purpose).
         """
@@ -569,14 +612,18 @@ class StreamingPullManager(object):
             lease_ids = []
 
         # Put the request together.
-        request = types.StreamingPullRequest(
+        request = gapic_types.StreamingPullRequest(
             modify_deadline_ack_ids=list(lease_ids),
             modify_deadline_seconds=[self.ack_deadline] * len(lease_ids),
             stream_ack_deadline_seconds=stream_ack_deadline_seconds,
             subscription=self._subscription,
             client_id=self._client_id,
-            max_outstanding_messages=self._flow_control.max_messages,
-            max_outstanding_bytes=self._flow_control.max_bytes,
+            max_outstanding_messages=(
+                0 if self._use_legacy_flow_control else self._flow_control.max_messages
+            ),
+            max_outstanding_bytes=(
+                0 if self._use_legacy_flow_control else self._flow_control.max_bytes
+            ),
         )
 
         # Return the initial request.
@@ -601,9 +648,13 @@ class StreamingPullManager(object):
             )
             return
 
+        # IMPORTANT: Circumvent the wrapper class and operate on the raw underlying
+        # protobuf message to significantly gain on attribute access performance.
+        received_messages = response._pb.received_messages
+
         _LOGGER.debug(
             "Processing %s received message(s), currently on hold %s (bytes %s).",
-            len(response.received_messages),
+            len(received_messages),
             self._messages_on_hold.size,
             self._on_hold_bytes,
         )
@@ -613,12 +664,12 @@ class StreamingPullManager(object):
         # received them.
         items = [
             requests.ModAckRequest(message.ack_id, self._ack_histogram.percentile(99))
-            for message in response.received_messages
+            for message in received_messages
         ]
         self._dispatcher.modify_ack_deadline(items)
 
         with self._pause_resume_lock:
-            for received_message in response.received_messages:
+            for received_message in received_messages:
                 message = google.cloud.pubsub_v1.subscriber.message.Message(
                     received_message.message,
                     received_message.ack_id,
@@ -651,7 +702,7 @@ class StreamingPullManager(object):
             Will be :data:`True` if the ``exception`` is "acceptable", i.e.
             in a list of retryable / idempotent exceptions.
         """
-        exception = _maybe_wrap_exception(exception)
+        exception = _wrap_as_exception(exception)
         # If this is in the list of idempotent exceptions, then we want to
         # recover.
         if isinstance(exception, _RETRYABLE_STREAM_ERRORS):
@@ -673,7 +724,7 @@ class StreamingPullManager(object):
             Will be :data:`True` if the ``exception`` is "acceptable", i.e.
             in a list of terminating exceptions.
         """
-        exception = _maybe_wrap_exception(exception)
+        exception = _wrap_as_exception(exception)
         if isinstance(exception, _TERMINATING_STREAM_ERRORS):
             _LOGGER.info("Observed terminating stream error %s", exception)
             return True
@@ -692,9 +743,9 @@ class StreamingPullManager(object):
         background consumer and preventing it from being ``joined()``.
         """
         _LOGGER.info("RPC termination has signaled streaming pull manager shutdown.")
-        future = _maybe_wrap_exception(future)
+        error = _wrap_as_exception(future)
         thread = threading.Thread(
-            name=_RPC_ERROR_THREAD_NAME, target=self.close, kwargs={"reason": future}
+            name=_RPC_ERROR_THREAD_NAME, target=self.close, kwargs={"reason": error}
         )
         thread.daemon = True
         thread.start()

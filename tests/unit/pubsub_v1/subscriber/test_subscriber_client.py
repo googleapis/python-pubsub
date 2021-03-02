@@ -13,12 +13,15 @@
 # limitations under the License.
 
 from google.auth import credentials
+import grpc
 import mock
 
+from google.api_core.gapic_v1.client_info import METRICS_METADATA_KEY
 from google.cloud.pubsub_v1 import subscriber
-from google.cloud.pubsub_v1.gapic import subscriber_client
 from google.cloud.pubsub_v1 import types
 from google.cloud.pubsub_v1.subscriber import futures
+from google.pubsub_v1.services.subscriber import client as subscriber_client
+from google.pubsub_v1.services.subscriber.transports.grpc import SubscriberGrpcTransport
 
 
 def test_init():
@@ -27,11 +30,31 @@ def test_init():
     assert isinstance(client.api, subscriber_client.SubscriberClient)
 
 
+def test_init_default_client_info():
+    creds = mock.Mock(spec=credentials.Credentials)
+    client = subscriber.Client(credentials=creds)
+
+    installed_version = subscriber.client.__version__
+    expected_client_info = f"gccl/{installed_version}"
+
+    for wrapped_method in client.api.transport._wrapped_methods.values():
+        user_agent = next(
+            (
+                header_value
+                for header, header_value in wrapped_method._metadata
+                if header == METRICS_METADATA_KEY
+            ),
+            None,
+        )
+        assert user_agent is not None
+        assert expected_client_info in user_agent
+
+
 def test_init_w_custom_transport():
-    transport = object()
+    transport = SubscriberGrpcTransport()
     client = subscriber.Client(transport=transport)
     assert isinstance(client.api, subscriber_client.SubscriberClient)
-    assert client.api.transport is transport
+    assert client.api._transport is transport
 
 
 def test_init_w_api_endpoint():
@@ -39,32 +62,57 @@ def test_init_w_api_endpoint():
     client = subscriber.Client(client_options=client_options)
 
     assert isinstance(client.api, subscriber_client.SubscriberClient)
-    assert (client.api.transport._channel._channel.target()).decode(
+    assert (client.api._transport.grpc_channel._channel.target()).decode(
         "utf-8"
-    ) == "testendpoint.google.com"
+    ) == "testendpoint.google.com:443"
 
 
 def test_init_w_unicode_api_endpoint():
-    client_options = {"api_endpoint": u"testendpoint.google.com"}
+    client_options = {"api_endpoint": "testendpoint.google.com"}
     client = subscriber.Client(client_options=client_options)
 
     assert isinstance(client.api, subscriber_client.SubscriberClient)
-    assert (client.api.transport._channel._channel.target()).decode(
+    assert (client.api._transport.grpc_channel._channel.target()).decode(
         "utf-8"
-    ) == "testendpoint.google.com"
+    ) == "testendpoint.google.com:443"
 
 
 def test_init_w_empty_client_options():
     client = subscriber.Client(client_options={})
 
     assert isinstance(client.api, subscriber_client.SubscriberClient)
-    assert (client.api.transport._channel._channel.target()).decode(
+    assert (client.api._transport.grpc_channel._channel.target()).decode(
         "utf-8"
     ) == subscriber_client.SubscriberClient.SERVICE_ADDRESS
 
 
+def test_init_client_options_pass_through():
+    mock_ssl_creds = grpc.ssl_channel_credentials()
+
+    def init(self, *args, **kwargs):
+        self.kwargs = kwargs
+        self._transport = mock.Mock()
+        self._transport._host = "testendpoint.google.com"
+        self._transport._ssl_channel_credentials = mock_ssl_creds
+
+    with mock.patch.object(subscriber_client.SubscriberClient, "__init__", init):
+        client = subscriber.Client(
+            client_options={
+                "quota_project_id": "42",
+                "scopes": [],
+                "credentials_file": "file.json",
+            }
+        )
+        client_options = client._api.kwargs["client_options"]
+        assert client_options.get("quota_project_id") == "42"
+        assert client_options.get("scopes") == []
+        assert client_options.get("credentials_file") == "file.json"
+        assert client.target == "testendpoint.google.com"
+        assert client.api.transport._ssl_channel_credentials == mock_ssl_creds
+
+
 def test_init_emulator(monkeypatch):
-    monkeypatch.setenv("PUBSUB_EMULATOR_HOST", "/baz/bacon/")
+    monkeypatch.setenv("PUBSUB_EMULATOR_HOST", "/baz/bacon:123")
     # NOTE: When the emulator host is set, a custom channel will be used, so
     #       no credentials (mock ot otherwise) can be passed in.
     client = subscriber.Client()
@@ -73,8 +121,8 @@ def test_init_emulator(monkeypatch):
     #
     # Sadly, there seems to be no good way to do this without poking at
     # the private API of gRPC.
-    channel = client.api.transport.pull._channel
-    assert channel.target().decode("utf8") == "/baz/bacon/"
+    channel = client.api._transport.pull._channel
+    assert channel.target().decode("utf8") == "/baz/bacon:123"
 
 
 def test_class_method_factory():
@@ -138,31 +186,32 @@ def test_subscribe_options(manager_open):
 
 
 def test_close():
-    mock_transport = mock.NonCallableMock()
-    client = subscriber.Client(transport=mock_transport)
+    client = subscriber.Client()
+    patcher = mock.patch.object(client.api._transport.grpc_channel, "close")
 
-    client.close()
+    with patcher as patched_close:
+        client.close()
 
-    mock_transport.channel.close.assert_called()
+    patched_close.assert_called()
 
 
 def test_closes_channel_as_context_manager():
-    mock_transport = mock.NonCallableMock()
-    client = subscriber.Client(transport=mock_transport)
+    client = subscriber.Client()
+    patcher = mock.patch.object(client.api._transport.grpc_channel, "close")
 
-    with client:
-        pass
+    with patcher as patched_close:
+        with client:
+            pass
 
-    mock_transport.channel.close.assert_called()
+    patched_close.assert_called()
 
 
 def test_streaming_pull_gapic_monkeypatch():
-    transport = mock.NonCallableMock(spec=["streaming_pull"])
-    transport.streaming_pull = mock.Mock(spec=[])
-    client = subscriber.Client(transport=transport)
+    client = subscriber.Client()
 
-    client.streaming_pull(requests=iter([]))
+    with mock.patch("google.api_core.gapic_v1.method.wrap_method"):
+        client.streaming_pull(requests=iter([]))
 
-    assert client.api.transport is transport
+    transport = client.api._transport
     assert hasattr(transport.streaming_pull, "_prefetch_first_result_")
     assert not transport.streaming_pull._prefetch_first_result_

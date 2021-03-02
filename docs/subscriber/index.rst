@@ -12,8 +12,9 @@ Instantiating a subscriber client is straightforward:
 .. code-block:: python
 
     from google.cloud import pubsub
-    subscriber = pubsub.SubscriberClient()
 
+    with pubsub.SubscriberClient() as subscriber:
+        # ...
 
 Creating a Subscription
 -----------------------
@@ -36,9 +37,15 @@ to subscribe to, and it must already exist. Once you have that, it is easy:
 
     # Substitute PROJECT, SUBSCRIPTION, and TOPIC with appropriate values for
     # your application.
-    sub_path = subscriber.subscription_path(PROJECT, SUBSCRIPTION)
-    topic_path = subscriber.topic_path(PROJECT, TOPIC)
-    subscriber.create_subscription(sub_path, topic_path)
+
+    # from google.cloud import pubsub
+    # publisher = pubsub.PublisherClient()
+
+    topic_path = publisher.topic_path(PROJECT, TOPIC)
+
+    with pubsub.SubscriberClient() as subscriber: 
+        sub_path = subscriber.subscription_path(PROJECT, SUBSCRIPTION)
+        subscriber.create_subscription(request={"name": sub_path, "topic": topic_path})
 
 Once you have created a subscription (or if you already had one), the next
 step is to pull data from it.
@@ -52,16 +59,28 @@ To pull the messages synchronously, use the client's
 
 .. code-block:: python
 
+    # Wrap the following code in `with pubsub.SubscriberClient() as subscriber:`
+
     # Substitute PROJECT and SUBSCRIPTION with appropriate values for your
     # application.
     subscription_path = subscriber.subscription_path(PROJECT, SUBSCRIPTION)
-    response = subscriber.pull(subscription_path, max_messages=5)
+    response = subscriber.pull(
+        request={
+            "subscription": subscription_path,
+            "max_messages": 5,
+        }
+    )
 
     for msg in response.received_messages:
         print("Received message:", msg.message.data)
 
     ack_ids = [msg.ack_id for msg in response.received_messages]
-    subscriber.acknowledge(subscription_path, ack_ids)
+    subscriber.acknowledge(
+        request={
+            "subscription": subscription_path,
+            "ack_ids": ack_ids,
+        }
+    )
 
 The method returns a :class:`~.pubsub_v1.types.PullResponse` instance that
 contains a list of received :class:`~.pubsub_v1.types.ReceivedMessage`
@@ -74,9 +93,17 @@ be dropped by this client and the backend will try to re-deliver them.
 
 .. code-block:: python
 
+    # Wrap the following code in `with pubsub.SubscriberClient() as subscriber:`
+
     ack_ids = []  # TODO: populate with `ack_ids` of the messages to NACK
     ack_deadline_seconds = 0
-    subscriber.modify_ack_deadline(subscription_path, ack_ids, ack_deadline_seconds)
+    subscriber.modify_ack_deadline(
+        request={
+            "subscription": subscription_path,
+            "ack_ids": ack_ids,
+            "ack_deadline_seconds": ack_deadline_seconds,
+        }
+    )
 
 
 Pulling a Subscription Asynchronously
@@ -88,6 +115,8 @@ background thread to receive messages from Pub/Sub and calls a callback with
 each message received.
 
 .. code-block:: python
+
+    # Wrap the following code in `with pubsub.SubscriberClient() as subscriber:`
 
     # Substitute PROJECT and SUBSCRIPTION with appropriate values for your
     # application.
@@ -127,6 +156,8 @@ Here is an example:
         do_something_with(message)  # Replace this with your actual logic.
         message.ack()  # Asynchronously acknowledge the message.
 
+    # Wrap the following code in `with pubsub.SubscriberClient() as subscriber:`
+    
     # Substitute PROJECT and SUBSCRIPTION with appropriate values for your
     # application.
     subscription_path = subscriber.subscription_path(PROJECT, SUBSCRIPTION)
@@ -157,7 +188,8 @@ thread will be set on the future.
     try:
         future.result()
     except Exception as ex:
-        subscription.close()
+        # Close the subscriber if not using a context manager.
+        subscriber.close()
         raise
 
 Finally, you can use
