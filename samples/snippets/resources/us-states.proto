@@ -1,0 +1,6 @@
+syntax = "proto3";
+
+message State {
+  string name = 1;
+  string post_abbr = 2;
+}
