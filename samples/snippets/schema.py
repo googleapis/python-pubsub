@@ -228,11 +228,10 @@ def publish_avro_records(project_id, topic_id, avsc_file):
             encoder = BinaryEncoder(bout)
             writer.write(record, encoder)
             data = bout.getvalue()
-
-            print("Preparing a binary-encoded message.")
+            print(f"Preparing a binary-encoded message:\n{data}")
         elif encoding == Encoding.JSON:
             data = json.dumps(record).encode("utf-8")
-            print("Preparing a JSON-encoded message.")
+            print(f"Preparing a JSON-encoded message:\n{data}")
         else:
             raise InvalidArgument(ValueError)
 
@@ -246,10 +245,51 @@ def publish_avro_records(project_id, topic_id, avsc_file):
     # [END pubsub_publish_avro_records]
 
 
-def publish_proto_messages(project_id, topic_id, proto_file):
+def publish_proto_messages(project_id, topic_id):
     """Publish a BINARY or JSON encoded message to a topic configured with a protobuf schema."""
     # [START pubsub_publish_proto_messages]
-    pass
+    from google.api_core.exceptions import NotFound, InvalidArgument
+    from google.cloud.pubsub import PublisherClient
+    from google.protobuf.json_format import MessageToJson
+    from google.pubsub_v1.types import Encoding
+
+    from utilities import us_states_pb2
+
+    # TODO(developer): Replace these variables before running the sample.
+    # project_id = "your-project-id"
+    # topic_id = "your-topic-id"
+
+    publisher_client = PublisherClient()
+    topic_path = publisher_client.topic_path(project_id, topic_id)
+
+    try:
+        # Get the topic encoding type.
+        topic = publisher_client.get_topic(request={"topic": topic_path})
+        encoding = topic.schema_settings.encoding
+
+        # Instantiate a protoc-generated class defined in `us-states.proto`.
+        state = us_states_pb2.StateProto()
+        state.name = "Alaska"
+        state.post_abbr = "AK"
+
+        # Encode the data according to the message serialization type.
+        if encoding == Encoding.BINARY:
+            data = state.SerializeToString()
+            print(f"Preparing a binary-encoded message:\n{data}")
+        elif encoding == Encoding.JSON:
+            json_object = MessageToJson(state)
+            data = str(json_object).encode("utf-8")
+            print(f"Preparing a JSON-encoded message:\n{data}")
+        else:
+            raise InvalidArgument(ValueError)
+
+        future = publisher_client.publish(topic_path, data)
+        print(f"Published message ID: {future.result()}")
+
+    except NotFound:
+        print(f"{topic_id} not found.")
+    except InvalidArgument:
+        print(f"No encoding specified in {topic_path}. Abort.")
     # [END pubsub_publish_proto_messages]
 
 
@@ -283,11 +323,11 @@ def subscribe_with_avro_schema(project_id, subscription_id, avsc_file, timeout=N
             bout = io.BytesIO(message.data)
             decoder = BinaryDecoder(bout)
             reader = DatumReader(avro_schema)
-            data = reader.read(decoder)
-            print(f"Received a binary-encoded message:\n{data}")
+            message_data = reader.read(decoder)
+            print(f"Received a binary-encoded message:\n{message_data}")
         elif encoding == "JSON":
-            data = json.loads(message.data)
-            print(f"Received a JSON-encoded message:\n{data}")
+            message_data = json.loads(message.data)
+            print(f"Received a JSON-encoded message:\n{message_data}")
         else:
             print(f"Received a message with no encoding:\n{message}")
 
@@ -307,10 +347,53 @@ def subscribe_with_avro_schema(project_id, subscription_id, avsc_file, timeout=N
     # [END pubsub_subscribe_avro_records]
 
 
-def subscribe_with_proto_schema(project_id, subscription_id):
+def subscribe_with_proto_schema(project_id, subscription_id, timeout):
     """Receive and decode messages sent to a topic with a protobuf schema."""
     # [[START pubsub_subscribe_proto_messages]
-    pass
+    from concurrent.futures import TimeoutError
+    from google.cloud.pubsub import SubscriberClient
+    from google.protobuf.json_format import Parse
+
+    from utilities import us_states_pb2
+
+    # TODO(developer)
+    # project_id = "your-project-id"
+    # subscription_id = "your-subscription-id"
+    # Number of seconds the subscriber listens for messages
+    # timeout = 5.0
+
+    subscriber = SubscriberClient()
+    subscription_path = subscriber.subscription_path(project_id, subscription_id)
+
+    # Instantiate a protoc-generated class defined in `us-states.proto`.
+    state = us_states_pb2.StateProto()
+
+    def callback(message):
+        # Get the message serialization type.
+        encoding = message.attributes.get("googclient_schemaencoding")
+        # Deserialize the message data accordingly.
+        if encoding == "BINARY":
+            state.ParseFromString(message.data)
+            print("Received a binary-encoded message:\n{state}")
+        elif encoding == "JSON":
+            Parse(message.data, state)
+            print(f"Received a JSON-encoded message:\n{state}")
+        else:
+            print(f"Received a message with no encoding:\n{message}")
+
+        message.ack()
+
+    streaming_pull_future = subscriber.subscribe(subscription_path, callback=callback)
+    print(f"Listening for messages on {subscription_path}..\n")
+
+    # Wrap subscriber in a 'with' block to automatically call close() when done.
+    with subscriber:
+        try:
+            # When `timeout` is not set, result() will block indefinitely,
+            # unless an exception occurs first.
+            streaming_pull_future.result(timeout=timeout)
+        except TimeoutError:
+            streaming_pull_future.cancel()
     # [END pubsub_subscribe_proto_messages]
 
 
@@ -374,6 +457,9 @@ if __name__ == "__main__":
         "receive-proto", help=subscribe_with_proto_schema.__doc__
     )
     subscribe_with_proto_schema_parser.add_argument("subscription_id")
+    subscribe_with_proto_schema_parser.add_argument(
+        "timeout", default=None, type=float, nargs="?"
+    )
 
     args = parser.parse_args()
 
@@ -394,10 +480,10 @@ if __name__ == "__main__":
     if args.command == "publish-avro":
         publish_avro_records(args.project_id, args.topic_id, args.avsc_file)
     if args.command == "publish-proto":
-        publish_proto_messages(args.project_id, args.topic_id, args.proto_file)
+        publish_proto_messages(args.project_id, args.topic_id)
     if args.command == "receive-avro":
         subscribe_with_avro_schema(
             args.project_id, args.subscription_id, args.avsc_file, args.timeout
         )
     if args.command == "receive-proto":
-        subscribe_with_proto_schema(args.project_id, args.subscription_id)
+        subscribe_with_proto_schema(args.project_id, args.subscription_id, args.timeout)

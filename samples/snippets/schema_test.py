@@ -98,7 +98,7 @@ def avro_topic(publisher_client, avro_schema):
 
 
 @pytest.fixture(scope="module")
-def proto_topic(publisher_client):
+def proto_topic(publisher_client, proto_schema):
     proto_topic_path = publisher_client.topic_path(PROJECT_ID, PROTO_TOPIC_ID)
 
     try:
@@ -108,8 +108,8 @@ def proto_topic(publisher_client):
             request={
                 "name": proto_topic_path,
                 "schema_settings": {
-                    "schema": avro_schema,
-                    "encoding": Encoding.BINAARY,
+                    "schema": proto_schema,
+                    "encoding": Encoding.BINARY,
                 },
             }
         )
@@ -209,13 +209,6 @@ def test_list_schemas(capsys):
     assert "Listed schemas." in out
 
 
-def test_delete_schema(proto_schema, capsys):
-    schema.delete_schema(PROJECT_ID, PROTO_SCHEMA_ID)
-    out, _ = capsys.readouterr()
-    assert "Deleted a schema" in out
-    assert f"{proto_schema}" in out
-
-
 def test_create_topic_with_schema(avro_schema, capsys):
     schema.create_topic_with_schema(PROJECT_ID, AVRO_TOPIC_ID, AVRO_SCHEMA_ID, "BINARY")
     out, _ = capsys.readouterr()
@@ -228,7 +221,7 @@ def test_create_topic_with_schema(avro_schema, capsys):
 def test_publish_avro_records(avro_schema, avro_topic, capsys):
     schema.publish_avro_records(PROJECT_ID, AVRO_TOPIC_ID, AVSC_FILE)
     out, _ = capsys.readouterr()
-    assert "Preparing a binary-encoded message." in out
+    assert "Preparing a binary-encoded message" in out
     assert "Published message ID" in out
 
 
@@ -238,3 +231,27 @@ def test_subscribe_with_avro_schema(avro_schema, avro_topic, avro_subscription, 
     schema.subscribe_with_avro_schema(PROJECT_ID, AVRO_SUBSCRIPTION_ID, AVSC_FILE, 9)
     out, _ = capsys.readouterr()
     assert "Received a binary-encoded message:" in out
+
+
+def test_publish_proto_records(proto_topic, capsys):
+    schema.publish_proto_messages(PROJECT_ID, PROTO_TOPIC_ID)
+    out, _ = capsys.readouterr()
+    assert "Preparing a binary-encoded message" in out
+    assert "Published message ID" in out
+
+
+def test_subscribe_with_proto_schema(
+    proto_schema, proto_topic, proto_subscription, capsys
+):
+    schema.publish_proto_messages(PROJECT_ID, PROTO_TOPIC_ID)
+
+    schema.subscribe_with_proto_schema(PROJECT_ID, PROTO_SUBSCRIPTION_ID, 9)
+    out, _ = capsys.readouterr()
+    assert "Received a binary-encoded message" in out
+
+
+def test_delete_schema(proto_schema, capsys):
+    schema.delete_schema(PROJECT_ID, PROTO_SCHEMA_ID)
+    out, _ = capsys.readouterr()
+    assert "Deleted a schema" in out
+    assert f"{proto_schema}" in out

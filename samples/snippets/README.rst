@@ -266,6 +266,48 @@ To run this sample:
 
 
 
+Schema
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+.. image:: https://gstatic.com/cloudssh/images/open-btn.png
+   :target: https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com//googleapis/python-pubsub&page=editor&open_in_editor=samples/snippets/iam.py,samples/snippets/README.rst
+
+
+
+
+To run this sample:
+
+.. code-block:: bash
+
+    $ python schema.py
+
+    usage: schema.py [-h]
+                    project_id
+                    {create-avro,create-proto,get,list,delete,create-topic,publish-avro,publish-proto,receive-avro,receive-proto}
+                    ...
+
+    This application demonstrates how to perform basic schema operations
+    using the Cloud Pub/Sub API.
+
+    For more information, see the README.md under /pubsub and the documentation
+    at https://cloud.google.com/pubsub/docs.
+
+    positional arguments:
+    project_id            Your Google Cloud project ID
+    {create-avro,create-proto,get,list,delete,create-topic,publish-avro,publish-proto,receive-avro,receive-proto}
+        create-avro         Create a schema resource from an Avro schema file formatted in JSON.
+        create-proto        Create a schema resource from a protobuf schema file.
+        get                 Get a schema resource.
+        list                List schema resources.
+        delete              Delete a schema resource.
+        create-topic        Create a topic resource with a schema.
+        publish-avro        Pulbish a BINARY or JSON encoded message to a topic configured with an Avro schema.
+        publish-proto       Publish a BINARY or JSON encoded message to a topic configured with a protobuf schema.
+        receive-avro        Receive and decode messages sent to a topic with an Avro schema.
+        receive-proto       Receive and decode messages sent to a topic with a protobuf schema.
+
+    optional arguments:
+    -h, --help            show this help message and exit
 
 
 The client library
