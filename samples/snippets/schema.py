@@ -132,8 +132,8 @@ def list_schemas(project_id):
 def delete_schema(project_id, schema_id):
     """Delete a schema resource."""
     # [START pubsub_delete_schema]
-    from google.cloud.pubsub import SchemaServiceClient
     from google.api_core.exceptions import NotFound
+    from google.cloud.pubsub import SchemaServiceClient
 
     # TODO(developer): Replace these variables before running the sample.
     # project_id = "your-project-id"
@@ -150,7 +150,7 @@ def delete_schema(project_id, schema_id):
     # [END pubsub_delete_schema]
 
 
-def create_topic_with_schema(project_id, topic_id, schema_id, encoding):
+def create_topic_with_schema(project_id, topic_id, schema_id, message_encoding):
     """Create a topic resource with a schema."""
     # [START pubsub_create_topic_with_schema]
     from google.api_core.exceptions import AlreadyExists
@@ -161,8 +161,8 @@ def create_topic_with_schema(project_id, topic_id, schema_id, encoding):
     # project_id = "your-project-id"
     # topic_id = "your-topic-id"
     # schema_id = "your-schema-id"
-    # Choose either BINARY or JSON message serialization in this topic.
-    # encoding = "BINARY"
+    # Choose either BINARY or JSON as valid message encoding in this topic.
+    # message_encoding = "BINARY"
 
     publisher_client = PublisherClient()
     topic_path = publisher_client.topic_path(project_id, topic_id)
@@ -170,10 +170,12 @@ def create_topic_with_schema(project_id, topic_id, schema_id, encoding):
     schema_client = SchemaServiceClient()
     schema_path = schema_client.schema_path(project_id, schema_id)
 
-    if encoding == "BINARY":
+    if message_encoding == "BINARY":
         encoding = Encoding.BINARY
-    elif encoding == "JSON":
+    elif message_encoding == "JSON":
         encoding = Encoding.JSON
+    else:
+        encoding = Encoding.ENCODING_UNSPECIFIED
 
     try:
         response = publisher_client.create_topic(
@@ -189,24 +191,119 @@ def create_topic_with_schema(project_id, topic_id, schema_id, encoding):
     # [END pubsub_create_topic_with_schema]
 
 
-def publish_avro_records(project_id, topic_id):
+def publish_avro_records(project_id, topic_id, avsc_file):
     """Pulbish a BINARY or JSON encoded message to a topic configured with an Avro schema."""
     # [START pubsub_publish_avro_records]
-    pass
+    from avro.io import BinaryEncoder, DatumWriter
+    import avro
+    import io
+    import json
+    from google.api_core.exceptions import NotFound, InvalidArgument
+    from google.cloud.pubsub import PublisherClient
+    from google.pubsub_v1.types import Encoding
+
+    # TODO(developer): Replace these variables before running the sample.
+    # project_id = "your-project-id"
+    # topic_id = "your-topic-id"
+    # avsc_file = "path/to/an/avro/schema/file/(.avsc)/formatted/in/json"
+
+    publisher_client = PublisherClient()
+    topic_path = publisher_client.topic_path(project_id, topic_id)
+
+    # Prepare to write Avro records to the binary output stream.
+    avro_schema = avro.schema.parse(open(avsc_file, "rb").read())
+    writer = DatumWriter(avro_schema)
+    bout = io.BytesIO()
+
+    # Prepare some data using a Python dictionary that matches the Avro schema
+    record = {"name": "Alaska", "post_abbr": "AK"}
+
+    try:
+        # Get the topic encoding type.
+        topic = publisher_client.get_topic(request={"topic": topic_path})
+        encoding = topic.schema_settings.encoding
+
+        # Encode the data according to the message serialization type.
+        if encoding == Encoding.BINARY:
+            encoder = BinaryEncoder(bout)
+            writer.write(record, encoder)
+            data = bout.getvalue()
+
+            print("Preparing a binary-encoded message.")
+        elif encoding == Encoding.JSON:
+            data = json.dumps(record).encode("utf-8")
+            print("Preparing a JSON-encoded message.")
+        else:
+            raise InvalidArgument(ValueError)
+
+        future = publisher_client.publish(topic_path, data)
+        print(f"Published message ID: {future.result()}")
+
+    except NotFound:
+        print(f"{topic_id} not found.")
+    except InvalidArgument:
+        print(f"No encoding specified in {topic_path}. Abort.")
     # [END pubsub_publish_avro_records]
 
 
-def publish_proto_messages(project_id, topic_id):
+def publish_proto_messages(project_id, topic_id, proto_file):
     """Publish a BINARY or JSON encoded message to a topic configured with a protobuf schema."""
     # [START pubsub_publish_proto_messages]
     pass
     # [END pubsub_publish_proto_messages]
 
 
-def subscribe_with_avro_schema(project_id, subscription_id):
+def subscribe_with_avro_schema(project_id, subscription_id, avsc_file, timeout=None):
     """Receive and decode messages sent to a topic with an Avro schema."""
     # [START pubsub_subscribe_avro_records]
-    pass
+    import avro
+    from avro.io import BinaryDecoder, DatumReader
+    from concurrent.futures import TimeoutError
+    import io
+    import json
+    from google.cloud.pubsub import SubscriberClient
+
+    # TODO(developer)
+    # project_id = "your-project-id"
+    # subscription_id = "your-subscription-id"
+    # avsc_file = "path/to/an/avro/schema/file/(.avsc)/formatted/in/json"
+    # Number of seconds the subscriber listens for messages
+    # timeout = 5.0
+
+    subscriber = SubscriberClient()
+    subscription_path = subscriber.subscription_path(project_id, subscription_id)
+
+    avro_schema = avro.schema.parse(open(avsc_file, "rb").read())
+
+    def callback(message):
+        # Get the message serialization type.
+        encoding = message.attributes.get("googclient_schemaencoding")
+        # Deserialize the message data accordingly.
+        if encoding == "BINARY":
+            bout = io.BytesIO(message.data)
+            decoder = BinaryDecoder(bout)
+            reader = DatumReader(avro_schema)
+            data = reader.read(decoder)
+            print(f"Received a binary-encoded message:\n{data}")
+        elif encoding == "JSON":
+            data = json.loads(message.data)
+            print(f"Received a JSON-encoded message:\n{data}")
+        else:
+            print(f"Received a message with no encoding:\n{message}")
+
+        message.ack()
+
+    streaming_pull_future = subscriber.subscribe(subscription_path, callback=callback)
+    print(f"Listening for messages on {subscription_path}..\n")
+
+    # Wrap subscriber in a 'with' block to automatically call close() when done.
+    with subscriber:
+        try:
+            # When `timeout` is not set, result() will block indefinitely,
+            # unless an exception occurs first.
+            streaming_pull_future.result(timeout=timeout)
+        except TimeoutError:
+            streaming_pull_future.cancel()
     # [END pubsub_subscribe_avro_records]
 
 
@@ -219,7 +316,8 @@ def subscribe_with_proto_schema(project_id, subscription_id):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter,
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument("project_id", help="Your Google Cloud project ID")
 
@@ -250,12 +348,13 @@ if __name__ == "__main__":
     )
     create_topic_with_schema_parser.add_argument("topic_id")
     create_topic_with_schema_parser.add_argument("schema_id")
-    create_topic_with_schema_parser.add_argument("encoding")
+    create_topic_with_schema_parser.add_argument("message_encoding")
 
     publish_avro_records_parser = subparsers.add_parser(
         "publish-avro", help=publish_avro_records.__doc__
     )
     publish_avro_records_parser.add_argument("topic_id")
+    publish_avro_records_parser.add_argument("avsc_file")
 
     publish_proto_messages_parser = subparsers.add_parser(
         "publish-proto", help=publish_proto_messages.__doc__
@@ -266,6 +365,10 @@ if __name__ == "__main__":
         "receive-avro", help=subscribe_with_avro_schema.__doc__
     )
     subscribe_with_avro_schema_parser.add_argument("subscription_id")
+    subscribe_with_avro_schema_parser.add_argument("avsc_file")
+    subscribe_with_avro_schema_parser.add_argument(
+        "timeout", default=None, type=float, nargs="?"
+    )
 
     subscribe_with_proto_schema_parser = subparsers.add_parser(
         "receive-proto", help=subscribe_with_proto_schema.__doc__
@@ -286,13 +389,15 @@ if __name__ == "__main__":
         delete_schema(args.project_id, args.schema_id)
     if args.command == "create-topic":
         create_topic_with_schema(
-            args.project_id, args.topic_id, args.schema_id, args.encoding
+            args.project_id, args.topic_id, args.schema_id, args.message_encoding
         )
     if args.command == "publish-avro":
-        publish_avro_records(args.project_id, args.topic_id)
+        publish_avro_records(args.project_id, args.topic_id, args.avsc_file)
     if args.command == "publish-proto":
-        publish_proto_messages(args.project_id, args.topic_id)
-    if args.command == "subscribe-avro":
-        subscribe_with_avro_schema(args.project_id, args.subscription_id)
-    if args.command == "subscribe-proto":
+        publish_proto_messages(args.project_id, args.topic_id, args.proto_file)
+    if args.command == "receive-avro":
+        subscribe_with_avro_schema(
+            args.project_id, args.subscription_id, args.avsc_file, args.timeout
+        )
+    if args.command == "receive-proto":
         subscribe_with_proto_schema(args.project_id, args.subscription_id)
