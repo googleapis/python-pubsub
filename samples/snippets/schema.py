@@ -18,14 +18,14 @@
 using the Cloud Pub/Sub API.
 
 For more information, see the README.md under /pubsub and the documentation
-at https://cloud.google.com/pubsub/docs.
+at https://cloud.google.com/pubsub/docs/schemas.
 """
 
 import argparse
 
 
 def create_avro_schema(project_id, schema_id, avsc_file):
-    """Create a schema resource from an Avro schema file formatted in JSON."""
+    """Create a schema resource from a JSON-formatted Avro schema file."""
     # [START pubsub_create_avro_schema]
     from google.api_core.exceptions import AlreadyExists
     from google.cloud.pubsub import SchemaServiceClient
@@ -198,7 +198,7 @@ def publish_avro_records(project_id, topic_id, avsc_file):
     import avro
     import io
     import json
-    from google.api_core.exceptions import NotFound, InvalidArgument
+    from google.api_core.exceptions import NotFound
     from google.cloud.pubsub import PublisherClient
     from google.pubsub_v1.types import Encoding
 
@@ -233,22 +233,21 @@ def publish_avro_records(project_id, topic_id, avsc_file):
             data = json.dumps(record).encode("utf-8")
             print(f"Preparing a JSON-encoded message:\n{data}")
         else:
-            raise InvalidArgument(ValueError)
+            print(f"No encoding specified in {topic_path}. Abort.")
+            exit(0)
 
         future = publisher_client.publish(topic_path, data)
         print(f"Published message ID: {future.result()}")
 
     except NotFound:
         print(f"{topic_id} not found.")
-    except InvalidArgument:
-        print(f"No encoding specified in {topic_path}. Abort.")
     # [END pubsub_publish_avro_records]
 
 
 def publish_proto_messages(project_id, topic_id):
     """Publish a BINARY or JSON encoded message to a topic configured with a protobuf schema."""
     # [START pubsub_publish_proto_messages]
-    from google.api_core.exceptions import NotFound, InvalidArgument
+    from google.api_core.exceptions import NotFound
     from google.cloud.pubsub import PublisherClient
     from google.protobuf.json_format import MessageToJson
     from google.pubsub_v1.types import Encoding
@@ -281,15 +280,14 @@ def publish_proto_messages(project_id, topic_id):
             data = str(json_object).encode("utf-8")
             print(f"Preparing a JSON-encoded message:\n{data}")
         else:
-            raise InvalidArgument(ValueError)
+            print(f"No encoding specified in {topic_path}. Abort.")
+            exit(0)
 
         future = publisher_client.publish(topic_path, data)
         print(f"Published message ID: {future.result()}")
 
     except NotFound:
         print(f"{topic_id} not found.")
-    except InvalidArgument:
-        print(f"No encoding specified in {topic_path}. Abort.")
     # [END pubsub_publish_proto_messages]
 
 

@@ -270,7 +270,7 @@ Schema
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 .. image:: https://gstatic.com/cloudssh/images/open-btn.png
-   :target: https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com//googleapis/python-pubsub&page=editor&open_in_editor=samples/snippets/iam.py,samples/snippets/README.rst
+   :target: https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com//googleapis/python-pubsub&page=editor&open_in_editor=samples/snippets/schema.py,samples/snippets/README.rst
 
 
 
