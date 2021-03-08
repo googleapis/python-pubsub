@@ -14,10 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 import uuid
 
 from google.api_core.exceptions import NotFound
-import google.auth
 from google.cloud.pubsub import PublisherClient, SchemaServiceClient, SubscriberClient
 from google.pubsub_v1.types import Encoding
 import pytest
@@ -25,6 +25,10 @@ import pytest
 import schema
 
 UUID = uuid.uuid4().hex
+try:
+    PROJECT_ID = os.environ["GOOGLE_CLOUD_PROJECT"]
+except KeyError:
+    raise KeyError("Need to set GOOGLE_CLOUD_PROJECT as an environment variable.")
 AVRO_TOPIC_ID = f"schema-test-avro-topic-{UUID}"
 PROTO_TOPIC_ID = f"schema-test-proto-topic-{UUID}"
 AVRO_SUBSCRIPTION_ID = f"schema-test-avro-subscription-{UUID}"
@@ -36,20 +40,14 @@ PROTO_FILE = "resources/us-states.proto"
 
 
 @pytest.fixture(scope="module")
-def project_id():
-    _, default_project_id = google.auth.default()
-    yield default_project_id
-
-
-@pytest.fixture(scope="module")
 def schema_client():
     schema_client = SchemaServiceClient()
     yield schema_client
 
 
 @pytest.fixture(scope="module")
-def avro_schema(project_id, schema_client):
-    avro_schema_path = schema_client.schema_path(project_id, AVRO_SCHEMA_ID)
+def avro_schema(schema_client):
+    avro_schema_path = schema_client.schema_path(PROJECT_ID, AVRO_SCHEMA_ID)
 
     yield avro_schema_path
 
@@ -60,8 +58,8 @@ def avro_schema(project_id, schema_client):
 
 
 @pytest.fixture(scope="module")
-def proto_schema(project_id, schema_client):
-    proto_schema_path = schema_client.schema_path(project_id, PROTO_SCHEMA_ID)
+def proto_schema(schema_client):
+    proto_schema_path = schema_client.schema_path(PROJECT_ID, PROTO_SCHEMA_ID)
 
     yield proto_schema_path
 
@@ -77,10 +75,10 @@ def publisher_client():
 
 
 @pytest.fixture(scope="module")
-def avro_topic(project_id, publisher_client, avro_schema):
+def avro_topic(publisher_client, avro_schema):
     from google.pubsub_v1.types import Encoding
 
-    avro_topic_path = publisher_client.topic_path(project_id, AVRO_TOPIC_ID)
+    avro_topic_path = publisher_client.topic_path(PROJECT_ID, AVRO_TOPIC_ID)
 
     try:
         avro_topic = publisher_client.get_topic(request={"topic": avro_topic_path})
@@ -101,8 +99,8 @@ def avro_topic(project_id, publisher_client, avro_schema):
 
 
 @pytest.fixture(scope="module")
-def proto_topic(project_id, publisher_client, proto_schema):
-    proto_topic_path = publisher_client.topic_path(project_id, PROTO_TOPIC_ID)
+def proto_topic(publisher_client, proto_schema):
+    proto_topic_path = publisher_client.topic_path(PROJECT_ID, PROTO_TOPIC_ID)
 
     try:
         proto_topic = publisher_client.get_topic(request={"topic": proto_topic_path})
@@ -130,9 +128,9 @@ def subscriber_client():
 
 
 @pytest.fixture(scope="module")
-def avro_subscription(project_id, subscriber_client, avro_topic):
+def avro_subscription(subscriber_client, avro_topic):
     avro_subscription_path = subscriber_client.subscription_path(
-        project_id, AVRO_SUBSCRIPTION_ID
+        PROJECT_ID, AVRO_SUBSCRIPTION_ID
     )
 
     try:
@@ -152,9 +150,9 @@ def avro_subscription(project_id, subscriber_client, avro_topic):
 
 
 @pytest.fixture(scope="module")
-def proto_subscription(project_id, subscriber_client, proto_topic):
+def proto_subscription(subscriber_client, proto_topic):
     proto_subscription_path = subscriber_client.subscription_path(
-        project_id, PROTO_SUBSCRIPTION_ID
+        PROJECT_ID, PROTO_SUBSCRIPTION_ID
     )
 
     try:
@@ -173,47 +171,47 @@ def proto_subscription(project_id, subscriber_client, proto_topic):
     )
 
 
-def test_create_avro_schema(project_id, schema_client, avro_schema, capsys):
+def test_create_avro_schema(schema_client, avro_schema, capsys):
     try:
         schema_client.delete_schema(request={"name": avro_schema})
     except NotFound:
         pass
 
-    schema.create_avro_schema(project_id, AVRO_SCHEMA_ID, AVSC_FILE)
+    schema.create_avro_schema(PROJECT_ID, AVRO_SCHEMA_ID, AVSC_FILE)
 
     out, _ = capsys.readouterr()
     assert "Created a schema using an Avro schema file:" in out
     assert f"{avro_schema}" in out
 
 
-def test_create_proto_schema(project_id, schema_client, proto_schema, capsys):
+def test_create_proto_schema(schema_client, proto_schema, capsys):
     try:
         schema_client.delete_schema(request={"name": proto_schema})
     except NotFound:
         pass
 
-    schema.create_proto_schema(project_id, PROTO_SCHEMA_ID, PROTO_FILE)
+    schema.create_proto_schema(PROJECT_ID, PROTO_SCHEMA_ID, PROTO_FILE)
 
     out, _ = capsys.readouterr()
     assert "Created a schema using a protobuf schema file:" in out
     assert f"{proto_schema}" in out
 
 
-def test_get_schema(project_id, avro_schema, capsys):
-    schema.get_schema(project_id, AVRO_SCHEMA_ID)
+def test_get_schema(avro_schema, capsys):
+    schema.get_schema(PROJECT_ID, AVRO_SCHEMA_ID)
     out, _ = capsys.readouterr()
     assert "Got a schema" in out
     assert f"{avro_schema}" in out
 
 
-def test_list_schemas(project_id, capsys):
-    schema.list_schemas(project_id)
+def test_list_schemas(capsys):
+    schema.list_schemas(PROJECT_ID)
     out, _ = capsys.readouterr()
     assert "Listed schemas." in out
 
 
-def test_create_topic_with_schema(project_id, avro_schema, capsys):
-    schema.create_topic_with_schema(project_id, AVRO_TOPIC_ID, AVRO_SCHEMA_ID, "BINARY")
+def test_create_topic_with_schema(avro_schema, capsys):
+    schema.create_topic_with_schema(PROJECT_ID, AVRO_TOPIC_ID, AVRO_SCHEMA_ID, "BINARY")
     out, _ = capsys.readouterr()
     assert "Created a topic" in out
     assert f"{AVRO_TOPIC_ID}" in out
@@ -221,42 +219,40 @@ def test_create_topic_with_schema(project_id, avro_schema, capsys):
     assert "BINARY" in out
 
 
-def test_publish_avro_records(project_id, avro_schema, avro_topic, capsys):
-    schema.publish_avro_records(project_id, AVRO_TOPIC_ID, AVSC_FILE)
+def test_publish_avro_records(avro_schema, avro_topic, capsys):
+    schema.publish_avro_records(PROJECT_ID, AVRO_TOPIC_ID, AVSC_FILE)
     out, _ = capsys.readouterr()
     assert "Preparing a binary-encoded message" in out
     assert "Published message ID" in out
 
 
-def test_subscribe_with_avro_schema(
-    project_id, avro_schema, avro_topic, avro_subscription, capsys
-):
-    schema.publish_avro_records(project_id, AVRO_TOPIC_ID, AVSC_FILE)
+def test_subscribe_with_avro_schema(avro_schema, avro_topic, avro_subscription, capsys):
+    schema.publish_avro_records(PROJECT_ID, AVRO_TOPIC_ID, AVSC_FILE)
 
-    schema.subscribe_with_avro_schema(project_id, AVRO_SUBSCRIPTION_ID, AVSC_FILE, 9)
+    schema.subscribe_with_avro_schema(PROJECT_ID, AVRO_SUBSCRIPTION_ID, AVSC_FILE, 9)
     out, _ = capsys.readouterr()
     assert "Received a binary-encoded message:" in out
 
 
-def test_publish_proto_records(project_id, proto_topic, capsys):
-    schema.publish_proto_messages(project_id, PROTO_TOPIC_ID)
+def test_publish_proto_records(proto_topic, capsys):
+    schema.publish_proto_messages(PROJECT_ID, PROTO_TOPIC_ID)
     out, _ = capsys.readouterr()
     assert "Preparing a binary-encoded message" in out
     assert "Published message ID" in out
 
 
 def test_subscribe_with_proto_schema(
-    project_id, proto_schema, proto_topic, proto_subscription, capsys
+    proto_schema, proto_topic, proto_subscription, capsys
 ):
-    schema.publish_proto_messages(project_id, PROTO_TOPIC_ID)
+    schema.publish_proto_messages(PROJECT_ID, PROTO_TOPIC_ID)
 
-    schema.subscribe_with_proto_schema(project_id, PROTO_SUBSCRIPTION_ID, 9)
+    schema.subscribe_with_proto_schema(PROJECT_ID, PROTO_SUBSCRIPTION_ID, 9)
     out, _ = capsys.readouterr()
     assert "Received a binary-encoded message" in out
 
 
-def test_delete_schema(project_id, proto_schema, capsys):
-    schema.delete_schema(project_id, PROTO_SCHEMA_ID)
+def test_delete_schema(proto_schema, capsys):
+    schema.delete_schema(PROJECT_ID, PROTO_SCHEMA_ID)
     out, _ = capsys.readouterr()
     assert "Deleted a schema" in out
     assert f"{proto_schema}" in out
