@@ -216,7 +216,7 @@ def test_create_topic_with_schema(avro_schema, capsys):
     assert "Created a topic" in out
     assert f"{AVRO_TOPIC_ID}" in out
     assert f"{avro_schema}" in out
-    assert "BINARY" in out
+    assert "BINARY" in out or "2" in out
 
 
 def test_publish_avro_records(avro_schema, avro_topic, capsys):

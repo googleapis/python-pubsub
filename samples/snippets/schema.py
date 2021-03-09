@@ -153,7 +153,7 @@ def delete_schema(project_id, schema_id):
 def create_topic_with_schema(project_id, topic_id, schema_id, message_encoding):
     """Create a topic resource with a schema."""
     # [START pubsub_create_topic_with_schema]
-    from google.api_core.exceptions import AlreadyExists
+    from google.api_core.exceptions import AlreadyExists, InvalidArgument
     from google.cloud.pubsub import PublisherClient, SchemaServiceClient
     from google.pubsub_v1.types import Encoding
 
@@ -188,6 +188,8 @@ def create_topic_with_schema(project_id, topic_id, schema_id, message_encoding):
 
     except AlreadyExists:
         print(f"{topic_id} already exists.")
+    except InvalidArgument:
+        print("Please choose either BINARY or JSON as a valid message encoding type.")
     # [END pubsub_create_topic_with_schema]
 
 
@@ -397,8 +399,7 @@ def subscribe_with_proto_schema(project_id, subscription_id, timeout):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description=__doc__,
-        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument("project_id", help="Your Google Cloud project ID")
 
@@ -429,7 +430,9 @@ if __name__ == "__main__":
     )
     create_topic_with_schema_parser.add_argument("topic_id")
     create_topic_with_schema_parser.add_argument("schema_id")
-    create_topic_with_schema_parser.add_argument("message_encoding")
+    create_topic_with_schema_parser.add_argument(
+        "message_encoding", choices=["BINARY", "JSON"]
+    )
 
     publish_avro_records_parser = subparsers.add_parser(
         "publish-avro", help=publish_avro_records.__doc__
