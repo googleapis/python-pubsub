@@ -78,7 +78,7 @@ To run this sample:
 
 .. code-block:: bash
 
-    $ python quickstart/pub.py
+    $ python3 quickstart/pub.py
 
 
 Quickstart (Subscriber)
@@ -94,7 +94,7 @@ To run this sample:
 
 .. code-block:: bash
 
-    $ python quickstart/sub.py
+    $ python3 quickstart/sub.py
 
 
 Publisher
@@ -110,7 +110,7 @@ To run this sample:
 
 .. code-block:: bash
 
-    $ python publisher.py
+    $ python3 publisher.py
 
     usage: publisher.py [-h]
                         project_id
@@ -168,7 +168,7 @@ To run this sample:
 
 .. code-block:: bash
 
-    $ python subscriber.py
+    $ python3 subscriber.py
 
     usage: subscriber.py [-h]
                          project_id
@@ -232,7 +232,7 @@ To run this sample:
 
 .. code-block:: bash
 
-    $ python iam.py
+    $ python3 iam.py
 
     usage: iam.py [-h]
                   project_id
@@ -279,7 +279,7 @@ To run this sample:
 
 .. code-block:: bash
 
-    $ python schema.py
+    $ python3 schema.py
 
     usage: schema.py [-h]
                     project_id
