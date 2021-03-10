@@ -112,6 +112,14 @@ class StreamingPullManager(object):
         scheduler (~google.cloud.pubsub_v1.scheduler.Scheduler): The scheduler
             to use to process messages. If not provided, a thread pool-based
             scheduler will be used.
+        await_callbacks_on_shutdown (bool):
+            If ``True``, the ``close()`` method will wait until all scheduler threads
+            terminate and only then proceed with shutting down the remaining running
+            helper threads.
+
+            If ``False`` (default), the ``close()`` method will shut down the scheduler
+            in a non-blocking fashion, i.e. it will not wait for the currently executing
+            scheduler threads to terminate.
     """
 
     def __init__(
@@ -121,11 +129,13 @@ class StreamingPullManager(object):
         flow_control=types.FlowControl(),
         scheduler=None,
         use_legacy_flow_control=False,
+        await_callbacks_on_shutdown=False,
     ):
         self._client = client
         self._subscription = subscription
         self._flow_control = flow_control
         self._use_legacy_flow_control = use_legacy_flow_control
+        self._await_callbacks_on_shutdown = await_callbacks_on_shutdown
         self._ack_histogram = histogram.Histogram()
         self._last_histogram_size = 0
         self._ack_deadline = 10
@@ -512,7 +522,7 @@ class StreamingPullManager(object):
         # Start the stream heartbeater thread.
         self._heartbeater.start()
 
-    def close(self, reason=None, await_msg_callbacks=False):
+    def close(self, reason=None):
         """Stop consuming messages and shutdown all helper threads.
 
         This method is idempotent. Additional calls will have no effect.
@@ -521,15 +531,6 @@ class StreamingPullManager(object):
             reason (Any): The reason to close this. If None, this is considered
                 an "intentional" shutdown. This is passed to the callbacks
                 specified via :meth:`add_close_callback`.
-
-            await_msg_callbacks (bool):
-                If ``True``, the method will wait until all scheduler threads terminate
-                and only then proceed with the shutdown with the remaining shutdown
-                tasks,
-
-                If ``False`` (default), the method will shut down the scheduler in a
-                non-blocking fashion, i.e. it will not wait for the currently executing
-                scheduler threads to terminate.
         """
         with self._closing:
             if self._closed:
@@ -544,7 +545,7 @@ class StreamingPullManager(object):
             # Shutdown all helper threads
             _LOGGER.debug("Stopping scheduler.")
             dropped_messages = self._scheduler.shutdown(
-                await_msg_callbacks=await_msg_callbacks
+                await_msg_callbacks=self._await_callbacks_on_shutdown
             )
             self._scheduler = None
 

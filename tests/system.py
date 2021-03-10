@@ -645,12 +645,13 @@ class TestStreamingPull(object):
             callback=callback,
             flow_control=flow_control,
             scheduler=scheduler,
+            await_callbacks_on_shutdown=True,
         )
 
         try:
             subscription_future.result(timeout=10)  # less than the sleep in callback
         except exceptions.TimeoutError:
-            subscription_future.cancel(await_msg_callbacks=True)
+            subscription_future.cancel()
 
         # The shutdown should have waited for the already executing callbacks to finish.
         assert len(processed_messages) == 3
@@ -666,7 +667,7 @@ class TestStreamingPull(object):
             all_done.wait()
 
         subscription_future = subscriber.subscribe(
-            subscription_path, callback=callback2
+            subscription_path, callback=callback2, await_callbacks_on_shutdown=False
         )
 
         try:
@@ -674,7 +675,7 @@ class TestStreamingPull(object):
         except threading.BrokenBarrierError:  # PRAGMA: no cover
             pytest.fail("The remaining messages have not been re-delivered in time.")
         finally:
-            subscription_future.cancel(await_msg_callbacks=False)
+            subscription_future.cancel()
 
         # There should be 7 messages left that were not yet processed and none of them
         # should be a message that should have already been sucessfully processed in the
