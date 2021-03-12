@@ -38,6 +38,7 @@ import google.cloud.pubsub_v1.subscriber.scheduler
 from google.pubsub_v1 import types as gapic_types
 
 _LOGGER = logging.getLogger(__name__)
+_REGULAR_SHUTDOWN_THREAD_NAME = "Thread-RegularStreamShutdown"
 _RPC_ERROR_THREAD_NAME = "Thread-OnRpcTerminated"
 _RETRYABLE_STREAM_ERRORS = (
     exceptions.DeadlineExceeded,
@@ -527,10 +528,28 @@ class StreamingPullManager(object):
 
         This method is idempotent. Additional calls will have no effect.
 
+        The method does not block, it delegates the shutdown operations to a background
+        thread.
+
         Args:
-            reason (Any): The reason to close this. If None, this is considered
+            reason (Any): The reason to close this. If ``None``, this is considered
                 an "intentional" shutdown. This is passed to the callbacks
                 specified via :meth:`add_close_callback`.
+        """
+        thread = threading.Thread(
+            name=_REGULAR_SHUTDOWN_THREAD_NAME,
+            daemon=True,
+            target=self._shutdown,
+            kwargs={"reason": reason},
+        )
+        thread.start()
+
+    def _shutdown(self, reason=None):
+        """Run the actual shutdown sequence (stop the stream and all helper threads).
+
+        Args:
+            reason (Any): The reason to close the stream. If ``None``, this is
+                considered an "intentional" shutdown.
         """
         with self._closing:
             if self._closed:
@@ -746,7 +765,7 @@ class StreamingPullManager(object):
         _LOGGER.info("RPC termination has signaled streaming pull manager shutdown.")
         error = _wrap_as_exception(future)
         thread = threading.Thread(
-            name=_RPC_ERROR_THREAD_NAME, target=self.close, kwargs={"reason": error}
+            name=_RPC_ERROR_THREAD_NAME, target=self._shutdown, kwargs={"reason": error}
         )
         thread.daemon = True
         thread.start()

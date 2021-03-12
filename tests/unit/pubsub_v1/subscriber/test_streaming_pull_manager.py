@@ -988,7 +988,7 @@ def test__on_rpc_done(thread):
     manager._on_rpc_done(mock.sentinel.error)
 
     thread.assert_called_once_with(
-        name=mock.ANY, target=manager.close, kwargs={"reason": mock.ANY}
+        name=mock.ANY, target=manager._shutdown, kwargs={"reason": mock.ANY}
     )
     _, kwargs = thread.call_args
     reason = kwargs["kwargs"]["reason"]

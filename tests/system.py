@@ -652,8 +652,10 @@ class TestStreamingPull(object):
             subscription_future.result(timeout=10)  # less than the sleep in callback
         except exceptions.TimeoutError:
             subscription_future.cancel()
+            subscription_future.result()  # block until shutdown completes
 
-        # The shutdown should have waited for the already executing callbacks to finish.
+        # Blocking om shutdown should have waited for the already executing
+        # callbacks to finish.
         assert len(processed_messages) == 3
 
         # The messages that were not processed should have been NACK-ed and we should
@@ -676,6 +678,7 @@ class TestStreamingPull(object):
             pytest.fail("The remaining messages have not been re-delivered in time.")
         finally:
             subscription_future.cancel()
+            subscription_future.result()  # block until shutdown completes
 
         # There should be 7 messages left that were not yet processed and none of them
         # should be a message that should have already been sucessfully processed in the
