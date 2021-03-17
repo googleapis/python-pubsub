@@ -201,11 +201,13 @@ class Client(object):
                 how callbacks are executed concurrently. This object must not be shared
                 across multiple SubscriberClients.
             await_callbacks_on_shutdown (bool):
-                If ``True``, the returned future's ``close()`` method will block until
-                the background stream and its helper threads have has been terminated,
-                and all currently executing message callbacks are done processing.
+                If ``True``, after canceling the returned future, the latter's
+                ``result()`` method will block until the background stream and its
+                helper threads have been terminated, and all currently executing message
+                callbacks are done processing.
 
-                If ``False`` (default), the returned future's ``close()`` method returns
+                If ``False`` (default), the returned future's ``result()`` method will
+                not block after canceling the future. The method will instead return
                 immediately after the background stream and its helper threads have been
                 terminated, but some of the message callback threads might still be
                 running at that point.

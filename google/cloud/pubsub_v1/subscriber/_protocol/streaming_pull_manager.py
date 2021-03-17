@@ -113,13 +113,17 @@ class StreamingPullManager(object):
             to use to process messages. If not provided, a thread pool-based
             scheduler will be used.
         await_callbacks_on_shutdown (bool):
-            If ``True``, the ``close()`` method will wait until all scheduler threads
+            If ``True``, the shutdown thread will wait until all scheduler threads
             terminate and only then proceed with shutting down the remaining running
             helper threads.
 
-            If ``False`` (default), the ``close()`` method will shut down the scheduler
-            in a non-blocking fashion, i.e. it will not wait for the currently executing
-            scheduler threads to terminate.
+            If ``False`` (default), the shutdown thread will shut the scheduler down,
+            but it will not wait for the currently executing scheduler threads to
+            terminate.
+
+            This setting affects when the on close callbacks get invoked, and
+            consequently, when the StreamingPullFuture associated with the stream gets
+            resolved.
     """
 
     def __init__(
