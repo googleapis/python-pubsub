@@ -22,7 +22,6 @@ import threading
 import uuid
 
 import grpc
-import six
 
 from google.api_core import bidi
 from google.api_core import exceptions
@@ -417,7 +416,7 @@ class StreamingPullManager(object):
                 deadline = request.modify_deadline_seconds[n]
                 deadline_to_ack_ids[deadline].append(ack_id)
 
-            for deadline, ack_ids in six.iteritems(deadline_to_ack_ids):
+            for deadline, ack_ids in deadline_to_ack_ids.items():
                 self._client.modify_ack_deadline(
                     subscription=self._subscription,
                     ack_ids=ack_ids,

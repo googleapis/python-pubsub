@@ -19,6 +19,7 @@ import uuid
 
 import backoff
 from flaky import flaky
+from google.api_core.exceptions import InternalServerError
 from google.api_core.exceptions import NotFound
 from google.api_core.exceptions import Unknown
 from google.cloud import pubsub_v1
@@ -239,13 +240,14 @@ def test_create_subscription_with_dead_letter_policy(
     assert f"After {DEFAULT_MAX_DELIVERY_ATTEMPTS} delivery attempts." in out
 
 
+@flaky(max_runs=3, min_passes=1)
 def test_receive_with_delivery_attempts(
     publisher_client, topic, dead_letter_topic, subscription_dlq, capsys
 ):
 
     # The dlq subscription raises 404 before it's ready.
     # We keep retrying up to 10 minutes for mitigating the flakiness.
-    @backoff.on_exception(backoff.expo, (Unknown, NotFound), max_time=600)
+    @backoff.on_exception(backoff.expo, (Unknown, NotFound), max_time=120)
     def run_sample():
         _publish_messages(publisher_client, topic)
 
@@ -258,14 +260,22 @@ def test_receive_with_delivery_attempts(
     assert "With delivery attempts: " in out
 
 
+@flaky(max_runs=3, min_passes=1)
 def test_update_dead_letter_policy(subscription_dlq, dead_letter_topic, capsys):
-    _ = subscriber.update_subscription_with_dead_letter_policy(
-        PROJECT_ID,
-        TOPIC,
-        SUBSCRIPTION_DLQ,
-        DEAD_LETTER_TOPIC,
-        UPDATED_MAX_DELIVERY_ATTEMPTS,
-    )
+
+    # We saw internal server error that suggests to retry.
+
+    @backoff.on_exception(backoff.expo, (Unknown, InternalServerError), max_time=60)
+    def run_sample():
+        subscriber.update_subscription_with_dead_letter_policy(
+            PROJECT_ID,
+            TOPIC,
+            SUBSCRIPTION_DLQ,
+            DEAD_LETTER_TOPIC,
+            UPDATED_MAX_DELIVERY_ATTEMPTS,
+        )
+
+    run_sample()
 
     out, _ = capsys.readouterr()
     assert dead_letter_topic in out
