@@ -145,8 +145,8 @@ class Client(object):
         a long time to process.
 
         The ``use_legacy_flow_control`` argument disables enforcing flow control
-        settings at the Cloud PubSub server and uses the less accurate method of
-        only enforcing flow control at the client side.
+        settings at the Cloud Pub/Sub server, and only the client side flow control
+        will be enforced.
 
         This method starts the receiver in the background and returns a
         *Future* representing its execution. Waiting on the future (calling
@@ -202,8 +202,8 @@ class Client(object):
             use_legacy_flow_control (bool):
                 If set to ``True``, it disables enforcing flow control settings on the
                 Cloud Pub/Sub server. Defaults to ``False``.
-                The less accurate method of enforcing flow control on the client side
-                is still enabled in both cases.
+                Mind that the client side flow control is always enforced, regardless of
+                this value.
 
         Returns:
             A :class:`~google.cloud.pubsub_v1.subscriber.futures.StreamingPullFuture`
