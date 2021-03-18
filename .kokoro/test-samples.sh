@@ -37,4 +37,4 @@ if [[ $KOKORO_BUILD_ARTIFACTS_SUBDIR = *"periodic"* ]]; then
     echo "--- IMPORTANT IMPORTANT IMPORTANT ---"
 fi
 
-exec ../../.kokoro/test-samples-impl.sh
+exec .kokoro/test-samples-impl.sh
