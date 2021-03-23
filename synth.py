@@ -76,7 +76,7 @@ count = s.replace(
     flags=re.MULTILINE | re.DOTALL,
 )
 
-if count < 18:
+if count < 15:
     raise Exception("Expected replacements for gRPC channel options not made.")
 
 # If the emulator is used, force an insecure gRPC channel to avoid SSL errors.
