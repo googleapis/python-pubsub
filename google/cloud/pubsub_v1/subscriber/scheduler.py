@@ -20,13 +20,10 @@ each message.
 
 import abc
 import concurrent.futures
-
-import six
-from six.moves import queue
+import queue
 
 
-@six.add_metaclass(abc.ABCMeta)
-class Scheduler(object):
+class Scheduler(metaclass=abc.ABCMeta):
     """Abstract base class for schedulers.
 
     Schedulers are used to schedule callbacks asynchronously.

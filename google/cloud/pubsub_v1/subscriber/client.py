@@ -122,6 +122,7 @@ class Client(object):
         flow_control=(),
         scheduler=None,
         use_legacy_flow_control=False,
+        await_callbacks_on_shutdown=False,
     ):
         """Asynchronously start receiving messages on a given subscription.
 
@@ -204,6 +205,17 @@ class Client(object):
                 Cloud Pub/Sub server. Defaults to ``False``.
                 Mind that the client side flow control is always enforced, regardless of
                 this value.
+            await_callbacks_on_shutdown (bool):
+                If ``True``, after canceling the returned future, the latter's
+                ``result()`` method will block until the background stream and its
+                helper threads have been terminated, and all currently executing message
+                callbacks are done processing.
+
+                If ``False`` (default), the returned future's ``result()`` method will
+                not block after canceling the future. The method will instead return
+                immediately after the background stream and its helper threads have been
+                terminated, but some of the message callback threads might still be
+                running at that point.
 
         Returns:
             A :class:`~google.cloud.pubsub_v1.subscriber.futures.StreamingPullFuture`
@@ -217,6 +229,7 @@ class Client(object):
             flow_control=flow_control,
             scheduler=scheduler,
             use_legacy_flow_control=use_legacy_flow_control,
+            await_callbacks_on_shutdown=await_callbacks_on_shutdown,
         )
 
         future = futures.StreamingPullFuture(manager)

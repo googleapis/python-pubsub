@@ -78,7 +78,36 @@ class PublisherAsyncClient:
         PublisherClient.parse_common_location_path
     )
 
-    from_service_account_file = PublisherClient.from_service_account_file
+    @classmethod
+    def from_service_account_info(cls, info: dict, *args, **kwargs):
+        """Creates an instance of this client using the provided credentials info.
+
+        Args:
+            info (dict): The service account private key info.
+            args: Additional arguments to pass to the constructor.
+            kwargs: Additional arguments to pass to the constructor.
+
+        Returns:
+            PublisherAsyncClient: The constructed client.
+        """
+        return PublisherClient.from_service_account_info.__func__(PublisherAsyncClient, info, *args, **kwargs)  # type: ignore
+
+    @classmethod
+    def from_service_account_file(cls, filename: str, *args, **kwargs):
+        """Creates an instance of this client using the provided credentials
+        file.
+
+        Args:
+            filename (str): The path to the service account private key json
+                file.
+            args: Additional arguments to pass to the constructor.
+            kwargs: Additional arguments to pass to the constructor.
+
+        Returns:
+            PublisherAsyncClient: The constructed client.
+        """
+        return PublisherClient.from_service_account_file.__func__(PublisherAsyncClient, filename, *args, **kwargs)  # type: ignore
+
     from_service_account_json = from_service_account_file
 
     @property
@@ -156,7 +185,7 @@ class PublisherAsyncClient:
         (https://cloud.google.com/pubsub/docs/admin#resource_names).
 
         Args:
-            request (:class:`~.pubsub.Topic`):
+            request (:class:`google.pubsub_v1.types.Topic`):
                 The request object. A topic resource.
             name (:class:`str`):
                 Required. The name of the topic. It must have the format
@@ -167,6 +196,7 @@ class PublisherAsyncClient:
                 plus (``+``) or percent signs (``%``). It must be
                 between 3 and 255 characters in length, and it must not
                 start with ``"goog"``.
+
                 This corresponds to the ``name`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
@@ -178,7 +208,7 @@ class PublisherAsyncClient:
                 sent along with the request as metadata.
 
         Returns:
-            ~.pubsub.Topic:
+            google.pubsub_v1.types.Topic:
                 A topic resource.
         """
         # Create or coerce a protobuf request object.
@@ -237,7 +267,7 @@ class PublisherAsyncClient:
         properties of a topic are not modifiable.
 
         Args:
-            request (:class:`~.pubsub.UpdateTopicRequest`):
+            request (:class:`google.pubsub_v1.types.UpdateTopicRequest`):
                 The request object. Request for the UpdateTopic method.
 
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
@@ -247,7 +277,7 @@ class PublisherAsyncClient:
                 sent along with the request as metadata.
 
         Returns:
-            ~.pubsub.Topic:
+            google.pubsub_v1.types.Topic:
                 A topic resource.
         """
         # Create or coerce a protobuf request object.
@@ -296,16 +326,17 @@ class PublisherAsyncClient:
         the topic does not exist.
 
         Args:
-            request (:class:`~.pubsub.PublishRequest`):
+            request (:class:`google.pubsub_v1.types.PublishRequest`):
                 The request object. Request for the Publish method.
             topic (:class:`str`):
                 Required. The messages in the request will be published
                 on this topic. Format is
                 ``projects/{project}/topics/{topic}``.
+
                 This corresponds to the ``topic`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
-            messages (:class:`Sequence[~.pubsub.PubsubMessage]`):
+            messages (:class:`Sequence[google.pubsub_v1.types.PubsubMessage]`):
                 Required. The messages to publish.
                 This corresponds to the ``messages`` field
                 on the ``request`` instance; if ``request`` is provided, this
@@ -318,8 +349,8 @@ class PublisherAsyncClient:
                 sent along with the request as metadata.
 
         Returns:
-            ~.pubsub.PublishResponse:
-                Response for the ``Publish`` method.
+            google.pubsub_v1.types.PublishResponse:
+                Response for the Publish method.
         """
         # Create or coerce a protobuf request object.
         # Sanity check: If we got a request object, we should *not* have
@@ -388,11 +419,12 @@ class PublisherAsyncClient:
         r"""Gets the configuration of a topic.
 
         Args:
-            request (:class:`~.pubsub.GetTopicRequest`):
+            request (:class:`google.pubsub_v1.types.GetTopicRequest`):
                 The request object. Request for the GetTopic method.
             topic (:class:`str`):
                 Required. The name of the topic to get. Format is
                 ``projects/{project}/topics/{topic}``.
+
                 This corresponds to the ``topic`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
@@ -404,7 +436,7 @@ class PublisherAsyncClient:
                 sent along with the request as metadata.
 
         Returns:
-            ~.pubsub.Topic:
+            google.pubsub_v1.types.Topic:
                 A topic resource.
         """
         # Create or coerce a protobuf request object.
@@ -467,11 +499,12 @@ class PublisherAsyncClient:
         r"""Lists matching topics.
 
         Args:
-            request (:class:`~.pubsub.ListTopicsRequest`):
+            request (:class:`google.pubsub_v1.types.ListTopicsRequest`):
                 The request object. Request for the `ListTopics` method.
             project (:class:`str`):
                 Required. The name of the project in which to list
                 topics. Format is ``projects/{project-id}``.
+
                 This corresponds to the ``project`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
@@ -483,8 +516,8 @@ class PublisherAsyncClient:
                 sent along with the request as metadata.
 
         Returns:
-            ~.pagers.ListTopicsAsyncPager:
-                Response for the ``ListTopics`` method.
+            google.pubsub_v1.services.publisher.pagers.ListTopicsAsyncPager:
+                Response for the ListTopics method.
 
                 Iterating over this object will yield results and
                 resolve additional pages automatically.
@@ -557,13 +590,14 @@ class PublisherAsyncClient:
         topic.
 
         Args:
-            request (:class:`~.pubsub.ListTopicSubscriptionsRequest`):
+            request (:class:`google.pubsub_v1.types.ListTopicSubscriptionsRequest`):
                 The request object. Request for the
                 `ListTopicSubscriptions` method.
             topic (:class:`str`):
                 Required. The name of the topic that subscriptions are
                 attached to. Format is
                 ``projects/{project}/topics/{topic}``.
+
                 This corresponds to the ``topic`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
@@ -575,8 +609,8 @@ class PublisherAsyncClient:
                 sent along with the request as metadata.
 
         Returns:
-            ~.pagers.ListTopicSubscriptionsAsyncPager:
-                Response for the ``ListTopicSubscriptions`` method.
+            google.pubsub_v1.services.publisher.pagers.ListTopicSubscriptionsAsyncPager:
+                Response for the ListTopicSubscriptions method.
 
                 Iterating over this object will yield results and
                 resolve additional pages automatically.
@@ -653,13 +687,14 @@ class PublisherAsyncClient:
         in an existing subscription to the state captured by a snapshot.
 
         Args:
-            request (:class:`~.pubsub.ListTopicSnapshotsRequest`):
+            request (:class:`google.pubsub_v1.types.ListTopicSnapshotsRequest`):
                 The request object. Request for the `ListTopicSnapshots`
                 method.
             topic (:class:`str`):
                 Required. The name of the topic that snapshots are
                 attached to. Format is
                 ``projects/{project}/topics/{topic}``.
+
                 This corresponds to the ``topic`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
@@ -671,8 +706,8 @@ class PublisherAsyncClient:
                 sent along with the request as metadata.
 
         Returns:
-            ~.pagers.ListTopicSnapshotsAsyncPager:
-                Response for the ``ListTopicSnapshots`` method.
+            google.pubsub_v1.services.publisher.pagers.ListTopicSnapshotsAsyncPager:
+                Response for the ListTopicSnapshots method.
 
                 Iterating over this object will yield results and
                 resolve additional pages automatically.
@@ -749,12 +784,13 @@ class PublisherAsyncClient:
         field is set to ``_deleted-topic_``.
 
         Args:
-            request (:class:`~.pubsub.DeleteTopicRequest`):
+            request (:class:`google.pubsub_v1.types.DeleteTopicRequest`):
                 The request object. Request for the `DeleteTopic`
                 method.
             topic (:class:`str`):
                 Required. Name of the topic to delete. Format is
                 ``projects/{project}/topics/{topic}``.
+
                 This corresponds to the ``topic`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
@@ -823,7 +859,7 @@ class PublisherAsyncClient:
         will stop.
 
         Args:
-            request (:class:`~.pubsub.DetachSubscriptionRequest`):
+            request (:class:`google.pubsub_v1.types.DetachSubscriptionRequest`):
                 The request object. Request for the DetachSubscription
                 method.
 
@@ -834,7 +870,7 @@ class PublisherAsyncClient:
                 sent along with the request as metadata.
 
         Returns:
-            ~.pubsub.DetachSubscriptionResponse:
+            google.pubsub_v1.types.DetachSubscriptionResponse:
                 Response for the DetachSubscription
                 method. Reserved for future use.
 

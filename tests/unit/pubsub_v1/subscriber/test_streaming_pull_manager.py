@@ -532,8 +532,8 @@ def test_open_has_been_closed():
         manager.open(mock.sentinel.callback, mock.sentinel.on_callback_error)
 
 
-def make_running_manager():
-    manager = make_manager()
+def make_running_manager(**kwargs):
+    manager = make_manager(**kwargs)
     manager._consumer = mock.create_autospec(bidi.BackgroundConsumer, instance=True)
     manager._consumer.is_active = True
     manager._dispatcher = mock.create_autospec(dispatcher.Dispatcher, instance=True)
@@ -653,6 +653,24 @@ def test_close_callbacks():
     manager.close(reason="meep")
 
     callback.assert_called_once_with(manager, "meep")
+
+
+def test_close_blocking_scheduler_shutdown():
+    manager, _, _, _, _, _ = make_running_manager(await_callbacks_on_shutdown=True)
+    scheduler = manager._scheduler
+
+    manager.close()
+
+    scheduler.shutdown.assert_called_once_with(await_msg_callbacks=True)
+
+
+def test_close_nonblocking_scheduler_shutdown():
+    manager, _, _, _, _, _ = make_running_manager(await_callbacks_on_shutdown=False)
+    scheduler = manager._scheduler
+
+    manager.close()
+
+    scheduler.shutdown.assert_called_once_with(await_msg_callbacks=False)
 
 
 def test_close_nacks_internally_queued_messages():
@@ -970,7 +988,7 @@ def test__on_rpc_done(thread):
     manager._on_rpc_done(mock.sentinel.error)
 
     thread.assert_called_once_with(
-        name=mock.ANY, target=manager.close, kwargs={"reason": mock.ANY}
+        name=mock.ANY, target=manager._shutdown, kwargs={"reason": mock.ANY}
     )
     _, kwargs = thread.call_args
     reason = kwargs["kwargs"]["reason"]
