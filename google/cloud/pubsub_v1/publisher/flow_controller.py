@@ -285,7 +285,9 @@ class FlowController(object):
         if total_bytes is None:
             total_bytes = self._total_bytes
 
-        if reserved_bytes is None:
+        # The following check is here for completness even though it always passes (no
+        # calling code currently needs to override reserved_bytes).
+        if reserved_bytes is None:  # pragma: no branch
             reserved_bytes = self._reserved_bytes
 
         return msg.format(
