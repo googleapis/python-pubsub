@@ -206,6 +206,14 @@ s.replace(
     "\n\g<0>",
 )
 
+# The namespace package declaration in google/cloud/__init__.py should be excluded
+# from coverage.
+s.replace(
+    ".coveragerc",
+    r"((?P<indent>[^\n\S]+)google/pubsub/__init__\.py)",
+    "\g<indent>google/cloud/__init__.py\n\g<0>",
+)
+
 # ----------------------------------------------------------------------------
 # Add templated files
 # ----------------------------------------------------------------------------
