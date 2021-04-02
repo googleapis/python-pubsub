@@ -201,10 +201,9 @@ class Client(object):
                 how callbacks are executed concurrently. This object must not be shared
                 across multiple SubscriberClients.
             use_legacy_flow_control (bool):
-                If set to ``True``, it disables enforcing flow control settings on the
-                Cloud Pub/Sub server. Defaults to ``False``.
-                Mind that the client side flow control is always enforced, regardless of
-                this value.
+                If set to ``True``, flow control at the Cloud Pub/Sub server is disabled,
+                though client-side flow control is still enabled. If set to ``False``
+                (default), both server-side and client-side flow control are enabled.
             await_callbacks_on_shutdown (bool):
                 If ``True``, after canceling the returned future, the latter's
                 ``result()`` method will block until the background stream and its
