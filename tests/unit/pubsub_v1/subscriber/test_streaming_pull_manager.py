@@ -550,23 +550,16 @@ def make_running_manager(**kwargs):
     )
 
 
-def await_manager_shutdown(timeout=None):  # pragma: NO COVER
+def await_manager_shutdown(manager, timeout=None):
     # NOTE: This method should be called after manager.close(), i.e. after the shutdown
-    # thread has been started.
-    shutdown_thread = next(
-        (
-            thread
-            for thread in threading.enumerate()
-            if thread.name == streaming_pull_manager._REGULAR_SHUTDOWN_THREAD_NAME
-        ),
-        None,
-    )
+    # thread has been created and started.
+    shutdown_thread = manager._regular_shutdown_thread
 
-    if shutdown_thread is None:
-        return  # Shutdown already finished.
+    if shutdown_thread is None:  # pragma: NO COVER
+        raise Exception("Shutdown thread does not exist on the manager instance.")
 
     shutdown_thread.join(timeout=timeout)
-    if shutdown_thread.is_alive():
+    if shutdown_thread.is_alive():  # pragma: NO COVER
         pytest.fail("Shutdown not completed in time.")
 
 
@@ -581,7 +574,7 @@ def test_close():
     ) = make_running_manager()
 
     manager.close()
-    await_manager_shutdown(timeout=3)
+    await_manager_shutdown(manager, timeout=3)
 
     consumer.stop.assert_called_once()
     leaser.stop.assert_called_once()
@@ -604,7 +597,7 @@ def test_close_inactive_consumer():
     consumer.is_active = False
 
     manager.close()
-    await_manager_shutdown(timeout=3)
+    await_manager_shutdown(manager, timeout=3)
 
     consumer.stop.assert_not_called()
     leaser.stop.assert_called_once()
@@ -618,7 +611,7 @@ def test_close_idempotent():
 
     manager.close()
     manager.close()
-    await_manager_shutdown(timeout=3)
+    await_manager_shutdown(manager, timeout=3)
 
     assert scheduler.shutdown.call_count == 1
 
@@ -663,7 +656,7 @@ def test_close_no_dispatcher_error():
     dispatcher.start()
 
     manager.close()
-    await_manager_shutdown(timeout=3)
+    await_manager_shutdown(manager, timeout=3)
 
     error_callback.assert_not_called()
 
@@ -675,7 +668,7 @@ def test_close_callbacks():
 
     manager.add_close_callback(callback)
     manager.close(reason="meep")
-    await_manager_shutdown(timeout=3)
+    await_manager_shutdown(manager, timeout=3)
 
     callback.assert_called_once_with(manager, "meep")
 
@@ -685,7 +678,7 @@ def test_close_blocking_scheduler_shutdown():
     scheduler = manager._scheduler
 
     manager.close()
-    await_manager_shutdown(timeout=3)
+    await_manager_shutdown(manager, timeout=3)
 
     scheduler.shutdown.assert_called_once_with(await_msg_callbacks=True)
 
@@ -695,7 +688,7 @@ def test_close_nonblocking_scheduler_shutdown():
     scheduler = manager._scheduler
 
     manager.close()
-    await_manager_shutdown(timeout=3)
+    await_manager_shutdown(manager, timeout=3)
 
     scheduler.shutdown.assert_called_once_with(await_msg_callbacks=False)
 
@@ -717,7 +710,7 @@ def test_close_nacks_internally_queued_messages():
     manager._messages_on_hold._messages_on_hold.append(messages[2])
 
     manager.close()
-    await_manager_shutdown(timeout=3)
+    await_manager_shutdown(manager, timeout=3)
 
     assert sorted(nacked_messages) == [b"msg1", b"msg2", b"msg3"]
 
