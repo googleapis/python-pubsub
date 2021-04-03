@@ -142,7 +142,7 @@ s.replace(
 )
 
 # Emit deprecation warning if return_immediately flag is set with synchronous pull.
-count = s.replace(
+s.replace(
     "google/pubsub_v1/services/subscriber/*client.py",
     r"import pkg_resources",
     "import warnings\n\g<0>",
@@ -169,6 +169,48 @@ count = s.replace(
 
 if count != 2:
     raise Exception("Too many or too few replacements in pull() methods.")
+
+# Silence deprecation warnings in pull() method flattened parameter tests.
+s.replace(
+    "tests/unit/gapic/pubsub_v1/test_subscriber.py",
+    "import mock",
+    "\g<0>\nimport warnings",
+)
+count = s.replace(
+    "tests/unit/gapic/pubsub_v1/test_subscriber.py",
+    textwrap.dedent(
+        r"""
+        ([^\n\S]+# Call the method with a truthy value for each flattened field,
+        [^\n\S]+# using the keyword arguments to the method\.)
+        \s+(client\.pull\(.*?\))"""
+    ),
+    """\n\g<1>
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=DeprecationWarning)
+            \g<2>""",
+    flags = re.MULTILINE | re.DOTALL,
+)
+
+if count < 1:
+    raise Exception("Catch warnings replacement failed.")
+
+count = s.replace(
+    "tests/unit/gapic/pubsub_v1/test_subscriber.py",
+    textwrap.dedent(
+        r"""
+        ([^\n\S]+# Call the method with a truthy value for each flattened field,
+        [^\n\S]+# using the keyword arguments to the method\.)
+        \s+response = (await client\.pull\(.*?\))"""
+    ),
+    """\n\g<1>
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=DeprecationWarning)
+            \g<2>""",
+    flags = re.MULTILINE | re.DOTALL,
+)
+
+if count < 1:
+    raise Exception("Catch warnings replacement failed.")
 
 # Make sure that client library version is present in user agent header.
 s.replace(
