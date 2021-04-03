@@ -262,7 +262,7 @@ s.replace(
 templated_files = gcp.CommonTemplates().py_library(
     microgenerator=True,
     samples=True,
-    cov_level=99,
+    cov_level=100,
     system_test_external_dependencies=["psutil"],
 )
 s.move(templated_files, excludes=[".coveragerc"])
