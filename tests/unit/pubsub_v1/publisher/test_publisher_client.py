@@ -84,7 +84,8 @@ def test_init_default_client_info():
 
 
 def test_init_w_custom_transport():
-    transport = PublisherGrpcTransport()
+    creds = mock.Mock(spec=credentials.Credentials)
+    transport = PublisherGrpcTransport(credentials=creds)
     client = publisher.Client(transport=transport)
 
     # A plain client should have an `api` (the underlying GAPIC) and a
@@ -97,8 +98,9 @@ def test_init_w_custom_transport():
 
 
 def test_init_w_api_endpoint():
+    creds = mock.Mock(spec=credentials.Credentials)
     client_options = {"api_endpoint": "testendpoint.google.com"}
-    client = publisher.Client(client_options=client_options)
+    client = publisher.Client(client_options=client_options, credentials=creds)
 
     assert isinstance(client.api, publisher_client.PublisherClient)
     assert (client.api._transport.grpc_channel._channel.target()).decode(
@@ -107,7 +109,8 @@ def test_init_w_api_endpoint():
 
 
 def test_init_w_empty_client_options():
-    client = publisher.Client(client_options={})
+    creds = mock.Mock(spec=credentials.Credentials)
+    client = publisher.Client(client_options={}, credentials=creds)
 
     assert isinstance(client.api, publisher_client.PublisherClient)
     assert (client.api._transport.grpc_channel._channel.target()).decode(
