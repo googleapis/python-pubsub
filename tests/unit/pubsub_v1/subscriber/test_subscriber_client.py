@@ -54,15 +54,17 @@ def test_init_default_client_info():
 
 
 def test_init_w_custom_transport():
-    transport = SubscriberGrpcTransport()
+    creds = mock.Mock(spec=credentials.Credentials)
+    transport = SubscriberGrpcTransport(credentials=creds)
     client = subscriber.Client(transport=transport)
     assert isinstance(client.api, subscriber_client.SubscriberClient)
     assert client.api._transport is transport
 
 
 def test_init_w_api_endpoint():
+    creds = mock.Mock(spec=credentials.Credentials)
     client_options = {"api_endpoint": "testendpoint.google.com"}
-    client = subscriber.Client(client_options=client_options)
+    client = subscriber.Client(client_options=client_options, credentials=creds)
 
     assert isinstance(client.api, subscriber_client.SubscriberClient)
     assert (client.api._transport.grpc_channel._channel.target()).decode(
@@ -71,7 +73,8 @@ def test_init_w_api_endpoint():
 
 
 def test_init_w_empty_client_options():
-    client = subscriber.Client(client_options={})
+    creds = mock.Mock(spec=credentials.Credentials)
+    client = subscriber.Client(client_options={}, credentials=creds)
 
     assert isinstance(client.api, subscriber_client.SubscriberClient)
     assert (client.api._transport.grpc_channel._channel.target()).decode(
@@ -181,7 +184,8 @@ def test_subscribe_options(manager_open):
 
 
 def test_close():
-    client = subscriber.Client()
+    creds = mock.Mock(spec=credentials.Credentials)
+    client = subscriber.Client(credentials=creds)
     patcher = mock.patch.object(client.api._transport.grpc_channel, "close")
 
     with patcher as patched_close:
@@ -191,7 +195,8 @@ def test_close():
 
 
 def test_closes_channel_as_context_manager():
-    client = subscriber.Client()
+    creds = mock.Mock(spec=credentials.Credentials)
+    client = subscriber.Client(credentials=creds)
     patcher = mock.patch.object(client.api._transport.grpc_channel, "close")
 
     with patcher as patched_close:
@@ -202,7 +207,8 @@ def test_closes_channel_as_context_manager():
 
 
 def test_streaming_pull_gapic_monkeypatch():
-    client = subscriber.Client()
+    creds = mock.Mock(spec=credentials.Credentials)
+    client = subscriber.Client(credentials=creds)
 
     with mock.patch("google.api_core.gapic_v1.method.wrap_method"):
         client.streaming_pull(requests=iter([]))
@@ -213,7 +219,8 @@ def test_streaming_pull_gapic_monkeypatch():
 
 
 def test_sync_pull_warning_if_return_immediately():
-    client = subscriber.Client()
+    creds = mock.Mock(spec=credentials.Credentials)
+    client = subscriber.Client(credentials=creds)
     subscription_path = "projects/foo/subscriptions/bar"
 
     with mock.patch.object(
@@ -233,7 +240,8 @@ def test_sync_pull_warning_if_return_immediately():
 async def test_sync_pull_warning_if_return_immediately_async():
     from google.pubsub_v1.services.subscriber.async_client import SubscriberAsyncClient
 
-    client = SubscriberAsyncClient()
+    creds = mock.Mock(spec=credentials.Credentials)
+    client = SubscriberAsyncClient(credentials=creds)
     subscription_path = "projects/foo/subscriptions/bar"
 
     patcher = mock.patch(
