@@ -17,7 +17,6 @@ from __future__ import division
 
 import inspect
 
-from google.auth import credentials
 import grpc
 
 import mock

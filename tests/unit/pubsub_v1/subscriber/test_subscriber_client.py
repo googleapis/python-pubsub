@@ -14,7 +14,6 @@
 
 import warnings
 
-from google.auth import credentials
 import grpc
 import mock
 import pytest
