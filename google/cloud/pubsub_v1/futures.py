@@ -14,6 +14,7 @@
 
 from __future__ import absolute_import
 
+import concurrent.futures
 import threading
 import uuid
 
@@ -38,6 +39,14 @@ class Future(google.api_core.future.Future):
             with that model. The ``wait()`` and ``set()`` methods will be
             used. If this argument is not provided, then a new
             :class:`threading.Event` will be created and used.
+
+        condition (Optional[Any]): A condition variable, with the same interface as
+            :class:`threading.Condition`. This is provided so that callers
+            with different concurrency models (e.g. ``threading`` or
+            ``multiprocessing``) can supply a condition that is compatible
+            with that model. The ``acquire()`` and ``release()`` methods will be
+            used. If this argument is not provided, then a new
+            :class:`threading.Condition` will be created and used.
     """
 
     # This could be a sentinel object or None, but the sentinel object's ID
@@ -45,7 +54,7 @@ class Future(google.api_core.future.Future):
     # actually being a result.
     _SENTINEL = uuid.uuid4()
 
-    def __init__(self, completed=None):
+    def __init__(self, completed=None, condition=None):
         self._result = self._SENTINEL
         self._exception = self._SENTINEL
         self._callbacks = []
@@ -53,36 +62,45 @@ class Future(google.api_core.future.Future):
             completed = threading.Event()
         self._completed = completed
 
+        # The following is here for compatibility with concurrent.futures.as_completed().
+        if condition is None:
+            condition = threading.Condition()
+        self._condition = condition
+        self._state = concurrent.futures._base.RUNNING  # Until it goes to FINISHED.
+        self._waiters = []
+
     def cancel(self):
         """Actions in Pub/Sub generally may not be canceled.
 
-        This method always returns False.
+        This method always returns ``False``.
         """
         return False
 
     def cancelled(self):
         """Actions in Pub/Sub generally may not be canceled.
 
-        This method always returns False.
+        This method always returns ``False``.
         """
         return False
 
     def running(self):
-        """Actions in Pub/Sub generally may not be canceled.
+        """A future is always considered running until it goes to the FINISHED state.
 
         Returns:
-            bool: ``True`` if this method has not yet completed, or
-                ``False`` if it has completed.
+            bool: ``True`` if the future has not yet finished, or
+                ``False`` if it has transitioned to the FINISHED state.
         """
         return not self.done()
 
     def done(self):
-        """Return True the future is done, False otherwise.
+        """Return ``True`` if the future is done, ``False`` otherwise.
 
-        This still returns True in failure cases; checking :meth:`result` or
+        This still returns ``True`` in failure cases; checking :meth:`result` or
         :meth:`exception` is the canonical way to assess success or failure.
         """
-        return self._exception != self._SENTINEL or self._result != self._SENTINEL
+        # The internal state is set to FINISHED when either of _exception or _result
+        # is set to a non-sentinel value, thus just checking the state is fine.
+        return self._state == concurrent.futures._base.FINISHED
 
     def result(self, timeout=None):
         """Resolve the future and return a value where appropriate.
@@ -121,11 +139,11 @@ class Future(google.api_core.future.Future):
         if not self._completed.wait(timeout=timeout):
             raise exceptions.TimeoutError("Timed out waiting for result.")
 
-        # If the batch completed successfully, this should return None.
+        # If the corresponding batch completed successfully, this should return None.
         if self._result != self._SENTINEL:
             return None
 
-        # Okay, this batch had an error; this should return it.
+        # Okay, the corresponding batch had an error; this should return it.
         return self._exception
 
     def add_done_callback(self, callback):
@@ -140,9 +158,12 @@ class Future(google.api_core.future.Future):
         Returns:
             None
         """
-        if self.done():
-            return callback(self)
-        self._callbacks.append(callback)
+        with self._condition:
+            if self._state != concurrent.futures._base.FINISHED:
+                self._callbacks.append(callback)
+                return
+
+        return callback(self)
 
     def set_result(self, result):
         """Set the result of the future to the provided result.
@@ -150,13 +171,20 @@ class Future(google.api_core.future.Future):
         Args:
             result (Any): The result
         """
-        # Sanity check: A future can only complete once.
-        if self.done():
-            raise RuntimeError("set_result can only be called once.")
+        with self._condition:
+            # Sanity check: A future can only complete once.
+            if self._state == concurrent.futures._base.FINISHED:
+                raise RuntimeError("set_result can only be called once.")
 
-        # Set the result and trigger the future.
-        self._result = result
-        self._trigger()
+            self._result = result
+            self._state = concurrent.futures._base.FINISHED
+            self._completed.set()
+
+            for waiter in self._waiters:
+                waiter.add_result(self)
+
+        for callback in self._callbacks:
+            callback(self)
 
     def set_exception(self, exception):
         """Set the result of the future to the given exception.
@@ -164,23 +192,17 @@ class Future(google.api_core.future.Future):
         Args:
             exception (:exc:`Exception`): The exception raised.
         """
-        # Sanity check: A future can only complete once.
-        if self.done():
-            raise RuntimeError("set_exception can only be called once.")
+        with self._condition:
+            # Sanity check: A future can only complete once.
+            if self._state == concurrent.futures._base.FINISHED:
+                raise RuntimeError("set_exception can only be called once.")
 
-        # Set the exception and trigger the future.
-        self._exception = exception
-        self._trigger()
+            self._exception = exception
+            self._state = concurrent.futures._base.FINISHED
+            self._completed.set()
 
-    def _trigger(self):
-        """Trigger all callbacks registered to this Future.
+            for waiter in self._waiters:
+                waiter.add_exception(self)
 
-        This method is called internally by the batch once the batch
-        completes.
-
-        Args:
-            message_id (str): The message ID, as a string.
-        """
-        self._completed.set()
         for callback in self._callbacks:
             callback(self)
