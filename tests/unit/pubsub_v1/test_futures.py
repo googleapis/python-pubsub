@@ -12,7 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import concurrent.futures
 import threading
+import time
 
 import mock
 import pytest
@@ -26,25 +28,36 @@ def _future(*args, **kwargs):
 
 
 def test_constructor_defaults():
-    with mock.patch.object(threading, "Event", autospec=True) as Event:
+    event_patcher = mock.patch.object(threading, "Event", autospec=True)
+    condition_patcher = mock.patch.object(threading, "Condition", autospec=True)
+
+    with event_patcher as Event, condition_patcher as Condition:
         future = _future()
 
     assert future._result == futures.Future._SENTINEL
     assert future._exception == futures.Future._SENTINEL
     assert future._callbacks == []
     assert future._completed is Event.return_value
+    assert future._condition is Condition.return_value
+    assert future._state == concurrent.futures._base.RUNNING
+    assert future._waiters == []
 
     Event.assert_called_once_with()
+    Condition.assert_called_once_with()
 
 
 def test_constructor_explicit_completed():
     completed = mock.sentinel.completed
-    future = _future(completed=completed)
+    condition = mock.sentinel.condition
+    future = _future(completed=completed, condition=condition)
 
     assert future._result == futures.Future._SENTINEL
     assert future._exception == futures.Future._SENTINEL
     assert future._callbacks == []
     assert future._completed is completed
+    assert future._condition is condition
+    assert future._state == concurrent.futures._base.RUNNING
+    assert future._waiters == []
 
 
 def test_cancel():
@@ -146,3 +159,45 @@ def test_set_exception_once_only():
     future.set_exception(ValueError("wah wah"))
     with pytest.raises(RuntimeError):
         future.set_exception(TypeError("other wah wah"))
+
+
+def test_as_completed_compatibility():
+    all_futures = {i: _future() for i in range(6)}
+    done_futures = []
+
+    def resolve_future(future_idx, delay=0):
+        time.sleep(delay)
+        future = all_futures[future_idx]
+        if future_idx % 2 == 0:
+            future.set_result(f"{future_idx}: I'm done!")
+        else:
+            future.set_exception(Exception(f"Future {future_idx} errored"))
+
+    all_futures[2].set_result("2: I'm done!")
+
+    # Start marking the futures as completed (either with success or error) at
+    # different times and check that ther "as completed" order is correct.
+    for future_idx, delay in ((0, 0.8), (3, 0.6), (1, 0.4), (5, 0.2)):
+        threading.Thread(
+            target=resolve_future, args=(future_idx, delay), daemon=True
+        ).start()
+
+    try:
+        # Use a loop instead of a list comprehension to gather futures completed
+        # before the timeout error occurs.
+        for future in concurrent.futures.as_completed(all_futures.values(), timeout=1):
+            done_futures.append(future)
+    except concurrent.futures.TimeoutError:
+        pass
+    else:  # pragma: NO COVER
+        pytest.fail("Not all Futures should have been recognized as completed.")
+
+    # NOTE: Future 4 was never resolved.
+    expected = [
+        all_futures[2],
+        all_futures[5],
+        all_futures[1],
+        all_futures[3],
+        all_futures[0],
+    ]
+    assert done_futures == expected
