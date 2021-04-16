@@ -110,6 +110,7 @@ __all__ = (
     "ModifyPushConfigRequest",
     "PublishRequest",
     "PublishResponse",
+    "PublisherClient",
     "PubsubMessage",
     "PullRequest",
     "PullResponse",
@@ -117,7 +118,6 @@ __all__ = (
     "ReceivedMessage",
     "RetryPolicy",
     "Schema",
-    "SchemaServiceClient",
     "SchemaSettings",
     "SchemaView",
     "SeekRequest",
@@ -135,5 +135,5 @@ __all__ = (
     "ValidateMessageResponse",
     "ValidateSchemaRequest",
     "ValidateSchemaResponse",
-    "PublisherClient",
+    "SchemaServiceClient",
 )
