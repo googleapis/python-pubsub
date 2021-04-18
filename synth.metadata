@@ -4,7 +4,7 @@
       "git": {
         "name": ".",
         "remote": "https://github.com/googleapis/python-pubsub.git",
-        "sha": "b8352f91c63e0cb7d64c4d0e557651248cd301b5"
+        "sha": "1e598ee9ff2aa184229daf9c986a71dad9572657"
       }
     },
     {
