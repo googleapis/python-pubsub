@@ -30,6 +30,8 @@ from google.pubsub_v1.services.subscriber import client as subscriber_client
 try:
     __version__ = pkg_resources.get_distribution("google-cloud-pubsub").version
 except pkg_resources.DistributionNotFound:
+    # Distribution might not be available if we are not running from within
+    # a PIP package.
     __version__ = "0.0"
 
 _BLACKLISTED_METHODS = (

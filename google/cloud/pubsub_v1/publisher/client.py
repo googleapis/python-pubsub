@@ -39,6 +39,8 @@ from google.pubsub_v1.services.publisher import client as publisher_client
 try:
     __version__ = pkg_resources.get_distribution("google-cloud-pubsub").version
 except pkg_resources.DistributionNotFound:
+    # Distribution might not be available if we are not running from within a
+    # PIP package.
     __version__ = "0.0"
 
 _LOGGER = logging.getLogger(__name__)
