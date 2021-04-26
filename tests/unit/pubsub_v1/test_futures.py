@@ -12,10 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import concurrent.futures
 import threading
+import time
 
 import mock
 import pytest
+import warnings
 
 from google.cloud.pubsub_v1 import exceptions
 from google.cloud.pubsub_v1 import futures
@@ -25,34 +28,23 @@ def _future(*args, **kwargs):
     return futures.Future(*args, **kwargs)
 
 
-def test_constructor_defaults():
-    with mock.patch.object(threading, "Event", autospec=True) as Event:
-        future = _future()
-
-    assert future._result == futures.Future._SENTINEL
-    assert future._exception == futures.Future._SENTINEL
-    assert future._callbacks == []
-    assert future._completed is Event.return_value
-
-    Event.assert_called_once_with()
+def test_constructor_default_no_warning():
+    with warnings.catch_warnings(record=True) as warned:
+        _future()
+    assert not warned
 
 
-def test_constructor_explicit_completed():
+def test_constructor_custom_completed_arg():
     completed = mock.sentinel.completed
-    future = _future(completed=completed)
 
-    assert future._result == futures.Future._SENTINEL
-    assert future._exception == futures.Future._SENTINEL
-    assert future._callbacks == []
-    assert future._completed is completed
+    with warnings.catch_warnings(record=True) as warned:
+        _future(completed=completed)
 
-
-def test_cancel():
-    assert _future().cancel() is False
-
-
-def test_cancelled():
-    assert _future().cancelled() is False
+    assert len(warned) == 1
+    assert issubclass(warned[0].category, DeprecationWarning)
+    warning_msg = str(warned[0].message)
+    assert "completed" in warning_msg
+    assert "not used" in warning_msg
 
 
 def test_running():
@@ -112,8 +104,8 @@ def test_add_done_callback_pending_batch():
     future = _future()
     callback = mock.Mock()
     future.add_done_callback(callback)
-    assert len(future._callbacks) == 1
-    assert callback in future._callbacks
+    assert len(future._done_callbacks) == 1
+    assert callback in future._done_callbacks
     assert callback.call_count == 0
 
 
@@ -137,12 +129,54 @@ def test_trigger():
 def test_set_result_once_only():
     future = _future()
     future.set_result("12345")
-    with pytest.raises(RuntimeError):
+    with pytest.raises(concurrent.futures.InvalidStateError):
         future.set_result("67890")
 
 
 def test_set_exception_once_only():
     future = _future()
     future.set_exception(ValueError("wah wah"))
-    with pytest.raises(RuntimeError):
+    with pytest.raises(concurrent.futures.InvalidStateError):
         future.set_exception(TypeError("other wah wah"))
+
+
+def test_as_completed_compatibility():
+    all_futures = {i: _future() for i in range(6)}
+    done_futures = []
+
+    def resolve_future(future_idx, delay=0):
+        time.sleep(delay)
+        future = all_futures[future_idx]
+        if future_idx % 2 == 0:
+            future.set_result(f"{future_idx}: I'm done!")
+        else:
+            future.set_exception(Exception(f"Future {future_idx} errored"))
+
+    all_futures[2].set_result("2: I'm done!")
+
+    # Start marking the futures as completed (either with success or error) at
+    # different times and check that ther "as completed" order is correct.
+    for future_idx, delay in ((0, 0.8), (3, 0.6), (1, 0.4), (5, 0.2)):
+        threading.Thread(
+            target=resolve_future, args=(future_idx, delay), daemon=True
+        ).start()
+
+    try:
+        # Use a loop instead of a list comprehension to gather futures completed
+        # before the timeout error occurs.
+        for future in concurrent.futures.as_completed(all_futures.values(), timeout=1):
+            done_futures.append(future)
+    except concurrent.futures.TimeoutError:
+        pass
+    else:  # pragma: NO COVER
+        pytest.fail("Not all Futures should have been recognized as completed.")
+
+    # NOTE: Future 4 was never resolved.
+    expected = [
+        all_futures[2],
+        all_futures[5],
+        all_futures[1],
+        all_futures[3],
+        all_futures[0],
+    ]
+    assert done_futures == expected

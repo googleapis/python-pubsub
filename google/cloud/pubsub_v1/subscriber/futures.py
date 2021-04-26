@@ -47,6 +47,8 @@ class StreamingPullFuture(futures.Future):
         """Stops pulling messages and shutdowns the background thread consuming
         messages.
         """
+        # NOTE: We circumvent the base future's self._state to track the cancellation
+        # state, as this state has different meaning with streaming pull futures.
         self._cancelled = True
         return self._manager.close()
 
