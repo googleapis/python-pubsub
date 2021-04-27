@@ -55,3 +55,19 @@ class Future(concurrent.futures.Future, google.api_core.future.Future):
         raise NotImplementedError(
             "Only used by executors from `concurrent.futures` package."
         )
+
+    def set_result(self, result):
+        """Set the return value of work associated with the future.
+
+        Do not use this method, it should only be used internally by the library and its
+        unit tests.
+        """
+        return super().set_result(result=result)
+
+    def set_exception(self, exception):
+        """Set the result of the future as being the given exception.
+
+        Do not use this method, it should only be used internally by the library and its
+        unit tests.
+        """
+        return super().set_exception(exception=exception)

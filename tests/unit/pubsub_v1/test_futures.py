@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import concurrent.futures
+import sys
 import threading
 import time
 
@@ -126,6 +127,10 @@ def test_trigger():
     callback.assert_called_once_with(future)
 
 
+@pytest.mark.skipif(
+    sys.version_info < (3, 8),
+    reason="InvalidStateError is only available in Python 3.8+",
+)
 def test_set_result_once_only():
     future = _future()
     future.set_result("12345")
@@ -133,6 +138,10 @@ def test_set_result_once_only():
         future.set_result("67890")
 
 
+@pytest.mark.skipif(
+    sys.version_info < (3, 8),
+    reason="InvalidStateError is only available in Python 3.8+",
+)
 def test_set_exception_once_only():
     future = _future()
     future.set_exception(ValueError("wah wah"))
