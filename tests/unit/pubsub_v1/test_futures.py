@@ -127,6 +127,17 @@ def test_trigger():
     callback.assert_called_once_with(future)
 
 
+def test_set_running_or_notify_cancel_not_implemented_error():
+    future = _future()
+    with pytest.raises(NotImplementedError) as exc_info:
+        future.set_running_or_notify_cancel()
+
+    assert exc_info.value.args
+    error_msg = exc_info.value.args[0]
+    assert "used by executors" in error_msg
+    assert "concurrent.futures" in error_msg
+
+
 @pytest.mark.skipif(
     sys.version_info < (3, 8),
     reason="InvalidStateError is only available in Python 3.8+",
