@@ -532,8 +532,8 @@ def test_open_has_been_closed():
         manager.open(mock.sentinel.callback, mock.sentinel.on_callback_error)
 
 
-def make_running_manager():
-    manager = make_manager()
+def make_running_manager(**kwargs):
+    manager = make_manager(**kwargs)
     manager._consumer = mock.create_autospec(bidi.BackgroundConsumer, instance=True)
     manager._consumer.is_active = True
     manager._dispatcher = mock.create_autospec(dispatcher.Dispatcher, instance=True)
@@ -550,6 +550,19 @@ def make_running_manager():
     )
 
 
+def await_manager_shutdown(manager, timeout=None):
+    # NOTE: This method should be called after manager.close(), i.e. after the shutdown
+    # thread has been created and started.
+    shutdown_thread = manager._regular_shutdown_thread
+
+    if shutdown_thread is None:  # pragma: NO COVER
+        raise Exception("Shutdown thread does not exist on the manager instance.")
+
+    shutdown_thread.join(timeout=timeout)
+    if shutdown_thread.is_alive():  # pragma: NO COVER
+        pytest.fail("Shutdown not completed in time.")
+
+
 def test_close():
     (
         manager,
@@ -561,6 +574,7 @@ def test_close():
     ) = make_running_manager()
 
     manager.close()
+    await_manager_shutdown(manager, timeout=3)
 
     consumer.stop.assert_called_once()
     leaser.stop.assert_called_once()
@@ -583,6 +597,7 @@ def test_close_inactive_consumer():
     consumer.is_active = False
 
     manager.close()
+    await_manager_shutdown(manager, timeout=3)
 
     consumer.stop.assert_not_called()
     leaser.stop.assert_called_once()
@@ -596,6 +611,7 @@ def test_close_idempotent():
 
     manager.close()
     manager.close()
+    await_manager_shutdown(manager, timeout=3)
 
     assert scheduler.shutdown.call_count == 1
 
@@ -640,6 +656,7 @@ def test_close_no_dispatcher_error():
     dispatcher.start()
 
     manager.close()
+    await_manager_shutdown(manager, timeout=3)
 
     error_callback.assert_not_called()
 
@@ -651,8 +668,29 @@ def test_close_callbacks():
 
     manager.add_close_callback(callback)
     manager.close(reason="meep")
+    await_manager_shutdown(manager, timeout=3)
 
     callback.assert_called_once_with(manager, "meep")
+
+
+def test_close_blocking_scheduler_shutdown():
+    manager, _, _, _, _, _ = make_running_manager(await_callbacks_on_shutdown=True)
+    scheduler = manager._scheduler
+
+    manager.close()
+    await_manager_shutdown(manager, timeout=3)
+
+    scheduler.shutdown.assert_called_once_with(await_msg_callbacks=True)
+
+
+def test_close_nonblocking_scheduler_shutdown():
+    manager, _, _, _, _, _ = make_running_manager(await_callbacks_on_shutdown=False)
+    scheduler = manager._scheduler
+
+    manager.close()
+    await_manager_shutdown(manager, timeout=3)
+
+    scheduler.shutdown.assert_called_once_with(await_msg_callbacks=False)
 
 
 def test_close_nacks_internally_queued_messages():
@@ -672,6 +710,7 @@ def test_close_nacks_internally_queued_messages():
     manager._messages_on_hold._messages_on_hold.append(messages[2])
 
     manager.close()
+    await_manager_shutdown(manager, timeout=3)
 
     assert sorted(nacked_messages) == [b"msg1", b"msg2", b"msg3"]
 
@@ -970,7 +1009,7 @@ def test__on_rpc_done(thread):
     manager._on_rpc_done(mock.sentinel.error)
 
     thread.assert_called_once_with(
-        name=mock.ANY, target=manager.close, kwargs={"reason": mock.ANY}
+        name=mock.ANY, target=manager._shutdown, kwargs={"reason": mock.ANY}
     )
     _, kwargs = thread.call_args
     reason = kwargs["kwargs"]["reason"]

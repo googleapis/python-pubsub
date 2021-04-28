@@ -40,10 +40,7 @@ from .client import SchemaServiceClient
 
 
 class SchemaServiceAsyncClient:
-    """ Service for doing schema-related operations.
-    EXPERIMENTAL: The Schema service is in development and may not
-    work yet.
-    """
+    """Service for doing schema-related operations."""
 
     _client: SchemaServiceClient
 
@@ -82,7 +79,36 @@ class SchemaServiceAsyncClient:
         SchemaServiceClient.parse_common_location_path
     )
 
-    from_service_account_file = SchemaServiceClient.from_service_account_file
+    @classmethod
+    def from_service_account_info(cls, info: dict, *args, **kwargs):
+        """Creates an instance of this client using the provided credentials info.
+
+        Args:
+            info (dict): The service account private key info.
+            args: Additional arguments to pass to the constructor.
+            kwargs: Additional arguments to pass to the constructor.
+
+        Returns:
+            SchemaServiceAsyncClient: The constructed client.
+        """
+        return SchemaServiceClient.from_service_account_info.__func__(SchemaServiceAsyncClient, info, *args, **kwargs)  # type: ignore
+
+    @classmethod
+    def from_service_account_file(cls, filename: str, *args, **kwargs):
+        """Creates an instance of this client using the provided credentials
+        file.
+
+        Args:
+            filename (str): The path to the service account private key json
+                file.
+            args: Additional arguments to pass to the constructor.
+            kwargs: Additional arguments to pass to the constructor.
+
+        Returns:
+            SchemaServiceAsyncClient: The constructed client.
+        """
+        return SchemaServiceClient.from_service_account_file.__func__(SchemaServiceAsyncClient, filename, *args, **kwargs)  # type: ignore
+
     from_service_account_json = from_service_account_file
 
     @property
@@ -160,20 +186,22 @@ class SchemaServiceAsyncClient:
         r"""Creates a schema.
 
         Args:
-            request (:class:`~.gp_schema.CreateSchemaRequest`):
+            request (:class:`google.pubsub_v1.types.CreateSchemaRequest`):
                 The request object. Request for the CreateSchema method.
             parent (:class:`str`):
                 Required. The name of the project in which to create the
                 schema. Format is ``projects/{project-id}``.
+
                 This corresponds to the ``parent`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
-            schema (:class:`~.gp_schema.Schema`):
+            schema (:class:`google.pubsub_v1.types.Schema`):
                 Required. The schema object to create.
 
                 This schema's ``name`` parameter is ignored. The schema
                 object returned by CreateSchema will have a ``name``
                 made using the given ``parent`` and ``schema_id``.
+
                 This corresponds to the ``schema`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
@@ -184,6 +212,7 @@ class SchemaServiceAsyncClient:
                 See
                 https://cloud.google.com/pubsub/docs/admin#resource_names
                 for resource name constraints.
+
                 This corresponds to the ``schema_id`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
@@ -195,7 +224,7 @@ class SchemaServiceAsyncClient:
                 sent along with the request as metadata.
 
         Returns:
-            ~.gp_schema.Schema:
+            google.pubsub_v1.types.Schema:
                 A schema resource.
         """
         # Create or coerce a protobuf request object.
@@ -252,11 +281,12 @@ class SchemaServiceAsyncClient:
         r"""Gets a schema.
 
         Args:
-            request (:class:`~.schema.GetSchemaRequest`):
+            request (:class:`google.pubsub_v1.types.GetSchemaRequest`):
                 The request object. Request for the GetSchema method.
             name (:class:`str`):
                 Required. The name of the schema to get. Format is
                 ``projects/{project}/schemas/{schema}``.
+
                 This corresponds to the ``name`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
@@ -268,7 +298,7 @@ class SchemaServiceAsyncClient:
                 sent along with the request as metadata.
 
         Returns:
-            ~.schema.Schema:
+            google.pubsub_v1.types.Schema:
                 A schema resource.
         """
         # Create or coerce a protobuf request object.
@@ -321,12 +351,13 @@ class SchemaServiceAsyncClient:
         r"""Lists schemas in a project.
 
         Args:
-            request (:class:`~.schema.ListSchemasRequest`):
+            request (:class:`google.pubsub_v1.types.ListSchemasRequest`):
                 The request object. Request for the `ListSchemas`
                 method.
             parent (:class:`str`):
                 Required. The name of the project in which to list
                 schemas. Format is ``projects/{project-id}``.
+
                 This corresponds to the ``parent`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
@@ -338,8 +369,8 @@ class SchemaServiceAsyncClient:
                 sent along with the request as metadata.
 
         Returns:
-            ~.pagers.ListSchemasAsyncPager:
-                Response for the ``ListSchemas`` method.
+            google.pubsub_v1.services.schema_service.pagers.ListSchemasAsyncPager:
+                Response for the ListSchemas method.
 
                 Iterating over this object will yield results and
                 resolve additional pages automatically.
@@ -401,12 +432,13 @@ class SchemaServiceAsyncClient:
         r"""Deletes a schema.
 
         Args:
-            request (:class:`~.schema.DeleteSchemaRequest`):
+            request (:class:`google.pubsub_v1.types.DeleteSchemaRequest`):
                 The request object. Request for the `DeleteSchema`
                 method.
             name (:class:`str`):
                 Required. Name of the schema to delete. Format is
                 ``projects/{project}/schemas/{schema}``.
+
                 This corresponds to the ``name`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
@@ -467,18 +499,20 @@ class SchemaServiceAsyncClient:
         r"""Validates a schema.
 
         Args:
-            request (:class:`~.gp_schema.ValidateSchemaRequest`):
+            request (:class:`google.pubsub_v1.types.ValidateSchemaRequest`):
                 The request object. Request for the `ValidateSchema`
                 method.
             parent (:class:`str`):
                 Required. The name of the project in which to validate
                 schemas. Format is ``projects/{project-id}``.
+
                 This corresponds to the ``parent`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
-            schema (:class:`~.gp_schema.Schema`):
+            schema (:class:`google.pubsub_v1.types.Schema`):
                 Required. The schema object to
                 validate.
+
                 This corresponds to the ``schema`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
@@ -490,8 +524,8 @@ class SchemaServiceAsyncClient:
                 sent along with the request as metadata.
 
         Returns:
-            ~.gp_schema.ValidateSchemaResponse:
-                Response for the ``ValidateSchema`` method.
+            google.pubsub_v1.types.ValidateSchemaResponse:
+                Response for the ValidateSchema method.
         """
         # Create or coerce a protobuf request object.
         # Sanity check: If we got a request object, we should *not* have
@@ -544,7 +578,7 @@ class SchemaServiceAsyncClient:
         r"""Validates a message against a schema.
 
         Args:
-            request (:class:`~.schema.ValidateMessageRequest`):
+            request (:class:`google.pubsub_v1.types.ValidateMessageRequest`):
                 The request object. Request for the `ValidateMessage`
                 method.
 
@@ -555,8 +589,8 @@ class SchemaServiceAsyncClient:
                 sent along with the request as metadata.
 
         Returns:
-            ~.schema.ValidateMessageResponse:
-                Response for the ``ValidateMessage`` method.
+            google.pubsub_v1.types.ValidateMessageResponse:
+                Response for the ValidateMessage method.
         """
         # Create or coerce a protobuf request object.
 

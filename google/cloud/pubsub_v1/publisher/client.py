@@ -21,8 +21,6 @@ import pkg_resources
 import threading
 import time
 
-import six
-
 from google.api_core import gapic_v1
 from google.auth.credentials import AnonymousCredentials
 from google.oauth2 import service_account
@@ -38,7 +36,12 @@ from google.cloud.pubsub_v1.publisher.flow_controller import FlowController
 from google.pubsub_v1 import types as gapic_types
 from google.pubsub_v1.services.publisher import client as publisher_client
 
-__version__ = pkg_resources.get_distribution("google-cloud-pubsub").version
+try:
+    __version__ = pkg_resources.get_distribution("google-cloud-pubsub").version
+except pkg_resources.DistributionNotFound:
+    # Distribution might not be available if we are not running from within a
+    # PIP package.
+    __version__ = "0.0"
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -49,14 +52,6 @@ _BLACKLISTED_METHODS = (
 )
 
 _raw_proto_pubbsub_message = gapic_types.PubsubMessage.pb()
-
-
-def _set_nested_value(container, value, keys):
-    current = container
-    for key in keys[:-1]:
-        current = current.setdefault(key, {})
-    current[keys[-1]] = value
-    return container
 
 
 @_gapic.add_methods(publisher_client.PublisherClient, blacklist=_BLACKLISTED_METHODS)
@@ -277,8 +272,6 @@ class Client(object):
             ordering_key: A string that identifies related messages for which
                 publish order should be respected. Message ordering must be
                 enabled for this client to use this feature.
-                EXPERIMENTAL: This feature is currently available in a closed
-                alpha. Please contact the Cloud Pub/Sub team to use it.
             retry (Optional[google.api_core.retry.Retry]): Designation of what
                 errors, if any, should be retried. If `ordering_key` is specified,
                 the total retry deadline will be changed to "infinity".
@@ -311,7 +304,7 @@ class Client(object):
         """
         # Sanity check: Is the data being sent as a bytestring?
         # If it is literally anything else, complain loudly about it.
-        if not isinstance(data, six.binary_type):
+        if not isinstance(data, bytes):
             raise TypeError(
                 "Data being published to Pub/Sub must be sent as a bytestring."
             )
@@ -324,9 +317,9 @@ class Client(object):
 
         # Coerce all attributes to text strings.
         for k, v in copy.copy(attrs).items():
-            if isinstance(v, six.text_type):
+            if isinstance(v, str):
                 continue
-            if isinstance(v, six.binary_type):
+            if isinstance(v, bytes):
                 attrs[k] = v.decode("utf-8")
                 continue
             raise TypeError(

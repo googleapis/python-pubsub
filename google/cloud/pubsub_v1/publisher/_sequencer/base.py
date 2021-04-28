@@ -16,18 +16,15 @@ from __future__ import absolute_import
 
 import abc
 
-import six
 
-
-@six.add_metaclass(abc.ABCMeta)
-class Sequencer(object):
+class Sequencer(metaclass=abc.ABCMeta):
     """The base class for sequencers for Pub/Sub publishing. A sequencer
        sequences messages to be published.
     """
 
     @staticmethod
     @abc.abstractmethod
-    def is_finished(self):
+    def is_finished(self):  # pragma: NO COVER
         """ Whether the sequencer is finished and should be cleaned up.
 
             Returns:
@@ -37,7 +34,7 @@ class Sequencer(object):
 
     @staticmethod
     @abc.abstractmethod
-    def unpause(self, message):
+    def unpause(self, message):  # pragma: NO COVER
         """ Unpauses this sequencer.
 
         Raises:
@@ -48,7 +45,7 @@ class Sequencer(object):
 
     @staticmethod
     @abc.abstractmethod
-    def publish(self, message, retry=None, timeout=None):
+    def publish(self, message, retry=None, timeout=None):  # pragma: NO COVER
         """ Publish message for this ordering key.
 
         Args:
