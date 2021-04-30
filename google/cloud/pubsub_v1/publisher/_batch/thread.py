@@ -207,7 +207,7 @@ class Batch(base.Batch):
 
     def _start_commit_thread(self):
         """Start a new thread to actually handle the commit."""
-        # NOTE: If the thread is *not* a daemon, a memory leak exists sue to a CPython issue.
+        # NOTE: If the thread is *not* a daemon, a memory leak exists due to a CPython issue.
         # https://github.com/googleapis/python-pubsub/issues/395#issuecomment-829910303
         # https://github.com/googleapis/python-pubsub/issues/395#issuecomment-830092418
         commit_thread = threading.Thread(

@@ -375,7 +375,7 @@ class Client(object):
 
     def _start_commit_thread(self):
         """Start a new thread to actually wait and commit the sequencers."""
-        # NOTE: If the thread is *not* a daemon, a memory leak exists sue to a CPython issue.
+        # NOTE: If the thread is *not* a daemon, a memory leak exists due to a CPython issue.
         # https://github.com/googleapis/python-pubsub/issues/395#issuecomment-829910303
         # https://github.com/googleapis/python-pubsub/issues/395#issuecomment-830092418
         self._commit_thread = threading.Thread(
