@@ -5,6 +5,34 @@
 [1]: https://pypi.org/project/google-cloud-pubsub/#history
 
 
+### [2.4.1](https://www.github.com/googleapis/python-pubsub/compare/v2.4.0...v2.4.1) (2021-05-06)
+
+
+### Bug Fixes
+
+* do not crash if distribution cannot be found when extracting semver ([#393](https://www.github.com/googleapis/python-pubsub/issues/393)) ([b7817f2](https://www.github.com/googleapis/python-pubsub/commit/b7817f2843d46dc672900d332b8b5791a7facdb8))
+* Memory leak when publishing messages. ([#406](https://www.github.com/googleapis/python-pubsub/issues/406)) ([3976580](https://www.github.com/googleapis/python-pubsub/commit/3976580ce1904ac63ff1726a35ea1b492524957a))
+* move await_msg_callbacks flag to subscribe() method ([#320](https://www.github.com/googleapis/python-pubsub/issues/320)) ([d40d027](https://www.github.com/googleapis/python-pubsub/commit/d40d02713c8c189937ae5c21d099b88a3131a59f))
+* Remove EXPERIMENTAL tag for ordering keys in publisher/client.py ([#324](https://www.github.com/googleapis/python-pubsub/issues/324)) ([b035b86](https://www.github.com/googleapis/python-pubsub/commit/b035b86fe59e336d30e32bf67809cc2390e75889)), closes [#321](https://www.github.com/googleapis/python-pubsub/issues/321)
+* Remove EXPERIMENTAL tag for ordering keys in types.py ([#323](https://www.github.com/googleapis/python-pubsub/issues/323)) ([659cd7a](https://www.github.com/googleapis/python-pubsub/commit/659cd7ae2784245d4217fbc722dac04bd3222d32))
+* **sample:** bump the max_time to 10 mins for a flaky test ([#311](https://www.github.com/googleapis/python-pubsub/issues/311)) ([e2678d4](https://www.github.com/googleapis/python-pubsub/commit/e2678d47c08e6b03782d2d744a4e630b933fdd51)), closes [#291](https://www.github.com/googleapis/python-pubsub/issues/291)
+* **sample:** mark test flaky ([#326](https://www.github.com/googleapis/python-pubsub/issues/326)) ([5a97ef1](https://www.github.com/googleapis/python-pubsub/commit/5a97ef1bb7512fe814a8f72a43b3e9698434cd8d))
+* **sample:** mitigate flakiness in subscriber_test ([#304](https://www.github.com/googleapis/python-pubsub/issues/304)) ([271a385](https://www.github.com/googleapis/python-pubsub/commit/271a3856d835967f18f6becdae5ad53d585d0ccf))
+* **sample:** retry InternalServerError ([#329](https://www.github.com/googleapis/python-pubsub/issues/329)) ([34c9b11](https://www.github.com/googleapis/python-pubsub/commit/34c9b11ae697c280f32642c3101b7f7da971f589)), closes [#321](https://www.github.com/googleapis/python-pubsub/issues/321)
+* SSL error when using the client with the emulator ([#297](https://www.github.com/googleapis/python-pubsub/issues/297)) ([83db672](https://www.github.com/googleapis/python-pubsub/commit/83db67239d3521457138699109f766d574a0a2c4))
+
+
+### Reverts
+
+* add graceful streaming pull shutdown ([#315](https://www.github.com/googleapis/python-pubsub/issues/315)) ([16bf588](https://www.github.com/googleapis/python-pubsub/commit/16bf58823020c6b20e03a21b8b1de46eda3a2340))
+
+
+### Documentation
+
+* add additional info on use_legacy_flow_control parameter ([#301](https://www.github.com/googleapis/python-pubsub/issues/301)) ([f47523e](https://www.github.com/googleapis/python-pubsub/commit/f47523eda640b08fcbca965c0edaaf90dcbda33f))
+* fix `create_topic()` call in README ([#360](https://www.github.com/googleapis/python-pubsub/issues/360)) ([f5eee4b](https://www.github.com/googleapis/python-pubsub/commit/f5eee4b13c17367d27d52c01d0aaf2884d77d49c))
+* remove EXPERIMENTAL tag from Schema service (via synth) ([#307](https://www.github.com/googleapis/python-pubsub/issues/307)) ([ad85202](https://www.github.com/googleapis/python-pubsub/commit/ad852028836520db779c5cc33689ffd7e5458a7d))
+
 ## [2.4.1](https://www.github.com/googleapis/python-pubsub/compare/v2.4.0...v2.4.1) (2021-03-30)
 
 ### Bug Fixes
