@@ -28,8 +28,8 @@ class StreamingPullFuture(futures.Future):
 
     def __init__(self, manager):
         super(StreamingPullFuture, self).__init__()
-        self._manager = manager
-        self._manager.add_close_callback(self._on_close_callback)
+        self.__manager = manager
+        self.__manager.add_close_callback(self._on_close_callback)
         self.__cancelled = False
 
     def _on_close_callback(self, manager, result):
@@ -50,7 +50,7 @@ class StreamingPullFuture(futures.Future):
         # NOTE: We circumvent the base future's self._state to track the cancellation
         # state, as this state has different meaning with streaming pull futures.
         self.__cancelled = True
-        return self._manager.close()
+        return self.__manager.close()
 
     def cancelled(self):
         """
