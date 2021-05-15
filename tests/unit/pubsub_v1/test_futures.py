@@ -19,7 +19,6 @@ import time
 
 import mock
 import pytest
-import warnings
 
 from google.cloud.pubsub_v1 import exceptions
 from google.cloud.pubsub_v1 import futures
@@ -27,25 +26,6 @@ from google.cloud.pubsub_v1 import futures
 
 def _future(*args, **kwargs):
     return futures.Future(*args, **kwargs)
-
-
-def test_constructor_default_no_warning():
-    with warnings.catch_warnings(record=True) as warned:
-        _future()
-    assert not warned
-
-
-def test_constructor_custom_completed_arg():
-    completed = mock.sentinel.completed
-
-    with warnings.catch_warnings(record=True) as warned:
-        _future(completed=completed)
-
-    assert len(warned) == 1
-    assert issubclass(warned[0].category, DeprecationWarning)
-    warning_msg = str(warned[0].message)
-    assert "completed" in warning_msg
-    assert "not used" in warning_msg
 
 
 def test_running():

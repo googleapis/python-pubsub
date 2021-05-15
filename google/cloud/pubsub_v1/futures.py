@@ -15,7 +15,6 @@
 from __future__ import absolute_import
 
 import concurrent.futures
-import warnings
 
 import google.api_core.future
 
@@ -28,21 +27,7 @@ class Future(concurrent.futures.Future, google.api_core.future.Future):
 
     This object should not be created directly, but is returned by other
     methods in this library.
-
-    Args:
-        completed (Optional[Any]):
-             [deprecated] Not used anymore and will be removed in the future.
     """
-
-    def __init__(self, completed=None):
-        if completed is not None:
-            msg = (
-                "Parameter `completed` is not used anymore and will be "
-                "removed in the future."
-            )
-            warnings.warn(msg, category=DeprecationWarning)
-
-        super().__init__()
 
     def running(self):
         """Return ``True`` if the associated Pub/Sub action has not yet completed.
