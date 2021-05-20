@@ -476,7 +476,10 @@ def test_heartbeat_inactive():
 def test_open(heartbeater, dispatcher, leaser, background_consumer, resumable_bidi_rpc):
     manager = make_manager()
 
-    manager.open(mock.sentinel.callback, mock.sentinel.on_callback_error)
+    with mock.patch.object(
+        type(manager), "ack_deadline", new=mock.PropertyMock(return_value=18)
+    ):
+        manager.open(mock.sentinel.callback, mock.sentinel.on_callback_error)
 
     heartbeater.assert_called_once_with(manager)
     heartbeater.return_value.start.assert_called_once()
@@ -503,7 +506,7 @@ def test_open(heartbeater, dispatcher, leaser, background_consumer, resumable_bi
     )
     initial_request_arg = resumable_bidi_rpc.call_args.kwargs["initial_request"]
     assert initial_request_arg.func == manager._get_initial_request
-    assert initial_request_arg.args[0] == 10  # the default stream ACK timeout
+    assert initial_request_arg.args[0] == 18
     assert not manager._client.api.get_subscription.called
 
     resumable_bidi_rpc.return_value.add_done_callback.assert_called_once_with(
@@ -772,6 +775,38 @@ def test__on_response_delivery_attempt():
     assert msg1.delivery_attempt is None
     msg2 = schedule_calls[1][1][1]
     assert msg2.delivery_attempt == 6
+
+
+def test__on_response_modifies_ack_deadline():
+    manager, _, dispatcher, leaser, _, scheduler = make_running_manager()
+    manager._callback = mock.sentinel.callback
+
+    # Set up the messages.
+    response = gapic_types.StreamingPullResponse(
+        received_messages=[
+            gapic_types.ReceivedMessage(
+                ack_id="ack_1",
+                message=gapic_types.PubsubMessage(data=b"foo", message_id="1"),
+            ),
+            gapic_types.ReceivedMessage(
+                ack_id="ack_2",
+                message=gapic_types.PubsubMessage(data=b"bar", message_id="2"),
+            ),
+        ]
+    )
+
+    # adjust message bookkeeping in leaser
+    fake_leaser_add(leaser, init_msg_count=0, assumed_msg_size=80)
+
+    # Actually run the method and chack that correct MODACK value is used.
+    with mock.patch.object(
+        type(manager), "ack_deadline", new=mock.PropertyMock(return_value=18)
+    ):
+        manager._on_response(response)
+
+    dispatcher.modify_ack_deadline.assert_called_once_with(
+        [requests.ModAckRequest("ack_1", 18), requests.ModAckRequest("ack_2", 18)]
+    )
 
 
 def test__on_response_no_leaser_overload():

@@ -179,6 +179,11 @@ class StreamingPullManager(object):
         # currently on hold.
         self._pause_resume_lock = threading.Lock()
 
+        # A lock protecting the current ACK deadline used in the lease management. This
+        # value can be potentially updated both by the leaser thread and by the message
+        # consumer thread when invoking the internal _on_response() callback.
+        self._ack_deadline_lock = threading.Lock()
+
         # The threads created in ``.open()``.
         self._dispatcher = None
         self._leaser = None
@@ -223,29 +228,31 @@ class StreamingPullManager(object):
 
     @property
     def ack_deadline(self):
-        """Return the current ack deadline based on historical time-to-ack.
+        """Return and possibly update the current ACK deadline based on historical data.
 
-        This method is "sticky". It will only perform the computations to
-        check on the right ack deadline if the histogram has gained a
+        This method is "sticky". It will only perform the computations to check on the
+        right ACK deadline if the histogram with past time-to-ack data has gained a
         significant amount of new information.
 
         Returns:
             int: The ack deadline.
         """
-        target_size = min(
-            self._last_histogram_size * 2, self._last_histogram_size + 100
-        )
-        hist_size = len(self.ack_histogram)
-
-        if hist_size > target_size:
-            self._last_histogram_size = hist_size
-            self._ack_deadline = self.ack_histogram.percentile(percent=99)
-
-        if self.flow_control.max_duration_per_lease_extension > 0:
-            self._ack_deadline = min(
-                self._ack_deadline, self.flow_control.max_duration_per_lease_extension
+        with self._ack_deadline_lock:
+            target_size = min(
+                self._last_histogram_size * 2, self._last_histogram_size + 100
             )
-        return self._ack_deadline
+            hist_size = len(self.ack_histogram)
+
+            if hist_size > target_size:
+                self._last_histogram_size = hist_size
+                self._ack_deadline = self.ack_histogram.percentile(percent=99)
+
+            if self.flow_control.max_duration_per_lease_extension > 0:
+                self._ack_deadline = min(
+                    self._ack_deadline,
+                    self.flow_control.max_duration_per_lease_extension,
+                )
+            return self._ack_deadline
 
     @property
     def load(self):
@@ -490,7 +497,7 @@ class StreamingPullManager(object):
         )
 
         # Create the RPC
-        stream_ack_deadline_seconds = self.ack_histogram.percentile(99)
+        stream_ack_deadline_seconds = self.ack_deadline
 
         get_initial_request = functools.partial(
             self._get_initial_request, stream_ack_deadline_seconds
@@ -688,7 +695,7 @@ class StreamingPullManager(object):
         # modack the messages we received, as this tells the server that we've
         # received them.
         items = [
-            requests.ModAckRequest(message.ack_id, self._ack_histogram.percentile(99))
+            requests.ModAckRequest(message.ack_id, self.ack_deadline)
             for message in received_messages
         ]
         self._dispatcher.modify_ack_deadline(items)
