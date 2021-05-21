@@ -228,16 +228,32 @@ class StreamingPullManager(object):
 
     @property
     def ack_deadline(self):
-        """Return and possibly update the current ACK deadline based on historical data.
-
-        This method is "sticky". It will only perform the computations to check on the
-        right ACK deadline if the histogram with past time-to-ack data has gained a
-        significant amount of new information.
+        """Return the current ACK deadline based on historical data without updating it.
 
         Returns:
             int: The ack deadline.
         """
+        return self._obtain_ack_deadline(maybe_update=False)
+
+    def _obtain_ack_deadline(self, maybe_update: bool) -> int:
+        """The actual `ack_deadline` implementation.
+
+        This method is "sticky". It will only perform the computations to check on the
+        right ACK deadline if explicitly requested AND if the histogram with past
+        time-to-ack data has gained a significant amount of new information.
+
+        Args:
+            maybe_update (bool):
+                If ``True``, also update the current ACK deadline before returning it if
+                enough new ACK data has been gathered.
+
+        Returns:
+            int: The current ACK deadline in seconds to use.
+        """
         with self._ack_deadline_lock:
+            if not maybe_update:
+                return self._ack_deadline
+
             target_size = min(
                 self._last_histogram_size * 2, self._last_histogram_size + 100
             )
