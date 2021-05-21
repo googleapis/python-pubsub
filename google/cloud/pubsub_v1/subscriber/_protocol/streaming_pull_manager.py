@@ -143,7 +143,7 @@ class StreamingPullManager(object):
         self._await_callbacks_on_shutdown = await_callbacks_on_shutdown
         self._ack_histogram = histogram.Histogram()
         self._last_histogram_size = 0
-        self._ack_deadline = 10
+        self._ack_deadline = histogram.MIN_ACK_DEADLINE
         self._rpc = None
         self._callback = None
         self._closing = threading.Lock()
@@ -248,10 +248,12 @@ class StreamingPullManager(object):
                 self._ack_deadline = self.ack_histogram.percentile(percent=99)
 
             if self.flow_control.max_duration_per_lease_extension > 0:
-                self._ack_deadline = min(
-                    self._ack_deadline,
+                # The setting in flow control could be too low, adjust if needed.
+                flow_control_setting = max(
                     self.flow_control.max_duration_per_lease_extension,
+                    histogram.MIN_ACK_DEADLINE,
                 )
+                self._ack_deadline = min(self._ack_deadline, flow_control_setting)
             return self._ack_deadline
 
     @property

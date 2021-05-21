@@ -139,13 +139,49 @@ def fake_leaser_add(leaser, init_msg_count=0, assumed_msg_size=10):
     leaser.add = stdlib_types.MethodType(fake_add, leaser)
 
 
-def test_ack_deadline():
+def test_ack_deadline_no_custom_flow_control_setting():
+    from google.cloud.pubsub_v1.subscriber._protocol import histogram
+
     manager = make_manager()
-    assert manager.ack_deadline == 10
-    manager.ack_histogram.add(20)
-    assert manager.ack_deadline == 20
-    manager.ack_histogram.add(10)
-    assert manager.ack_deadline == 20
+
+    # Make sure that max_duration_per_lease_extension is disabled.
+    manager._flow_control = types.FlowControl(max_duration_per_lease_extension=0)
+
+    assert manager.ack_deadline == histogram.MIN_ACK_DEADLINE
+
+    # When we get some historical data, the deadline is adjusted.
+    manager.ack_histogram.add(histogram.MIN_ACK_DEADLINE * 2)
+    assert manager.ack_deadline == histogram.MIN_ACK_DEADLINE * 2
+
+    # Adding just a single additional data point does not yet change the deadline.
+    manager.ack_histogram.add(histogram.MIN_ACK_DEADLINE)
+    assert manager.ack_deadline == histogram.MIN_ACK_DEADLINE * 2
+
+
+def test_ack_deadline_with_max_duration_per_lease_extension():
+    from google.cloud.pubsub_v1.subscriber._protocol import histogram
+
+    manager = make_manager()
+    manager._flow_control = types.FlowControl(
+        max_duration_per_lease_extension=histogram.MIN_ACK_DEADLINE + 1
+    )
+    manager.ack_histogram.add(histogram.MIN_ACK_DEADLINE * 3)  # make p99 value large
+
+    # The deadline configured in flow control should prevail.
+    assert manager.ack_deadline == histogram.MIN_ACK_DEADLINE + 1
+
+
+def test_ack_deadline_with_max_duration_per_lease_extension_too_low():
+    from google.cloud.pubsub_v1.subscriber._protocol import histogram
+
+    manager = make_manager()
+    manager._flow_control = types.FlowControl(
+        max_duration_per_lease_extension=histogram.MIN_ACK_DEADLINE - 1
+    )
+    manager.ack_histogram.add(histogram.MIN_ACK_DEADLINE * 3)  # make p99 value large
+
+    # The deadline configured in flow control should be adjusted to the minimum allowed.
+    assert manager.ack_deadline == histogram.MIN_ACK_DEADLINE
 
 
 def test_client_id():
@@ -179,17 +215,6 @@ def test_streaming_flow_control_use_legacy_flow_control():
     request = manager._get_initial_request(stream_ack_deadline_seconds=10)
     assert request.max_outstanding_messages == 0
     assert request.max_outstanding_bytes == 0
-
-
-def test_ack_deadline_with_max_duration_per_lease_extension():
-    manager = make_manager()
-    manager._flow_control = types.FlowControl(max_duration_per_lease_extension=5)
-
-    assert manager.ack_deadline == 5
-    for _ in range(5):
-        manager.ack_histogram.add(20)
-
-    assert manager.ack_deadline == 5
 
 
 def test_maybe_pause_consumer_wo_consumer_set():
