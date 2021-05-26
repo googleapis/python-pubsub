@@ -31,8 +31,9 @@ class Histogram(object):
     are free to use a different formula.
 
     The precision of data stored is to the nearest integer. Additionally,
-    values outside the range of ``10 <= x <= 600`` are stored as ``10`` or
-    ``600``, since these are the boundaries of leases in the actual API.
+    values outside the range of ``MIN_ACK_DEADLINE <= x <= MAX_ACK_DEADLINE`` are stored
+    as ``MIN_ACK_DEADLINE`` or ``MAX_ACK_DEADLINE``, since these are the boundaries of
+    leases in the actual API.
     """
 
     def __init__(self, data=None):
