@@ -100,7 +100,7 @@ class Histogram(object):
     def min(self):
         """Return the minimum value in this histogram.
 
-        If there are no values in the histogram at all, return the min default.
+        If there are no values in the histogram at all, return ``MIN_ACK_DEADLINE``.
 
         Returns:
             int: The minimum value in the histogram.
