@@ -130,6 +130,12 @@ class Leaser(object):
             # a sensible default and within the ranges allowed by Pub/Sub.
             # Also update the deadline currently used if enough new ACK data has been
             # gathered since the last deadline update.
+            #
+            # This is the only time the deadline changes.  The reason
+            # for this is that we want to prevent the deadline from
+            # decreasing while the leaser is sleeping, because if it
+            # did, the leaser might not wake up in time to extend
+            # leases for messages with the reduced deadline.
             deadline = self._manager._obtain_ack_deadline(maybe_update=True)
             _LOGGER.debug("The current deadline value is %d seconds.", deadline)
 
