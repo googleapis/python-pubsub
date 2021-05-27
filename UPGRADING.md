@@ -100,10 +100,7 @@ specified by the API producer.
         *,
         project: str = None,
         retry: retries.Retry = gapic_v1.method.DEFAULT,
-        timeout: Union[
-            google.api_core.timeout.ConstantTimeout,
-            google.api_core.timeout.ExponentialTimeout
-        ] = gapic_v1.method.DEFAULT,
+        timeout: google.pubsub_v1.types.TimeoutType = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pagers.ListTopicsPager:
 ```
