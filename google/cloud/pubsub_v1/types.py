@@ -18,10 +18,12 @@ import collections
 import enum
 import inspect
 import sys
+from typing import Union
 
 import proto
 
 from google.api import http_pb2
+import google.api_core
 from google.api_core import gapic_v1
 from google.iam.v1 import iam_policy_pb2
 from google.iam.v1 import policy_pb2
@@ -35,6 +37,16 @@ from google.protobuf import timestamp_pb2
 from google.api_core.protobuf_helpers import get_messages
 
 from google.pubsub_v1.types import pubsub as pubsub_gapic_types
+
+
+TimeoutType = Union[
+    None,
+    int,
+    float,
+    google.api_core.timeout.ConstantTimeout,
+    google.api_core.timeout.ExponentialTimeout,
+]
+"""The type of the timeout parameter of publisher client methods."""
 
 
 # Define the default values for batching.
@@ -206,6 +218,7 @@ _shared_modules = [
 _local_modules = [pubsub_gapic_types]
 
 names = [
+    "TimeoutType",
     "BatchSettings",
     "LimitExceededBehavior",
     "PublishFlowControl",
