@@ -16,6 +16,7 @@ from __future__ import absolute_import
 
 import abc
 
+from google.api_core import gapic_v1
 from google.pubsub_v1 import types as gapic_types
 
 
@@ -48,7 +49,10 @@ class Sequencer(metaclass=abc.ABCMeta):
     @staticmethod
     @abc.abstractmethod
     def publish(
-        self, message, retry=None, timeout: gapic_types.TimeoutType = None
+        self,
+        message,
+        retry=None,
+        timeout: gapic_types.TimeoutType = gapic_v1.method.DEFAULT,
     ):  # pragma: NO COVER
         """ Publish message for this ordering key.
 
