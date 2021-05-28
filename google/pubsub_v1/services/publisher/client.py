@@ -38,6 +38,7 @@ from google.iam.v1 import iam_policy_pb2 as iam_policy  # type: ignore
 from google.iam.v1 import policy_pb2 as policy  # type: ignore
 from google.pubsub_v1.services.publisher import pagers
 from google.pubsub_v1.types import pubsub
+from google.pubsub_v1.types import TimeoutType
 
 import grpc
 
@@ -402,9 +403,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
         *,
         name: str = None,
         retry: retries.Retry = gapic_v1.method.DEFAULT,
-        timeout: Union[
-            timeouts.ConstantTimeout, timeouts.ExponentialTimeout
-        ] = gapic_v1.method.DEFAULT,
+        timeout: TimeoutType = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pubsub.Topic:
         r"""Creates the given topic with the given name. See the [resource
@@ -431,7 +430,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
 
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
-            timeout (Union[timeouts.ConstantTimeout, timeouts.ExponentialTimeout]):
+            timeout (TimeoutType):
                 The timeout for this request.
             metadata (Sequence[Tuple[str, str]]): Strings which should be
                 sent along with the request as metadata.
@@ -473,6 +472,9 @@ class PublisherClient(metaclass=PublisherClientMeta):
             gapic_v1.routing_header.to_grpc_metadata((("name", request.name),)),
         )
 
+        if timeout is None or isinstance(timeout, (int, float)):
+            timeout = timeouts.ConstantTimeout(timeout)
+
         # Send the request.
         response = rpc(request, retry=retry, timeout=timeout, metadata=metadata,)
 
@@ -484,9 +486,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
         request: pubsub.UpdateTopicRequest = None,
         *,
         retry: retries.Retry = gapic_v1.method.DEFAULT,
-        timeout: Union[
-            timeouts.ConstantTimeout, timeouts.ExponentialTimeout
-        ] = gapic_v1.method.DEFAULT,
+        timeout: TimeoutType = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pubsub.Topic:
         r"""Updates an existing topic. Note that certain
@@ -499,7 +499,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
 
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
-            timeout (Union[timeouts.ConstantTimeout, timeouts.ExponentialTimeout]):
+            timeout (TimeoutType):
                 The timeout for this request.
             metadata (Sequence[Tuple[str, str]]): Strings which should be
                 sent along with the request as metadata.
@@ -529,6 +529,9 @@ class PublisherClient(metaclass=PublisherClientMeta):
             ),
         )
 
+        if timeout is None or isinstance(timeout, (int, float)):
+            timeout = timeouts.ConstantTimeout(timeout)
+
         # Send the request.
         response = rpc(request, retry=retry, timeout=timeout, metadata=metadata,)
 
@@ -542,9 +545,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
         topic: str = None,
         messages: Sequence[pubsub.PubsubMessage] = None,
         retry: retries.Retry = gapic_v1.method.DEFAULT,
-        timeout: Union[
-            timeouts.ConstantTimeout, timeouts.ExponentialTimeout
-        ] = gapic_v1.method.DEFAULT,
+        timeout: TimeoutType = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pubsub.PublishResponse:
         r"""Adds one or more messages to the topic. Returns ``NOT_FOUND`` if
@@ -570,7 +571,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
 
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
-            timeout (Union[timeouts.ConstantTimeout, timeouts.ExponentialTimeout]):
+            timeout (TimeoutType):
                 The timeout for this request.
             metadata (Sequence[Tuple[str, str]]): Strings which should be
                 sent along with the request as metadata.
@@ -614,6 +615,9 @@ class PublisherClient(metaclass=PublisherClientMeta):
             gapic_v1.routing_header.to_grpc_metadata((("topic", request.topic),)),
         )
 
+        if timeout is None or isinstance(timeout, (int, float)):
+            timeout = timeouts.ConstantTimeout(timeout)
+
         # Send the request.
         response = rpc(request, retry=retry, timeout=timeout, metadata=metadata,)
 
@@ -626,9 +630,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
         *,
         topic: str = None,
         retry: retries.Retry = gapic_v1.method.DEFAULT,
-        timeout: Union[
-            timeouts.ConstantTimeout, timeouts.ExponentialTimeout
-        ] = gapic_v1.method.DEFAULT,
+        timeout: TimeoutType = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pubsub.Topic:
         r"""Gets the configuration of a topic.
@@ -647,7 +649,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
 
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
-            timeout (Union[timeouts.ConstantTimeout, timeouts.ExponentialTimeout]):
+            timeout (TimeoutType):
                 The timeout for this request.
             metadata (Sequence[Tuple[str, str]]): Strings which should be
                 sent along with the request as metadata.
@@ -689,6 +691,9 @@ class PublisherClient(metaclass=PublisherClientMeta):
             gapic_v1.routing_header.to_grpc_metadata((("topic", request.topic),)),
         )
 
+        if timeout is None or isinstance(timeout, (int, float)):
+            timeout = timeouts.ConstantTimeout(timeout)
+
         # Send the request.
         response = rpc(request, retry=retry, timeout=timeout, metadata=metadata,)
 
@@ -701,9 +706,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
         *,
         project: str = None,
         retry: retries.Retry = gapic_v1.method.DEFAULT,
-        timeout: Union[
-            timeouts.ConstantTimeout, timeouts.ExponentialTimeout
-        ] = gapic_v1.method.DEFAULT,
+        timeout: TimeoutType = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pagers.ListTopicsPager:
         r"""Lists matching topics.
@@ -722,7 +725,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
 
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
-            timeout (Union[timeouts.ConstantTimeout, timeouts.ExponentialTimeout]):
+            timeout (TimeoutType):
                 The timeout for this request.
             metadata (Sequence[Tuple[str, str]]): Strings which should be
                 sent along with the request as metadata.
@@ -768,6 +771,9 @@ class PublisherClient(metaclass=PublisherClientMeta):
             gapic_v1.routing_header.to_grpc_metadata((("project", request.project),)),
         )
 
+        if timeout is None or isinstance(timeout, (int, float)):
+            timeout = timeouts.ConstantTimeout(timeout)
+
         # Send the request.
         response = rpc(request, retry=retry, timeout=timeout, metadata=metadata,)
 
@@ -786,9 +792,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
         *,
         topic: str = None,
         retry: retries.Retry = gapic_v1.method.DEFAULT,
-        timeout: Union[
-            timeouts.ConstantTimeout, timeouts.ExponentialTimeout
-        ] = gapic_v1.method.DEFAULT,
+        timeout: TimeoutType = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pagers.ListTopicSubscriptionsPager:
         r"""Lists the names of the attached subscriptions on this
@@ -807,10 +811,9 @@ class PublisherClient(metaclass=PublisherClientMeta):
                 This corresponds to the ``topic`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
-            timeout (Union[timeouts.ConstantTimeout, timeouts.ExponentialTimeout]):
+            timeout (TimeoutType):
                 The timeout for this request.
             metadata (Sequence[Tuple[str, str]]): Strings which should be
                 sent along with the request as metadata.
@@ -856,6 +859,9 @@ class PublisherClient(metaclass=PublisherClientMeta):
             gapic_v1.routing_header.to_grpc_metadata((("topic", request.topic),)),
         )
 
+        if timeout is None or isinstance(timeout, (int, float)):
+            timeout = timeouts.ConstantTimeout(timeout)
+
         # Send the request.
         response = rpc(request, retry=retry, timeout=timeout, metadata=metadata,)
 
@@ -874,9 +880,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
         *,
         topic: str = None,
         retry: retries.Retry = gapic_v1.method.DEFAULT,
-        timeout: Union[
-            timeouts.ConstantTimeout, timeouts.ExponentialTimeout
-        ] = gapic_v1.method.DEFAULT,
+        timeout: TimeoutType = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pagers.ListTopicSnapshotsPager:
         r"""Lists the names of the snapshots on this topic. Snapshots are
@@ -902,7 +906,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
 
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
-            timeout (Union[timeouts.ConstantTimeout, timeouts.ExponentialTimeout]):
+            timeout (TimeoutType):
                 The timeout for this request.
             metadata (Sequence[Tuple[str, str]]): Strings which should be
                 sent along with the request as metadata.
@@ -948,6 +952,9 @@ class PublisherClient(metaclass=PublisherClientMeta):
             gapic_v1.routing_header.to_grpc_metadata((("topic", request.topic),)),
         )
 
+        if timeout is None or isinstance(timeout, (int, float)):
+            timeout = timeouts.ConstantTimeout(timeout)
+
         # Send the request.
         response = rpc(request, retry=retry, timeout=timeout, metadata=metadata,)
 
@@ -966,9 +973,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
         *,
         topic: str = None,
         retry: retries.Retry = gapic_v1.method.DEFAULT,
-        timeout: Union[
-            timeouts.ConstantTimeout, timeouts.ExponentialTimeout
-        ] = gapic_v1.method.DEFAULT,
+        timeout: TimeoutType = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> None:
         r"""Deletes the topic with the given name. Returns ``NOT_FOUND`` if
@@ -993,7 +998,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
 
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
-            timeout (Union[timeouts.ConstantTimeout, timeouts.ExponentialTimeout]):
+            timeout (TimeoutType):
                 The timeout for this request.
             metadata (Sequence[Tuple[str, str]]): Strings which should be
                 sent along with the request as metadata.
@@ -1031,6 +1036,9 @@ class PublisherClient(metaclass=PublisherClientMeta):
             gapic_v1.routing_header.to_grpc_metadata((("topic", request.topic),)),
         )
 
+        if timeout is None or isinstance(timeout, (int, float)):
+            timeout = timeouts.ConstantTimeout(timeout)
+
         # Send the request.
         rpc(
             request, retry=retry, timeout=timeout, metadata=metadata,
@@ -1041,9 +1049,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
         request: pubsub.DetachSubscriptionRequest = None,
         *,
         retry: retries.Retry = gapic_v1.method.DEFAULT,
-        timeout: Union[
-            timeouts.ConstantTimeout, timeouts.ExponentialTimeout
-        ] = gapic_v1.method.DEFAULT,
+        timeout: TimeoutType = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pubsub.DetachSubscriptionResponse:
         r"""Detaches a subscription from this topic. All messages retained
@@ -1060,7 +1066,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
 
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
-            timeout (Union[timeouts.ConstantTimeout, timeouts.ExponentialTimeout]):
+            timeout (TimeoutType):
                 The timeout for this request.
             metadata (Sequence[Tuple[str, str]]): Strings which should be
                 sent along with the request as metadata.
@@ -1092,6 +1098,9 @@ class PublisherClient(metaclass=PublisherClientMeta):
             ),
         )
 
+        if timeout is None or isinstance(timeout, (int, float)):
+            timeout = timeouts.ConstantTimeout(timeout)
+
         # Send the request.
         response = rpc(request, retry=retry, timeout=timeout, metadata=metadata,)
 
@@ -1103,9 +1112,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
         request: iam_policy.SetIamPolicyRequest = None,
         *,
         retry: retries.Retry = gapic_v1.method.DEFAULT,
-        timeout: Union[
-            timeouts.ConstantTimeout, timeouts.ExponentialTimeout
-        ] = gapic_v1.method.DEFAULT,
+        timeout: TimeoutType = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> policy.Policy:
         r"""Sets the IAM access control policy on the specified
@@ -1117,7 +1124,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
                 method.
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
-            timeout (Union[timeouts.ConstantTimeout, timeouts.ExponentialTimeout]):
+            timeout (TimeoutType):
                 The timeout for this request.
             metadata (Sequence[Tuple[str, str]]): Strings which should be
                 sent along with the request as metadata.
@@ -1205,6 +1212,9 @@ class PublisherClient(metaclass=PublisherClientMeta):
             gapic_v1.routing_header.to_grpc_metadata((("resource", request.resource),)),
         )
 
+        if timeout is None or isinstance(timeout, (int, float)):
+            timeout = timeouts.ConstantTimeout(timeout)
+
         # Send the request.
         response = rpc(request, retry=retry, timeout=timeout, metadata=metadata,)
 
@@ -1216,9 +1226,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
         request: iam_policy.GetIamPolicyRequest = None,
         *,
         retry: retries.Retry = gapic_v1.method.DEFAULT,
-        timeout: Union[
-            timeouts.ConstantTimeout, timeouts.ExponentialTimeout
-        ] = gapic_v1.method.DEFAULT,
+        timeout: TimeoutType = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> policy.Policy:
         r"""Gets the IAM access control policy for a function.
@@ -1229,9 +1237,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
             request (:class:`~.iam_policy.GetIamPolicyRequest`):
                 The request object. Request message for `GetIamPolicy`
                 method.
-            retry (google.api_core.retry.Retry): Designation of what errors, if any,
-                should be retried.
-            timeout (Union[timeouts.ConstantTimeout, timeouts.ExponentialTimeout]):
+            timeout (TimeoutType):
                 The timeout for this request.
             metadata (Sequence[Tuple[str, str]]): Strings which should be
                 sent along with the request as metadata.
@@ -1319,6 +1325,9 @@ class PublisherClient(metaclass=PublisherClientMeta):
             gapic_v1.routing_header.to_grpc_metadata((("resource", request.resource),)),
         )
 
+        if timeout is None or isinstance(timeout, (int, float)):
+            timeout = timeouts.ConstantTimeout(timeout)
+
         # Send the request.
         response = rpc(request, retry=retry, timeout=timeout, metadata=metadata,)
 
@@ -1330,9 +1339,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
         request: iam_policy.TestIamPermissionsRequest = None,
         *,
         retry: retries.Retry = gapic_v1.method.DEFAULT,
-        timeout: Union[
-            timeouts.ConstantTimeout, timeouts.ExponentialTimeout
-        ] = gapic_v1.method.DEFAULT,
+        timeout: TimeoutType = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> iam_policy.TestIamPermissionsResponse:
         r"""Tests the specified permissions against the IAM access control
@@ -1343,9 +1350,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
             request (:class:`~.iam_policy.TestIamPermissionsRequest`):
                 The request object. Request message for
                 `TestIamPermissions` method.
-            retry (google.api_core.retry.Retry): Designation of what errors, if any,
-                should be retried.
-            timeout (Union[timeouts.ConstantTimeout, timeouts.ExponentialTimeout]):
+            timeout (TimeoutType):
                 The timeout for this request.
             metadata (Sequence[Tuple[str, str]]): Strings which should be
                 sent along with the request as metadata.
@@ -1373,6 +1378,9 @@ class PublisherClient(metaclass=PublisherClientMeta):
         metadata = tuple(metadata) + (
             gapic_v1.routing_header.to_grpc_metadata((("resource", request.resource),)),
         )
+
+        if timeout is None or isinstance(timeout, (int, float)):
+            timeout = timeouts.ConstantTimeout(timeout)
 
         # Send the request.
         response = rpc(request, retry=retry, timeout=timeout, metadata=metadata,)

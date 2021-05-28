@@ -250,24 +250,58 @@ s.replace(
 
 # Allow timeout to be an instance of google.api_core.timeout.*
 s.replace(
+    "google/pubsub_v1/types/__init__.py",
+    r"from \.pubsub import \(",
+    "from typing import Union\n\n\g<0>"
+)
+s.replace(
+    "google/pubsub_v1/types/__init__.py",
+    r"__all__ = \(\n",
+    textwrap.dedent('''\
+        TimeoutType = Union[
+            None,
+            int,
+            float,
+            "google.api_core.timeout.ConstantTimeout",
+            "google.api_core.timeout.ExponentialTimeout",
+        ]
+        """The type of the timeout parameter of publisher client methods."""
+
+        \g<0>    "TimeoutType",''')
+)
+
+s.replace(
     "google/pubsub_v1/services/publisher/*client.py",
     r"from google.api_core import retry as retries.*\n",
     "\g<0>from google.api_core import timeout as timeouts  # type: ignore\n"
 )
 s.replace(
     "google/pubsub_v1/services/publisher/*client.py",
+    r"from google\.pubsub_v1\.types import pubsub",
+    "\g<0>\nfrom google.pubsub_v1.types import TimeoutType",
+)
+
+s.replace(
+    "google/pubsub_v1/services/publisher/*client.py",
     r"(\s+)timeout: float = None.*\n",
-    """
-        \g<1>timeout: Union[
-        \g<1>    timeouts.ConstantTimeout, timeouts.ExponentialTimeout
-        \g<1>] = gapic_v1.method.DEFAULT,""",
+    "\g<1>timeout: TimeoutType = gapic_v1.method.DEFAULT,",
 )
 s.replace(
     "google/pubsub_v1/services/publisher/*client.py",
     r"([^\S\r\n]+)timeout \(float\): (.*)\n",
     (
-        "\g<1>timeout (Union[timeouts.ConstantTimeout, timeouts.ExponentialTimeout]):\n"
+        "\g<1>timeout (TimeoutType):\n"
         "\g<1>    \g<2>\n"
+    ),
+)
+s.replace(
+    "google/pubsub_v1/services/publisher/*client.py",
+    r"([^\S\r\n]+)# Send the request\.\n",
+    textwrap.dedent("""\
+        \g<1>if timeout is None or isinstance(timeout, (int, float)):
+        \g<1>    timeout = timeouts.ConstantTimeout(timeout)
+
+        \g<0>"""
     ),
 )
 
