@@ -273,7 +273,7 @@ class Client(object):
                 publish order should be respected. Message ordering must be
                 enabled for this client to use this feature.
             retry (Optional[google.api_core.retry.Retry]): Designation of what
-                errors, if any, should be retried. If `ordering_key` is specified,\
+                errors, if any, should be retried. If `ordering_key` is specified,
                 the total retry deadline will be changed to "infinity".
                 If given, it overides any retry passed into the client through
                 the ``publisher_options`` argument.
