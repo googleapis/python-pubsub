@@ -16,6 +16,8 @@ from __future__ import absolute_import
 
 import abc
 
+from google.pubsub_v1 import types as gapic_types
+
 
 class Sequencer(metaclass=abc.ABCMeta):
     """The base class for sequencers for Pub/Sub publishing. A sequencer
@@ -45,7 +47,9 @@ class Sequencer(metaclass=abc.ABCMeta):
 
     @staticmethod
     @abc.abstractmethod
-    def publish(self, message, retry=None, timeout=None):  # pragma: NO COVER
+    def publish(
+        self, message, retry=None, timeout: gapic_types.TimeoutType = None
+    ):  # pragma: NO COVER
         """ Publish message for this ordering key.
 
         Args:
@@ -53,10 +57,7 @@ class Sequencer(metaclass=abc.ABCMeta):
                 The Pub/Sub message.
             retry (Optional[google.api_core.retry.Retry]):
                 The retry settings to apply when publishing the message.
-            timeout (Union[ \
-                googole.api_core.timeout.ConstantTimeout, \
-                googole.api_core.timeout.ExponentialTimeout \
-            ]):
+            timeout (:class:`~.pubsub_v1.types.TimeoutType`):
                 The timeout to apply when publishing the message.
 
         Returns:

@@ -15,6 +15,7 @@
 from google.api_core import gapic_v1
 
 from google.cloud.pubsub_v1.publisher._sequencer import base
+from google.pubsub_v1 import types as gapic_types
 
 
 class UnorderedSequencer(base.Sequencer):
@@ -80,7 +81,7 @@ class UnorderedSequencer(base.Sequencer):
     def _create_batch(
         self,
         commit_retry=gapic_v1.method.DEFAULT,
-        commit_timeout=gapic_v1.method.DEFAULT,
+        commit_timeout: gapic_types.TimeoutType = gapic_v1.method.DEFAULT,
     ):
         """ Create a new batch using the client's batch class and other stored
             settings.
@@ -88,10 +89,7 @@ class UnorderedSequencer(base.Sequencer):
         Args:
             commit_retry (Optional[google.api_core.retry.Retry]):
                 The retry settings to apply when publishing the batch.
-            commit_timeout (Union[ \
-                googole.api_core.timeout.ConstantTimeout, \
-                googole.api_core.timeout.ExponentialTimeout \
-            ]):
+            commit_timeout (:class:`~.pubsub_v1.types.TimeoutType`):
                 The timeout to apply when publishing the batch.
         """
         return self._client._batch_class(
@@ -105,7 +103,10 @@ class UnorderedSequencer(base.Sequencer):
         )
 
     def publish(
-        self, message, retry=gapic_v1.method.DEFAULT, timeout=gapic_v1.method.DEFAULT
+        self,
+        message,
+        retry=gapic_v1.method.DEFAULT,
+        timeout: gapic_types.TimeoutType = gapic_v1.method.DEFAULT,
     ):
         """ Batch message into existing or new batch.
 
@@ -114,10 +115,7 @@ class UnorderedSequencer(base.Sequencer):
                 The Pub/Sub message.
             retry (Optional[google.api_core.retry.Retry]):
                 The retry settings to apply when publishing the message.
-            timeout (Union[ \
-                googole.api_core.timeout.ConstantTimeout, \
-                googole.api_core.timeout.ExponentialTimeout \
-            ]):
+            timeout (:class:`~.pubsub_v1.types.TimeoutType`):
                 The timeout to apply when publishing the message.
 
         Returns:

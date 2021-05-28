@@ -42,7 +42,7 @@ def create_batch(
     batch_done_callback=None,
     commit_when_full=True,
     commit_retry=gapic_v1.method.DEFAULT,
-    commit_timeout=gapic_v1.method.DEFAULT,
+    commit_timeout: gapic_types.TimeoutType = gapic_v1.method.DEFAULT,
     **batch_settings
 ):
     """Return a batch object suitable for testing.
@@ -55,10 +55,7 @@ def create_batch(
             has reached byte-size or number-of-messages limits.
         commit_retry (Optional[google.api_core.retry.Retry]): The retry settings
             for the batch commit call.
-        commit_timeout (Optional[Union[ \
-            googole.api_core.timeout.ConstantTimeout, \
-            googole.api_core.timeout.ExponentialTimeout \
-        ]]):
+        commit_timeout (:class:`~.pubsub_v1.types.TimeoutType`):
             The timeout to apply to the batch commit call.
         batch_settings (Mapping[str, str]): Arguments passed on to the
             :class:``~.pubsub_v1.types.BatchSettings`` constructor.

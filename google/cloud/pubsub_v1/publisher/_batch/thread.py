@@ -73,10 +73,7 @@ class Batch(base.Batch):
         commit_retry (Optional[google.api_core.retry.Retry]): Designation of what
             errors, if any, should be retried when commiting the batch. If not
             provided, a default retry is used.
-        commit_timeout (Union[ \
-                googole.api_core.timeout.ConstantTimeout, \
-                googole.api_core.timeout.ExponentialTimeout \
-            ]):
+        commit_timeout (:class:`~.pubsub_v1.types.TimeoutType`):
                 The timeout to apply when commiting the batch. If not provided, a
                 default timeout is used.
     """
@@ -89,7 +86,7 @@ class Batch(base.Batch):
         batch_done_callback=None,
         commit_when_full=True,
         commit_retry=gapic_v1.method.DEFAULT,
-        commit_timeout=gapic_v1.method.DEFAULT,
+        commit_timeout: gapic_types.TimeoutType = gapic_v1.method.DEFAULT,
     ):
         self._client = client
         self._topic = topic
