@@ -472,9 +472,6 @@ class PublisherClient(metaclass=PublisherClientMeta):
             gapic_v1.routing_header.to_grpc_metadata((("name", request.name),)),
         )
 
-        if timeout is None or isinstance(timeout, (int, float)):
-            timeout = timeouts.ConstantTimeout(timeout)
-
         # Send the request.
         response = rpc(request, retry=retry, timeout=timeout, metadata=metadata,)
 
@@ -528,9 +525,6 @@ class PublisherClient(metaclass=PublisherClientMeta):
                 (("topic.name", request.topic.name),)
             ),
         )
-
-        if timeout is None or isinstance(timeout, (int, float)):
-            timeout = timeouts.ConstantTimeout(timeout)
 
         # Send the request.
         response = rpc(request, retry=retry, timeout=timeout, metadata=metadata,)
@@ -615,9 +609,6 @@ class PublisherClient(metaclass=PublisherClientMeta):
             gapic_v1.routing_header.to_grpc_metadata((("topic", request.topic),)),
         )
 
-        if timeout is None or isinstance(timeout, (int, float)):
-            timeout = timeouts.ConstantTimeout(timeout)
-
         # Send the request.
         response = rpc(request, retry=retry, timeout=timeout, metadata=metadata,)
 
@@ -690,9 +681,6 @@ class PublisherClient(metaclass=PublisherClientMeta):
         metadata = tuple(metadata) + (
             gapic_v1.routing_header.to_grpc_metadata((("topic", request.topic),)),
         )
-
-        if timeout is None or isinstance(timeout, (int, float)):
-            timeout = timeouts.ConstantTimeout(timeout)
 
         # Send the request.
         response = rpc(request, retry=retry, timeout=timeout, metadata=metadata,)
@@ -770,9 +758,6 @@ class PublisherClient(metaclass=PublisherClientMeta):
         metadata = tuple(metadata) + (
             gapic_v1.routing_header.to_grpc_metadata((("project", request.project),)),
         )
-
-        if timeout is None or isinstance(timeout, (int, float)):
-            timeout = timeouts.ConstantTimeout(timeout)
 
         # Send the request.
         response = rpc(request, retry=retry, timeout=timeout, metadata=metadata,)
@@ -858,9 +843,6 @@ class PublisherClient(metaclass=PublisherClientMeta):
         metadata = tuple(metadata) + (
             gapic_v1.routing_header.to_grpc_metadata((("topic", request.topic),)),
         )
-
-        if timeout is None or isinstance(timeout, (int, float)):
-            timeout = timeouts.ConstantTimeout(timeout)
 
         # Send the request.
         response = rpc(request, retry=retry, timeout=timeout, metadata=metadata,)
@@ -952,9 +934,6 @@ class PublisherClient(metaclass=PublisherClientMeta):
             gapic_v1.routing_header.to_grpc_metadata((("topic", request.topic),)),
         )
 
-        if timeout is None or isinstance(timeout, (int, float)):
-            timeout = timeouts.ConstantTimeout(timeout)
-
         # Send the request.
         response = rpc(request, retry=retry, timeout=timeout, metadata=metadata,)
 
@@ -1036,9 +1015,6 @@ class PublisherClient(metaclass=PublisherClientMeta):
             gapic_v1.routing_header.to_grpc_metadata((("topic", request.topic),)),
         )
 
-        if timeout is None or isinstance(timeout, (int, float)):
-            timeout = timeouts.ConstantTimeout(timeout)
-
         # Send the request.
         rpc(
             request, retry=retry, timeout=timeout, metadata=metadata,
@@ -1097,9 +1073,6 @@ class PublisherClient(metaclass=PublisherClientMeta):
                 (("subscription", request.subscription),)
             ),
         )
-
-        if timeout is None or isinstance(timeout, (int, float)):
-            timeout = timeouts.ConstantTimeout(timeout)
 
         # Send the request.
         response = rpc(request, retry=retry, timeout=timeout, metadata=metadata,)
@@ -1212,9 +1185,6 @@ class PublisherClient(metaclass=PublisherClientMeta):
             gapic_v1.routing_header.to_grpc_metadata((("resource", request.resource),)),
         )
 
-        if timeout is None or isinstance(timeout, (int, float)):
-            timeout = timeouts.ConstantTimeout(timeout)
-
         # Send the request.
         response = rpc(request, retry=retry, timeout=timeout, metadata=metadata,)
 
@@ -1325,9 +1295,6 @@ class PublisherClient(metaclass=PublisherClientMeta):
             gapic_v1.routing_header.to_grpc_metadata((("resource", request.resource),)),
         )
 
-        if timeout is None or isinstance(timeout, (int, float)):
-            timeout = timeouts.ConstantTimeout(timeout)
-
         # Send the request.
         response = rpc(request, retry=retry, timeout=timeout, metadata=metadata,)
 
@@ -1378,9 +1345,6 @@ class PublisherClient(metaclass=PublisherClientMeta):
         metadata = tuple(metadata) + (
             gapic_v1.routing_header.to_grpc_metadata((("resource", request.resource),)),
         )
-
-        if timeout is None or isinstance(timeout, (int, float)):
-            timeout = timeouts.ConstantTimeout(timeout)
 
         # Send the request.
         response = rpc(request, retry=retry, timeout=timeout, metadata=metadata,)

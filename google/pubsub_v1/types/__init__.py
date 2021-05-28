@@ -77,7 +77,6 @@ from .schema import (
 )
 
 TimeoutType = Union[
-    None,
     int,
     float,
     "google.api_core.timeout.ConstantTimeout",

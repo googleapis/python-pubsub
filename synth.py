@@ -259,7 +259,6 @@ s.replace(
     r"__all__ = \(\n",
     textwrap.dedent('''\
         TimeoutType = Union[
-            None,
             int,
             float,
             "google.api_core.timeout.ConstantTimeout",
@@ -292,16 +291,6 @@ s.replace(
     (
         "\g<1>timeout (TimeoutType):\n"
         "\g<1>    \g<2>\n"
-    ),
-)
-s.replace(
-    "google/pubsub_v1/services/publisher/*client.py",
-    r"([^\S\r\n]+)# Send the request\.\n",
-    textwrap.dedent("""\
-        \g<1>if timeout is None or isinstance(timeout, (int, float)):
-        \g<1>    timeout = timeouts.ConstantTimeout(timeout)
-
-        \g<0>"""
     ),
 )
 
