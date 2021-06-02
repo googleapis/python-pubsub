@@ -193,65 +193,54 @@ class FlowController(object):
                 self._message_count = max(0, self._message_count)
                 self._total_bytes = max(0, self._total_bytes)
 
-            # TODO: merge these two together to only loop through threads once...
-            # And distribute both bytes and slots at the same time
-            self._distribute_available_slots()
-            self._distribute_available_bytes()
+            self._distribute_available_capacity()
 
             # If at least one thread waiting to add() can be unblocked, wake them up.
             if self._ready_to_unblock():
                 _LOGGER.debug("Notifying threads waiting to add messages to flow.")
                 self._has_capacity.notify_all()
 
-    def _distribute_available_slots(self):
-        """Distribute available message slots among the waiting threads in FIFO order.
+    def _distribute_available_capacity(self):
+        """Distribute available capacity among the waiting threads in FIFO order.
 
         The method assumes that the caller has obtained ``_operational_lock``.
         """
-        available = (
+        available_slots = (
             self._settings.message_limit - self._message_count - self._reserved_slots
         )
+        available_bytes = (
+            self._settings.byte_limit - self._total_bytes - self._reserved_bytes
+        )
 
-        # the slots go to the first waiting threads that don't not have one yet
         for thread in self._waiting:
-            if available <= 0:
-                break
+            if available_slots <= 0 and available_bytes <= 0:
+                break  # Santa is now empty-handed, better luck next time.
 
             reservation = self._reservations[thread]
-            if reservation.has_slot:
+
+            # Distribute any free slots.
+            if available_slots > 0 and not reservation.has_slot:
+                reservation.has_slot = True
+                self._reserved_slots += 1
+                available_slots -= 1
+
+            # Distribute any free bytes.
+            if available_bytes <= 0:
                 continue
 
-            # we don't have a slot yet, reserve it
-            reservation.has_slot = True
-            self._reserved_slots += 1
-            available -= 1
+            bytes_still_needed = reservation.bytes_needed - reservation.bytes_reserved
 
-    def _distribute_available_bytes(self):
-        """Distribute available bytes capacity among the waiting threads in FIFO order.
-
-        The method assumes that the caller has obtained ``_operational_lock``.
-        """
-        available = self._settings.byte_limit - self._total_bytes - self._reserved_bytes
-
-        for thread in self._waiting:
-            if available <= 0:
-                break
-
-            reservation = self._reservations[thread]
-            still_needed = reservation.bytes_needed - reservation.bytes_reserved
-
-            # Sanity check for any internal inconsistencies.
-            if still_needed < 0:
+            if bytes_still_needed < 0:  # Sanity check for any internal inconsistencies.
                 msg = "Too many bytes reserved: {} / {}".format(
                     reservation.bytes_reserved, reservation.bytes_needed
                 )
                 warnings.warn(msg, category=RuntimeWarning)
-                still_needed = 0
+                bytes_still_needed = 0
 
-            can_give = min(still_needed, available)
+            can_give = min(bytes_still_needed, available_bytes)
             reservation.bytes_reserved += can_give
             self._reserved_bytes += can_give
-            available -= can_give
+            available_bytes -= can_give
 
     def _ready_to_unblock(self):
         """Determine if any of the threads waiting to add a message can proceed.
