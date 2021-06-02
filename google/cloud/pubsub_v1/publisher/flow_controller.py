@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from collections import deque
+from collections import OrderedDict
 import logging
 import threading
 import warnings
@@ -57,13 +57,11 @@ class FlowController(object):
         self._message_count = 0
         self._total_bytes = 0
 
-        # A FIFO queue of threads blocked on adding a message, from first to last.
+        # A FIFO queue of threads blocked on adding a message that also tracks their
+        # reservations of available flow control bytes and message slots.
         # Only relevant if the configured limit exceeded behavior is BLOCK.
-        self._waiting = deque()
+        self._waiting = OrderedDict()
 
-        # Reservations of available flow control bytes and message slots by the waiting
-        # threads. Each value is a _QuantityReservation instance.
-        self._reservations = dict()
         self._reserved_bytes = 0
         self._reserved_slots = 0
 
@@ -141,13 +139,13 @@ class FlowController(object):
             current_thread = threading.current_thread()
 
             while self._would_overflow(message):
-                if current_thread not in self._reservations:
-                    self._waiting.append(current_thread)
-                    self._reservations[current_thread] = _QuantityReservation(
+                if current_thread not in self._waiting:
+                    reservation = _QuantityReservation(
                         bytes_reserved=0,
                         bytes_needed=message._pb.ByteSize(),
                         has_slot=False,
                     )
+                    self._waiting[current_thread] = reservation  # Will be placed last.
 
                 _LOGGER.debug(
                     "Blocking until there is enough free capacity in the flow - "
@@ -164,10 +162,9 @@ class FlowController(object):
             # Message accepted, increase the load and remove thread stats.
             self._message_count += 1
             self._total_bytes += message._pb.ByteSize()
-            self._reserved_bytes -= self._reservations[current_thread].bytes_reserved
+            self._reserved_bytes -= self._waiting[current_thread].bytes_reserved
             self._reserved_slots -= 1
-            del self._reservations[current_thread]
-            self._waiting.remove(current_thread)
+            del self._waiting[current_thread]
 
     def release(self, message):
         """Release a mesage from flow control.
@@ -212,11 +209,9 @@ class FlowController(object):
             self._settings.byte_limit - self._total_bytes - self._reserved_bytes
         )
 
-        for thread in self._waiting:
+        for reservation in self._waiting.values():
             if available_slots <= 0 and available_bytes <= 0:
                 break  # Santa is now empty-handed, better luck next time.
-
-            reservation = self._reservations[thread]
 
             # Distribute any free slots.
             if available_slots > 0 and not reservation.has_slot:
@@ -253,10 +248,10 @@ class FlowController(object):
         if self._waiting:
             # It's enough to only check the head of the queue, because FIFO
             # distribution of any free capacity.
-            reservation = self._reservations[self._waiting[0]]
+            first_reservation = next(iter(self._waiting.values()))
             return (
-                reservation.bytes_reserved >= reservation.bytes_needed
-                and reservation.has_slot
+                first_reservation.bytes_reserved >= first_reservation.bytes_needed
+                and first_reservation.has_slot
             )
 
         return False
@@ -273,7 +268,7 @@ class FlowController(object):
         Returns:
             bool
         """
-        reservation = self._reservations.get(threading.current_thread())
+        reservation = self._waiting.get(threading.current_thread())
 
         if reservation:
             enough_reserved = reservation.bytes_reserved >= reservation.bytes_needed
