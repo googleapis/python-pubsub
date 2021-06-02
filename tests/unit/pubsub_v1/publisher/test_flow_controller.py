@@ -434,9 +434,9 @@ def test_warning_on_internal_reservation_stats_error_when_unblocking():
         pytest.fail("Adding a message on overflow did not block.")  # pragma: NO COVER
 
     # Intentionally corrupt internal stats
-    reservation = next(iter(flow_controller._byte_reservations.values()), None)
+    reservation = next(iter(flow_controller._reservations.values()), None)
     assert reservation is not None, "No messages blocked by flow controller."
-    reservation.reserved = reservation.needed + 1
+    reservation.bytes_reserved = reservation.bytes_needed + 1
 
     with warnings.catch_warnings(record=True) as warned:
         _run_in_daemon(flow_controller.release, [msg1], releasing_1_done)
