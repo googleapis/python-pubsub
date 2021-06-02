@@ -367,6 +367,41 @@ def test_threads_posting_large_messages_do_not_starve():
         pytest.fail("Adding messages blocked or errored.")  # pragma: NO COVER
 
 
+def test_blocked_messages_are_accepted_in_fifo_order():
+    settings = types.PublishFlowControl(
+        message_limit=1,
+        byte_limit=1_000_000,  # Unlimited for practical purposes in the test.
+        limit_exceeded_behavior=types.LimitExceededBehavior.BLOCK,
+    )
+    flow_controller = FlowController(settings)
+
+    # It's OK if the message instance is shared, as flow controlelr is only concerned
+    # with byte sizes and counts, and not with particular message instances.
+    message = grpc_types.PubsubMessage(data=b"x")
+
+    adding_done_events = [threading.Event() for _ in range(10)]
+    releasing_done_events = [threading.Event() for _ in adding_done_events]
+
+    # Add messages. The first one will be accepted, and the rest should queue behind.
+    for adding_done in adding_done_events:
+        _run_in_daemon(flow_controller, "add", [message], adding_done)
+        time.sleep(0.1)
+
+    if not adding_done_events[0].wait(timeout=0.1):  # pragma: NO COVER
+        pytest.fail("The first message unexpectedly got blocked on adding.")
+
+    # For each message, check that it has indeed been added to the flow controller.
+    # Then release it to make room for the next message in line, and repeat the check.
+    enumeration = enumerate(zip(adding_done_events, releasing_done_events))
+    for i, (adding_done, releasing_done) in enumeration:
+        if not adding_done.wait(timeout=0.1):  # pragma: NO COVER
+            pytest.fail(f"Queued message still blocked on adding (i={i}).")
+
+        _run_in_daemon(flow_controller, "release", [message], releasing_done)
+        if not releasing_done.wait(timeout=0.1):  # pragma: NO COVER
+            pytest.fail(f"Queued message was not released in time (i={i}).")
+
+
 def test_warning_on_internal_reservation_stats_error_when_unblocking():
     settings = types.PublishFlowControl(
         message_limit=1,
