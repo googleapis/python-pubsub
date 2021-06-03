@@ -34,8 +34,7 @@ Manager
 
   It also:
   - Receives messages to be processed from the consumer.
-  - Pauses and resumes the consumer based on workload, to avoid
-    accumulating too many unprocessed messages.
+  - Pauses and resumes the consumer based on workload, to avoid accumulating too many unprocessed messages.
 
   The manager doesn't have/manage a thread of its own.  Most of it's
   work is done in response to messages from the consumer, dispatcher,
