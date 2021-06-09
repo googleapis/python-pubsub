@@ -5,6 +5,70 @@
 [1]: https://pypi.org/project/google-cloud-pubsub/#history
 
 
+## [2.5.0](https://www.github.com/googleapis/python-pubsub/compare/v2.4.2...v2.5.0) (2021-05-18)
+
+
+### Features
+
+* Make publish futures compatible with `concurrent.futures.as_completed()`. ([#397](https://www.github.com/googleapis/python-pubsub/issues/397)) ([e29a2c0](https://www.github.com/googleapis/python-pubsub/commit/e29a2c0ac6c5d2ebf2311646e552a02f184cfedc))
+
+
+### Bug Fixes
+
+* Scheduler errors when executor in shutdown. ([#399](https://www.github.com/googleapis/python-pubsub/issues/399)) ([39a83d3](https://www.github.com/googleapis/python-pubsub/commit/39a83d3eef196e88478ad8362201a2ab12e9f681))
+
+## 2.4.2
+
+05-06-2021 23:50 PDT
+
+
+### Implementation Changes
+
+- Fix memory leak when publishing messages. ([#406](https://github.com/googleapis/python-pubsub/pull/406))
+- Do not crash if distribution cannot be found when extracting semantic version. ([#393](https://github.com/googleapis/python-pubsub/pull/393))
+- Emit a warning if `return_immediately` is set with synchronous pull. ([#355](https://github.com/googleapis/python-pubsub/pull/355))
+- Regenerate GAPIC layer with latest changes, use explicit default timeouts. ([#345](https://github.com/googleapis/python-pubsub/pull/345))
+
+
+### Documentation
+
+- Add additional info on `use_legacy_flow_control` parameter. ([#301](https://github.com/googleapis/python-pubsub/pull/301))
+- Remove EXPERIMENTAL tag for ordering keys in `publisher/client.py`. ([#324](https://github.com/googleapis/python-pubsub/pull/324))
+- Fix `create_topic()` call in README. ([#360](https://github.com/googleapis/python-pubsub/pull/360))
+- Generate PyPI token in secrets manager, fix spacing in docs (via synth). ([#384](https://github.com/googleapis/python-pubsub/pull/384))
+- Add `SECURITY.md`. ([#401](https://github.com/googleapis/python-pubsub/pull/401))
+
+
+### Internal / Testing Changes
+
+- Require 100% unit test coverage (via synth). ([#359](https://github.com/googleapis/python-pubsub/pull/359))
+- Bump test coverage to 100%. ([#364](https://github.com/googleapis/python-pubsub/pull/364))
+- Fix streaming pull close unit test flakiness. ([#361](https://github.com/googleapis/python-pubsub/pull/361))
+- Pass explicit credentials in all unit tests creating clients. ([#369](https://github.com/googleapis/python-pubsub/pull/369))
+- Fix flaky test for blocking pull shutdown. ([#378](https://github.com/googleapis/python-pubsub/pull/378))
+- Add missing licence header. ([#377](https://github.com/googleapis/python-pubsub/pull/377))
+
+## [2.4.1](https://www.github.com/googleapis/python-pubsub/compare/v2.4.0...v2.4.1) (2021-03-30)
+
+### Bug Fixes
+
+* Move `await_msg_callbacks` flag to `subscribe()` method, fixing a regression in Pub/Sub Lite client.
+  ([#320](https://www.github.com/googleapis/python-pubsub/issues/320)) ([d40d027](https://www.github.com/googleapis/python-pubsub/commit/d40d02713c8c189937ae5c21d099b88a3131a59f))
+* SSL error when using the client with the emulator. ([#297](https://www.github.com/googleapis/python-pubsub/issues/297)) ([83db672](https://www.github.com/googleapis/python-pubsub/commit/83db67239d3521457138699109f766d574a0a2c4))
+
+### Implementation Changes
+
+* (samples) Bump the max_time to 10 minutes for a flaky test. ([#311](https://www.github.com/googleapis/python-pubsub/issues/311)) ([e2678d4](https://www.github.com/googleapis/python-pubsub/commit/e2678d47c08e6b03782d2d744a4e630b933fdd51)), closes [#291](https://www.github.com/googleapis/python-pubsub/issues/291)
+* (samples) Mark delivery attempts test as flaky. ([#326](https://www.github.com/googleapis/python-pubsub/issues/326)) ([5a97ef1](https://www.github.com/googleapis/python-pubsub/commit/5a97ef1bb7512fe814a8f72a43b3e9698434cd8d))
+* (samples) Mitigate flakiness in subscriber_tests. ([#304](https://www.github.com/googleapis/python-pubsub/issues/304)) ([271a385](https://www.github.com/googleapis/python-pubsub/commit/271a3856d835967f18f6becdae5ad53d585d0ccf))
+* (samples) Retry `InternalServerError` in dead letter policy test. ([#329](https://www.github.com/googleapis/python-pubsub/issues/329)) ([34c9b11](https://www.github.com/googleapis/python-pubsub/commit/34c9b11ae697c280f32642c3101b7f7da971f589)), closes [#321](https://www.github.com/googleapis/python-pubsub/issues/321)
+
+### Documentation
+
+* Remove EXPERIMENTAL tag for ordering keys in `types.py`. ([#323](https://www.github.com/googleapis/python-pubsub/issues/323)) ([659cd7a](https://www.github.com/googleapis/python-pubsub/commit/659cd7ae2784245d4217fbc722dac04bd3222d32))
+* Remove EXPERIMENTAL tag from `Schema` service (via synth). ([#307](https://www.github.com/googleapis/python-pubsub/issues/307)) ([ad85202](https://www.github.com/googleapis/python-pubsub/commit/ad852028836520db779c5cc33689ffd7e5458a7d))
+
+
 ## 2.4.0
 
 02-22-2021 05:02 PST

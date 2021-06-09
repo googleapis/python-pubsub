@@ -107,9 +107,6 @@ PublisherOptions.__new__.__defaults__ = (
 PublisherOptions.__doc__ = "The options for the publisher client."
 PublisherOptions.enable_message_ordering.__doc__ = (
     "Whether to order messages in a batch by a supplied ordering key."
-    "EXPERIMENTAL: Message ordering is an alpha feature that requires "
-    "special permissions to use. Please contact the Cloud Pub/Sub team for "
-    "more information."
 )
 PublisherOptions.flow_control.__doc__ = (
     "Flow control settings for message publishing by the client. By default "
@@ -155,7 +152,8 @@ FlowControl.max_lease_duration.__doc__ = (
 FlowControl.max_duration_per_lease_extension.__doc__ = (
     "The max amount of time in seconds for a single lease extension attempt. "
     "Bounds the delay before a message redelivery if the subscriber "
-    "fails to extend the deadline."
+    "fails to extend the deadline. Must be between 10 and 600 (inclusive). Ignored "
+    "if set to 0."
 )
 
 

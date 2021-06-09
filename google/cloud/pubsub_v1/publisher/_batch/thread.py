@@ -18,8 +18,6 @@ import logging
 import threading
 import time
 
-import six
-
 import google.api_core.exceptions
 from google.api_core import gapic_v1
 from google.cloud.pubsub_v1.publisher import exceptions
@@ -209,9 +207,11 @@ class Batch(base.Batch):
 
     def _start_commit_thread(self):
         """Start a new thread to actually handle the commit."""
-
+        # NOTE: If the thread is *not* a daemon, a memory leak exists due to a CPython issue.
+        # https://github.com/googleapis/python-pubsub/issues/395#issuecomment-829910303
+        # https://github.com/googleapis/python-pubsub/issues/395#issuecomment-830092418
         commit_thread = threading.Thread(
-            name="Thread-CommitBatchPublisher", target=self._commit
+            name="Thread-CommitBatchPublisher", target=self._commit, daemon=True
         )
         commit_thread.start()
 
@@ -287,8 +287,7 @@ class Batch(base.Batch):
             # IDs. We are trusting that there is a 1:1 mapping, and raise
             # an exception if not.
             self._status = base.BatchStatus.SUCCESS
-            zip_iter = six.moves.zip(response.message_ids, self._futures)
-            for message_id, future in zip_iter:
+            for message_id, future in zip(response.message_ids, self._futures):
                 future.set_result(message_id)
         else:
             # Sanity check: If the number of message IDs is not equal to
@@ -381,7 +380,7 @@ class Batch(base.Batch):
 
                 # Track the future on this batch (so that the result of the
                 # future can be set).
-                future = futures.Future(completed=threading.Event())
+                future = futures.Future()
                 self._futures.append(future)
 
         # Try to commit, but it must be **without** the lock held, since

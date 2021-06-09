@@ -22,7 +22,6 @@ import threading
 import uuid
 
 import grpc
-import six
 
 from google.api_core import bidi
 from google.api_core import exceptions
@@ -38,6 +37,7 @@ import google.cloud.pubsub_v1.subscriber.scheduler
 from google.pubsub_v1 import types as gapic_types
 
 _LOGGER = logging.getLogger(__name__)
+_REGULAR_SHUTDOWN_THREAD_NAME = "Thread-RegularStreamShutdown"
 _RPC_ERROR_THREAD_NAME = "Thread-OnRpcTerminated"
 _RETRYABLE_STREAM_ERRORS = (
     exceptions.DeadlineExceeded,
@@ -106,12 +106,25 @@ class StreamingPullManager(object):
             ``projects/{project}/subscriptions/{subscription}``.
         flow_control (~google.cloud.pubsub_v1.types.FlowControl): The flow
             control settings.
-        use_legacy_flow_control (bool): Disables enforcing flow control settings
-            at the Cloud PubSub server and uses the less accurate method of only
-            enforcing flow control at the client side.
+        use_legacy_flow_control (bool):
+            If set to ``True``, flow control at the Cloud Pub/Sub server is disabled,
+            though client-side flow control is still enabled. If set to ``False``
+            (default), both server-side and client-side flow control are enabled.
         scheduler (~google.cloud.pubsub_v1.scheduler.Scheduler): The scheduler
             to use to process messages. If not provided, a thread pool-based
             scheduler will be used.
+        await_callbacks_on_shutdown (bool):
+            If ``True``, the shutdown thread will wait until all scheduler threads
+            terminate and only then proceed with shutting down the remaining running
+            helper threads.
+
+            If ``False`` (default), the shutdown thread will shut the scheduler down,
+            but it will not wait for the currently executing scheduler threads to
+            terminate.
+
+            This setting affects when the on close callbacks get invoked, and
+            consequently, when the StreamingPullFuture associated with the stream gets
+            resolved.
     """
 
     def __init__(
@@ -121,19 +134,22 @@ class StreamingPullManager(object):
         flow_control=types.FlowControl(),
         scheduler=None,
         use_legacy_flow_control=False,
+        await_callbacks_on_shutdown=False,
     ):
         self._client = client
         self._subscription = subscription
         self._flow_control = flow_control
         self._use_legacy_flow_control = use_legacy_flow_control
+        self._await_callbacks_on_shutdown = await_callbacks_on_shutdown
         self._ack_histogram = histogram.Histogram()
         self._last_histogram_size = 0
-        self._ack_deadline = 10
+        self._ack_deadline = histogram.MIN_ACK_DEADLINE
         self._rpc = None
         self._callback = None
         self._closing = threading.Lock()
         self._closed = False
         self._close_callbacks = []
+        self._regular_shutdown_thread = None  # Created on intentional shutdown.
 
         # Generate a random client id tied to this object. All streaming pull
         # connections (initial and re-connects) will then use the same client
@@ -162,6 +178,11 @@ class StreamingPullManager(object):
         # affects the load computation, i.e. the count and size of the messages
         # currently on hold.
         self._pause_resume_lock = threading.Lock()
+
+        # A lock protecting the current ACK deadline used in the lease management. This
+        # value can be potentially updated both by the leaser thread and by the message
+        # consumer thread when invoking the internal _on_response() callback.
+        self._ack_deadline_lock = threading.Lock()
 
         # The threads created in ``.open()``.
         self._dispatcher = None
@@ -207,29 +228,49 @@ class StreamingPullManager(object):
 
     @property
     def ack_deadline(self):
-        """Return the current ack deadline based on historical time-to-ack.
-
-        This method is "sticky". It will only perform the computations to
-        check on the right ack deadline if the histogram has gained a
-        significant amount of new information.
+        """Return the current ACK deadline based on historical data without updating it.
 
         Returns:
             int: The ack deadline.
         """
-        target_size = min(
-            self._last_histogram_size * 2, self._last_histogram_size + 100
-        )
-        hist_size = len(self.ack_histogram)
+        return self._obtain_ack_deadline(maybe_update=False)
 
-        if hist_size > target_size:
-            self._last_histogram_size = hist_size
-            self._ack_deadline = self.ack_histogram.percentile(percent=99)
+    def _obtain_ack_deadline(self, maybe_update: bool) -> int:
+        """The actual `ack_deadline` implementation.
 
-        if self.flow_control.max_duration_per_lease_extension > 0:
-            self._ack_deadline = min(
-                self._ack_deadline, self.flow_control.max_duration_per_lease_extension
+        This method is "sticky". It will only perform the computations to check on the
+        right ACK deadline if explicitly requested AND if the histogram with past
+        time-to-ack data has gained a significant amount of new information.
+
+        Args:
+            maybe_update (bool):
+                If ``True``, also update the current ACK deadline before returning it if
+                enough new ACK data has been gathered.
+
+        Returns:
+            int: The current ACK deadline in seconds to use.
+        """
+        with self._ack_deadline_lock:
+            if not maybe_update:
+                return self._ack_deadline
+
+            target_size = min(
+                self._last_histogram_size * 2, self._last_histogram_size + 100
             )
-        return self._ack_deadline
+            hist_size = len(self.ack_histogram)
+
+            if hist_size > target_size:
+                self._last_histogram_size = hist_size
+                self._ack_deadline = self.ack_histogram.percentile(percent=99)
+
+            if self.flow_control.max_duration_per_lease_extension > 0:
+                # The setting in flow control could be too low, adjust if needed.
+                flow_control_setting = max(
+                    self.flow_control.max_duration_per_lease_extension,
+                    histogram.MIN_ACK_DEADLINE,
+                )
+                self._ack_deadline = min(self._ack_deadline, flow_control_setting)
+            return self._ack_deadline
 
     @property
     def load(self):
@@ -406,7 +447,7 @@ class StreamingPullManager(object):
                 deadline = request.modify_deadline_seconds[n]
                 deadline_to_ack_ids[deadline].append(ack_id)
 
-            for deadline, ack_ids in six.iteritems(deadline_to_ack_ids):
+            for deadline, ack_ids in deadline_to_ack_ids.items():
                 self._client.modify_ack_deadline(
                     subscription=self._subscription,
                     ack_ids=ack_ids,
@@ -474,7 +515,7 @@ class StreamingPullManager(object):
         )
 
         # Create the RPC
-        stream_ack_deadline_seconds = self.ack_histogram.percentile(99)
+        stream_ack_deadline_seconds = self.ack_deadline
 
         get_initial_request = functools.partial(
             self._get_initial_request, stream_ack_deadline_seconds
@@ -512,24 +553,33 @@ class StreamingPullManager(object):
         # Start the stream heartbeater thread.
         self._heartbeater.start()
 
-    def close(self, reason=None, await_msg_callbacks=False):
+    def close(self, reason=None):
         """Stop consuming messages and shutdown all helper threads.
 
         This method is idempotent. Additional calls will have no effect.
 
+        The method does not block, it delegates the shutdown operations to a background
+        thread.
+
         Args:
-            reason (Any): The reason to close this. If None, this is considered
+            reason (Any): The reason to close this. If ``None``, this is considered
                 an "intentional" shutdown. This is passed to the callbacks
                 specified via :meth:`add_close_callback`.
+        """
+        self._regular_shutdown_thread = threading.Thread(
+            name=_REGULAR_SHUTDOWN_THREAD_NAME,
+            daemon=True,
+            target=self._shutdown,
+            kwargs={"reason": reason},
+        )
+        self._regular_shutdown_thread.start()
 
-            await_msg_callbacks (bool):
-                If ``True``, the method will wait until all scheduler threads terminate
-                and only then proceed with the shutdown with the remaining shutdown
-                tasks,
+    def _shutdown(self, reason=None):
+        """Run the actual shutdown sequence (stop the stream and all helper threads).
 
-                If ``False`` (default), the method will shut down the scheduler in a
-                non-blocking fashion, i.e. it will not wait for the currently executing
-                scheduler threads to terminate.
+        Args:
+            reason (Any): The reason to close the stream. If ``None``, this is
+                considered an "intentional" shutdown.
         """
         with self._closing:
             if self._closed:
@@ -544,7 +594,7 @@ class StreamingPullManager(object):
             # Shutdown all helper threads
             _LOGGER.debug("Stopping scheduler.")
             dropped_messages = self._scheduler.shutdown(
-                await_msg_callbacks=await_msg_callbacks
+                await_msg_callbacks=self._await_callbacks_on_shutdown
             )
             self._scheduler = None
 
@@ -663,7 +713,7 @@ class StreamingPullManager(object):
         # modack the messages we received, as this tells the server that we've
         # received them.
         items = [
-            requests.ModAckRequest(message.ack_id, self._ack_histogram.percentile(99))
+            requests.ModAckRequest(message.ack_id, self.ack_deadline)
             for message in received_messages
         ]
         self._dispatcher.modify_ack_deadline(items)
@@ -745,7 +795,7 @@ class StreamingPullManager(object):
         _LOGGER.info("RPC termination has signaled streaming pull manager shutdown.")
         error = _wrap_as_exception(future)
         thread = threading.Thread(
-            name=_RPC_ERROR_THREAD_NAME, target=self.close, kwargs={"reason": error}
+            name=_RPC_ERROR_THREAD_NAME, target=self._shutdown, kwargs={"reason": error}
         )
         thread.daemon = True
         thread.start()

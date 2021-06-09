@@ -27,7 +27,12 @@ from google.cloud.pubsub_v1.subscriber._protocol import streaming_pull_manager
 from google.pubsub_v1.services.subscriber import client as subscriber_client
 
 
-__version__ = pkg_resources.get_distribution("google-cloud-pubsub").version
+try:
+    __version__ = pkg_resources.get_distribution("google-cloud-pubsub").version
+except pkg_resources.DistributionNotFound:
+    # Distribution might not be available if we are not running from within
+    # a PIP package.
+    __version__ = "0.0"
 
 _BLACKLISTED_METHODS = (
     "publish",
@@ -122,6 +127,7 @@ class Client(object):
         flow_control=(),
         scheduler=None,
         use_legacy_flow_control=False,
+        await_callbacks_on_shutdown=False,
     ):
         """Asynchronously start receiving messages on a given subscription.
 
@@ -145,8 +151,8 @@ class Client(object):
         a long time to process.
 
         The ``use_legacy_flow_control`` argument disables enforcing flow control
-        settings at the Cloud PubSub server and uses the less accurate method of
-        only enforcing flow control at the client side.
+        settings at the Cloud Pub/Sub server, and only the client side flow control
+        will be enforced.
 
         This method starts the receiver in the background and returns a
         *Future* representing its execution. Waiting on the future (calling
@@ -199,6 +205,21 @@ class Client(object):
                 *scheduler* to use when executing the callback. This controls
                 how callbacks are executed concurrently. This object must not be shared
                 across multiple SubscriberClients.
+            use_legacy_flow_control (bool):
+                If set to ``True``, flow control at the Cloud Pub/Sub server is disabled,
+                though client-side flow control is still enabled. If set to ``False``
+                (default), both server-side and client-side flow control are enabled.
+            await_callbacks_on_shutdown (bool):
+                If ``True``, after canceling the returned future, the latter's
+                ``result()`` method will block until the background stream and its
+                helper threads have been terminated, and all currently executing message
+                callbacks are done processing.
+
+                If ``False`` (default), the returned future's ``result()`` method will
+                not block after canceling the future. The method will instead return
+                immediately after the background stream and its helper threads have been
+                terminated, but some of the message callback threads might still be
+                running at that point.
 
         Returns:
             A :class:`~google.cloud.pubsub_v1.subscriber.futures.StreamingPullFuture`
@@ -212,6 +233,7 @@ class Client(object):
             flow_control=flow_control,
             scheduler=scheduler,
             use_legacy_flow_control=use_legacy_flow_control,
+            await_callbacks_on_shutdown=await_callbacks_on_shutdown,
         )
 
         future = futures.StreamingPullFuture(manager)

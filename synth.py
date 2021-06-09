@@ -76,7 +76,7 @@ count = s.replace(
     flags=re.MULTILINE | re.DOTALL,
 )
 
-if count < 18:
+if count < 15:
     raise Exception("Expected replacements for gRPC channel options not made.")
 
 # If the emulator is used, force an insecure gRPC channel to avoid SSL errors.
@@ -141,6 +141,77 @@ s.replace(
         \g<0>""",
 )
 
+# Emit deprecation warning if return_immediately flag is set with synchronous pull.
+s.replace(
+    "google/pubsub_v1/services/subscriber/*client.py",
+    r"import pkg_resources",
+    "import warnings\n\g<0>",
+)
+count = s.replace(
+    "google/pubsub_v1/services/subscriber/*client.py",
+    r"""
+    ([^\n\S]+(?:async\ )?def\ pull\(.*?->\ pubsub\.PullResponse:.*?)
+    ((?P<indent>[^\n\S]+)\#\ Wrap\ the\ RPC\ method)
+    """,
+    textwrap.dedent(
+    """
+    \g<1>
+    \g<indent>if request.return_immediately:
+    \g<indent>    warnings.warn(
+    \g<indent>        "The return_immediately flag is deprecated and should be set to False.",
+    \g<indent>        category=DeprecationWarning,
+    \g<indent>    )
+
+    \g<2>"""
+    ),
+    flags=re.MULTILINE | re.DOTALL | re.VERBOSE,
+)
+
+if count != 2:
+    raise Exception("Too many or too few replacements in pull() methods.")
+
+# Silence deprecation warnings in pull() method flattened parameter tests.
+s.replace(
+    "tests/unit/gapic/pubsub_v1/test_subscriber.py",
+    "import mock",
+    "\g<0>\nimport warnings",
+)
+count = s.replace(
+    "tests/unit/gapic/pubsub_v1/test_subscriber.py",
+    textwrap.dedent(
+        r"""
+        ([^\n\S]+# Call the method with a truthy value for each flattened field,
+        [^\n\S]+# using the keyword arguments to the method\.)
+        \s+(client\.pull\(.*?\))"""
+    ),
+    """\n\g<1>
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=DeprecationWarning)
+            \g<2>""",
+    flags = re.MULTILINE | re.DOTALL,
+)
+
+if count < 1:
+    raise Exception("Catch warnings replacement failed.")
+
+count = s.replace(
+    "tests/unit/gapic/pubsub_v1/test_subscriber.py",
+    textwrap.dedent(
+        r"""
+        ([^\n\S]+# Call the method with a truthy value for each flattened field,
+        [^\n\S]+# using the keyword arguments to the method\.)
+        \s+response = (await client\.pull\(.*?\))"""
+    ),
+    """\n\g<1>
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=DeprecationWarning)
+            \g<2>""",
+    flags = re.MULTILINE | re.DOTALL,
+)
+
+if count < 1:
+    raise Exception("Catch warnings replacement failed.")
+
 # Make sure that client library version is present in user agent header.
 s.replace(
     [
@@ -177,13 +248,21 @@ s.replace(
     "\n\g<0>",
 )
 
+# The namespace package declaration in google/cloud/__init__.py should be excluded
+# from coverage.
+s.replace(
+    ".coveragerc",
+    r"((?P<indent>[^\n\S]+)google/pubsub/__init__\.py)",
+    "\g<indent>google/cloud/__init__.py\n\g<0>",
+)
+
 # ----------------------------------------------------------------------------
 # Add templated files
 # ----------------------------------------------------------------------------
 templated_files = gcp.CommonTemplates().py_library(
     microgenerator=True,
     samples=True,
-    cov_level=99,
+    cov_level=100,
     system_test_external_dependencies=["psutil"],
 )
 s.move(templated_files, excludes=[".coveragerc"])

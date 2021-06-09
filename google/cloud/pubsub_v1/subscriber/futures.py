@@ -28,9 +28,9 @@ class StreamingPullFuture(futures.Future):
 
     def __init__(self, manager):
         super(StreamingPullFuture, self).__init__()
-        self._manager = manager
-        self._manager.add_close_callback(self._on_close_callback)
-        self._cancelled = False
+        self.__manager = manager
+        self.__manager.add_close_callback(self._on_close_callback)
+        self.__cancelled = False
 
     def _on_close_callback(self, manager, result):
         if self.done():
@@ -43,27 +43,18 @@ class StreamingPullFuture(futures.Future):
         else:
             self.set_exception(result)
 
-    def cancel(self, await_msg_callbacks=False):
+    def cancel(self):
         """Stops pulling messages and shutdowns the background thread consuming
         messages.
-
-        Args:
-            await_msg_callbacks (bool):
-                If ``True``, the method will block until the background stream and its
-                helper threads have has been terminated, as well as all currently
-                executing message callbacks are done processing.
-
-                If ``False`` (default), the method returns immediately after the
-                background stream and its helper threads have has been terminated, but
-                some of the message callback threads might still be running at that
-                point.
         """
-        self._cancelled = True
-        return self._manager.close(await_msg_callbacks=await_msg_callbacks)
+        # NOTE: We circumvent the base future's self._state to track the cancellation
+        # state, as this state has different meaning with streaming pull futures.
+        self.__cancelled = True
+        return self.__manager.close()
 
     def cancelled(self):
         """
         returns:
             bool: ``True`` if the subscription has been cancelled.
         """
-        return self._cancelled
+        return self.__cancelled

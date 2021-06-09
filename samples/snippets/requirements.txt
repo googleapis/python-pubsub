@@ -1,1 +1,2 @@
-google-cloud-pubsub==2.2.0
+google-cloud-pubsub==2.5.0
+avro==1.10.2

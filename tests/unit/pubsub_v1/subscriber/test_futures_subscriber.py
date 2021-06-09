@@ -31,13 +31,12 @@ class TestStreamingPullFuture(object):
 
     def test_default_state(self):
         future = self.make_future()
+        manager = future._StreamingPullFuture__manager
 
         assert future.running()
         assert not future.done()
         assert not future.cancelled()
-        future._manager.add_close_callback.assert_called_once_with(
-            future._on_close_callback
-        )
+        manager.add_close_callback.assert_called_once_with(future._on_close_callback)
 
     def test__on_close_callback_success(self):
         future = self.make_future()
@@ -69,18 +68,11 @@ class TestStreamingPullFuture(object):
         result = future.result()
         assert result == "foo"  # on close callback was a no-op
 
-    def test_cancel_default_nonblocking_manager_shutdown(self):
+    def test_cancel(self):
         future = self.make_future()
+        manager = future._StreamingPullFuture__manager
 
         future.cancel()
 
-        future._manager.close.assert_called_once_with(await_msg_callbacks=False)
-        assert future.cancelled()
-
-    def test_cancel_blocking_manager_shutdown(self):
-        future = self.make_future()
-
-        future.cancel(await_msg_callbacks=True)
-
-        future._manager.close.assert_called_once_with(await_msg_callbacks=True)
+        manager.close.assert_called_once()
         assert future.cancelled()

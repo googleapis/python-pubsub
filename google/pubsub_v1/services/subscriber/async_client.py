@@ -28,6 +28,7 @@ from typing import (
     Type,
     Union,
 )
+import warnings
 import pkg_resources
 
 import google.api_core.client_options as ClientOptions  # type: ignore
@@ -91,8 +92,36 @@ class SubscriberAsyncClient:
         SubscriberClient.parse_common_location_path
     )
 
-    from_service_account_info = SubscriberClient.from_service_account_info
-    from_service_account_file = SubscriberClient.from_service_account_file
+    @classmethod
+    def from_service_account_info(cls, info: dict, *args, **kwargs):
+        """Creates an instance of this client using the provided credentials info.
+
+        Args:
+            info (dict): The service account private key info.
+            args: Additional arguments to pass to the constructor.
+            kwargs: Additional arguments to pass to the constructor.
+
+        Returns:
+            SubscriberAsyncClient: The constructed client.
+        """
+        return SubscriberClient.from_service_account_info.__func__(SubscriberAsyncClient, info, *args, **kwargs)  # type: ignore
+
+    @classmethod
+    def from_service_account_file(cls, filename: str, *args, **kwargs):
+        """Creates an instance of this client using the provided credentials
+        file.
+
+        Args:
+            filename (str): The path to the service account private key json
+                file.
+            args: Additional arguments to pass to the constructor.
+            kwargs: Additional arguments to pass to the constructor.
+
+        Returns:
+            SubscriberAsyncClient: The constructed client.
+        """
+        return SubscriberClient.from_service_account_file.__func__(SubscriberAsyncClient, filename, *args, **kwargs)  # type: ignore
+
     from_service_account_json = from_service_account_file
 
     @property
@@ -295,6 +324,7 @@ class SubscriberAsyncClient:
                     exceptions.ServiceUnavailable,
                     exceptions.Unknown,
                 ),
+                deadline=60.0,
             ),
             default_timeout=60.0,
             client_info=DEFAULT_CLIENT_INFO,
@@ -376,6 +406,7 @@ class SubscriberAsyncClient:
                     exceptions.ServiceUnavailable,
                     exceptions.Unknown,
                 ),
+                deadline=60.0,
             ),
             default_timeout=60.0,
             client_info=DEFAULT_CLIENT_INFO,
@@ -435,6 +466,7 @@ class SubscriberAsyncClient:
                 maximum=60.0,
                 multiplier=1.3,
                 predicate=retries.if_exception_type(exceptions.ServiceUnavailable,),
+                deadline=60.0,
             ),
             default_timeout=60.0,
             client_info=DEFAULT_CLIENT_INFO,
@@ -522,6 +554,7 @@ class SubscriberAsyncClient:
                     exceptions.ServiceUnavailable,
                     exceptions.Unknown,
                 ),
+                deadline=60.0,
             ),
             default_timeout=60.0,
             client_info=DEFAULT_CLIENT_INFO,
@@ -606,6 +639,7 @@ class SubscriberAsyncClient:
                 maximum=60.0,
                 multiplier=1.3,
                 predicate=retries.if_exception_type(exceptions.ServiceUnavailable,),
+                deadline=60.0,
             ),
             default_timeout=60.0,
             client_info=DEFAULT_CLIENT_INFO,
@@ -713,6 +747,7 @@ class SubscriberAsyncClient:
                 maximum=60.0,
                 multiplier=1.3,
                 predicate=retries.if_exception_type(exceptions.ServiceUnavailable,),
+                deadline=60.0,
             ),
             default_timeout=60.0,
             client_info=DEFAULT_CLIENT_INFO,
@@ -806,6 +841,7 @@ class SubscriberAsyncClient:
                 maximum=60.0,
                 multiplier=1.3,
                 predicate=retries.if_exception_type(exceptions.ServiceUnavailable,),
+                deadline=60.0,
             ),
             default_timeout=60.0,
             client_info=DEFAULT_CLIENT_INFO,
@@ -907,6 +943,12 @@ class SubscriberAsyncClient:
         if max_messages is not None:
             request.max_messages = max_messages
 
+        if request.return_immediately:
+            warnings.warn(
+                "The return_immediately flag is deprecated and should be set to False.",
+                category=DeprecationWarning,
+            )
+
         # Wrap the RPC method; this adds retry and timeout information,
         # and friendly error handling.
         rpc = gapic_v1.method_async.wrap_method(
@@ -920,6 +962,7 @@ class SubscriberAsyncClient:
                     exceptions.ServiceUnavailable,
                     exceptions.Unknown,
                 ),
+                deadline=60.0,
             ),
             default_timeout=60.0,
             client_info=DEFAULT_CLIENT_INFO,
@@ -991,6 +1034,7 @@ class SubscriberAsyncClient:
                     exceptions.ResourceExhausted,
                     exceptions.ServiceUnavailable,
                 ),
+                deadline=900.0,
             ),
             default_timeout=900.0,
             client_info=DEFAULT_CLIENT_INFO,
@@ -1079,6 +1123,7 @@ class SubscriberAsyncClient:
                 maximum=60.0,
                 multiplier=1.3,
                 predicate=retries.if_exception_type(exceptions.ServiceUnavailable,),
+                deadline=60.0,
             ),
             default_timeout=60.0,
             client_info=DEFAULT_CLIENT_INFO,
@@ -1172,6 +1217,7 @@ class SubscriberAsyncClient:
                     exceptions.ServiceUnavailable,
                     exceptions.Unknown,
                 ),
+                deadline=60.0,
             ),
             default_timeout=60.0,
             client_info=DEFAULT_CLIENT_INFO,
@@ -1261,6 +1307,7 @@ class SubscriberAsyncClient:
                     exceptions.ServiceUnavailable,
                     exceptions.Unknown,
                 ),
+                deadline=60.0,
             ),
             default_timeout=60.0,
             client_info=DEFAULT_CLIENT_INFO,
@@ -1391,6 +1438,7 @@ class SubscriberAsyncClient:
                 maximum=60.0,
                 multiplier=1.3,
                 predicate=retries.if_exception_type(exceptions.ServiceUnavailable,),
+                deadline=60.0,
             ),
             default_timeout=60.0,
             client_info=DEFAULT_CLIENT_INFO,
@@ -1458,6 +1506,7 @@ class SubscriberAsyncClient:
                 maximum=60.0,
                 multiplier=1.3,
                 predicate=retries.if_exception_type(exceptions.ServiceUnavailable,),
+                deadline=60.0,
             ),
             default_timeout=60.0,
             client_info=DEFAULT_CLIENT_INFO,
@@ -1542,6 +1591,7 @@ class SubscriberAsyncClient:
                 maximum=60.0,
                 multiplier=1.3,
                 predicate=retries.if_exception_type(exceptions.ServiceUnavailable,),
+                deadline=60.0,
             ),
             default_timeout=60.0,
             client_info=DEFAULT_CLIENT_INFO,
@@ -1607,6 +1657,7 @@ class SubscriberAsyncClient:
                     exceptions.ServiceUnavailable,
                     exceptions.Unknown,
                 ),
+                deadline=60.0,
             ),
             default_timeout=60.0,
             client_info=DEFAULT_CLIENT_INFO,

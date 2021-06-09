@@ -25,7 +25,6 @@ import time
 
 import mock
 import pytest
-import six
 
 import google.auth
 from google.api_core import exceptions as core_exceptions
@@ -45,12 +44,12 @@ def project():
     yield default_project
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture()
 def publisher():
     yield pubsub_v1.PublisherClient()
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture()
 def subscriber():
     yield pubsub_v1.SubscriberClient()
 
@@ -87,12 +86,12 @@ def test_publish_messages(publisher, topic_path, cleanup):
         publisher.publish(
             topic_path, b"The hail in Wales falls mainly on the snails.", num=str(i)
         )
-        for i in six.moves.range(500)
+        for i in range(500)
     ]
 
     for future in futures:
         result = future.result()
-        assert isinstance(result, six.string_types)
+        assert isinstance(result, str)
 
 
 def test_publish_large_messages(publisher, topic_path, cleanup):
@@ -121,7 +120,7 @@ def test_publish_large_messages(publisher, topic_path, cleanup):
     # be no "InvalidArgument: request_size is too large" error.
     for future in futures:
         result = future.result(timeout=10)
-        assert isinstance(result, six.string_types)  # the message ID
+        assert isinstance(result, str)  # the message ID
 
 
 def test_subscribe_to_messages(
@@ -143,7 +142,7 @@ def test_subscribe_to_messages(
     # Publish some messages.
     futures = [
         publisher.publish(topic_path, b"Wooooo! The claaaaaw!", num=str(index))
-        for index in six.moves.range(50)
+        for index in range(50)
     ]
 
     # Make sure the publish completes.
@@ -155,7 +154,7 @@ def test_subscribe_to_messages(
     # that we got everything at least once.
     callback = AckCallback()
     future = subscriber.subscribe(subscription_path, callback)
-    for second in six.moves.range(10):
+    for second in range(10):
         time.sleep(1)
 
         # The callback should have fired at least fifty times, but it
@@ -188,7 +187,7 @@ def test_subscribe_to_messages_async_callbacks(
     # Publish some messages.
     futures = [
         publisher.publish(topic_path, b"Wooooo! The claaaaaw!", num=str(index))
-        for index in six.moves.range(2)
+        for index in range(2)
     ]
 
     # Make sure the publish completes.
@@ -201,7 +200,7 @@ def test_subscribe_to_messages_async_callbacks(
 
     # Actually open the subscription and hold it open for a few seconds.
     future = subscriber.subscribe(subscription_path, callback)
-    for second in six.moves.range(5):
+    for second in range(5):
         time.sleep(4)
 
         # The callback should have fired at least two times, but it may
@@ -645,14 +644,17 @@ class TestStreamingPull(object):
             callback=callback,
             flow_control=flow_control,
             scheduler=scheduler,
+            await_callbacks_on_shutdown=True,
         )
 
         try:
             subscription_future.result(timeout=10)  # less than the sleep in callback
         except exceptions.TimeoutError:
-            subscription_future.cancel(await_msg_callbacks=True)
+            subscription_future.cancel()
+            subscription_future.result()  # block until shutdown completes
 
-        # The shutdown should have waited for the already executing callbacks to finish.
+        # Blocking om shutdown should have waited for the already executing
+        # callbacks to finish.
         assert len(processed_messages) == 3
 
         # The messages that were not processed should have been NACK-ed and we should
@@ -666,7 +668,7 @@ class TestStreamingPull(object):
             all_done.wait()
 
         subscription_future = subscriber.subscribe(
-            subscription_path, callback=callback2
+            subscription_path, callback=callback2, await_callbacks_on_shutdown=False
         )
 
         try:
@@ -674,7 +676,8 @@ class TestStreamingPull(object):
         except threading.BrokenBarrierError:  # PRAGMA: no cover
             pytest.fail("The remaining messages have not been re-delivered in time.")
         finally:
-            subscription_future.cancel(await_msg_callbacks=False)
+            subscription_future.cancel()
+            subscription_future.result()  # block until shutdown completes
 
         # There should be 7 messages left that were not yet processed and none of them
         # should be a message that should have already been sucessfully processed in the
