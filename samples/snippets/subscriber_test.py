@@ -120,11 +120,16 @@ def subscription_sync(subscriber_client, topic):
     @backoff.on_exception(backoff.expo, Unknown, max_time=300)
     def delete_subscription():
         try:
-            subscriber_client.delete_subscription(request={"subscription": subscription.name})
+            subscriber_client.delete_subscription(
+                request={"subscription": subscription.name}
+            )
         except NotFound:
-            print("When Unknown error happens, the server might have"
-                  " successfully deleted the subscription under the cover, so"
-                  " we ignore NotFound")
+            print(
+                "When Unknown error happens, the server might have"
+                " successfully deleted the subscription under the cover, so"
+                " we ignore NotFound"
+            )
+
     delete_subscription()
 
 
@@ -251,7 +256,9 @@ def test_receive_with_delivery_attempts(
     def run_sample():
         _publish_messages(publisher_client, topic)
 
-        subscriber.receive_messages_with_delivery_attempts(PROJECT_ID, SUBSCRIPTION_DLQ, 90)
+        subscriber.receive_messages_with_delivery_attempts(
+            PROJECT_ID, SUBSCRIPTION_DLQ, 90
+        )
 
     run_sample()
 
@@ -409,19 +416,23 @@ def test_receive_with_blocking_shutdown(
     out_lines = out.splitlines()
 
     msg_received_lines = [
-        i for i, line in enumerate(out_lines)
+        i
+        for i, line in enumerate(out_lines)
         if re.search(r".*received.*message.*", line, flags=re.IGNORECASE)
     ]
     msg_done_lines = [
-        i for i, line in enumerate(out_lines)
+        i
+        for i, line in enumerate(out_lines)
         if re.search(r".*done processing.*message.*", line, flags=re.IGNORECASE)
     ]
     stream_canceled_lines = [
-        i for i, line in enumerate(out_lines)
+        i
+        for i, line in enumerate(out_lines)
         if re.search(r".*streaming pull future canceled.*", line, flags=re.IGNORECASE)
     ]
     shutdown_done_waiting_lines = [
-        i for i, line in enumerate(out_lines)
+        i
+        for i, line in enumerate(out_lines)
         if re.search(r".*done waiting.*stream shutdown.*", line, flags=re.IGNORECASE)
     ]
 
