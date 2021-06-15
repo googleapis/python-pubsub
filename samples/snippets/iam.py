@@ -183,8 +183,7 @@ def check_subscription_permissions(project_id, subscription_id):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description=__doc__,
-        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument("project_id", help="Your Google Cloud project ID")
 
@@ -216,8 +215,7 @@ if __name__ == "__main__":
     check_topic_permissions_parser.add_argument("topic_id")
 
     check_subscription_permissions_parser = subparsers.add_parser(
-        "check-subscription-permissions",
-        help=check_subscription_permissions.__doc__,
+        "check-subscription-permissions", help=check_subscription_permissions.__doc__,
     )
     check_subscription_permissions_parser.add_argument("subscription_id")
 
