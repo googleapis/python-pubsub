@@ -55,7 +55,7 @@ def create_topic(project_id, topic_id):
 
     topic = publisher.create_topic(request={"name": topic_path})
 
-    print("Created topic: {}".format(topic.name))
+    print(f"Created topic: {topic.name}")
     # [END pubsub_quickstart_create_topic]
     # [END pubsub_create_topic]
 
@@ -74,7 +74,7 @@ def delete_topic(project_id, topic_id):
 
     publisher.delete_topic(request={"topic": topic_path})
 
-    print("Topic deleted: {}".format(topic_path))
+    print(f"Topic deleted: {topic_path}")
     # [END pubsub_delete_topic]
 
 
@@ -94,7 +94,7 @@ def publish_messages(project_id, topic_id):
     topic_path = publisher.topic_path(project_id, topic_id)
 
     for n in range(1, 10):
-        data = "Message number {}".format(n)
+        data = f"Message number {n}"
         # Data must be a bytestring
         data = data.encode("utf-8")
         # When you publish a message, the client returns a future.
@@ -120,7 +120,7 @@ def publish_messages_with_custom_attributes(project_id, topic_id):
     topic_path = publisher.topic_path(project_id, topic_id)
 
     for n in range(1, 10):
-        data = "Message number {}".format(n)
+        data = f"Message number {n}"
         # Data must be a bytestring
         data = data.encode("utf-8")
         # Add two attributes, origin and username, to the message
@@ -150,10 +150,10 @@ def publish_messages_with_error_handler(project_id, topic_id):
     def get_callback(publish_future, data):
         def callback(publish_future):
             try:
-                # Wait half 100 ms for the publish call to succeed.
+                # Wait 100 ms for the publish call to succeed.
                 print(publish_future.result(timeout=0.1))
-            except TimeoutError:
-                print("Publishing {} timed out.".format(data))
+            except futures.TimeoutError:
+                print(f"Publishing {data} timed out.")
 
         return callback
 
@@ -161,7 +161,7 @@ def publish_messages_with_error_handler(project_id, topic_id):
         data = str(i)
         # When you publish a message, the client returns a future.
         publish_future = publisher.publish(topic_path, data.encode("utf-8"))
-        # Non-blocking. Publish failures is handled in the callback function.
+        # Non-blocking. Publish failures are handled in the callback function.
         publish_future.add_done_callback(get_callback(publish_future, data))
         publish_futures.append(publish_future)
 
@@ -182,11 +182,11 @@ def publish_messages_with_batch_settings(project_id, topic_id):
     # project_id = "your-project-id"
     # topic_id = "your-topic-id"
 
-    # Configure the batch to publish as soon as there is ten messages,
-    # one kilobyte of data, or one second has passed.
+    # Configure the batch to publish as soon as there are 10 messages
+    # or 1 KiB of data, or 1 second has passed.
     batch_settings = pubsub_v1.types.BatchSettings(
         max_messages=10,  # default 100
-        max_bytes=1024,  # default 1 MB
+        max_bytes=1024,  # default 1 MiB
         max_latency=1,  # default 10 ms
     )
     publisher = pubsub_v1.PublisherClient(batch_settings)
@@ -199,7 +199,7 @@ def publish_messages_with_batch_settings(project_id, topic_id):
         print(message_id)
 
     for n in range(1, 10):
-        data = "Message number {}".format(n)
+        data = f"Message number {n}"
         # Data must be a bytestring
         data = data.encode("utf-8")
         publish_future = publisher.publish(topic_path, data)
@@ -248,11 +248,11 @@ def publish_messages_with_flow_control_settings(project_id, topic_id):
 
     # Publish 1000 messages in quick succession to trigger flow control.
     for n in range(1, 1000):
-        data = "Message number {}".format(n)
+        data = f"Message number {n}"
         # Data must be a bytestring
         data = data.encode("utf-8")
         publish_future = publisher.publish(topic_path, data)
-        # Non-blocking.
+        # Non-blocking. Allow the publisher client to batch messages.
         publish_future.add_done_callback(callback)
         publish_futures.append(publish_future)
 
@@ -294,7 +294,7 @@ def publish_messages_with_retry_settings(project_id, topic_id):
     topic_path = publisher.topic_path(project_id, topic_id)
 
     for n in range(1, 10):
-        data = "Message number {}".format(n)
+        data = f"Message number {n}"
         # Data must be a bytestring
         data = data.encode("utf-8")
         future = publisher.publish(topic=topic_path, data=data, retry=custom_retry)
