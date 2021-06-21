@@ -469,6 +469,7 @@ def test_receive_synchronously(publisher_client, topic, subscription_sync, capsy
     assert f"{subscription_sync}" in out
 
 
+@flaky(max_runs=3, min_passes=1)
 def test_receive_synchronously_with_lease(
     publisher_client, topic, subscription_sync, capsys
 ):
