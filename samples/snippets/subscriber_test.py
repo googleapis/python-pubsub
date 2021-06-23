@@ -15,6 +15,7 @@
 import os
 import re
 import sys
+import time
 import uuid
 
 import backoff
@@ -475,7 +476,8 @@ def test_receive_synchronously_with_lease(
 ):
     @backoff.on_exception(backoff.expo, Unknown, max_time=300)
     def run_sample():
-        _publish_messages(publisher_client, topic, message_num=3)
+        _publish_messages(publisher_client, topic, message_num=10)
+        time.sleep(10)
         subscriber.synchronous_pull_with_lease_management(PROJECT_ID, SUBSCRIPTION_SYNC)
 
     run_sample()
