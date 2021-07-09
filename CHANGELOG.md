@@ -5,6 +5,13 @@
 [1]: https://pypi.org/project/google-cloud-pubsub/#history
 
 
+### [2.6.1](https://www.github.com/googleapis/python-pubsub/compare/v2.6.0...v2.6.1) (2021-07-09)
+
+
+### Documentation
+
+* include docs for Pager classes ([#438](https://www.github.com/googleapis/python-pubsub/issues/438)) ([c1f0350](https://www.github.com/googleapis/python-pubsub/commit/c1f0350f8fa2070cf831f0934991fed1b02ff646))
+
 ## [2.6.0](https://www.github.com/googleapis/python-pubsub/compare/v2.5.0...v2.6.0) (2021-06-17)
 
 
