@@ -397,7 +397,8 @@ def receive_messages(project_id, subscription_id, timeout=None):
             # unless an exception is encountered first.
             streaming_pull_future.result(timeout=timeout)
         except TimeoutError:
-            streaming_pull_future.cancel()
+            streaming_pull_future.cancel()  # Trigger the shutdown.
+            streaming_pull_future.result()  # Block until the shutdown is complete.
     # [END pubsub_subscriber_async_pull]
     # [END pubsub_quickstart_subscriber]
 
@@ -436,7 +437,8 @@ def receive_messages_with_custom_attributes(project_id, subscription_id, timeout
             # unless an exception is encountered first.
             streaming_pull_future.result(timeout=timeout)
         except TimeoutError:
-            streaming_pull_future.cancel()
+            streaming_pull_future.cancel()  # Trigger the shutdown.
+            streaming_pull_future.result()  # Block until the shutdown is complete.
     # [END pubsub_subscriber_async_pull_custom_attributes]
 
 
@@ -474,7 +476,8 @@ def receive_messages_with_flow_control(project_id, subscription_id, timeout=None
             # unless an exception is encountered first.
             streaming_pull_future.result(timeout=timeout)
         except TimeoutError:
-            streaming_pull_future.cancel()
+            streaming_pull_future.cancel()  # Trigger the shutdown.
+            streaming_pull_future.result()  # Block until the shutdown is complete.
     # [END pubsub_subscriber_flow_settings]
 
 
@@ -496,7 +499,7 @@ def receive_messages_with_blocking_shutdown(project_id, subscription_id, timeout
 
     def callback(message):
         print(f"Received {message.data}.")
-        time.sleep(timeout + 5.0)  # Pocess longer than streaming pull future timeout.
+        time.sleep(timeout + 3.0)  # Pocess longer than streaming pull future timeout.
         message.ack()
         print(f"Done processing the message {message.data}.")
 
@@ -663,10 +666,11 @@ def listen_for_errors(project_id, subscription_id, timeout=None):
         try:
             streaming_pull_future.result(timeout=timeout)
         except Exception as e:
-            streaming_pull_future.cancel()
             print(
                 f"Listening for messages on {subscription_path} threw an exception: {e}."
             )
+            streaming_pull_future.cancel()  # Trigger the shutdown.
+            streaming_pull_future.result()  # Block until the shutdown is complete.
     # [END pubsub_subscriber_error_listener]
 
 
@@ -697,7 +701,8 @@ def receive_messages_with_delivery_attempts(project_id, subscription_id, timeout
         try:
             streaming_pull_future.result(timeout=timeout)
         except TimeoutError:
-            streaming_pull_future.cancel()
+            streaming_pull_future.cancel()  # Trigger the shutdown.
+            streaming_pull_future.result()  # Block until the shutdown is complete.
     # [END pubsub_dead_letter_delivery_attempt]
 
 

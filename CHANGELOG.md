@@ -5,6 +5,54 @@
 [1]: https://pypi.org/project/google-cloud-pubsub/#history
 
 
+## 2.6.1
+
+07-05-2021 10:33 PDT
+
+### Dependencies
+
+- Fix possible crash by requiring `grpcio >= 1.38.1`. ([#414](https://github.com/googleapis/python-pubsub/issues/414)) ([7037a28](https://github.com/googleapis/python-pubsub/pull/435/commits/7037a28090aa4efa01808231721716bca80bb0b7))
+
+### Documentation
+
+- Adjust samples for publishing with error handler and flow control. ([#433](https://github.com/googleapis/python-pubsub/pull/433))
+
+### Internal / Testing Changes
+
+- Fix flaky sync pull sample test. ([#434](https://github.com/googleapis/python-pubsub/pull/434))
+- Mitigate flaky snippets tests. ([#432](https://github.com/googleapis/python-pubsub/pull/432))
+
+## [2.6.0](https://www.github.com/googleapis/python-pubsub/compare/v2.5.0...v2.6.0) (2021-06-17)
+
+
+### Features
+
+* support customizable retry and timeout settings on the publisher client ([#299](https://www.github.com/googleapis/python-pubsub/issues/299)) ([7597604](https://www.github.com/googleapis/python-pubsub/commit/7597604b41fa3a1e9bf34addc35c8647dde007cc))
+
+
+### Bug Fixes
+
+* ACK deadline set for received messages can be too low  ([#416](https://www.github.com/googleapis/python-pubsub/issues/416)) ([e907f6e](https://www.github.com/googleapis/python-pubsub/commit/e907f6e05f59f64a3b08df3304e92ec960997be6))
+* threads can skip the line in publisher flow controller ([#422](https://www.github.com/googleapis/python-pubsub/issues/422)) ([ef89f55](https://www.github.com/googleapis/python-pubsub/commit/ef89f55a41044e9ad26b91132b4b1be9c7b2c127))
+
+
+### Documentation
+
+* block until the streaming pull shuts down ([#424](https://www.github.com/googleapis/python-pubsub/issues/424)) ([d0d0b70](https://www.github.com/googleapis/python-pubsub/commit/d0d0b704642df8dee893d3f585aeb666e19696fb))
+* explain that future.cancel() is non-blocking ([#420](https://www.github.com/googleapis/python-pubsub/issues/420)) ([c825789](https://www.github.com/googleapis/python-pubsub/commit/c825789bdff310f44cbb132a723e99d1e6331d8f))
+
+## [2.5.0](https://www.github.com/googleapis/python-pubsub/compare/v2.4.2...v2.5.0) (2021-05-18)
+
+
+### Features
+
+* Make publish futures compatible with `concurrent.futures.as_completed()`. ([#397](https://www.github.com/googleapis/python-pubsub/issues/397)) ([e29a2c0](https://www.github.com/googleapis/python-pubsub/commit/e29a2c0ac6c5d2ebf2311646e552a02f184cfedc))
+
+
+### Bug Fixes
+
+* Scheduler errors when executor in shutdown. ([#399](https://www.github.com/googleapis/python-pubsub/issues/399)) ([39a83d3](https://www.github.com/googleapis/python-pubsub/commit/39a83d3eef196e88478ad8362201a2ab12e9f681))
+
 ## 2.4.2
 
 05-06-2021 23:50 PDT
