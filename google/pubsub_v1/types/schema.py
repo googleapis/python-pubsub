@@ -53,6 +53,7 @@ class Encoding(proto.Enum):
 
 class Schema(proto.Message):
     r"""A schema resource.
+
     Attributes:
         name (str):
             Required. Name of the schema. Format is
@@ -78,6 +79,7 @@ class Schema(proto.Message):
 
 class CreateSchemaRequest(proto.Message):
     r"""Request for the CreateSchema method.
+
     Attributes:
         parent (str):
             Required. The name of the project in which to create the
@@ -104,6 +106,7 @@ class CreateSchemaRequest(proto.Message):
 
 class GetSchemaRequest(proto.Message):
     r"""Request for the GetSchema method.
+
     Attributes:
         name (str):
             Required. The name of the schema to get. Format is
@@ -120,6 +123,7 @@ class GetSchemaRequest(proto.Message):
 
 class ListSchemasRequest(proto.Message):
     r"""Request for the ``ListSchemas`` method.
+
     Attributes:
         parent (str):
             Required. The name of the project in which to list schemas.
@@ -145,6 +149,7 @@ class ListSchemasRequest(proto.Message):
 
 class ListSchemasResponse(proto.Message):
     r"""Response for the ``ListSchemas`` method.
+
     Attributes:
         schemas (Sequence[google.pubsub_v1.types.Schema]):
             The resulting schemas.
@@ -164,6 +169,7 @@ class ListSchemasResponse(proto.Message):
 
 class DeleteSchemaRequest(proto.Message):
     r"""Request for the ``DeleteSchema`` method.
+
     Attributes:
         name (str):
             Required. Name of the schema to delete. Format is
@@ -175,6 +181,7 @@ class DeleteSchemaRequest(proto.Message):
 
 class ValidateSchemaRequest(proto.Message):
     r"""Request for the ``ValidateSchema`` method.
+
     Attributes:
         parent (str):
             Required. The name of the project in which to validate
@@ -193,6 +200,7 @@ class ValidateSchemaResponse(proto.Message):
 
 class ValidateMessageRequest(proto.Message):
     r"""Request for the ``ValidateMessage`` method.
+
     Attributes:
         parent (str):
             Required. The name of the project in which to validate
