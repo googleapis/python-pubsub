@@ -29,7 +29,7 @@ for library in s.get_staging_dirs(default_version):
     # DEFAULT SCOPES and SERVICE_ADDRESS are being used. so let's force them in.
     s.replace(
         library / f"google/pubsub_{library.name}/services/*er/*client.py",
-        r"DEFAULT_ENDPOINT = 'pubsub\.googleapis\.com'",
+        r"""DEFAULT_ENDPOINT = \"pubsub\.googleapis\.com\"""",
         """
     # The scopes needed to make gRPC calls to all of the methods defined in
     # this service
