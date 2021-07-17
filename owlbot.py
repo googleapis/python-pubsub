@@ -234,6 +234,63 @@ for library in s.get_staging_dirs(default_version):
         "\n\g<0>",
     )
 
+    # Allow timeout to be an instance of google.api_core.timeout.*
+    s.replace(
+        library / f"google/pubsub_{library.name}/types/__init__.py",
+        r"from \.pubsub import \(",
+        "from typing import Union\n\n\g<0>"
+    )
+
+    s.replace(
+        library / f"google/pubsub_{library.name}/types/__init__.py",
+        r"__all__ = \(\n",
+        textwrap.dedent('''\
+            TimeoutType = Union[
+                int,
+                float,
+                "google.api_core.timeout.ConstantTimeout",
+                "google.api_core.timeout.ExponentialTimeout",
+            ]
+            """The type of the timeout parameter of publisher client methods."""
+
+            \g<0>    "TimeoutType",''')
+    )
+
+    s.replace(
+        library / f"google/pubsub_{library.name}/services/publisher/*client.py",
+        r"from google.api_core import retry as retries.*\n",
+        "\g<0>from google.api_core import timeout as timeouts  # type: ignore\n"
+    )
+
+    s.replace(
+        library / f"google/pubsub_{library.name}/services/publisher/*client.py",
+        f"from google\.pubsub_{library.name}\.types import pubsub",
+        f"\g<0>\nfrom google.pubsub_{library.name}.types import TimeoutType",
+    )
+
+    s.replace(
+        library / f"google/pubsub_{library.name}/services/publisher/*client.py",
+        r"(\s+)timeout: float = None.*\n",
+        f"\g<1>timeout: TimeoutType = gapic_{library.name}.method.DEFAULT,",
+    )
+
+    s.replace(
+        library / f"google/pubsub_{library.name}/services/publisher/*client.py",
+        r"([^\S\r\n]+)timeout \(float\): (.*)\n",
+        (
+            "\g<1>timeout (TimeoutType):\n"
+            "\g<1>    \g<2>\n"
+        ),
+    )
+
+    # The namespace package declaration in google/cloud/__init__.py should be excluded
+    # from coverage.
+    s.replace(
+        ".coveragerc",
+        r"((?P<indent>[^\n\S]+)google/pubsub/__init__\.py)",
+        "\g<indent>google/cloud/__init__.py\n\g<0>",
+    )
+
     s.move(
         library,
         excludes=[
