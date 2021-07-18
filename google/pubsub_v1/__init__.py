@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 # Copyright 2020 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,6 +17,7 @@
 from .services.publisher import PublisherClient
 from .services.schema_service import SchemaServiceClient
 from .services.subscriber import SubscriberClient
+
 from .types.pubsub import AcknowledgeRequest
 from .types.pubsub import CreateSnapshotRequest
 from .types.pubsub import DeadLetterPolicy
@@ -74,7 +74,6 @@ from .types.schema import ValidateMessageRequest
 from .types.schema import ValidateMessageResponse
 from .types.schema import ValidateSchemaRequest
 from .types.schema import ValidateSchemaResponse
-
 
 __all__ = (
     "AcknowledgeRequest",

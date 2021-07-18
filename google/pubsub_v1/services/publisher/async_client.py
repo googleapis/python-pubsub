@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 # Copyright 2020 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 from collections import OrderedDict
 import functools
 import re
@@ -34,7 +32,6 @@ from google.iam.v1 import policy_pb2 as policy  # type: ignore
 from google.pubsub_v1.services.publisher import pagers
 from google.pubsub_v1.types import pubsub
 from google.pubsub_v1.types import TimeoutType
-
 from .transports.base import PublisherTransport, DEFAULT_CLIENT_INFO
 from .transports.grpc_asyncio import PublisherGrpcAsyncIOTransport
 from .client import PublisherClient
@@ -56,25 +53,20 @@ class PublisherAsyncClient:
     parse_subscription_path = staticmethod(PublisherClient.parse_subscription_path)
     topic_path = staticmethod(PublisherClient.topic_path)
     parse_topic_path = staticmethod(PublisherClient.parse_topic_path)
-
     common_billing_account_path = staticmethod(
         PublisherClient.common_billing_account_path
     )
     parse_common_billing_account_path = staticmethod(
         PublisherClient.parse_common_billing_account_path
     )
-
     common_folder_path = staticmethod(PublisherClient.common_folder_path)
     parse_common_folder_path = staticmethod(PublisherClient.parse_common_folder_path)
-
     common_organization_path = staticmethod(PublisherClient.common_organization_path)
     parse_common_organization_path = staticmethod(
         PublisherClient.parse_common_organization_path
     )
-
     common_project_path = staticmethod(PublisherClient.common_project_path)
     parse_common_project_path = staticmethod(PublisherClient.parse_common_project_path)
-
     common_location_path = staticmethod(PublisherClient.common_location_path)
     parse_common_location_path = staticmethod(
         PublisherClient.parse_common_location_path
@@ -165,7 +157,6 @@ class PublisherAsyncClient:
             google.auth.exceptions.MutualTlsChannelError: If mutual TLS transport
                 creation failed for any reason.
         """
-
         self._client = PublisherClient(
             credentials=credentials,
             transport=transport,
@@ -188,7 +179,8 @@ class PublisherAsyncClient:
 
         Args:
             request (:class:`google.pubsub_v1.types.Topic`):
-                The request object. A topic resource.
+                The request object.
+                A topic resource.
             name (:class:`str`):
                 Required. The name of the topic. It must have the format
                 ``"projects/{project}/topics/{topic}"``. ``{topic}``
@@ -202,7 +194,6 @@ class PublisherAsyncClient:
                 This corresponds to the ``name`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (TimeoutType):
@@ -228,7 +219,6 @@ class PublisherAsyncClient:
 
         # If we have keyword arguments corresponding to fields on the
         # request, apply these.
-
         if name is not None:
             request.name = name
 
@@ -272,8 +262,8 @@ class PublisherAsyncClient:
 
         Args:
             request (:class:`google.pubsub_v1.types.UpdateTopicRequest`):
-                The request object. Request for the UpdateTopic method.
-
+                The request object.
+                Request for the UpdateTopic method.
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (TimeoutType):
@@ -286,7 +276,6 @@ class PublisherAsyncClient:
                 A topic resource.
         """
         # Create or coerce a protobuf request object.
-
         request = pubsub.UpdateTopicRequest(request)
 
         # Wrap the RPC method; this adds retry and timeout information,
@@ -333,7 +322,8 @@ class PublisherAsyncClient:
 
         Args:
             request (:class:`google.pubsub_v1.types.PublishRequest`):
-                The request object. Request for the Publish method.
+                The request object.
+                Request for the Publish method.
             topic (:class:`str`):
                 Required. The messages in the request will be published
                 on this topic. Format is
@@ -347,7 +337,6 @@ class PublisherAsyncClient:
                 This corresponds to the ``messages`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (TimeoutType):
@@ -373,10 +362,8 @@ class PublisherAsyncClient:
 
         # If we have keyword arguments corresponding to fields on the
         # request, apply these.
-
         if topic is not None:
             request.topic = topic
-
         if messages:
             request.messages.extend(messages)
 
@@ -428,7 +415,8 @@ class PublisherAsyncClient:
 
         Args:
             request (:class:`google.pubsub_v1.types.GetTopicRequest`):
-                The request object. Request for the GetTopic method.
+                The request object.
+                Request for the GetTopic method.
             topic (:class:`str`):
                 Required. The name of the topic to get. Format is
                 ``projects/{project}/topics/{topic}``.
@@ -436,7 +424,6 @@ class PublisherAsyncClient:
                 This corresponds to the ``topic`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (TimeoutType):
@@ -462,7 +449,6 @@ class PublisherAsyncClient:
 
         # If we have keyword arguments corresponding to fields on the
         # request, apply these.
-
         if topic is not None:
             request.topic = topic
 
@@ -510,7 +496,8 @@ class PublisherAsyncClient:
 
         Args:
             request (:class:`google.pubsub_v1.types.ListTopicsRequest`):
-                The request object. Request for the `ListTopics` method.
+                The request object.
+                Request for the `ListTopics` method.
             project (:class:`str`):
                 Required. The name of the project in which to list
                 topics. Format is ``projects/{project-id}``.
@@ -518,7 +505,6 @@ class PublisherAsyncClient:
                 This corresponds to the ``project`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (TimeoutType):
@@ -548,7 +534,6 @@ class PublisherAsyncClient:
 
         # If we have keyword arguments corresponding to fields on the
         # request, apply these.
-
         if project is not None:
             request.project = project
 
@@ -603,7 +588,8 @@ class PublisherAsyncClient:
 
         Args:
             request (:class:`google.pubsub_v1.types.ListTopicSubscriptionsRequest`):
-                The request object. Request for the
+                The request object.
+                Request for the
                 `ListTopicSubscriptions` method.
             topic (:class:`str`):
                 Required. The name of the topic that subscriptions are
@@ -613,7 +599,6 @@ class PublisherAsyncClient:
                 This corresponds to the ``topic`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (TimeoutType):
@@ -643,7 +628,6 @@ class PublisherAsyncClient:
 
         # If we have keyword arguments corresponding to fields on the
         # request, apply these.
-
         if topic is not None:
             request.topic = topic
 
@@ -702,7 +686,8 @@ class PublisherAsyncClient:
 
         Args:
             request (:class:`google.pubsub_v1.types.ListTopicSnapshotsRequest`):
-                The request object. Request for the `ListTopicSnapshots`
+                The request object.
+                Request for the `ListTopicSnapshots`
                 method.
             topic (:class:`str`):
                 Required. The name of the topic that snapshots are
@@ -712,7 +697,6 @@ class PublisherAsyncClient:
                 This corresponds to the ``topic`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (TimeoutType):
@@ -742,7 +726,6 @@ class PublisherAsyncClient:
 
         # If we have keyword arguments corresponding to fields on the
         # request, apply these.
-
         if topic is not None:
             request.topic = topic
 
@@ -801,7 +784,8 @@ class PublisherAsyncClient:
 
         Args:
             request (:class:`google.pubsub_v1.types.DeleteTopicRequest`):
-                The request object. Request for the `DeleteTopic`
+                The request object.
+                Request for the `DeleteTopic`
                 method.
             topic (:class:`str`):
                 Required. Name of the topic to delete. Format is
@@ -810,7 +794,6 @@ class PublisherAsyncClient:
                 This corresponds to the ``topic`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (TimeoutType):
@@ -832,7 +815,6 @@ class PublisherAsyncClient:
 
         # If we have keyword arguments corresponding to fields on the
         # request, apply these.
-
         if topic is not None:
             request.topic = topic
 
@@ -878,9 +860,9 @@ class PublisherAsyncClient:
 
         Args:
             request (:class:`google.pubsub_v1.types.DetachSubscriptionRequest`):
-                The request object. Request for the DetachSubscription
+                The request object.
+                Request for the DetachSubscription
                 method.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (TimeoutType):
@@ -895,7 +877,6 @@ class PublisherAsyncClient:
 
         """
         # Create or coerce a protobuf request object.
-
         request = pubsub.DetachSubscriptionRequest(request)
 
         # Wrap the RPC method; this adds retry and timeout information,

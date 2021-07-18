@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 # Copyright 2020 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 from collections import OrderedDict
 import functools
 import re
@@ -33,7 +31,6 @@ from google.iam.v1 import policy_pb2 as policy  # type: ignore
 from google.pubsub_v1.services.schema_service import pagers
 from google.pubsub_v1.types import schema
 from google.pubsub_v1.types import schema as gp_schema
-
 from .transports.base import SchemaServiceTransport, DEFAULT_CLIENT_INFO
 from .transports.grpc_asyncio import SchemaServiceGrpcAsyncIOTransport
 from .client import SchemaServiceClient
@@ -49,31 +46,26 @@ class SchemaServiceAsyncClient:
 
     schema_path = staticmethod(SchemaServiceClient.schema_path)
     parse_schema_path = staticmethod(SchemaServiceClient.parse_schema_path)
-
     common_billing_account_path = staticmethod(
         SchemaServiceClient.common_billing_account_path
     )
     parse_common_billing_account_path = staticmethod(
         SchemaServiceClient.parse_common_billing_account_path
     )
-
     common_folder_path = staticmethod(SchemaServiceClient.common_folder_path)
     parse_common_folder_path = staticmethod(
         SchemaServiceClient.parse_common_folder_path
     )
-
     common_organization_path = staticmethod(
         SchemaServiceClient.common_organization_path
     )
     parse_common_organization_path = staticmethod(
         SchemaServiceClient.parse_common_organization_path
     )
-
     common_project_path = staticmethod(SchemaServiceClient.common_project_path)
     parse_common_project_path = staticmethod(
         SchemaServiceClient.parse_common_project_path
     )
-
     common_location_path = staticmethod(SchemaServiceClient.common_location_path)
     parse_common_location_path = staticmethod(
         SchemaServiceClient.parse_common_location_path
@@ -164,7 +156,6 @@ class SchemaServiceAsyncClient:
             google.auth.exceptions.MutualTlsChannelError: If mutual TLS transport
                 creation failed for any reason.
         """
-
         self._client = SchemaServiceClient(
             credentials=credentials,
             transport=transport,
@@ -187,7 +178,8 @@ class SchemaServiceAsyncClient:
 
         Args:
             request (:class:`google.pubsub_v1.types.CreateSchemaRequest`):
-                The request object. Request for the CreateSchema method.
+                The request object.
+                Request for the CreateSchema method.
             parent (:class:`str`):
                 Required. The name of the project in which to create the
                 schema. Format is ``projects/{project-id}``.
@@ -216,7 +208,6 @@ class SchemaServiceAsyncClient:
                 This corresponds to the ``schema_id`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
@@ -241,7 +232,6 @@ class SchemaServiceAsyncClient:
 
         # If we have keyword arguments corresponding to fields on the
         # request, apply these.
-
         if parent is not None:
             request.parent = parent
         if schema is not None:
@@ -282,7 +272,8 @@ class SchemaServiceAsyncClient:
 
         Args:
             request (:class:`google.pubsub_v1.types.GetSchemaRequest`):
-                The request object. Request for the GetSchema method.
+                The request object.
+                Request for the GetSchema method.
             name (:class:`str`):
                 Required. The name of the schema to get. Format is
                 ``projects/{project}/schemas/{schema}``.
@@ -290,7 +281,6 @@ class SchemaServiceAsyncClient:
                 This corresponds to the ``name`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
@@ -315,7 +305,6 @@ class SchemaServiceAsyncClient:
 
         # If we have keyword arguments corresponding to fields on the
         # request, apply these.
-
         if name is not None:
             request.name = name
 
@@ -352,7 +341,8 @@ class SchemaServiceAsyncClient:
 
         Args:
             request (:class:`google.pubsub_v1.types.ListSchemasRequest`):
-                The request object. Request for the `ListSchemas`
+                The request object.
+                Request for the `ListSchemas`
                 method.
             parent (:class:`str`):
                 Required. The name of the project in which to list
@@ -361,7 +351,6 @@ class SchemaServiceAsyncClient:
                 This corresponds to the ``parent`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
@@ -390,7 +379,6 @@ class SchemaServiceAsyncClient:
 
         # If we have keyword arguments corresponding to fields on the
         # request, apply these.
-
         if parent is not None:
             request.parent = parent
 
@@ -433,7 +421,8 @@ class SchemaServiceAsyncClient:
 
         Args:
             request (:class:`google.pubsub_v1.types.DeleteSchemaRequest`):
-                The request object. Request for the `DeleteSchema`
+                The request object.
+                Request for the `DeleteSchema`
                 method.
             name (:class:`str`):
                 Required. Name of the schema to delete. Format is
@@ -442,7 +431,6 @@ class SchemaServiceAsyncClient:
                 This corresponds to the ``name`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
@@ -463,7 +451,6 @@ class SchemaServiceAsyncClient:
 
         # If we have keyword arguments corresponding to fields on the
         # request, apply these.
-
         if name is not None:
             request.name = name
 
@@ -500,7 +487,8 @@ class SchemaServiceAsyncClient:
 
         Args:
             request (:class:`google.pubsub_v1.types.ValidateSchemaRequest`):
-                The request object. Request for the `ValidateSchema`
+                The request object.
+                Request for the `ValidateSchema`
                 method.
             parent (:class:`str`):
                 Required. The name of the project in which to validate
@@ -516,7 +504,6 @@ class SchemaServiceAsyncClient:
                 This corresponds to the ``schema`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
@@ -541,7 +528,6 @@ class SchemaServiceAsyncClient:
 
         # If we have keyword arguments corresponding to fields on the
         # request, apply these.
-
         if parent is not None:
             request.parent = parent
         if schema is not None:
@@ -579,9 +565,9 @@ class SchemaServiceAsyncClient:
 
         Args:
             request (:class:`google.pubsub_v1.types.ValidateMessageRequest`):
-                The request object. Request for the `ValidateMessage`
+                The request object.
+                Request for the `ValidateMessage`
                 method.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
@@ -593,7 +579,6 @@ class SchemaServiceAsyncClient:
                 Response for the ValidateMessage method.
         """
         # Create or coerce a protobuf request object.
-
         request = schema.ValidateMessageRequest(request)
 
         # Wrap the RPC method; this adds retry and timeout information,

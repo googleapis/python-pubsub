@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 # Copyright 2020 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,15 +13,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 import warnings
-from typing import Awaitable, Callable, Dict, Optional, Sequence, Tuple
+from typing import Awaitable, Callable, Dict, Optional, Sequence, Tuple, Union
 
 from google.api_core import gapic_v1  # type: ignore
 from google.api_core import grpc_helpers_async  # type: ignore
 from google import auth  # type: ignore
 from google.auth import credentials  # type: ignore
 from google.auth.transport.grpc import SslCredentials  # type: ignore
+import packaging.version
 
 import grpc  # type: ignore
 from grpc.experimental import aio  # type: ignore
@@ -32,7 +31,6 @@ from google.iam.v1 import policy_pb2 as policy  # type: ignore
 from google.protobuf import empty_pb2 as empty  # type: ignore
 from google.pubsub_v1.types import schema
 from google.pubsub_v1.types import schema as gp_schema
-
 from .base import SchemaServiceTransport, DEFAULT_CLIENT_INFO
 from .grpc import SchemaServiceGrpcTransport
 
@@ -84,13 +82,15 @@ class SchemaServiceGrpcAsyncIOTransport(SchemaServiceTransport):
         Returns:
             aio.Channel: A gRPC AsyncIO channel object.
         """
-        scopes = scopes or cls.AUTH_SCOPES
+
+        self_signed_jwt_kwargs = cls._get_self_signed_jwt_kwargs(host, scopes)
+
         return grpc_helpers_async.create_channel(
             host,
             credentials=credentials,
             credentials_file=credentials_file,
-            scopes=scopes,
             quota_project_id=quota_project_id,
+            **self_signed_jwt_kwargs,
             **kwargs,
         )
 
@@ -112,7 +112,8 @@ class SchemaServiceGrpcAsyncIOTransport(SchemaServiceTransport):
         """Instantiate the transport.
 
         Args:
-            host (Optional[str]): The hostname to connect to.
+            host (Optional[str]):
+                 The hostname to connect to.
             credentials (Optional[google.auth.credentials.Credentials]): The
                 authorization credentials to attach to requests. These
                 credentials identify the application to the service; if none
@@ -170,7 +171,6 @@ class SchemaServiceGrpcAsyncIOTransport(SchemaServiceTransport):
             # If a channel was explicitly provided, set it.
             self._grpc_channel = channel
             self._ssl_channel_credentials = None
-
         else:
             if api_mtls_endpoint:
                 host = api_mtls_endpoint
@@ -234,7 +234,9 @@ class SchemaServiceGrpcAsyncIOTransport(SchemaServiceTransport):
     def create_schema(
         self,
     ) -> Callable[[gp_schema.CreateSchemaRequest], Awaitable[gp_schema.Schema]]:
-        r"""Return a callable for the create schema method over gRPC.
+        r"""Return a callable for the
+        create schema
+          method over gRPC.
 
         Creates a schema.
 
@@ -260,7 +262,9 @@ class SchemaServiceGrpcAsyncIOTransport(SchemaServiceTransport):
     def get_schema(
         self,
     ) -> Callable[[schema.GetSchemaRequest], Awaitable[schema.Schema]]:
-        r"""Return a callable for the get schema method over gRPC.
+        r"""Return a callable for the
+        get schema
+          method over gRPC.
 
         Gets a schema.
 
@@ -286,7 +290,9 @@ class SchemaServiceGrpcAsyncIOTransport(SchemaServiceTransport):
     def list_schemas(
         self,
     ) -> Callable[[schema.ListSchemasRequest], Awaitable[schema.ListSchemasResponse]]:
-        r"""Return a callable for the list schemas method over gRPC.
+        r"""Return a callable for the
+        list schemas
+          method over gRPC.
 
         Lists schemas in a project.
 
@@ -312,7 +318,9 @@ class SchemaServiceGrpcAsyncIOTransport(SchemaServiceTransport):
     def delete_schema(
         self,
     ) -> Callable[[schema.DeleteSchemaRequest], Awaitable[empty.Empty]]:
-        r"""Return a callable for the delete schema method over gRPC.
+        r"""Return a callable for the
+        delete schema
+          method over gRPC.
 
         Deletes a schema.
 
@@ -340,7 +348,9 @@ class SchemaServiceGrpcAsyncIOTransport(SchemaServiceTransport):
     ) -> Callable[
         [gp_schema.ValidateSchemaRequest], Awaitable[gp_schema.ValidateSchemaResponse]
     ]:
-        r"""Return a callable for the validate schema method over gRPC.
+        r"""Return a callable for the
+        validate schema
+          method over gRPC.
 
         Validates a schema.
 
@@ -368,7 +378,9 @@ class SchemaServiceGrpcAsyncIOTransport(SchemaServiceTransport):
     ) -> Callable[
         [schema.ValidateMessageRequest], Awaitable[schema.ValidateMessageResponse]
     ]:
-        r"""Return a callable for the validate message method over gRPC.
+        r"""Return a callable for the
+        validate message
+          method over gRPC.
 
         Validates a message against a schema.
 
