@@ -1046,10 +1046,25 @@ class StreamingPullResponse(proto.Message):
         received_messages (Sequence[google.pubsub_v1.types.ReceivedMessage]):
             Received Pub/Sub messages. This will not be
             empty.
+        subscription_properties (google.pubsub_v1.types.StreamingPullResponse.SubscriptionProperties):
+            Properties associated with this subscription.
     """
+
+    class SubscriptionProperties(proto.Message):
+        r"""Subscription properties sent as part of the response.
+        Attributes:
+            message_ordering_enabled (bool):
+                True iff message ordering is enabled for this
+                subscription.
+        """
+
+        message_ordering_enabled = proto.Field(proto.BOOL, number=2,)
 
     received_messages = proto.RepeatedField(
         proto.MESSAGE, number=1, message="ReceivedMessage",
+    )
+    subscription_properties = proto.Field(
+        proto.MESSAGE, number=4, message=SubscriptionProperties,
     )
 
 
