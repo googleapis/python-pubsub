@@ -125,6 +125,16 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
 
         return api_endpoint.replace(".googleapis.com", ".mtls.googleapis.com")
 
+    # The scopes needed to make gRPC calls to all of the methods defined in
+    # this service
+    _DEFAULT_SCOPES = (
+        "https://www.googleapis.com/auth/cloud-platform",
+        "https://www.googleapis.com/auth/pubsub",
+    )
+
+    SERVICE_ADDRESS = "pubsub.googleapis.com:443"
+    """The default address of the service."""
+
     DEFAULT_ENDPOINT = "pubsub.googleapis.com"
     DEFAULT_MTLS_ENDPOINT = _get_default_mtls_endpoint.__func__(  # type: ignore
         DEFAULT_ENDPOINT

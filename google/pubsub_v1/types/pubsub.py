@@ -93,6 +93,7 @@ class MessageStoragePolicy(proto.Message):
 
 class SchemaSettings(proto.Message):
     r"""Settings for validating messages published against a schema.
+
     Attributes:
         schema (str):
             Required. The name of the schema that messages published
@@ -110,6 +111,7 @@ class SchemaSettings(proto.Message):
 
 class Topic(proto.Message):
     r"""A topic resource.
+
     Attributes:
         name (str):
             Required. The name of the topic. It must have the format
@@ -207,6 +209,7 @@ class PubsubMessage(proto.Message):
 
 class GetTopicRequest(proto.Message):
     r"""Request for the GetTopic method.
+
     Attributes:
         topic (str):
             Required. The name of the topic to get. Format is
@@ -218,6 +221,7 @@ class GetTopicRequest(proto.Message):
 
 class UpdateTopicRequest(proto.Message):
     r"""Request for the UpdateTopic method.
+
     Attributes:
         topic (google.pubsub_v1.types.Topic):
             Required. The updated topic object.
@@ -238,6 +242,7 @@ class UpdateTopicRequest(proto.Message):
 
 class PublishRequest(proto.Message):
     r"""Request for the Publish method.
+
     Attributes:
         topic (str):
             Required. The messages in the request will be published on
@@ -252,6 +257,7 @@ class PublishRequest(proto.Message):
 
 class PublishResponse(proto.Message):
     r"""Response for the ``Publish`` method.
+
     Attributes:
         message_ids (Sequence[str]):
             The server-assigned ID of each published
@@ -265,6 +271,7 @@ class PublishResponse(proto.Message):
 
 class ListTopicsRequest(proto.Message):
     r"""Request for the ``ListTopics`` method.
+
     Attributes:
         project (str):
             Required. The name of the project in which to list topics.
@@ -285,6 +292,7 @@ class ListTopicsRequest(proto.Message):
 
 class ListTopicsResponse(proto.Message):
     r"""Response for the ``ListTopics`` method.
+
     Attributes:
         topics (Sequence[google.pubsub_v1.types.Topic]):
             The resulting topics.
@@ -304,6 +312,7 @@ class ListTopicsResponse(proto.Message):
 
 class ListTopicSubscriptionsRequest(proto.Message):
     r"""Request for the ``ListTopicSubscriptions`` method.
+
     Attributes:
         topic (str):
             Required. The name of the topic that subscriptions are
@@ -326,6 +335,7 @@ class ListTopicSubscriptionsRequest(proto.Message):
 
 class ListTopicSubscriptionsResponse(proto.Message):
     r"""Response for the ``ListTopicSubscriptions`` method.
+
     Attributes:
         subscriptions (Sequence[str]):
             The names of subscriptions attached to the
@@ -346,6 +356,7 @@ class ListTopicSubscriptionsResponse(proto.Message):
 
 class ListTopicSnapshotsRequest(proto.Message):
     r"""Request for the ``ListTopicSnapshots`` method.
+
     Attributes:
         topic (str):
             Required. The name of the topic that snapshots are attached
@@ -366,6 +377,7 @@ class ListTopicSnapshotsRequest(proto.Message):
 
 class ListTopicSnapshotsResponse(proto.Message):
     r"""Response for the ``ListTopicSnapshots`` method.
+
     Attributes:
         snapshots (Sequence[str]):
             The names of the snapshots that match the
@@ -386,6 +398,7 @@ class ListTopicSnapshotsResponse(proto.Message):
 
 class DeleteTopicRequest(proto.Message):
     r"""Request for the ``DeleteTopic`` method.
+
     Attributes:
         topic (str):
             Required. Name of the topic to delete. Format is
@@ -397,6 +410,7 @@ class DeleteTopicRequest(proto.Message):
 
 class DetachSubscriptionRequest(proto.Message):
     r"""Request for the DetachSubscription method.
+
     Attributes:
         subscription (str):
             Required. The subscription to detach. Format is
@@ -414,6 +428,7 @@ class DetachSubscriptionResponse(proto.Message):
 
 class Subscription(proto.Message):
     r"""A subscription resource.
+
     Attributes:
         name (str):
             Required. The name of the subscription. It must have the
@@ -647,6 +662,7 @@ class ExpirationPolicy(proto.Message):
 
 class PushConfig(proto.Message):
     r"""Configuration for a push delivery endpoint.
+
     Attributes:
         push_endpoint (str):
             A URL locating the endpoint to which messages should be
@@ -725,6 +741,7 @@ class PushConfig(proto.Message):
 
 class ReceivedMessage(proto.Message):
     r"""A message and its corresponding acknowledgment ID.
+
     Attributes:
         ack_id (str):
             This ID can be used to acknowledge the
@@ -759,6 +776,7 @@ class ReceivedMessage(proto.Message):
 
 class GetSubscriptionRequest(proto.Message):
     r"""Request for the GetSubscription method.
+
     Attributes:
         subscription (str):
             Required. The name of the subscription to get. Format is
@@ -770,6 +788,7 @@ class GetSubscriptionRequest(proto.Message):
 
 class UpdateSubscriptionRequest(proto.Message):
     r"""Request for the UpdateSubscription method.
+
     Attributes:
         subscription (google.pubsub_v1.types.Subscription):
             Required. The updated subscription object.
@@ -787,6 +806,7 @@ class UpdateSubscriptionRequest(proto.Message):
 
 class ListSubscriptionsRequest(proto.Message):
     r"""Request for the ``ListSubscriptions`` method.
+
     Attributes:
         project (str):
             Required. The name of the project in which to list
@@ -807,6 +827,7 @@ class ListSubscriptionsRequest(proto.Message):
 
 class ListSubscriptionsResponse(proto.Message):
     r"""Response for the ``ListSubscriptions`` method.
+
     Attributes:
         subscriptions (Sequence[google.pubsub_v1.types.Subscription]):
             The subscriptions that match the request.
@@ -828,6 +849,7 @@ class ListSubscriptionsResponse(proto.Message):
 
 class DeleteSubscriptionRequest(proto.Message):
     r"""Request for the DeleteSubscription method.
+
     Attributes:
         subscription (str):
             Required. The subscription to delete. Format is
@@ -839,6 +861,7 @@ class DeleteSubscriptionRequest(proto.Message):
 
 class ModifyPushConfigRequest(proto.Message):
     r"""Request for the ModifyPushConfig method.
+
     Attributes:
         subscription (str):
             Required. The name of the subscription. Format is
@@ -859,6 +882,7 @@ class ModifyPushConfigRequest(proto.Message):
 
 class PullRequest(proto.Message):
     r"""Request for the ``Pull`` method.
+
     Attributes:
         subscription (str):
             Required. The subscription from which messages should be
@@ -887,6 +911,7 @@ class PullRequest(proto.Message):
 
 class PullResponse(proto.Message):
     r"""Response for the ``Pull`` method.
+
     Attributes:
         received_messages (Sequence[google.pubsub_v1.types.ReceivedMessage]):
             Received Pub/Sub messages. The list will be empty if there
@@ -903,6 +928,7 @@ class PullResponse(proto.Message):
 
 class ModifyAckDeadlineRequest(proto.Message):
     r"""Request for the ModifyAckDeadline method.
+
     Attributes:
         subscription (str):
             Required. The name of the subscription. Format is
@@ -929,6 +955,7 @@ class ModifyAckDeadlineRequest(proto.Message):
 
 class AcknowledgeRequest(proto.Message):
     r"""Request for the Acknowledge method.
+
     Attributes:
         subscription (str):
             Required. The subscription whose message is being
@@ -1052,6 +1079,7 @@ class StreamingPullResponse(proto.Message):
 
     class SubscriptionProperties(proto.Message):
         r"""Subscription properties sent as part of the response.
+
         Attributes:
             message_ordering_enabled (bool):
                 True iff message ordering is enabled for this
@@ -1070,6 +1098,7 @@ class StreamingPullResponse(proto.Message):
 
 class CreateSnapshotRequest(proto.Message):
     r"""Request for the ``CreateSnapshot`` method.
+
     Attributes:
         name (str):
             Required. User-provided name for this snapshot. If the name
@@ -1102,6 +1131,7 @@ class CreateSnapshotRequest(proto.Message):
 
 class UpdateSnapshotRequest(proto.Message):
     r"""Request for the UpdateSnapshot method.
+
     Attributes:
         snapshot (google.pubsub_v1.types.Snapshot):
             Required. The updated snapshot object.
@@ -1157,6 +1187,7 @@ class Snapshot(proto.Message):
 
 class GetSnapshotRequest(proto.Message):
     r"""Request for the GetSnapshot method.
+
     Attributes:
         snapshot (str):
             Required. The name of the snapshot to get. Format is
@@ -1168,6 +1199,7 @@ class GetSnapshotRequest(proto.Message):
 
 class ListSnapshotsRequest(proto.Message):
     r"""Request for the ``ListSnapshots`` method.
+
     Attributes:
         project (str):
             Required. The name of the project in which to list
@@ -1188,6 +1220,7 @@ class ListSnapshotsRequest(proto.Message):
 
 class ListSnapshotsResponse(proto.Message):
     r"""Response for the ``ListSnapshots`` method.
+
     Attributes:
         snapshots (Sequence[google.pubsub_v1.types.Snapshot]):
             The resulting snapshots.
@@ -1207,6 +1240,7 @@ class ListSnapshotsResponse(proto.Message):
 
 class DeleteSnapshotRequest(proto.Message):
     r"""Request for the ``DeleteSnapshot`` method.
+
     Attributes:
         snapshot (str):
             Required. The name of the snapshot to delete. Format is
@@ -1218,6 +1252,7 @@ class DeleteSnapshotRequest(proto.Message):
 
 class SeekRequest(proto.Message):
     r"""Request for the ``Seek`` method.
+
     Attributes:
         subscription (str):
             Required. The subscription to affect.
