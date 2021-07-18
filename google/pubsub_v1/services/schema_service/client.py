@@ -353,8 +353,7 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
 
         Args:
             request (google.pubsub_v1.types.CreateSchemaRequest):
-                The request object.
-                Request for the CreateSchema method.
+                The request object. Request for the CreateSchema method.
             parent (str):
                 Required. The name of the project in which to create the
                 schema. Format is ``projects/{project-id}``.
@@ -447,8 +446,7 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
 
         Args:
             request (google.pubsub_v1.types.GetSchemaRequest):
-                The request object.
-                Request for the GetSchema method.
+                The request object. Request for the GetSchema method.
             name (str):
                 Required. The name of the schema to get. Format is
                 ``projects/{project}/schemas/{schema}``.
@@ -516,8 +514,7 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
 
         Args:
             request (google.pubsub_v1.types.ListSchemasRequest):
-                The request object.
-                Request for the `ListSchemas`
+                The request object. Request for the `ListSchemas`
                 method.
             parent (str):
                 Required. The name of the project in which to list
@@ -596,8 +593,7 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
 
         Args:
             request (google.pubsub_v1.types.DeleteSchemaRequest):
-                The request object.
-                Request for the `DeleteSchema`
+                The request object. Request for the `DeleteSchema`
                 method.
             name (str):
                 Required. Name of the schema to delete. Format is
@@ -662,8 +658,7 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
 
         Args:
             request (google.pubsub_v1.types.ValidateSchemaRequest):
-                The request object.
-                Request for the `ValidateSchema`
+                The request object. Request for the `ValidateSchema`
                 method.
             parent (str):
                 Required. The name of the project in which to validate
@@ -740,8 +735,7 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
 
         Args:
             request (google.pubsub_v1.types.ValidateMessageRequest):
-                The request object.
-                Request for the `ValidateMessage`
+                The request object. Request for the `ValidateMessage`
                 method.
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.

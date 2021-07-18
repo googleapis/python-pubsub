@@ -232,9 +232,7 @@ class PublisherGrpcAsyncIOTransport(PublisherTransport):
 
     @property
     def create_topic(self) -> Callable[[pubsub.Topic], Awaitable[pubsub.Topic]]:
-        r"""Return a callable for the
-        create topic
-          method over gRPC.
+        r"""Return a callable for the create topic method over gRPC.
 
         Creates the given topic with the given name. See the [resource
         name rules]
@@ -262,9 +260,7 @@ class PublisherGrpcAsyncIOTransport(PublisherTransport):
     def update_topic(
         self,
     ) -> Callable[[pubsub.UpdateTopicRequest], Awaitable[pubsub.Topic]]:
-        r"""Return a callable for the
-        update topic
-          method over gRPC.
+        r"""Return a callable for the update topic method over gRPC.
 
         Updates an existing topic. Note that certain
         properties of a topic are not modifiable.
@@ -291,9 +287,7 @@ class PublisherGrpcAsyncIOTransport(PublisherTransport):
     def publish(
         self,
     ) -> Callable[[pubsub.PublishRequest], Awaitable[pubsub.PublishResponse]]:
-        r"""Return a callable for the
-        publish
-          method over gRPC.
+        r"""Return a callable for the publish method over gRPC.
 
         Adds one or more messages to the topic. Returns ``NOT_FOUND`` if
         the topic does not exist.
@@ -318,9 +312,7 @@ class PublisherGrpcAsyncIOTransport(PublisherTransport):
 
     @property
     def get_topic(self) -> Callable[[pubsub.GetTopicRequest], Awaitable[pubsub.Topic]]:
-        r"""Return a callable for the
-        get topic
-          method over gRPC.
+        r"""Return a callable for the get topic method over gRPC.
 
         Gets the configuration of a topic.
 
@@ -346,9 +338,7 @@ class PublisherGrpcAsyncIOTransport(PublisherTransport):
     def list_topics(
         self,
     ) -> Callable[[pubsub.ListTopicsRequest], Awaitable[pubsub.ListTopicsResponse]]:
-        r"""Return a callable for the
-        list topics
-          method over gRPC.
+        r"""Return a callable for the list topics method over gRPC.
 
         Lists matching topics.
 
@@ -377,9 +367,7 @@ class PublisherGrpcAsyncIOTransport(PublisherTransport):
         [pubsub.ListTopicSubscriptionsRequest],
         Awaitable[pubsub.ListTopicSubscriptionsResponse],
     ]:
-        r"""Return a callable for the
-        list topic subscriptions
-          method over gRPC.
+        r"""Return a callable for the list topic subscriptions method over gRPC.
 
         Lists the names of the attached subscriptions on this
         topic.
@@ -408,9 +396,7 @@ class PublisherGrpcAsyncIOTransport(PublisherTransport):
     ) -> Callable[
         [pubsub.ListTopicSnapshotsRequest], Awaitable[pubsub.ListTopicSnapshotsResponse]
     ]:
-        r"""Return a callable for the
-        list topic snapshots
-          method over gRPC.
+        r"""Return a callable for the list topic snapshots method over gRPC.
 
         Lists the names of the snapshots on this topic. Snapshots are
         used in
@@ -441,9 +427,7 @@ class PublisherGrpcAsyncIOTransport(PublisherTransport):
     def delete_topic(
         self,
     ) -> Callable[[pubsub.DeleteTopicRequest], Awaitable[empty.Empty]]:
-        r"""Return a callable for the
-        delete topic
-          method over gRPC.
+        r"""Return a callable for the delete topic method over gRPC.
 
         Deletes the topic with the given name. Returns ``NOT_FOUND`` if
         the topic does not exist. After a topic is deleted, a new topic
@@ -476,9 +460,7 @@ class PublisherGrpcAsyncIOTransport(PublisherTransport):
     ) -> Callable[
         [pubsub.DetachSubscriptionRequest], Awaitable[pubsub.DetachSubscriptionResponse]
     ]:
-        r"""Return a callable for the
-        detach subscription
-          method over gRPC.
+        r"""Return a callable for the detach subscription method over gRPC.
 
         Detaches a subscription from this topic. All messages retained
         in the subscription are dropped. Subsequent ``Pull`` and

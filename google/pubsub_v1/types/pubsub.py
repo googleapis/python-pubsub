@@ -144,7 +144,7 @@ class Topic(proto.Message):
     """
 
     name = proto.Field(proto.STRING, number=1,)
-    labels = proto.MapField(proto.STRING, proto.STRING, number=2)
+    labels = proto.MapField(proto.STRING, proto.STRING, number=2,)
     message_storage_policy = proto.Field(
         proto.MESSAGE, number=3, message="MessageStoragePolicy",
     )
@@ -197,7 +197,7 @@ class PubsubMessage(proto.Message):
     """
 
     data = proto.Field(proto.BYTES, number=1,)
-    attributes = proto.MapField(proto.STRING, proto.STRING, number=2)
+    attributes = proto.MapField(proto.STRING, proto.STRING, number=2,)
     message_id = proto.Field(proto.STRING, number=3,)
     publish_time = proto.Field(proto.MESSAGE, number=4, message=timestamp.Timestamp,)
     ordering_key = proto.Field(proto.STRING, number=5,)
@@ -532,7 +532,7 @@ class Subscription(proto.Message):
     message_retention_duration = proto.Field(
         proto.MESSAGE, number=8, message=duration.Duration,
     )
-    labels = proto.MapField(proto.STRING, proto.STRING, number=9)
+    labels = proto.MapField(proto.STRING, proto.STRING, number=9,)
     enable_message_ordering = proto.Field(proto.BOOL, number=10,)
     expiration_policy = proto.Field(
         proto.MESSAGE, number=11, message="ExpirationPolicy",
@@ -709,7 +709,7 @@ class PushConfig(proto.Message):
         audience = proto.Field(proto.STRING, number=2,)
 
     push_endpoint = proto.Field(proto.STRING, number=1,)
-    attributes = proto.MapField(proto.STRING, proto.STRING, number=2)
+    attributes = proto.MapField(proto.STRING, proto.STRING, number=2,)
     oidc_token = proto.Field(
         proto.MESSAGE, number=3, oneof="authentication_method", message=OidcToken,
     )
@@ -1072,7 +1072,7 @@ class CreateSnapshotRequest(proto.Message):
 
     name = proto.Field(proto.STRING, number=1,)
     subscription = proto.Field(proto.STRING, number=2,)
-    labels = proto.MapField(proto.STRING, proto.STRING, number=3)
+    labels = proto.MapField(proto.STRING, proto.STRING, number=3,)
 
 
 class UpdateSnapshotRequest(proto.Message):
@@ -1125,7 +1125,7 @@ class Snapshot(proto.Message):
     name = proto.Field(proto.STRING, number=1,)
     topic = proto.Field(proto.STRING, number=2,)
     expire_time = proto.Field(proto.MESSAGE, number=3, message=timestamp.Timestamp,)
-    labels = proto.MapField(proto.STRING, proto.STRING, number=4)
+    labels = proto.MapField(proto.STRING, proto.STRING, number=4,)
 
 
 class GetSnapshotRequest(proto.Message):

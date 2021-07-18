@@ -436,8 +436,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
 
         Args:
             request (google.pubsub_v1.types.Subscription):
-                The request object.
-                A subscription resource.
+                The request object. A subscription resource.
             name (str):
                 Required. The name of the subscription. It must have the
                 format
@@ -567,8 +566,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
 
         Args:
             request (google.pubsub_v1.types.GetSubscriptionRequest):
-                The request object.
-                Request for the GetSubscription
+                The request object. Request for the GetSubscription
                 method.
             subscription (str):
                 Required. The name of the subscription to get. Format is
@@ -641,8 +639,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
 
         Args:
             request (google.pubsub_v1.types.UpdateSubscriptionRequest):
-                The request object.
-                Request for the UpdateSubscription
+                The request object. Request for the UpdateSubscription
                 method.
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
@@ -694,8 +691,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
 
         Args:
             request (google.pubsub_v1.types.ListSubscriptionsRequest):
-                The request object.
-                Request for the `ListSubscriptions`
+                The request object. Request for the `ListSubscriptions`
                 method.
             project (str):
                 Required. The name of the project in which to list
@@ -780,8 +776,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
 
         Args:
             request (google.pubsub_v1.types.DeleteSubscriptionRequest):
-                The request object.
-                Request for the DeleteSubscription
+                The request object. Request for the DeleteSubscription
                 method.
             subscription (str):
                 Required. The subscription to delete. Format is
@@ -855,8 +850,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
 
         Args:
             request (google.pubsub_v1.types.ModifyAckDeadlineRequest):
-                The request object.
-                Request for the ModifyAckDeadline
+                The request object. Request for the ModifyAckDeadline
                 method.
             subscription (str):
                 Required. The name of the subscription. Format is
@@ -956,8 +950,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
 
         Args:
             request (google.pubsub_v1.types.AcknowledgeRequest):
-                The request object.
-                Request for the Acknowledge method.
+                The request object. Request for the Acknowledge method.
             subscription (str):
                 Required. The subscription whose message is being
                 acknowledged. Format is
@@ -1038,8 +1031,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
 
         Args:
             request (google.pubsub_v1.types.PullRequest):
-                The request object.
-                Request for the `Pull` method.
+                The request object. Request for the `Pull` method.
             subscription (str):
                 Required. The subscription from which messages should be
                 pulled. Format is
@@ -1151,8 +1143,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
 
         Args:
             requests (Iterator[google.pubsub_v1.types.StreamingPullRequest]):
-                The request object iterator.
-                Request for the `StreamingPull`
+                The request object iterator. Request for the `StreamingPull`
                 streaming RPC method. This request is used to establish
                 the initial stream as well as to stream acknowledgements
                 and ack deadline modifications from the client to the
@@ -1206,8 +1197,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
 
         Args:
             request (google.pubsub_v1.types.ModifyPushConfigRequest):
-                The request object.
-                Request for the ModifyPushConfig
+                The request object. Request for the ModifyPushConfig
                 method.
             subscription (str):
                 Required. The name of the subscription. Format is
@@ -1294,8 +1284,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
 
         Args:
             request (google.pubsub_v1.types.GetSnapshotRequest):
-                The request object.
-                Request for the GetSnapshot method.
+                The request object. Request for the GetSnapshot method.
             snapshot (str):
                 Required. The name of the snapshot to get. Format is
                 ``projects/{project}/snapshots/{snap}``.
@@ -1374,8 +1363,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
 
         Args:
             request (google.pubsub_v1.types.ListSnapshotsRequest):
-                The request object.
-                Request for the `ListSnapshots`
+                The request object. Request for the `ListSnapshots`
                 method.
             project (str):
                 Required. The name of the project in which to list
@@ -1474,8 +1462,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
 
         Args:
             request (google.pubsub_v1.types.CreateSnapshotRequest):
-                The request object.
-                Request for the `CreateSnapshot`
+                The request object. Request for the `CreateSnapshot`
                 method.
             name (str):
                 Required. User-provided name for this snapshot. If the
@@ -1578,8 +1565,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
 
         Args:
             request (google.pubsub_v1.types.UpdateSnapshotRequest):
-                The request object.
-                Request for the UpdateSnapshot
+                The request object. Request for the UpdateSnapshot
                 method.
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
@@ -1646,8 +1632,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
 
         Args:
             request (google.pubsub_v1.types.DeleteSnapshotRequest):
-                The request object.
-                Request for the `DeleteSnapshot`
+                The request object. Request for the `DeleteSnapshot`
                 method.
             snapshot (str):
                 Required. The name of the snapshot to delete. Format is
@@ -1719,8 +1704,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
 
         Args:
             request (google.pubsub_v1.types.SeekRequest):
-                The request object.
-                Request for the `Seek` method.
+                The request object. Request for the `Seek` method.
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
