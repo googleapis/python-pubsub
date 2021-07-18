@@ -32,7 +32,6 @@ from google.iam.v1 import policy_pb2  # type: ignore
 from google.pubsub_v1.services.publisher import pagers
 from google.pubsub_v1.types import pubsub
 from google.pubsub_v1.types import TimeoutType
-
 from .transports.base import PublisherTransport, DEFAULT_CLIENT_INFO
 from .transports.grpc_asyncio import PublisherGrpcAsyncIOTransport
 from .client import PublisherClient
@@ -266,7 +265,6 @@ class PublisherAsyncClient:
         Args:
             request (:class:`google.pubsub_v1.types.UpdateTopicRequest`):
                 The request object. Request for the UpdateTopic method.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (TimeoutType):
@@ -341,7 +339,6 @@ class PublisherAsyncClient:
                 This corresponds to the ``messages`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (TimeoutType):
@@ -428,7 +425,6 @@ class PublisherAsyncClient:
                 This corresponds to the ``topic`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (TimeoutType):
@@ -509,7 +505,6 @@ class PublisherAsyncClient:
                 This corresponds to the ``project`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (TimeoutType):
@@ -603,7 +598,6 @@ class PublisherAsyncClient:
                 This corresponds to the ``topic`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (TimeoutType):
@@ -701,7 +695,6 @@ class PublisherAsyncClient:
                 This corresponds to the ``topic`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (TimeoutType):
@@ -798,7 +791,6 @@ class PublisherAsyncClient:
                 This corresponds to the ``topic`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (TimeoutType):
@@ -869,7 +861,6 @@ class PublisherAsyncClient:
             request (:class:`google.pubsub_v1.types.DetachSubscriptionRequest`):
                 The request object. Request for the DetachSubscription
                 method.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (TimeoutType):
