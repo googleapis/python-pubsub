@@ -53,7 +53,7 @@ class SchemaServiceClientMeta(type):
     _transport_registry["grpc_asyncio"] = SchemaServiceGrpcAsyncIOTransport
 
     def get_transport_class(cls, label: str = None,) -> Type[SchemaServiceTransport]:
-        """Return an appropriate transport class.
+        """Returns an appropriate transport class.
 
         Args:
             label: The name of the desired transport. If none is
@@ -76,7 +76,8 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
 
     @staticmethod
     def _get_default_mtls_endpoint(api_endpoint):
-        """Convert api endpoint to mTLS endpoint.
+        """Converts api endpoint to mTLS endpoint.
+
         Convert "*.sandbox.googleapis.com" and "*.googleapis.com" to
         "*.mtls.sandbox.googleapis.com" and "*.mtls.googleapis.com" respectively.
         Args:
@@ -110,7 +111,8 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
 
     @classmethod
     def from_service_account_info(cls, info: dict, *args, **kwargs):
-        """Creates an instance of this client using the provided credentials info.
+        """Creates an instance of this client using the provided credentials
+            info.
 
         Args:
             info (dict): The service account private key info.
@@ -127,7 +129,7 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
     @classmethod
     def from_service_account_file(cls, filename: str, *args, **kwargs):
         """Creates an instance of this client using the provided credentials
-        file.
+            file.
 
         Args:
             filename (str): The path to the service account private key json
@@ -146,29 +148,30 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
 
     @property
     def transport(self) -> SchemaServiceTransport:
-        """Return the transport used by the client instance.
+        """Returns the transport used by the client instance.
 
         Returns:
-            SchemaServiceTransport: The transport used by the client instance.
+            SchemaServiceTransport: The transport used by the client
+                instance.
         """
         return self._transport
 
     @staticmethod
     def schema_path(project: str, schema: str,) -> str:
-        """Return a fully-qualified schema string."""
+        """Returns a fully-qualified schema string."""
         return "projects/{project}/schemas/{schema}".format(
             project=project, schema=schema,
         )
 
     @staticmethod
     def parse_schema_path(path: str) -> Dict[str, str]:
-        """Parse a schema path into its component segments."""
+        """Parses a schema path into its component segments."""
         m = re.match(r"^projects/(?P<project>.+?)/schemas/(?P<schema>.+?)$", path)
         return m.groupdict() if m else {}
 
     @staticmethod
     def common_billing_account_path(billing_account: str,) -> str:
-        """Return a fully-qualified billing_account string."""
+        """Returns a fully-qualified billing_account string."""
         return "billingAccounts/{billing_account}".format(
             billing_account=billing_account,
         )
@@ -181,7 +184,7 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
 
     @staticmethod
     def common_folder_path(folder: str,) -> str:
-        """Return a fully-qualified folder string."""
+        """Returns a fully-qualified folder string."""
         return "folders/{folder}".format(folder=folder,)
 
     @staticmethod
@@ -192,7 +195,7 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
 
     @staticmethod
     def common_organization_path(organization: str,) -> str:
-        """Return a fully-qualified organization string."""
+        """Returns a fully-qualified organization string."""
         return "organizations/{organization}".format(organization=organization,)
 
     @staticmethod
@@ -203,7 +206,7 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
 
     @staticmethod
     def common_project_path(project: str,) -> str:
-        """Return a fully-qualified project string."""
+        """Returns a fully-qualified project string."""
         return "projects/{project}".format(project=project,)
 
     @staticmethod
@@ -214,7 +217,7 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
 
     @staticmethod
     def common_location_path(project: str, location: str,) -> str:
-        """Return a fully-qualified location string."""
+        """Returns a fully-qualified location string."""
         return "projects/{project}/locations/{location}".format(
             project=project, location=location,
         )
@@ -233,7 +236,7 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
         client_options: Optional[client_options_lib.ClientOptions] = None,
         client_info: gapic_v1.client_info.ClientInfo = DEFAULT_CLIENT_INFO,
     ) -> None:
-        """Instantiate the schema service client.
+        """Instantiates the schema service client.
 
         Args:
             credentials (Optional[google.auth.credentials.Credentials]): The
@@ -288,9 +291,10 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
                 client_cert_source_func = client_options.client_cert_source
             else:
                 is_mtls = mtls.has_default_client_cert_source()
-                client_cert_source_func = (
-                    mtls.default_client_cert_source() if is_mtls else None
-                )
+                if is_mtls:
+                    client_cert_source_func = mtls.default_client_cert_source()
+                else:
+                    client_cert_source_func = None
 
         # Figure out which api endpoint to use.
         if client_options.api_endpoint is not None:
@@ -302,12 +306,14 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
             elif use_mtls_env == "always":
                 api_endpoint = self.DEFAULT_MTLS_ENDPOINT
             elif use_mtls_env == "auto":
-                api_endpoint = (
-                    self.DEFAULT_MTLS_ENDPOINT if is_mtls else self.DEFAULT_ENDPOINT
-                )
+                if is_mtls:
+                    api_endpoint = self.DEFAULT_MTLS_ENDPOINT
+                else:
+                    api_endpoint = self.DEFAULT_ENDPOINT
             else:
                 raise MutualTLSChannelError(
-                    "Unsupported GOOGLE_API_USE_MTLS_ENDPOINT value. Accepted values: never, auto, always"
+                    "Unsupported GOOGLE_API_USE_MTLS_ENDPOINT value. Accepted "
+                    "values: never, auto, always"
                 )
 
         # Save or instantiate the transport.
@@ -322,8 +328,8 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
                 )
             if client_options.scopes:
                 raise ValueError(
-                    "When providing a transport instance, "
-                    "provide its scopes directly."
+                    "When providing a transport instance, provide its scopes "
+                    "directly."
                 )
             self._transport = transport
         else:
@@ -779,8 +785,10 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
         timeout: float = None,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> policy_pb2.Policy:
-        r"""Sets the IAM access control policy on the specified
-        function. Replaces any existing policy.
+        r"""Sets the IAM access control policy on the specified function.
+
+        Replaces any existing policy.
+
         Args:
             request (:class:`~.iam_policy_pb2.SetIamPolicyRequest`):
                 The request object. Request message for `SetIamPolicy`
@@ -886,14 +894,16 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> policy_pb2.Policy:
         r"""Gets the IAM access control policy for a function.
-        Returns an empty policy if the function exists and does
-        not have a policy set.
+
+        Returns an empty policy if the function exists and does not have a
+        policy set.
+
         Args:
             request (:class:`~.iam_policy_pb2.GetIamPolicyRequest`):
                 The request object. Request message for `GetIamPolicy`
                 method.
-            retry (google.api_core.retry.Retry): Designation of what errors, if any,
-                should be retried.
+            retry (google.api_core.retry.Retry): Designation of what errors, if
+                any, should be retried.
             timeout (float): The timeout for this request.
             metadata (Sequence[Tuple[str, str]]): Strings which should be
                 sent along with the request as metadata.
@@ -992,15 +1002,18 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
         timeout: float = None,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> iam_policy_pb2.TestIamPermissionsResponse:
-        r"""Tests the specified permissions against the IAM access control
-        policy for a function. If the function does not exist, this will
-        return an empty set of permissions, not a NOT_FOUND error.
+        r"""Tests the specified IAM permissions against the IAM access control
+            policy for a function.
+
+        If the function does not exist, this will return an empty set
+        of permissions, not a NOT_FOUND error.
+
         Args:
             request (:class:`~.iam_policy_pb2.TestIamPermissionsRequest`):
                 The request object. Request message for
                 `TestIamPermissions` method.
-            retry (google.api_core.retry.Retry): Designation of what errors, if any,
-                should be retried.
+            retry (google.api_core.retry.Retry): Designation of what errors,
+                 if any, should be retried.
             timeout (float): The timeout for this request.
             metadata (Sequence[Tuple[str, str]]): Strings which should be
                 sent along with the request as metadata.

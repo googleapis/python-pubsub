@@ -73,7 +73,8 @@ class SchemaServiceAsyncClient:
 
     @classmethod
     def from_service_account_info(cls, info: dict, *args, **kwargs):
-        """Creates an instance of this client using the provided credentials info.
+        """Creates an instance of this client using the provided credentials
+            info.
 
         Args:
             info (dict): The service account private key info.
@@ -88,7 +89,7 @@ class SchemaServiceAsyncClient:
     @classmethod
     def from_service_account_file(cls, filename: str, *args, **kwargs):
         """Creates an instance of this client using the provided credentials
-        file.
+            file.
 
         Args:
             filename (str): The path to the service account private key json
@@ -105,7 +106,7 @@ class SchemaServiceAsyncClient:
 
     @property
     def transport(self) -> SchemaServiceTransport:
-        """Return the transport used by the client instance.
+        """Returns the transport used by the client instance.
 
         Returns:
             SchemaServiceTransport: The transport used by the client instance.
@@ -124,7 +125,7 @@ class SchemaServiceAsyncClient:
         client_options: ClientOptions = None,
         client_info: gapic_v1.client_info.ClientInfo = DEFAULT_CLIENT_INFO,
     ) -> None:
-        """Instantiate the schema service client.
+        """Instantiates the schema service client.
 
         Args:
             credentials (Optional[google.auth.credentials.Credentials]): The
@@ -603,8 +604,10 @@ class SchemaServiceAsyncClient:
         timeout: float = None,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> policy_pb2.Policy:
-        r"""Sets the IAM access control policy on the specified
-        function. Replaces any existing policy.
+        r"""Sets the IAM access control policy on the specified function.
+
+        Replaces any existing policy.
+
         Args:
             request (:class:`~.policy_pb2.SetIamPolicyRequest`):
                 The request object. Request message for `SetIamPolicy`
@@ -710,8 +713,10 @@ class SchemaServiceAsyncClient:
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> policy_pb2.Policy:
         r"""Gets the IAM access control policy for a function.
+
         Returns an empty policy if the function exists and does
         not have a policy set.
+
         Args:
             request (:class:`~.iam_policy_pb2.GetIamPolicyRequest`):
                 The request object. Request message for `GetIamPolicy`
@@ -817,8 +822,11 @@ class SchemaServiceAsyncClient:
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> iam_policy_pb2.TestIamPermissionsResponse:
         r"""Tests the specified permissions against the IAM access control
-        policy for a function. If the function does not exist, this will
+            policy for a function.
+
+        If the function does not exist, this will
         return an empty set of permissions, not a NOT_FOUND error.
+
         Args:
             request (:class:`~.iam_policy_pb2.TestIamPermissionsRequest`):
                 The request object. Request message for

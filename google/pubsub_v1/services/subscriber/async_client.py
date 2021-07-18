@@ -86,7 +86,8 @@ class SubscriberAsyncClient:
 
     @classmethod
     def from_service_account_info(cls, info: dict, *args, **kwargs):
-        """Creates an instance of this client using the provided credentials info.
+        """Creates an instance of this client using the provided credentials
+            info.
 
         Args:
             info (dict): The service account private key info.
@@ -101,7 +102,7 @@ class SubscriberAsyncClient:
     @classmethod
     def from_service_account_file(cls, filename: str, *args, **kwargs):
         """Creates an instance of this client using the provided credentials
-        file.
+            file.
 
         Args:
             filename (str): The path to the service account private key json
@@ -118,7 +119,7 @@ class SubscriberAsyncClient:
 
     @property
     def transport(self) -> SubscriberTransport:
-        """Return the transport used by the client instance.
+        """Returns the transport used by the client instance.
 
         Returns:
             SubscriberTransport: The transport used by the client instance.
@@ -137,7 +138,7 @@ class SubscriberAsyncClient:
         client_options: ClientOptions = None,
         client_info: gapic_v1.client_info.ClientInfo = DEFAULT_CLIENT_INFO,
     ) -> None:
-        """Instantiate the subscriber client.
+        """Instantiates the subscriber client.
 
         Args:
             credentials (Optional[google.auth.credentials.Credentials]): The
@@ -309,9 +310,9 @@ class SubscriberAsyncClient:
                 maximum=60.0,
                 multiplier=1.3,
                 predicate=retries.if_exception_type(
-                    exceptions.Aborted,
-                    exceptions.ServiceUnavailable,
-                    exceptions.Unknown,
+                    core_exceptions.Aborted,
+                    core_exceptions.ServiceUnavailable,
+                    core_exceptions.Unknown,
                 ),
                 deadline=60.0,
             ),
@@ -389,9 +390,9 @@ class SubscriberAsyncClient:
                 maximum=60.0,
                 multiplier=1.3,
                 predicate=retries.if_exception_type(
-                    exceptions.Aborted,
-                    exceptions.ServiceUnavailable,
-                    exceptions.Unknown,
+                    core_exceptions.Aborted,
+                    core_exceptions.ServiceUnavailable,
+                    core_exceptions.Unknown,
                 ),
                 deadline=60.0,
             ),
@@ -450,7 +451,9 @@ class SubscriberAsyncClient:
                 initial=0.1,
                 maximum=60.0,
                 multiplier=1.3,
-                predicate=retries.if_exception_type(exceptions.ServiceUnavailable,),
+                predicate=retries.if_exception_type(
+                    core_exceptions.ServiceUnavailable,
+                ),
                 deadline=60.0,
             ),
             default_timeout=60.0,
@@ -533,9 +536,9 @@ class SubscriberAsyncClient:
                 maximum=60.0,
                 multiplier=1.3,
                 predicate=retries.if_exception_type(
-                    exceptions.Aborted,
-                    exceptions.ServiceUnavailable,
-                    exceptions.Unknown,
+                    core_exceptions.Aborted,
+                    core_exceptions.ServiceUnavailable,
+                    core_exceptions.Unknown,
                 ),
                 deadline=60.0,
             ),
@@ -619,7 +622,9 @@ class SubscriberAsyncClient:
                 initial=0.1,
                 maximum=60.0,
                 multiplier=1.3,
-                predicate=retries.if_exception_type(exceptions.ServiceUnavailable,),
+                predicate=retries.if_exception_type(
+                    core_exceptions.ServiceUnavailable,
+                ),
                 deadline=60.0,
             ),
             default_timeout=60.0,
@@ -724,7 +729,9 @@ class SubscriberAsyncClient:
                 initial=0.1,
                 maximum=60.0,
                 multiplier=1.3,
-                predicate=retries.if_exception_type(exceptions.ServiceUnavailable,),
+                predicate=retries.if_exception_type(
+                    core_exceptions.ServiceUnavailable,
+                ),
                 deadline=60.0,
             ),
             default_timeout=60.0,
@@ -815,7 +822,9 @@ class SubscriberAsyncClient:
                 initial=0.1,
                 maximum=60.0,
                 multiplier=1.3,
-                predicate=retries.if_exception_type(exceptions.ServiceUnavailable,),
+                predicate=retries.if_exception_type(
+                    core_exceptions.ServiceUnavailable,
+                ),
                 deadline=60.0,
             ),
             default_timeout=60.0,
@@ -931,9 +940,9 @@ class SubscriberAsyncClient:
                 maximum=60.0,
                 multiplier=1.3,
                 predicate=retries.if_exception_type(
-                    exceptions.Aborted,
-                    exceptions.ServiceUnavailable,
-                    exceptions.Unknown,
+                    core_exceptions.Aborted,
+                    core_exceptions.ServiceUnavailable,
+                    core_exceptions.Unknown,
                 ),
                 deadline=60.0,
             ),
@@ -1001,11 +1010,11 @@ class SubscriberAsyncClient:
                 maximum=60.0,
                 multiplier=1.3,
                 predicate=retries.if_exception_type(
-                    exceptions.Aborted,
-                    exceptions.DeadlineExceeded,
-                    exceptions.InternalServerError,
-                    exceptions.ResourceExhausted,
-                    exceptions.ServiceUnavailable,
+                    core_exceptions.Aborted,
+                    core_exceptions.DeadlineExceeded,
+                    core_exceptions.InternalServerError,
+                    core_exceptions.ResourceExhausted,
+                    core_exceptions.ServiceUnavailable,
                 ),
                 deadline=900.0,
             ),
@@ -1093,7 +1102,9 @@ class SubscriberAsyncClient:
                 initial=0.1,
                 maximum=60.0,
                 multiplier=1.3,
-                predicate=retries.if_exception_type(exceptions.ServiceUnavailable,),
+                predicate=retries.if_exception_type(
+                    core_exceptions.ServiceUnavailable,
+                ),
                 deadline=60.0,
             ),
             default_timeout=60.0,
@@ -1182,9 +1193,9 @@ class SubscriberAsyncClient:
                 maximum=60.0,
                 multiplier=1.3,
                 predicate=retries.if_exception_type(
-                    exceptions.Aborted,
-                    exceptions.ServiceUnavailable,
-                    exceptions.Unknown,
+                    core_exceptions.Aborted,
+                    core_exceptions.ServiceUnavailable,
+                    core_exceptions.Unknown,
                 ),
                 deadline=60.0,
             ),
@@ -1270,9 +1281,9 @@ class SubscriberAsyncClient:
                 maximum=60.0,
                 multiplier=1.3,
                 predicate=retries.if_exception_type(
-                    exceptions.Aborted,
-                    exceptions.ServiceUnavailable,
-                    exceptions.Unknown,
+                    core_exceptions.Aborted,
+                    core_exceptions.ServiceUnavailable,
+                    core_exceptions.Unknown,
                 ),
                 deadline=60.0,
             ),
@@ -1402,7 +1413,9 @@ class SubscriberAsyncClient:
                 initial=0.1,
                 maximum=60.0,
                 multiplier=1.3,
-                predicate=retries.if_exception_type(exceptions.ServiceUnavailable,),
+                predicate=retries.if_exception_type(
+                    core_exceptions.ServiceUnavailable,
+                ),
                 deadline=60.0,
             ),
             default_timeout=60.0,
@@ -1468,7 +1481,9 @@ class SubscriberAsyncClient:
                 initial=0.1,
                 maximum=60.0,
                 multiplier=1.3,
-                predicate=retries.if_exception_type(exceptions.ServiceUnavailable,),
+                predicate=retries.if_exception_type(
+                    core_exceptions.ServiceUnavailable,
+                ),
                 deadline=60.0,
             ),
             default_timeout=60.0,
@@ -1551,7 +1566,9 @@ class SubscriberAsyncClient:
                 initial=0.1,
                 maximum=60.0,
                 multiplier=1.3,
-                predicate=retries.if_exception_type(exceptions.ServiceUnavailable,),
+                predicate=retries.if_exception_type(
+                    core_exceptions.ServiceUnavailable,
+                ),
                 deadline=60.0,
             ),
             default_timeout=60.0,
@@ -1612,9 +1629,9 @@ class SubscriberAsyncClient:
                 maximum=60.0,
                 multiplier=1.3,
                 predicate=retries.if_exception_type(
-                    exceptions.Aborted,
-                    exceptions.ServiceUnavailable,
-                    exceptions.Unknown,
+                    core_exceptions.Aborted,
+                    core_exceptions.ServiceUnavailable,
+                    core_exceptions.Unknown,
                 ),
                 deadline=60.0,
             ),
@@ -1644,8 +1661,10 @@ class SubscriberAsyncClient:
         timeout: float = None,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> policy_pb2.Policy:
-        r"""Sets the IAM access control policy on the specified
-        function. Replaces any existing policy.
+        r"""Sets the IAM access control policy on the specified function.
+
+        Replaces any existing policy.
+
         Args:
             request (:class:`~.policy_pb2.SetIamPolicyRequest`):
                 The request object. Request message for `SetIamPolicy`
@@ -1751,8 +1770,10 @@ class SubscriberAsyncClient:
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> policy_pb2.Policy:
         r"""Gets the IAM access control policy for a function.
+
         Returns an empty policy if the function exists and does
         not have a policy set.
+
         Args:
             request (:class:`~.iam_policy_pb2.GetIamPolicyRequest`):
                 The request object. Request message for `GetIamPolicy`
@@ -1858,8 +1879,11 @@ class SubscriberAsyncClient:
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> iam_policy_pb2.TestIamPermissionsResponse:
         r"""Tests the specified permissions against the IAM access control
-        policy for a function. If the function does not exist, this will
+            policy for a function.
+
+        If the function does not exist, this will
         return an empty set of permissions, not a NOT_FOUND error.
+
         Args:
             request (:class:`~.iam_policy_pb2.TestIamPermissionsRequest`):
                 The request object. Request message for
