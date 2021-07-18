@@ -79,6 +79,9 @@ from .types.schema import Encoding
 from .types.schema import SchemaView
 
 __all__ = (
+    "PublisherAsyncClient",
+    "SchemaServiceAsyncClient",
+    "SubscriberAsyncClient",
     "AcknowledgeRequest",
     "CreateSchemaRequest",
     "CreateSnapshotRequest",
