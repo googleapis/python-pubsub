@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 # Copyright 2020 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 from collections import OrderedDict
 from distutils import util
 import functools
@@ -24,24 +22,23 @@ from typing import Callable, Dict, Optional, Sequence, Tuple, Type, Union
 import pkg_resources
 
 from google.api_core import client_options as client_options_lib  # type: ignore
-from google.api_core import exceptions  # type: ignore
+from google.api_core import exceptions as core_exceptions  # type: ignore
 from google.api_core import gapic_v1  # type: ignore
 from google.api_core import retry as retries  # type: ignore
 from google.api_core import timeout as timeouts  # type: ignore
-from google.auth import credentials  # type: ignore
+from google.auth import credentials as ga_credentials  # type: ignore
 from google.auth.transport import mtls  # type: ignore
 from google.auth.transport.grpc import SslCredentials  # type: ignore
 from google.auth.exceptions import MutualTLSChannelError  # type: ignore
 from google.oauth2 import service_account  # type: ignore
 
-from google.iam.v1 import iam_policy_pb2 as iam_policy  # type: ignore
-from google.iam.v1 import policy_pb2 as policy  # type: ignore
+from google.iam.v1 import iam_policy_pb2  # type: ignore
+from google.iam.v1 import policy_pb2  # type: ignore
 from google.pubsub_v1.services.publisher import pagers
 from google.pubsub_v1.types import pubsub
 from google.pubsub_v1.types import TimeoutType
 
 import grpc
-
 from .transports.base import PublisherTransport, DEFAULT_CLIENT_INFO
 from .transports.grpc import PublisherGrpcTransport
 from .transports.grpc_asyncio import PublisherGrpcAsyncIOTransport
@@ -277,7 +274,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
     def __init__(
         self,
         *,
-        credentials: Optional[credentials.Credentials] = None,
+        credentials: Optional[ga_credentials.Credentials] = None,
         transport: Union[str, PublisherTransport, None] = None,
         client_options: Optional[client_options_lib.ClientOptions] = None,
         client_info: gapic_v1.client_info.ClientInfo = DEFAULT_CLIENT_INFO,
@@ -427,7 +424,6 @@ class PublisherClient(metaclass=PublisherClientMeta):
                 This corresponds to the ``name`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (TimeoutType):
@@ -455,10 +451,8 @@ class PublisherClient(metaclass=PublisherClientMeta):
         # there are no flattened fields.
         if not isinstance(request, pubsub.Topic):
             request = pubsub.Topic(request)
-
             # If we have keyword arguments corresponding to fields on the
             # request, apply these.
-
             if name is not None:
                 request.name = name
 
@@ -493,7 +487,6 @@ class PublisherClient(metaclass=PublisherClientMeta):
         Args:
             request (google.pubsub_v1.types.UpdateTopicRequest):
                 The request object. Request for the UpdateTopic method.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (TimeoutType):
@@ -506,7 +499,6 @@ class PublisherClient(metaclass=PublisherClientMeta):
                 A topic resource.
         """
         # Create or coerce a protobuf request object.
-
         # Minor optimization to avoid making a copy if the user passes
         # in a pubsub.UpdateTopicRequest.
         # There's no risk of modifying the input as we've already verified
@@ -562,7 +554,6 @@ class PublisherClient(metaclass=PublisherClientMeta):
                 This corresponds to the ``messages`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (TimeoutType):
@@ -590,10 +581,8 @@ class PublisherClient(metaclass=PublisherClientMeta):
         # there are no flattened fields.
         if not isinstance(request, pubsub.PublishRequest):
             request = pubsub.PublishRequest(request)
-
             # If we have keyword arguments corresponding to fields on the
             # request, apply these.
-
             if topic is not None:
                 request.topic = topic
             if messages is not None:
@@ -637,7 +626,6 @@ class PublisherClient(metaclass=PublisherClientMeta):
                 This corresponds to the ``topic`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (TimeoutType):
@@ -665,10 +653,8 @@ class PublisherClient(metaclass=PublisherClientMeta):
         # there are no flattened fields.
         if not isinstance(request, pubsub.GetTopicRequest):
             request = pubsub.GetTopicRequest(request)
-
             # If we have keyword arguments corresponding to fields on the
             # request, apply these.
-
             if topic is not None:
                 request.topic = topic
 
@@ -710,7 +696,6 @@ class PublisherClient(metaclass=PublisherClientMeta):
                 This corresponds to the ``project`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (TimeoutType):
@@ -742,10 +727,8 @@ class PublisherClient(metaclass=PublisherClientMeta):
         # there are no flattened fields.
         if not isinstance(request, pubsub.ListTopicsRequest):
             request = pubsub.ListTopicsRequest(request)
-
             # If we have keyword arguments corresponding to fields on the
             # request, apply these.
-
             if project is not None:
                 request.project = project
 
@@ -796,7 +779,6 @@ class PublisherClient(metaclass=PublisherClientMeta):
                 This corresponds to the ``topic`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (TimeoutType):
@@ -828,10 +810,8 @@ class PublisherClient(metaclass=PublisherClientMeta):
         # there are no flattened fields.
         if not isinstance(request, pubsub.ListTopicSubscriptionsRequest):
             request = pubsub.ListTopicSubscriptionsRequest(request)
-
             # If we have keyword arguments corresponding to fields on the
             # request, apply these.
-
             if topic is not None:
                 request.topic = topic
 
@@ -886,7 +866,6 @@ class PublisherClient(metaclass=PublisherClientMeta):
                 This corresponds to the ``topic`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (TimeoutType):
@@ -918,10 +897,8 @@ class PublisherClient(metaclass=PublisherClientMeta):
         # there are no flattened fields.
         if not isinstance(request, pubsub.ListTopicSnapshotsRequest):
             request = pubsub.ListTopicSnapshotsRequest(request)
-
             # If we have keyword arguments corresponding to fields on the
             # request, apply these.
-
             if topic is not None:
                 request.topic = topic
 
@@ -975,7 +952,6 @@ class PublisherClient(metaclass=PublisherClientMeta):
                 This corresponds to the ``topic`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (TimeoutType):
@@ -999,10 +975,8 @@ class PublisherClient(metaclass=PublisherClientMeta):
         # there are no flattened fields.
         if not isinstance(request, pubsub.DeleteTopicRequest):
             request = pubsub.DeleteTopicRequest(request)
-
             # If we have keyword arguments corresponding to fields on the
             # request, apply these.
-
             if topic is not None:
                 request.topic = topic
 
@@ -1040,7 +1014,6 @@ class PublisherClient(metaclass=PublisherClientMeta):
             request (google.pubsub_v1.types.DetachSubscriptionRequest):
                 The request object. Request for the DetachSubscription
                 method.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (TimeoutType):
@@ -1055,7 +1028,6 @@ class PublisherClient(metaclass=PublisherClientMeta):
 
         """
         # Create or coerce a protobuf request object.
-
         # Minor optimization to avoid making a copy if the user passes
         # in a pubsub.DetachSubscriptionRequest.
         # There's no risk of modifying the input as we've already verified
@@ -1083,17 +1055,17 @@ class PublisherClient(metaclass=PublisherClientMeta):
 
     def set_iam_policy(
         self,
-        request: iam_policy.SetIamPolicyRequest = None,
+        request: iam_policy_pb2.SetIamPolicyRequest = None,
         *,
         retry: retries.Retry = gapic_v1.method.DEFAULT,
         timeout: TimeoutType = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
-    ) -> policy.Policy:
+    ) -> policy_pb2.Policy:
         r"""Sets the IAM access control policy on the specified
         function. Replaces any existing policy.
 
         Args:
-            request (:class:`~.iam_policy.SetIamPolicyRequest`):
+            request (:class:`~.iam_policy_pb2.SetIamPolicyRequest`):
                 The request object. Request message for `SetIamPolicy`
                 method.
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
@@ -1103,7 +1075,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
             metadata (Sequence[Tuple[str, str]]): Strings which should be
                 sent along with the request as metadata.
         Returns:
-            ~.policy.Policy:
+            ~.policy_pb2.Policy:
                 Defines an Identity and Access Management (IAM) policy.
                 It is used to specify access control policies for Cloud
                 Platform resources.
@@ -1170,7 +1142,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
         # The request isn't a proto-plus wrapped type,
         # so it must be constructed via keyword expansion.
         if isinstance(request, dict):
-            request = iam_policy.SetIamPolicyRequest(**request)
+            request = iam_policy_pb2.SetIamPolicyRequest(**request)
 
         # Wrap the RPC method; this adds retry and timeout information,
         # and friendly error handling.
@@ -1194,18 +1166,18 @@ class PublisherClient(metaclass=PublisherClientMeta):
 
     def get_iam_policy(
         self,
-        request: iam_policy.GetIamPolicyRequest = None,
+        request: iam_policy_pb2.GetIamPolicyRequest = None,
         *,
         retry: retries.Retry = gapic_v1.method.DEFAULT,
         timeout: TimeoutType = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
-    ) -> policy.Policy:
+    ) -> policy_pb2.Policy:
         r"""Gets the IAM access control policy for a function.
         Returns an empty policy if the function exists and does
         not have a policy set.
 
         Args:
-            request (:class:`~.iam_policy.GetIamPolicyRequest`):
+            request (:class:`~.iam_policy_pb2.GetIamPolicyRequest`):
                 The request object. Request message for `GetIamPolicy`
                 method.
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
@@ -1215,7 +1187,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
             metadata (Sequence[Tuple[str, str]]): Strings which should be
                 sent along with the request as metadata.
         Returns:
-            ~.policy.Policy:
+            ~.policy_pb2.Policy:
                 Defines an Identity and Access Management (IAM) policy.
                 It is used to specify access control policies for Cloud
                 Platform resources.
@@ -1282,7 +1254,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
         # The request isn't a proto-plus wrapped type,
         # so it must be constructed via keyword expansion.
         if isinstance(request, dict):
-            request = iam_policy.GetIamPolicyRequest(**request)
+            request = iam_policy_pb2.GetIamPolicyRequest(**request)
 
         # Wrap the RPC method; this adds retry and timeout information,
         # and friendly error handling.
@@ -1306,18 +1278,18 @@ class PublisherClient(metaclass=PublisherClientMeta):
 
     def test_iam_permissions(
         self,
-        request: iam_policy.TestIamPermissionsRequest = None,
+        request: iam_policy_pb2.TestIamPermissionsRequest = None,
         *,
         retry: retries.Retry = gapic_v1.method.DEFAULT,
         timeout: TimeoutType = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
-    ) -> iam_policy.TestIamPermissionsResponse:
+    ) -> iam_policy_pb2.TestIamPermissionsResponse:
         r"""Tests the specified permissions against the IAM access control
         policy for a function. If the function does not exist, this will
         return an empty set of permissions, not a NOT_FOUND error.
 
         Args:
-            request (:class:`~.iam_policy.TestIamPermissionsRequest`):
+            request (:class:`~.iam_policy_pb2.TestIamPermissionsRequest`):
                 The request object. Request message for
                 `TestIamPermissions` method.
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
@@ -1327,7 +1299,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
             metadata (Sequence[Tuple[str, str]]): Strings which should be
                 sent along with the request as metadata.
         Returns:
-            ~.iam_policy.TestIamPermissionsResponse:
+            ~.iam_policy_pb2.TestIamPermissionsResponse:
                 Response message for ``TestIamPermissions`` method.
         """
         # Create or coerce a protobuf request object.
@@ -1335,7 +1307,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
         # The request isn't a proto-plus wrapped type,
         # so it must be constructed via keyword expansion.
         if isinstance(request, dict):
-            request = iam_policy.TestIamPermissionsRequest(**request)
+            request = iam_policy_pb2.TestIamPermissionsRequest(**request)
 
         # Wrap the RPC method; this adds retry and timeout information,
         # and friendly error handling.
