@@ -179,7 +179,8 @@ class PublisherAsyncClient:
 
         Args:
             request (:class:`google.pubsub_v1.types.Topic`):
-                The request object. A topic resource.
+                The request object.
+                A topic resource.
             name (:class:`str`):
                 Required. The name of the topic. It must have the format
                 ``"projects/{project}/topics/{topic}"``. ``{topic}``
@@ -261,7 +262,8 @@ class PublisherAsyncClient:
 
         Args:
             request (:class:`google.pubsub_v1.types.UpdateTopicRequest`):
-                The request object. Request for the UpdateTopic method.
+                The request object.
+                Request for the UpdateTopic method.
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (TimeoutType):
@@ -320,7 +322,8 @@ class PublisherAsyncClient:
 
         Args:
             request (:class:`google.pubsub_v1.types.PublishRequest`):
-                The request object. Request for the Publish method.
+                The request object.
+                Request for the Publish method.
             topic (:class:`str`):
                 Required. The messages in the request will be published
                 on this topic. Format is
@@ -412,7 +415,8 @@ class PublisherAsyncClient:
 
         Args:
             request (:class:`google.pubsub_v1.types.GetTopicRequest`):
-                The request object. Request for the GetTopic method.
+                The request object.
+                Request for the GetTopic method.
             topic (:class:`str`):
                 Required. The name of the topic to get. Format is
                 ``projects/{project}/topics/{topic}``.
@@ -492,7 +496,8 @@ class PublisherAsyncClient:
 
         Args:
             request (:class:`google.pubsub_v1.types.ListTopicsRequest`):
-                The request object. Request for the `ListTopics` method.
+                The request object.
+                Request for the `ListTopics` method.
             project (:class:`str`):
                 Required. The name of the project in which to list
                 topics. Format is ``projects/{project-id}``.
@@ -583,7 +588,8 @@ class PublisherAsyncClient:
 
         Args:
             request (:class:`google.pubsub_v1.types.ListTopicSubscriptionsRequest`):
-                The request object. Request for the
+                The request object.
+                Request for the
                 `ListTopicSubscriptions` method.
             topic (:class:`str`):
                 Required. The name of the topic that subscriptions are
@@ -680,7 +686,8 @@ class PublisherAsyncClient:
 
         Args:
             request (:class:`google.pubsub_v1.types.ListTopicSnapshotsRequest`):
-                The request object. Request for the `ListTopicSnapshots`
+                The request object.
+                Request for the `ListTopicSnapshots`
                 method.
             topic (:class:`str`):
                 Required. The name of the topic that snapshots are
@@ -777,7 +784,8 @@ class PublisherAsyncClient:
 
         Args:
             request (:class:`google.pubsub_v1.types.DeleteTopicRequest`):
-                The request object. Request for the `DeleteTopic`
+                The request object.
+                Request for the `DeleteTopic`
                 method.
             topic (:class:`str`):
                 Required. Name of the topic to delete. Format is
@@ -852,7 +860,8 @@ class PublisherAsyncClient:
 
         Args:
             request (:class:`google.pubsub_v1.types.DetachSubscriptionRequest`):
-                The request object. Request for the DetachSubscription
+                The request object.
+                Request for the DetachSubscription
                 method.
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
