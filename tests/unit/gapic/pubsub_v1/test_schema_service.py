@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 # Copyright 2020 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,16 +14,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+
 import os
 import mock
-import packaging.version
 
 import grpc
 from grpc.experimental import aio
 import math
 import pytest
 from proto.marshal.rules.dates import DurationRule, TimestampRule
-
 
 from google import auth
 from google.api_core import client_options
@@ -40,35 +40,8 @@ from google.pubsub_v1.services.schema_service import SchemaServiceAsyncClient
 from google.pubsub_v1.services.schema_service import SchemaServiceClient
 from google.pubsub_v1.services.schema_service import pagers
 from google.pubsub_v1.services.schema_service import transports
-from google.pubsub_v1.services.schema_service.transports.base import _API_CORE_VERSION
-from google.pubsub_v1.services.schema_service.transports.base import (
-    _GOOGLE_AUTH_VERSION,
-)
 from google.pubsub_v1.types import schema
 from google.pubsub_v1.types import schema as gp_schema
-
-
-# TODO(busunkim): Once google-api-core >= 1.26.0 is required:
-# - Delete all the api-core and auth "less than" test cases
-# - Delete these pytest markers (Make the "greater than or equal to" tests the default).
-requires_google_auth_lt_1_25_0 = pytest.mark.skipif(
-    packaging.version.parse(_GOOGLE_AUTH_VERSION) >= packaging.version.parse("1.25.0"),
-    reason="This test requires google-auth < 1.25.0",
-)
-requires_google_auth_gte_1_25_0 = pytest.mark.skipif(
-    packaging.version.parse(_GOOGLE_AUTH_VERSION) < packaging.version.parse("1.25.0"),
-    reason="This test requires google-auth >= 1.25.0",
-)
-
-requires_api_core_lt_1_26_0 = pytest.mark.skipif(
-    packaging.version.parse(_API_CORE_VERSION) >= packaging.version.parse("1.26.0"),
-    reason="This test requires google-api-core < 1.26.0",
-)
-
-requires_api_core_gte_1_26_0 = pytest.mark.skipif(
-    packaging.version.parse(_API_CORE_VERSION) < packaging.version.parse("1.26.0"),
-    reason="This test requires google-api-core >= 1.26.0",
-)
 
 
 def client_cert_source_callback():
@@ -492,17 +465,23 @@ def test_create_schema(
             type_=gp_schema.Schema.Type.PROTOCOL_BUFFER,
             definition="definition_value",
         )
+
         response = client.create_schema(request)
 
         # Establish that the underlying gRPC stub method was called.
         assert len(call.mock_calls) == 1
         _, args, _ = call.mock_calls[0]
+
         assert args[0] == gp_schema.CreateSchemaRequest()
 
     # Establish that the response is the type that we expect.
+
     assert isinstance(response, gp_schema.Schema)
+
     assert response.name == "name_value"
+
     assert response.type_ == gp_schema.Schema.Type.PROTOCOL_BUFFER
+
     assert response.definition == "definition_value"
 
 
@@ -522,6 +501,7 @@ def test_create_schema_empty_call():
         client.create_schema()
         call.assert_called()
         _, args, _ = call.mock_calls[0]
+
         assert args[0] == gp_schema.CreateSchemaRequest()
 
 
@@ -547,17 +527,22 @@ async def test_create_schema_async(
                 definition="definition_value",
             )
         )
+
         response = await client.create_schema(request)
 
         # Establish that the underlying gRPC stub method was called.
         assert len(call.mock_calls)
         _, args, _ = call.mock_calls[0]
+
         assert args[0] == gp_schema.CreateSchemaRequest()
 
     # Establish that the response is the type that we expect.
     assert isinstance(response, gp_schema.Schema)
+
     assert response.name == "name_value"
+
     assert response.type_ == gp_schema.Schema.Type.PROTOCOL_BUFFER
+
     assert response.definition == "definition_value"
 
 
@@ -572,12 +557,12 @@ def test_create_schema_field_headers():
     # Any value that is part of the HTTP/1.1 URI should be sent as
     # a field header. Set these to a non-empty value.
     request = gp_schema.CreateSchemaRequest()
-
     request.parent = "parent/value"
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(type(client.transport.create_schema), "__call__") as call:
         call.return_value = gp_schema.Schema()
+
         client.create_schema(request)
 
         # Establish that the underlying gRPC stub method was called.
@@ -597,12 +582,12 @@ async def test_create_schema_field_headers_async():
     # Any value that is part of the HTTP/1.1 URI should be sent as
     # a field header. Set these to a non-empty value.
     request = gp_schema.CreateSchemaRequest()
-
     request.parent = "parent/value"
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(type(client.transport.create_schema), "__call__") as call:
         call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(gp_schema.Schema())
+
         await client.create_schema(request)
 
         # Establish that the underlying gRPC stub method was called.
@@ -622,6 +607,7 @@ def test_create_schema_flattened():
     with mock.patch.object(type(client.transport.create_schema), "__call__") as call:
         # Designate an appropriate return value for the call.
         call.return_value = gp_schema.Schema()
+
         # Call the method with a truthy value for each flattened field,
         # using the keyword arguments to the method.
         client.create_schema(
@@ -634,8 +620,11 @@ def test_create_schema_flattened():
         # request object values.
         assert len(call.mock_calls) == 1
         _, args, _ = call.mock_calls[0]
+
         assert args[0].parent == "parent_value"
+
         assert args[0].schema == gp_schema.Schema(name="name_value")
+
         assert args[0].schema_id == "schema_id_value"
 
 
@@ -675,8 +664,11 @@ async def test_create_schema_flattened_async():
         # request object values.
         assert len(call.mock_calls)
         _, args, _ = call.mock_calls[0]
+
         assert args[0].parent == "parent_value"
+
         assert args[0].schema == gp_schema.Schema(name="name_value")
+
         assert args[0].schema_id == "schema_id_value"
 
 
@@ -712,17 +704,23 @@ def test_get_schema(transport: str = "grpc", request_type=schema.GetSchemaReques
             type_=schema.Schema.Type.PROTOCOL_BUFFER,
             definition="definition_value",
         )
+
         response = client.get_schema(request)
 
         # Establish that the underlying gRPC stub method was called.
         assert len(call.mock_calls) == 1
         _, args, _ = call.mock_calls[0]
+
         assert args[0] == schema.GetSchemaRequest()
 
     # Establish that the response is the type that we expect.
+
     assert isinstance(response, schema.Schema)
+
     assert response.name == "name_value"
+
     assert response.type_ == schema.Schema.Type.PROTOCOL_BUFFER
+
     assert response.definition == "definition_value"
 
 
@@ -742,6 +740,7 @@ def test_get_schema_empty_call():
         client.get_schema()
         call.assert_called()
         _, args, _ = call.mock_calls[0]
+
         assert args[0] == schema.GetSchemaRequest()
 
 
@@ -767,17 +766,22 @@ async def test_get_schema_async(
                 definition="definition_value",
             )
         )
+
         response = await client.get_schema(request)
 
         # Establish that the underlying gRPC stub method was called.
         assert len(call.mock_calls)
         _, args, _ = call.mock_calls[0]
+
         assert args[0] == schema.GetSchemaRequest()
 
     # Establish that the response is the type that we expect.
     assert isinstance(response, schema.Schema)
+
     assert response.name == "name_value"
+
     assert response.type_ == schema.Schema.Type.PROTOCOL_BUFFER
+
     assert response.definition == "definition_value"
 
 
@@ -792,12 +796,12 @@ def test_get_schema_field_headers():
     # Any value that is part of the HTTP/1.1 URI should be sent as
     # a field header. Set these to a non-empty value.
     request = schema.GetSchemaRequest()
-
     request.name = "name/value"
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(type(client.transport.get_schema), "__call__") as call:
         call.return_value = schema.Schema()
+
         client.get_schema(request)
 
         # Establish that the underlying gRPC stub method was called.
@@ -817,12 +821,12 @@ async def test_get_schema_field_headers_async():
     # Any value that is part of the HTTP/1.1 URI should be sent as
     # a field header. Set these to a non-empty value.
     request = schema.GetSchemaRequest()
-
     request.name = "name/value"
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(type(client.transport.get_schema), "__call__") as call:
         call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(schema.Schema())
+
         await client.get_schema(request)
 
         # Establish that the underlying gRPC stub method was called.
@@ -842,6 +846,7 @@ def test_get_schema_flattened():
     with mock.patch.object(type(client.transport.get_schema), "__call__") as call:
         # Designate an appropriate return value for the call.
         call.return_value = schema.Schema()
+
         # Call the method with a truthy value for each flattened field,
         # using the keyword arguments to the method.
         client.get_schema(name="name_value",)
@@ -850,6 +855,7 @@ def test_get_schema_flattened():
         # request object values.
         assert len(call.mock_calls) == 1
         _, args, _ = call.mock_calls[0]
+
         assert args[0].name == "name_value"
 
 
@@ -882,6 +888,7 @@ async def test_get_schema_flattened_async():
         # request object values.
         assert len(call.mock_calls)
         _, args, _ = call.mock_calls[0]
+
         assert args[0].name == "name_value"
 
 
@@ -912,15 +919,19 @@ def test_list_schemas(transport: str = "grpc", request_type=schema.ListSchemasRe
         call.return_value = schema.ListSchemasResponse(
             next_page_token="next_page_token_value",
         )
+
         response = client.list_schemas(request)
 
         # Establish that the underlying gRPC stub method was called.
         assert len(call.mock_calls) == 1
         _, args, _ = call.mock_calls[0]
+
         assert args[0] == schema.ListSchemasRequest()
 
     # Establish that the response is the type that we expect.
+
     assert isinstance(response, pagers.ListSchemasPager)
+
     assert response.next_page_token == "next_page_token_value"
 
 
@@ -940,6 +951,7 @@ def test_list_schemas_empty_call():
         client.list_schemas()
         call.assert_called()
         _, args, _ = call.mock_calls[0]
+
         assert args[0] == schema.ListSchemasRequest()
 
 
@@ -961,15 +973,18 @@ async def test_list_schemas_async(
         call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(
             schema.ListSchemasResponse(next_page_token="next_page_token_value",)
         )
+
         response = await client.list_schemas(request)
 
         # Establish that the underlying gRPC stub method was called.
         assert len(call.mock_calls)
         _, args, _ = call.mock_calls[0]
+
         assert args[0] == schema.ListSchemasRequest()
 
     # Establish that the response is the type that we expect.
     assert isinstance(response, pagers.ListSchemasAsyncPager)
+
     assert response.next_page_token == "next_page_token_value"
 
 
@@ -984,12 +999,12 @@ def test_list_schemas_field_headers():
     # Any value that is part of the HTTP/1.1 URI should be sent as
     # a field header. Set these to a non-empty value.
     request = schema.ListSchemasRequest()
-
     request.parent = "parent/value"
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(type(client.transport.list_schemas), "__call__") as call:
         call.return_value = schema.ListSchemasResponse()
+
         client.list_schemas(request)
 
         # Establish that the underlying gRPC stub method was called.
@@ -1009,7 +1024,6 @@ async def test_list_schemas_field_headers_async():
     # Any value that is part of the HTTP/1.1 URI should be sent as
     # a field header. Set these to a non-empty value.
     request = schema.ListSchemasRequest()
-
     request.parent = "parent/value"
 
     # Mock the actual call within the gRPC stub, and fake the request.
@@ -1017,6 +1031,7 @@ async def test_list_schemas_field_headers_async():
         call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(
             schema.ListSchemasResponse()
         )
+
         await client.list_schemas(request)
 
         # Establish that the underlying gRPC stub method was called.
@@ -1036,6 +1051,7 @@ def test_list_schemas_flattened():
     with mock.patch.object(type(client.transport.list_schemas), "__call__") as call:
         # Designate an appropriate return value for the call.
         call.return_value = schema.ListSchemasResponse()
+
         # Call the method with a truthy value for each flattened field,
         # using the keyword arguments to the method.
         client.list_schemas(parent="parent_value",)
@@ -1044,6 +1060,7 @@ def test_list_schemas_flattened():
         # request object values.
         assert len(call.mock_calls) == 1
         _, args, _ = call.mock_calls[0]
+
         assert args[0].parent == "parent_value"
 
 
@@ -1078,6 +1095,7 @@ async def test_list_schemas_flattened_async():
         # request object values.
         assert len(call.mock_calls)
         _, args, _ = call.mock_calls[0]
+
         assert args[0].parent == "parent_value"
 
 
@@ -1222,11 +1240,13 @@ def test_delete_schema(
     with mock.patch.object(type(client.transport.delete_schema), "__call__") as call:
         # Designate an appropriate return value for the call.
         call.return_value = None
+
         response = client.delete_schema(request)
 
         # Establish that the underlying gRPC stub method was called.
         assert len(call.mock_calls) == 1
         _, args, _ = call.mock_calls[0]
+
         assert args[0] == schema.DeleteSchemaRequest()
 
     # Establish that the response is the type that we expect.
@@ -1249,6 +1269,7 @@ def test_delete_schema_empty_call():
         client.delete_schema()
         call.assert_called()
         _, args, _ = call.mock_calls[0]
+
         assert args[0] == schema.DeleteSchemaRequest()
 
 
@@ -1268,11 +1289,13 @@ async def test_delete_schema_async(
     with mock.patch.object(type(client.transport.delete_schema), "__call__") as call:
         # Designate an appropriate return value for the call.
         call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(None)
+
         response = await client.delete_schema(request)
 
         # Establish that the underlying gRPC stub method was called.
         assert len(call.mock_calls)
         _, args, _ = call.mock_calls[0]
+
         assert args[0] == schema.DeleteSchemaRequest()
 
     # Establish that the response is the type that we expect.
@@ -1290,12 +1313,12 @@ def test_delete_schema_field_headers():
     # Any value that is part of the HTTP/1.1 URI should be sent as
     # a field header. Set these to a non-empty value.
     request = schema.DeleteSchemaRequest()
-
     request.name = "name/value"
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(type(client.transport.delete_schema), "__call__") as call:
         call.return_value = None
+
         client.delete_schema(request)
 
         # Establish that the underlying gRPC stub method was called.
@@ -1315,12 +1338,12 @@ async def test_delete_schema_field_headers_async():
     # Any value that is part of the HTTP/1.1 URI should be sent as
     # a field header. Set these to a non-empty value.
     request = schema.DeleteSchemaRequest()
-
     request.name = "name/value"
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(type(client.transport.delete_schema), "__call__") as call:
         call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(None)
+
         await client.delete_schema(request)
 
         # Establish that the underlying gRPC stub method was called.
@@ -1340,6 +1363,7 @@ def test_delete_schema_flattened():
     with mock.patch.object(type(client.transport.delete_schema), "__call__") as call:
         # Designate an appropriate return value for the call.
         call.return_value = None
+
         # Call the method with a truthy value for each flattened field,
         # using the keyword arguments to the method.
         client.delete_schema(name="name_value",)
@@ -1348,6 +1372,7 @@ def test_delete_schema_flattened():
         # request object values.
         assert len(call.mock_calls) == 1
         _, args, _ = call.mock_calls[0]
+
         assert args[0].name == "name_value"
 
 
@@ -1380,6 +1405,7 @@ async def test_delete_schema_flattened_async():
         # request object values.
         assert len(call.mock_calls)
         _, args, _ = call.mock_calls[0]
+
         assert args[0].name == "name_value"
 
 
@@ -1410,14 +1436,17 @@ def test_validate_schema(
     with mock.patch.object(type(client.transport.validate_schema), "__call__") as call:
         # Designate an appropriate return value for the call.
         call.return_value = gp_schema.ValidateSchemaResponse()
+
         response = client.validate_schema(request)
 
         # Establish that the underlying gRPC stub method was called.
         assert len(call.mock_calls) == 1
         _, args, _ = call.mock_calls[0]
+
         assert args[0] == gp_schema.ValidateSchemaRequest()
 
     # Establish that the response is the type that we expect.
+
     assert isinstance(response, gp_schema.ValidateSchemaResponse)
 
 
@@ -1437,6 +1466,7 @@ def test_validate_schema_empty_call():
         client.validate_schema()
         call.assert_called()
         _, args, _ = call.mock_calls[0]
+
         assert args[0] == gp_schema.ValidateSchemaRequest()
 
 
@@ -1458,11 +1488,13 @@ async def test_validate_schema_async(
         call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(
             gp_schema.ValidateSchemaResponse()
         )
+
         response = await client.validate_schema(request)
 
         # Establish that the underlying gRPC stub method was called.
         assert len(call.mock_calls)
         _, args, _ = call.mock_calls[0]
+
         assert args[0] == gp_schema.ValidateSchemaRequest()
 
     # Establish that the response is the type that we expect.
@@ -1480,12 +1512,12 @@ def test_validate_schema_field_headers():
     # Any value that is part of the HTTP/1.1 URI should be sent as
     # a field header. Set these to a non-empty value.
     request = gp_schema.ValidateSchemaRequest()
-
     request.parent = "parent/value"
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(type(client.transport.validate_schema), "__call__") as call:
         call.return_value = gp_schema.ValidateSchemaResponse()
+
         client.validate_schema(request)
 
         # Establish that the underlying gRPC stub method was called.
@@ -1505,7 +1537,6 @@ async def test_validate_schema_field_headers_async():
     # Any value that is part of the HTTP/1.1 URI should be sent as
     # a field header. Set these to a non-empty value.
     request = gp_schema.ValidateSchemaRequest()
-
     request.parent = "parent/value"
 
     # Mock the actual call within the gRPC stub, and fake the request.
@@ -1513,6 +1544,7 @@ async def test_validate_schema_field_headers_async():
         call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(
             gp_schema.ValidateSchemaResponse()
         )
+
         await client.validate_schema(request)
 
         # Establish that the underlying gRPC stub method was called.
@@ -1532,6 +1564,7 @@ def test_validate_schema_flattened():
     with mock.patch.object(type(client.transport.validate_schema), "__call__") as call:
         # Designate an appropriate return value for the call.
         call.return_value = gp_schema.ValidateSchemaResponse()
+
         # Call the method with a truthy value for each flattened field,
         # using the keyword arguments to the method.
         client.validate_schema(
@@ -1542,7 +1575,9 @@ def test_validate_schema_flattened():
         # request object values.
         assert len(call.mock_calls) == 1
         _, args, _ = call.mock_calls[0]
+
         assert args[0].parent == "parent_value"
+
         assert args[0].schema == gp_schema.Schema(name="name_value")
 
 
@@ -1581,7 +1616,9 @@ async def test_validate_schema_flattened_async():
         # request object values.
         assert len(call.mock_calls)
         _, args, _ = call.mock_calls[0]
+
         assert args[0].parent == "parent_value"
+
         assert args[0].schema == gp_schema.Schema(name="name_value")
 
 
@@ -1614,14 +1651,17 @@ def test_validate_message(
     with mock.patch.object(type(client.transport.validate_message), "__call__") as call:
         # Designate an appropriate return value for the call.
         call.return_value = schema.ValidateMessageResponse()
+
         response = client.validate_message(request)
 
         # Establish that the underlying gRPC stub method was called.
         assert len(call.mock_calls) == 1
         _, args, _ = call.mock_calls[0]
+
         assert args[0] == schema.ValidateMessageRequest()
 
     # Establish that the response is the type that we expect.
+
     assert isinstance(response, schema.ValidateMessageResponse)
 
 
@@ -1641,6 +1681,7 @@ def test_validate_message_empty_call():
         client.validate_message()
         call.assert_called()
         _, args, _ = call.mock_calls[0]
+
         assert args[0] == schema.ValidateMessageRequest()
 
 
@@ -1662,11 +1703,13 @@ async def test_validate_message_async(
         call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(
             schema.ValidateMessageResponse()
         )
+
         response = await client.validate_message(request)
 
         # Establish that the underlying gRPC stub method was called.
         assert len(call.mock_calls)
         _, args, _ = call.mock_calls[0]
+
         assert args[0] == schema.ValidateMessageRequest()
 
     # Establish that the response is the type that we expect.
@@ -1684,12 +1727,12 @@ def test_validate_message_field_headers():
     # Any value that is part of the HTTP/1.1 URI should be sent as
     # a field header. Set these to a non-empty value.
     request = schema.ValidateMessageRequest()
-
     request.parent = "parent/value"
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(type(client.transport.validate_message), "__call__") as call:
         call.return_value = schema.ValidateMessageResponse()
+
         client.validate_message(request)
 
         # Establish that the underlying gRPC stub method was called.
@@ -1709,7 +1752,6 @@ async def test_validate_message_field_headers_async():
     # Any value that is part of the HTTP/1.1 URI should be sent as
     # a field header. Set these to a non-empty value.
     request = schema.ValidateMessageRequest()
-
     request.parent = "parent/value"
 
     # Mock the actual call within the gRPC stub, and fake the request.
@@ -1717,6 +1759,7 @@ async def test_validate_message_field_headers_async():
         call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(
             schema.ValidateMessageResponse()
         )
+
         await client.validate_message(request)
 
         # Establish that the underlying gRPC stub method was called.
@@ -1841,35 +1884,10 @@ def test_schema_service_base_transport():
             getattr(transport, method)(request=object())
 
 
-@requires_google_auth_gte_1_25_0
 def test_schema_service_base_transport_with_credentials_file():
     # Instantiate the base transport with a credentials file
     with mock.patch.object(
-        auth, "load_credentials_from_file", autospec=True
-    ) as load_creds, mock.patch(
-        "google.pubsub_v1.services.schema_service.transports.SchemaServiceTransport._prep_wrapped_messages"
-    ) as Transport:
-        Transport.return_value = None
-        load_creds.return_value = (credentials.AnonymousCredentials(), None)
-        transport = transports.SchemaServiceTransport(
-            credentials_file="credentials.json", quota_project_id="octopus",
-        )
-        load_creds.assert_called_once_with(
-            "credentials.json",
-            scopes=None,
-            default_scopes=(
-                "https://www.googleapis.com/auth/cloud-platform",
-                "https://www.googleapis.com/auth/pubsub",
-            ),
-            quota_project_id="octopus",
-        )
-
-
-@requires_google_auth_lt_1_25_0
-def test_schema_service_base_transport_with_credentials_file_old_google_auth():
-    # Instantiate the base transport with a credentials file
-    with mock.patch.object(
-        auth, "load_credentials_from_file", autospec=True
+        auth, "load_credentials_from_file"
     ) as load_creds, mock.patch(
         "google.pubsub_v1.services.schema_service.transports.SchemaServiceTransport._prep_wrapped_messages"
     ) as Transport:
@@ -1890,7 +1908,7 @@ def test_schema_service_base_transport_with_credentials_file_old_google_auth():
 
 def test_schema_service_base_transport_with_adc():
     # Test the default credentials are used if credentials and credentials_file are None.
-    with mock.patch.object(auth, "default", autospec=True) as adc, mock.patch(
+    with mock.patch.object(auth, "default") as adc, mock.patch(
         "google.pubsub_v1.services.schema_service.transports.SchemaServiceTransport._prep_wrapped_messages"
     ) as Transport:
         Transport.return_value = None
@@ -1899,26 +1917,9 @@ def test_schema_service_base_transport_with_adc():
         adc.assert_called_once()
 
 
-@requires_google_auth_gte_1_25_0
 def test_schema_service_auth_adc():
     # If no credentials are provided, we should use ADC credentials.
-    with mock.patch.object(auth, "default", autospec=True) as adc:
-        adc.return_value = (credentials.AnonymousCredentials(), None)
-        SchemaServiceClient()
-        adc.assert_called_once_with(
-            scopes=None,
-            default_scopes=(
-                "https://www.googleapis.com/auth/cloud-platform",
-                "https://www.googleapis.com/auth/pubsub",
-            ),
-            quota_project_id=None,
-        )
-
-
-@requires_google_auth_lt_1_25_0
-def test_schema_service_auth_adc_old_google_auth():
-    # If no credentials are provided, we should use ADC credentials.
-    with mock.patch.object(auth, "default", autospec=True) as adc:
+    with mock.patch.object(auth, "default") as adc:
         adc.return_value = (credentials.AnonymousCredentials(), None)
         SchemaServiceClient()
         adc.assert_called_once_with(
@@ -1930,162 +1931,20 @@ def test_schema_service_auth_adc_old_google_auth():
         )
 
 
-@pytest.mark.parametrize(
-    "transport_class",
-    [
-        transports.SchemaServiceGrpcTransport,
-        transports.SchemaServiceGrpcAsyncIOTransport,
-    ],
-)
-@requires_google_auth_gte_1_25_0
-def test_schema_service_transport_auth_adc(transport_class):
+def test_schema_service_transport_auth_adc():
     # If credentials and host are not provided, the transport class should use
     # ADC credentials.
-    with mock.patch.object(auth, "default", autospec=True) as adc:
+    with mock.patch.object(auth, "default") as adc:
         adc.return_value = (credentials.AnonymousCredentials(), None)
-        transport_class(quota_project_id="octopus", scopes=["1", "2"])
-        adc.assert_called_once_with(
-            scopes=["1", "2"],
-            default_scopes=(
-                "https://www.googleapis.com/auth/cloud-platform",
-                "https://www.googleapis.com/auth/pubsub",
-            ),
-            quota_project_id="octopus",
+        transports.SchemaServiceGrpcTransport(
+            host="squid.clam.whelk", quota_project_id="octopus"
         )
-
-
-@pytest.mark.parametrize(
-    "transport_class",
-    [
-        transports.SchemaServiceGrpcTransport,
-        transports.SchemaServiceGrpcAsyncIOTransport,
-    ],
-)
-@requires_google_auth_lt_1_25_0
-def test_schema_service_transport_auth_adc_old_google_auth(transport_class):
-    # If credentials and host are not provided, the transport class should use
-    # ADC credentials.
-    with mock.patch.object(auth, "default", autospec=True) as adc:
-        adc.return_value = (credentials.AnonymousCredentials(), None)
-        transport_class(quota_project_id="octopus")
         adc.assert_called_once_with(
             scopes=(
                 "https://www.googleapis.com/auth/cloud-platform",
                 "https://www.googleapis.com/auth/pubsub",
             ),
             quota_project_id="octopus",
-        )
-
-
-@pytest.mark.parametrize(
-    "transport_class,grpc_helpers",
-    [
-        (transports.SchemaServiceGrpcTransport, grpc_helpers),
-        (transports.SchemaServiceGrpcAsyncIOTransport, grpc_helpers_async),
-    ],
-)
-@requires_api_core_gte_1_26_0
-def test_schema_service_transport_create_channel(transport_class, grpc_helpers):
-    # If credentials and host are not provided, the transport class should use
-    # ADC credentials.
-    with mock.patch.object(auth, "default", autospec=True) as adc, mock.patch.object(
-        grpc_helpers, "create_channel", autospec=True
-    ) as create_channel:
-        creds = credentials.AnonymousCredentials()
-        adc.return_value = (creds, None)
-        transport_class(quota_project_id="octopus", scopes=["1", "2"])
-
-        create_channel.assert_called_with(
-            "pubsub.googleapis.com",
-            credentials=creds,
-            credentials_file=None,
-            quota_project_id="octopus",
-            default_scopes=(
-                "https://www.googleapis.com/auth/cloud-platform",
-                "https://www.googleapis.com/auth/pubsub",
-            ),
-            scopes=["1", "2"],
-            default_host="pubsub.googleapis.com",
-            ssl_credentials=None,
-            options=[
-                ("grpc.max_send_message_length", -1),
-                ("grpc.max_receive_message_length", -1),
-                ("grpc.keepalive_time_ms", 30000),
-            ],
-        )
-
-
-@pytest.mark.parametrize(
-    "transport_class,grpc_helpers",
-    [
-        (transports.SchemaServiceGrpcTransport, grpc_helpers),
-        (transports.SchemaServiceGrpcAsyncIOTransport, grpc_helpers_async),
-    ],
-)
-@requires_api_core_lt_1_26_0
-def test_schema_service_transport_create_channel_old_api_core(
-    transport_class, grpc_helpers
-):
-    # If credentials and host are not provided, the transport class should use
-    # ADC credentials.
-    with mock.patch.object(auth, "default", autospec=True) as adc, mock.patch.object(
-        grpc_helpers, "create_channel", autospec=True
-    ) as create_channel:
-        creds = credentials.AnonymousCredentials()
-        adc.return_value = (creds, None)
-        transport_class(quota_project_id="octopus")
-
-        create_channel.assert_called_with(
-            "pubsub.googleapis.com",
-            credentials=creds,
-            credentials_file=None,
-            quota_project_id="octopus",
-            scopes=(
-                "https://www.googleapis.com/auth/cloud-platform",
-                "https://www.googleapis.com/auth/pubsub",
-            ),
-            ssl_credentials=None,
-            options=[
-                ("grpc.max_send_message_length", -1),
-                ("grpc.max_receive_message_length", -1),
-                ("grpc.keepalive_time_ms", 30000),
-            ],
-        )
-
-
-@pytest.mark.parametrize(
-    "transport_class,grpc_helpers",
-    [
-        (transports.SchemaServiceGrpcTransport, grpc_helpers),
-        (transports.SchemaServiceGrpcAsyncIOTransport, grpc_helpers_async),
-    ],
-)
-@requires_api_core_lt_1_26_0
-def test_schema_service_transport_create_channel_user_scopes(
-    transport_class, grpc_helpers
-):
-    # If credentials and host are not provided, the transport class should use
-    # ADC credentials.
-    with mock.patch.object(auth, "default", autospec=True) as adc, mock.patch.object(
-        grpc_helpers, "create_channel", autospec=True
-    ) as create_channel:
-        creds = credentials.AnonymousCredentials()
-        adc.return_value = (creds, None)
-
-        transport_class(quota_project_id="octopus", scopes=["1", "2"])
-
-        create_channel.assert_called_with(
-            "pubsub.googleapis.com",
-            credentials=creds,
-            credentials_file=None,
-            quota_project_id="octopus",
-            scopes=["1", "2"],
-            ssl_credentials=None,
-            options=[
-                ("grpc.max_send_message_length", -1),
-                ("grpc.max_receive_message_length", -1),
-                ("grpc.keepalive_time_ms", 30000),
-            ],
         )
 
 
@@ -2291,6 +2150,7 @@ def test_schema_service_transport_channel_mtls_with_adc(transport_class):
 def test_schema_path():
     project = "squid"
     schema = "clam"
+
     expected = "projects/{project}/schemas/{schema}".format(
         project=project, schema=schema,
     )
@@ -2312,6 +2172,7 @@ def test_parse_schema_path():
 
 def test_common_billing_account_path():
     billing_account = "oyster"
+
     expected = "billingAccounts/{billing_account}".format(
         billing_account=billing_account,
     )
@@ -2332,6 +2193,7 @@ def test_parse_common_billing_account_path():
 
 def test_common_folder_path():
     folder = "cuttlefish"
+
     expected = "folders/{folder}".format(folder=folder,)
     actual = SchemaServiceClient.common_folder_path(folder)
     assert expected == actual
@@ -2350,6 +2212,7 @@ def test_parse_common_folder_path():
 
 def test_common_organization_path():
     organization = "winkle"
+
     expected = "organizations/{organization}".format(organization=organization,)
     actual = SchemaServiceClient.common_organization_path(organization)
     assert expected == actual
@@ -2368,6 +2231,7 @@ def test_parse_common_organization_path():
 
 def test_common_project_path():
     project = "scallop"
+
     expected = "projects/{project}".format(project=project,)
     actual = SchemaServiceClient.common_project_path(project)
     assert expected == actual
@@ -2387,6 +2251,7 @@ def test_parse_common_project_path():
 def test_common_location_path():
     project = "squid"
     location = "clam"
+
     expected = "projects/{project}/locations/{location}".format(
         project=project, location=location,
     )

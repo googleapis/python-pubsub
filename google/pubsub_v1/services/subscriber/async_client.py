@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 # Copyright 2020 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+
 from collections import OrderedDict
 import functools
 import re
@@ -42,6 +44,7 @@ from google.protobuf import duration_pb2 as duration  # type: ignore
 from google.protobuf import timestamp_pb2 as timestamp  # type: ignore
 from google.pubsub_v1.services.subscriber import pagers
 from google.pubsub_v1.types import pubsub
+
 from .transports.base import SubscriberTransport, DEFAULT_CLIENT_INFO
 from .transports.grpc_asyncio import SubscriberGrpcAsyncIOTransport
 from .client import SubscriberClient
@@ -65,20 +68,25 @@ class SubscriberAsyncClient:
     parse_subscription_path = staticmethod(SubscriberClient.parse_subscription_path)
     topic_path = staticmethod(SubscriberClient.topic_path)
     parse_topic_path = staticmethod(SubscriberClient.parse_topic_path)
+
     common_billing_account_path = staticmethod(
         SubscriberClient.common_billing_account_path
     )
     parse_common_billing_account_path = staticmethod(
         SubscriberClient.parse_common_billing_account_path
     )
+
     common_folder_path = staticmethod(SubscriberClient.common_folder_path)
     parse_common_folder_path = staticmethod(SubscriberClient.parse_common_folder_path)
+
     common_organization_path = staticmethod(SubscriberClient.common_organization_path)
     parse_common_organization_path = staticmethod(
         SubscriberClient.parse_common_organization_path
     )
+
     common_project_path = staticmethod(SubscriberClient.common_project_path)
     parse_common_project_path = staticmethod(SubscriberClient.parse_common_project_path)
+
     common_location_path = staticmethod(SubscriberClient.common_location_path)
     parse_common_location_path = staticmethod(
         SubscriberClient.parse_common_location_path
@@ -169,6 +177,7 @@ class SubscriberAsyncClient:
             google.auth.exceptions.MutualTlsChannelError: If mutual TLS transport
                 creation failed for any reason.
         """
+
         self._client = SubscriberClient(
             credentials=credentials,
             transport=transport,
@@ -204,8 +213,7 @@ class SubscriberAsyncClient:
 
         Args:
             request (:class:`google.pubsub_v1.types.Subscription`):
-                The request object.
-                A subscription resource.
+                The request object. A subscription resource.
             name (:class:`str`):
                 Required. The name of the subscription. It must have the
                 format
@@ -268,6 +276,7 @@ class SubscriberAsyncClient:
                 This corresponds to the ``ack_deadline_seconds`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
+
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
@@ -292,6 +301,7 @@ class SubscriberAsyncClient:
 
         # If we have keyword arguments corresponding to fields on the
         # request, apply these.
+
         if name is not None:
             request.name = name
         if topic is not None:
@@ -345,8 +355,7 @@ class SubscriberAsyncClient:
 
         Args:
             request (:class:`google.pubsub_v1.types.GetSubscriptionRequest`):
-                The request object.
-                Request for the GetSubscription
+                The request object. Request for the GetSubscription
                 method.
             subscription (:class:`str`):
                 Required. The name of the subscription to get. Format is
@@ -355,6 +364,7 @@ class SubscriberAsyncClient:
                 This corresponds to the ``subscription`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
+
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
@@ -379,6 +389,7 @@ class SubscriberAsyncClient:
 
         # If we have keyword arguments corresponding to fields on the
         # request, apply these.
+
         if subscription is not None:
             request.subscription = subscription
 
@@ -429,9 +440,9 @@ class SubscriberAsyncClient:
 
         Args:
             request (:class:`google.pubsub_v1.types.UpdateSubscriptionRequest`):
-                The request object.
-                Request for the UpdateSubscription
+                The request object. Request for the UpdateSubscription
                 method.
+
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
@@ -443,6 +454,7 @@ class SubscriberAsyncClient:
                 A subscription resource.
         """
         # Create or coerce a protobuf request object.
+
         request = pubsub.UpdateSubscriptionRequest(request)
 
         # Wrap the RPC method; this adds retry and timeout information,
@@ -487,8 +499,7 @@ class SubscriberAsyncClient:
 
         Args:
             request (:class:`google.pubsub_v1.types.ListSubscriptionsRequest`):
-                The request object.
-                Request for the `ListSubscriptions`
+                The request object. Request for the `ListSubscriptions`
                 method.
             project (:class:`str`):
                 Required. The name of the project in which to list
@@ -497,6 +508,7 @@ class SubscriberAsyncClient:
                 This corresponds to the ``project`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
+
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
@@ -525,6 +537,7 @@ class SubscriberAsyncClient:
 
         # If we have keyword arguments corresponding to fields on the
         # request, apply these.
+
         if project is not None:
             request.project = project
 
@@ -583,8 +596,7 @@ class SubscriberAsyncClient:
 
         Args:
             request (:class:`google.pubsub_v1.types.DeleteSubscriptionRequest`):
-                The request object.
-                Request for the DeleteSubscription
+                The request object. Request for the DeleteSubscription
                 method.
             subscription (:class:`str`):
                 Required. The subscription to delete. Format is
@@ -593,6 +605,7 @@ class SubscriberAsyncClient:
                 This corresponds to the ``subscription`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
+
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
@@ -613,6 +626,7 @@ class SubscriberAsyncClient:
 
         # If we have keyword arguments corresponding to fields on the
         # request, apply these.
+
         if subscription is not None:
             request.subscription = subscription
 
@@ -664,8 +678,7 @@ class SubscriberAsyncClient:
 
         Args:
             request (:class:`google.pubsub_v1.types.ModifyAckDeadlineRequest`):
-                The request object.
-                Request for the ModifyAckDeadline
+                The request object. Request for the ModifyAckDeadline
                 method.
             subscription (:class:`str`):
                 Required. The name of the subscription. Format is
@@ -695,6 +708,7 @@ class SubscriberAsyncClient:
                 This corresponds to the ``ack_deadline_seconds`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
+
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
@@ -715,10 +729,12 @@ class SubscriberAsyncClient:
 
         # If we have keyword arguments corresponding to fields on the
         # request, apply these.
+
         if subscription is not None:
             request.subscription = subscription
         if ack_deadline_seconds is not None:
             request.ack_deadline_seconds = ack_deadline_seconds
+
         if ack_ids:
             request.ack_ids.extend(ack_ids)
 
@@ -771,8 +787,7 @@ class SubscriberAsyncClient:
 
         Args:
             request (:class:`google.pubsub_v1.types.AcknowledgeRequest`):
-                The request object.
-                Request for the Acknowledge method.
+                The request object. Request for the Acknowledge method.
             subscription (:class:`str`):
                 Required. The subscription whose message is being
                 acknowledged. Format is
@@ -789,6 +804,7 @@ class SubscriberAsyncClient:
                 This corresponds to the ``ack_ids`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
+
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
@@ -809,8 +825,10 @@ class SubscriberAsyncClient:
 
         # If we have keyword arguments corresponding to fields on the
         # request, apply these.
+
         if subscription is not None:
             request.subscription = subscription
+
         if ack_ids:
             request.ack_ids.extend(ack_ids)
 
@@ -859,8 +877,7 @@ class SubscriberAsyncClient:
 
         Args:
             request (:class:`google.pubsub_v1.types.PullRequest`):
-                The request object.
-                Request for the `Pull` method.
+                The request object. Request for the `Pull` method.
             subscription (:class:`str`):
                 Required. The subscription from which messages should be
                 pulled. Format is
@@ -893,6 +910,7 @@ class SubscriberAsyncClient:
                 This corresponds to the ``max_messages`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
+
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
@@ -917,6 +935,7 @@ class SubscriberAsyncClient:
 
         # If we have keyword arguments corresponding to fields on the
         # request, apply these.
+
         if subscription is not None:
             request.subscription = subscription
         if return_immediately is not None:
@@ -982,8 +1001,7 @@ class SubscriberAsyncClient:
 
         Args:
             requests (AsyncIterator[`google.pubsub_v1.types.StreamingPullRequest`]):
-                The request object AsyncIterator.
-                Request for the `StreamingPull`
+                The request object AsyncIterator. Request for the `StreamingPull`
                 streaming RPC method. This request is used to establish
                 the initial stream as well as to stream acknowledgements
                 and ack deadline modifications from the client to the
@@ -1048,8 +1066,7 @@ class SubscriberAsyncClient:
 
         Args:
             request (:class:`google.pubsub_v1.types.ModifyPushConfigRequest`):
-                The request object.
-                Request for the ModifyPushConfig
+                The request object. Request for the ModifyPushConfig
                 method.
             subscription (:class:`str`):
                 Required. The name of the subscription. Format is
@@ -1070,6 +1087,7 @@ class SubscriberAsyncClient:
                 This corresponds to the ``push_config`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
+
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
@@ -1090,6 +1108,7 @@ class SubscriberAsyncClient:
 
         # If we have keyword arguments corresponding to fields on the
         # request, apply these.
+
         if subscription is not None:
             request.subscription = subscription
         if push_config is not None:
@@ -1142,8 +1161,7 @@ class SubscriberAsyncClient:
 
         Args:
             request (:class:`google.pubsub_v1.types.GetSnapshotRequest`):
-                The request object.
-                Request for the GetSnapshot method.
+                The request object. Request for the GetSnapshot method.
             snapshot (:class:`str`):
                 Required. The name of the snapshot to get. Format is
                 ``projects/{project}/snapshots/{snap}``.
@@ -1151,6 +1169,7 @@ class SubscriberAsyncClient:
                 This corresponds to the ``snapshot`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
+
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
@@ -1181,6 +1200,7 @@ class SubscriberAsyncClient:
 
         # If we have keyword arguments corresponding to fields on the
         # request, apply these.
+
         if snapshot is not None:
             request.snapshot = snapshot
 
@@ -1232,8 +1252,7 @@ class SubscriberAsyncClient:
 
         Args:
             request (:class:`google.pubsub_v1.types.ListSnapshotsRequest`):
-                The request object.
-                Request for the `ListSnapshots`
+                The request object. Request for the `ListSnapshots`
                 method.
             project (:class:`str`):
                 Required. The name of the project in which to list
@@ -1242,6 +1261,7 @@ class SubscriberAsyncClient:
                 This corresponds to the ``project`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
+
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
@@ -1270,6 +1290,7 @@ class SubscriberAsyncClient:
 
         # If we have keyword arguments corresponding to fields on the
         # request, apply these.
+
         if project is not None:
             request.project = project
 
@@ -1342,8 +1363,7 @@ class SubscriberAsyncClient:
 
         Args:
             request (:class:`google.pubsub_v1.types.CreateSnapshotRequest`):
-                The request object.
-                Request for the `CreateSnapshot`
+                The request object. Request for the `CreateSnapshot`
                 method.
             name (:class:`str`):
                 Required. User-provided name for this snapshot. If the
@@ -1372,6 +1392,7 @@ class SubscriberAsyncClient:
                 This corresponds to the ``subscription`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
+
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
@@ -1402,6 +1423,7 @@ class SubscriberAsyncClient:
 
         # If we have keyword arguments corresponding to fields on the
         # request, apply these.
+
         if name is not None:
             request.name = name
         if subscription is not None:
@@ -1452,9 +1474,9 @@ class SubscriberAsyncClient:
 
         Args:
             request (:class:`google.pubsub_v1.types.UpdateSnapshotRequest`):
-                The request object.
-                Request for the UpdateSnapshot
+                The request object. Request for the UpdateSnapshot
                 method.
+
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
@@ -1472,6 +1494,7 @@ class SubscriberAsyncClient:
 
         """
         # Create or coerce a protobuf request object.
+
         request = pubsub.UpdateSnapshotRequest(request)
 
         # Wrap the RPC method; this adds retry and timeout information,
@@ -1525,8 +1548,7 @@ class SubscriberAsyncClient:
 
         Args:
             request (:class:`google.pubsub_v1.types.DeleteSnapshotRequest`):
-                The request object.
-                Request for the `DeleteSnapshot`
+                The request object. Request for the `DeleteSnapshot`
                 method.
             snapshot (:class:`str`):
                 Required. The name of the snapshot to delete. Format is
@@ -1535,6 +1557,7 @@ class SubscriberAsyncClient:
                 This corresponds to the ``snapshot`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
+
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
@@ -1555,6 +1578,7 @@ class SubscriberAsyncClient:
 
         # If we have keyword arguments corresponding to fields on the
         # request, apply these.
+
         if snapshot is not None:
             request.snapshot = snapshot
 
@@ -1604,8 +1628,8 @@ class SubscriberAsyncClient:
 
         Args:
             request (:class:`google.pubsub_v1.types.SeekRequest`):
-                The request object.
-                Request for the `Seek` method.
+                The request object. Request for the `Seek` method.
+
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
@@ -1617,6 +1641,7 @@ class SubscriberAsyncClient:
                 Response for the Seek method (this response is empty).
         """
         # Create or coerce a protobuf request object.
+
         request = pubsub.SeekRequest(request)
 
         # Wrap the RPC method; this adds retry and timeout information,
