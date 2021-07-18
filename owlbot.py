@@ -34,6 +34,14 @@ for library in s.get_staging_dirs(default_version):
     Attributes:""",
     )
 
+    # Work around gapic generator bug https://github.com/googleapis/gapic-generator-python/issues/902
+    s.replace(library / f"google/pubsub_{library.name}/types/*.py",
+                r""".
+        Attributes:""",
+                r""".\n
+        Attributes:""",
+    )
+
     # DEFAULT SCOPES and SERVICE_ADDRESS are being used. so let's force them in.
     s.replace(
         library / f"google/pubsub_{library.name}/services/*er/*client.py",

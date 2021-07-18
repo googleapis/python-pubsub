@@ -1079,6 +1079,7 @@ class StreamingPullResponse(proto.Message):
 
     class SubscriptionProperties(proto.Message):
         r"""Subscription properties sent as part of the response.
+
         Attributes:
             message_ordering_enabled (bool):
                 True iff message ordering is enabled for this
