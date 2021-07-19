@@ -31,9 +31,8 @@ release_status = "Development Status :: 5 - Production/Stable"
 dependencies = [
     "grpcio >= 1.38.1, < 2.0dev",  # https://github.com/googleapis/python-pubsub/issues/414
     # NOTE: Maintainers, please do not require google-api-core>=2.x.x
-        # Until this issue is closed
-        # https://github.com/googleapis/google-cloud-python/issues/10566
-        
+    # Until this issue is closed
+    # https://github.com/googleapis/google-cloud-python/issues/10566
     "google-api-core[grpc] >= 1.26.0, <3.0.0dev",
     "libcst >= 0.3.10",
     "proto-plus >= 1.7.1",
