@@ -302,7 +302,7 @@ for library in s.get_staging_dirs(default_version):
     # The namespace package declaration in google/cloud/__init__.py should be excluded
     # from coverage.
     count = s.replace(
-        ".coveragerc",
+        library / ".coveragerc",
         "google/pubsub/__init__.py",
         "google/cloud/__init__.py",
     )
