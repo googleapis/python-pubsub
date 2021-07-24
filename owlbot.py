@@ -301,11 +301,14 @@ for library in s.get_staging_dirs(default_version):
 
     # The namespace package declaration in google/cloud/__init__.py should be excluded
     # from coverage.
-    s.replace(
+    count = s.replace(
         ".coveragerc",
-        r"((?P<indent>[^\n\S]+)google/pubsub/__init__\.py)",
-        "\g<indent>google/cloud/__init__.py\n\g<0>",
+        "google/pubsub/__init__.py",
+        "google/cloud/__init__.py",
     )
+
+    if count < 1:
+        raise Exception(".coveragerc replacement failed.")
 
     s.move(
         library,
