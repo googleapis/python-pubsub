@@ -89,6 +89,7 @@ def default(session):
     session.install("mock", "pytest", "pytest-cov", "-c", constraints_path)
 
     session.install("-e", ".", "-c", constraints_path)
+    session.install("google-auth==2.0.0b1", "google-api-core==2.0.0b1")
 
     # Run py.test against the unit tests.
     session.run(
@@ -143,6 +144,7 @@ def system(session):
         "mock", "pytest", "google-cloud-testutils", "psutil", "-c", constraints_path
     )
     session.install("-e", ".", "-c", constraints_path)
+    session.install("google-auth==2.0.0b1", "google-api-core==2.0.0b1")
 
     # Run py.test against the system tests.
     if system_test_exists:
