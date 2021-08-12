@@ -1,4 +1,4 @@
 google-cloud-pubsub==2.7.0
 avro==1.10.2
 google-auth==2.0.0b1
-google-api-core==2.0.0b1
+google-api-core[grpc]==2.0.0b1
