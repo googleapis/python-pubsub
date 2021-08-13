@@ -17,6 +17,7 @@ import pytest
 
 from google.auth import credentials
 from google.cloud.pubsub_v1 import publisher
+from google.cloud.pubsub_v1 import types
 from google.cloud.pubsub_v1.publisher._batch import base
 from google.cloud.pubsub_v1.publisher._sequencer import unordered_sequencer
 from google.pubsub_v1 import types as gapic_types
@@ -100,6 +101,17 @@ def test_publish_custom_retry():
     assert sequencer._current_batch._commit_retry is mock.sentinel.custom_retry
 
 
+def test_publish_custom_timeout():
+    client = create_client()
+    message = create_message()
+    sequencer = unordered_sequencer.UnorderedSequencer(client, "topic_name")
+
+    sequencer.publish(message, timeout=mock.sentinel.custom_timeout)
+
+    assert sequencer._current_batch is not None
+    assert sequencer._current_batch._commit_timeout is mock.sentinel.custom_timeout
+
+
 def test_publish_batch_full():
     client = create_client()
     message = create_message()
@@ -119,13 +131,19 @@ def test_publish_batch_full():
 def test_publish_after_batch_error():
     client = create_client()
     message = create_message()
-    batch = mock.Mock(spec=client._batch_class)
+
+    batch = client._batch_class(
+        client, "topic_name", types.BatchSettings(max_latency=float("inf"))
+    )
+    batch._messages.append(mock.Mock(name="message"))  # Make batch truthy (non-empty).
 
     sequencer = unordered_sequencer.UnorderedSequencer(client, "topic_name")
     sequencer._set_batch(batch)
 
-    sequencer.commit()
-    batch.commit.assert_called_once()
+    with mock.patch.object(batch, "commit") as fake_batch_commit:
+        sequencer.commit()
+
+    fake_batch_commit.assert_called_once()
 
     # Simulate publish RPC failing.
     batch._set_status(base.BatchStatus.ERROR)

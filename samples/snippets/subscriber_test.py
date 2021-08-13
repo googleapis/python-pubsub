@@ -13,11 +13,14 @@
 # limitations under the License.
 
 import os
+import re
 import sys
+import time
 import uuid
 
 import backoff
 from flaky import flaky
+from google.api_core.exceptions import InternalServerError
 from google.api_core.exceptions import NotFound
 from google.api_core.exceptions import Unknown
 from google.cloud import pubsub_v1
@@ -238,13 +241,14 @@ def test_create_subscription_with_dead_letter_policy(
     assert f"After {DEFAULT_MAX_DELIVERY_ATTEMPTS} delivery attempts." in out
 
 
+@flaky(max_runs=3, min_passes=1)
 def test_receive_with_delivery_attempts(
     publisher_client, topic, dead_letter_topic, subscription_dlq, capsys
 ):
 
     # The dlq subscription raises 404 before it's ready.
     # We keep retrying up to 10 minutes for mitigating the flakiness.
-    @backoff.on_exception(backoff.expo, (Unknown, NotFound), max_time=600)
+    @backoff.on_exception(backoff.expo, (Unknown, NotFound), max_time=120)
     def run_sample():
         _publish_messages(publisher_client, topic)
 
@@ -259,13 +263,20 @@ def test_receive_with_delivery_attempts(
 
 @flaky(max_runs=3, min_passes=1)
 def test_update_dead_letter_policy(subscription_dlq, dead_letter_topic, capsys):
-    _ = subscriber.update_subscription_with_dead_letter_policy(
-        PROJECT_ID,
-        TOPIC,
-        SUBSCRIPTION_DLQ,
-        DEAD_LETTER_TOPIC,
-        UPDATED_MAX_DELIVERY_ATTEMPTS,
-    )
+
+    # We saw internal server error that suggests to retry.
+
+    @backoff.on_exception(backoff.expo, (Unknown, InternalServerError), max_time=60)
+    def run_sample():
+        subscriber.update_subscription_with_dead_letter_policy(
+            PROJECT_ID,
+            TOPIC,
+            SUBSCRIPTION_DLQ,
+            DEAD_LETTER_TOPIC,
+            UPDATED_MAX_DELIVERY_ATTEMPTS,
+        )
+
+    run_sample()
 
     out, _ = capsys.readouterr()
     assert dead_letter_topic in out
@@ -386,6 +397,57 @@ def test_receive_with_flow_control(publisher_client, topic, subscription_async, 
     assert "message" in out
 
 
+def test_receive_with_blocking_shutdown(
+    publisher_client, topic, subscription_async, capsys
+):
+    _publish_messages(publisher_client, topic, message_num=3)
+
+    subscriber.receive_messages_with_blocking_shutdown(
+        PROJECT_ID, SUBSCRIPTION_ASYNC, timeout=5.0
+    )
+
+    out, _ = capsys.readouterr()
+    out_lines = out.splitlines()
+
+    msg_received_lines = [
+        i for i, line in enumerate(out_lines)
+        if re.search(r".*received.*message.*", line, flags=re.IGNORECASE)
+    ]
+    msg_done_lines = [
+        i for i, line in enumerate(out_lines)
+        if re.search(r".*done processing.*message.*", line, flags=re.IGNORECASE)
+    ]
+    stream_canceled_lines = [
+        i for i, line in enumerate(out_lines)
+        if re.search(r".*streaming pull future canceled.*", line, flags=re.IGNORECASE)
+    ]
+    shutdown_done_waiting_lines = [
+        i for i, line in enumerate(out_lines)
+        if re.search(r".*done waiting.*stream shutdown.*", line, flags=re.IGNORECASE)
+    ]
+
+    try:
+        assert "Listening" in out
+        assert subscription_async in out
+
+        assert len(stream_canceled_lines) == 1
+        assert len(shutdown_done_waiting_lines) == 1
+        assert len(msg_received_lines) == 3
+        assert len(msg_done_lines) == 3
+
+        # The stream should have been canceled *after* receiving messages, but before
+        # message processing was done.
+        assert msg_received_lines[-1] < stream_canceled_lines[0] < msg_done_lines[0]
+
+        # Yet, waiting on the stream shutdown should have completed *after*
+        # the processing of received messages has ended.
+        assert msg_done_lines[-1] < shutdown_done_waiting_lines[0]
+    except AssertionError:  # pragma: NO COVER
+        from pprint import pprint
+        pprint(out_lines)  # To make possible flakiness debugging easier.
+        raise
+
+
 def test_listen_for_errors(publisher_client, topic, subscription_async, capsys):
 
     _publish_messages(publisher_client, topic)
@@ -408,12 +470,19 @@ def test_receive_synchronously(publisher_client, topic, subscription_sync, capsy
     assert f"{subscription_sync}" in out
 
 
+@flaky(max_runs=3, min_passes=1)
 def test_receive_synchronously_with_lease(
     publisher_client, topic, subscription_sync, capsys
 ):
     @backoff.on_exception(backoff.expo, Unknown, max_time=300)
     def run_sample():
-        _publish_messages(publisher_client, topic, message_num=3)
+        _publish_messages(publisher_client, topic, message_num=10)
+        # Pausing 10s to allow the subscriber to establish the connection
+        # because sync pull often returns fewer messages than requested.
+        # The intention is to fix flaky tests reporting errors like
+        # `google.api_core.exceptions.Unknown: None Stream removed` as
+        # in https://github.com/googleapis/python-pubsub/issues/341.
+        time.sleep(10)
         subscriber.synchronous_pull_with_lease_management(PROJECT_ID, SUBSCRIPTION_SYNC)
 
     run_sample()

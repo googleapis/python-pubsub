@@ -18,8 +18,6 @@ import logging
 import threading
 import time
 
-import six
-
 import google.api_core.exceptions
 from google.api_core import gapic_v1
 from google.cloud.pubsub_v1.publisher import exceptions
@@ -75,6 +73,9 @@ class Batch(base.Batch):
         commit_retry (Optional[google.api_core.retry.Retry]): Designation of what
             errors, if any, should be retried when commiting the batch. If not
             provided, a default retry is used.
+        commit_timeout (:class:`~.pubsub_v1.types.TimeoutType`):
+                The timeout to apply when commiting the batch. If not provided, a
+                default timeout is used.
     """
 
     def __init__(
@@ -85,6 +86,7 @@ class Batch(base.Batch):
         batch_done_callback=None,
         commit_when_full=True,
         commit_retry=gapic_v1.method.DEFAULT,
+        commit_timeout: gapic_types.TimeoutType = gapic_v1.method.DEFAULT,
     ):
         self._client = client
         self._topic = topic
@@ -108,6 +110,7 @@ class Batch(base.Batch):
         self._size = self._base_request_size
 
         self._commit_retry = commit_retry
+        self._commit_timeout = commit_timeout
 
     @staticmethod
     def make_lock():
@@ -209,9 +212,11 @@ class Batch(base.Batch):
 
     def _start_commit_thread(self):
         """Start a new thread to actually handle the commit."""
-
+        # NOTE: If the thread is *not* a daemon, a memory leak exists due to a CPython issue.
+        # https://github.com/googleapis/python-pubsub/issues/395#issuecomment-829910303
+        # https://github.com/googleapis/python-pubsub/issues/395#issuecomment-830092418
         commit_thread = threading.Thread(
-            name="Thread-CommitBatchPublisher", target=self._commit
+            name="Thread-CommitBatchPublisher", target=self._commit, daemon=True
         )
         commit_thread.start()
 
@@ -261,7 +266,10 @@ class Batch(base.Batch):
         try:
             # Performs retries for errors defined by the retry configuration.
             response = self._client.api.publish(
-                topic=self._topic, messages=self._messages, retry=self._commit_retry
+                topic=self._topic,
+                messages=self._messages,
+                retry=self._commit_retry,
+                timeout=self._commit_timeout,
             )
         except google.api_core.exceptions.GoogleAPIError as exc:
             # We failed to publish, even after retries, so set the exception on
@@ -287,8 +295,7 @@ class Batch(base.Batch):
             # IDs. We are trusting that there is a 1:1 mapping, and raise
             # an exception if not.
             self._status = base.BatchStatus.SUCCESS
-            zip_iter = six.moves.zip(response.message_ids, self._futures)
-            for message_id, future in zip_iter:
+            for message_id, future in zip(response.message_ids, self._futures):
                 future.set_result(message_id)
         else:
             # Sanity check: If the number of message IDs is not equal to
@@ -381,7 +388,7 @@ class Batch(base.Batch):
 
                 # Track the future on this batch (so that the result of the
                 # future can be set).
-                future = futures.Future(completed=threading.Event())
+                future = futures.Future()
                 self._futures.append(future)
 
         # Try to commit, but it must be **without** the lock held, since

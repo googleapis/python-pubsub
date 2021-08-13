@@ -4,8 +4,11 @@ branchProtectionRules:
 # Identifies the protection rule pattern. Name of the branch to be protected.
 # Defaults to `master`
 - pattern: master
+  requiresCodeOwnerReviews: true
+  requiresStrictStatusChecks: true
   requiredStatusCheckContexts:
     - 'Kokoro'
+    - 'Kokoro - Against Pub/Sub Lite samples'
     - 'cla/google'
     - 'Samples - Lint'
     - 'Samples - Python 3.6'

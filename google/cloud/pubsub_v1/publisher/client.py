@@ -21,8 +21,6 @@ import pkg_resources
 import threading
 import time
 
-import six
-
 from google.api_core import gapic_v1
 from google.auth.credentials import AnonymousCredentials
 from google.oauth2 import service_account
@@ -38,7 +36,12 @@ from google.cloud.pubsub_v1.publisher.flow_controller import FlowController
 from google.pubsub_v1 import types as gapic_types
 from google.pubsub_v1.services.publisher import client as publisher_client
 
-__version__ = pkg_resources.get_distribution("google-cloud-pubsub").version
+try:
+    __version__ = pkg_resources.get_distribution("google-cloud-pubsub").version
+except pkg_resources.DistributionNotFound:
+    # Distribution might not be available if we are not running from within a
+    # PIP package.
+    __version__ = "0.0"
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -49,14 +52,6 @@ _BLACKLISTED_METHODS = (
 )
 
 _raw_proto_pubbsub_message = gapic_types.PubsubMessage.pb()
-
-
-def _set_nested_value(container, value, keys):
-    current = container
-    for key in keys[:-1]:
-        current = current.setdefault(key, {})
-    current[keys[-1]] = value
-    return container
 
 
 @_gapic.add_methods(publisher_client.PublisherClient, blacklist=_BLACKLISTED_METHODS)
@@ -235,7 +230,13 @@ class Client(object):
                 sequencer.unpause()
 
     def publish(
-        self, topic, data, ordering_key="", retry=gapic_v1.method.DEFAULT, **attrs
+        self,
+        topic,
+        data,
+        ordering_key="",
+        retry=gapic_v1.method.DEFAULT,
+        timeout: gapic_types.TimeoutType = gapic_v1.method.DEFAULT,
+        **attrs
     ):
         """Publish a single message.
 
@@ -271,11 +272,15 @@ class Client(object):
             ordering_key: A string that identifies related messages for which
                 publish order should be respected. Message ordering must be
                 enabled for this client to use this feature.
-                EXPERIMENTAL: This feature is currently available in a closed
-                alpha. Please contact the Cloud Pub/Sub team to use it.
             retry (Optional[google.api_core.retry.Retry]): Designation of what
                 errors, if any, should be retried. If `ordering_key` is specified,
                 the total retry deadline will be changed to "infinity".
+                If given, it overides any retry passed into the client through
+                the ``publisher_options`` argument.
+            timeout (:class:`~.pubsub_v1.types.TimeoutType`):
+                The timeout for the RPC request. Can be used to override any timeout
+                passed in through ``publisher_options`` when instantiating the client.
+
             attrs (Mapping[str, str]): A dictionary of attributes to be
                 sent as metadata. (These may be text strings or byte strings.)
 
@@ -295,7 +300,7 @@ class Client(object):
         """
         # Sanity check: Is the data being sent as a bytestring?
         # If it is literally anything else, complain loudly about it.
-        if not isinstance(data, six.binary_type):
+        if not isinstance(data, bytes):
             raise TypeError(
                 "Data being published to Pub/Sub must be sent as a bytestring."
             )
@@ -308,9 +313,9 @@ class Client(object):
 
         # Coerce all attributes to text strings.
         for k, v in copy.copy(attrs).items():
-            if isinstance(v, six.text_type):
+            if isinstance(v, str):
                 continue
-            if isinstance(v, six.binary_type):
+            if isinstance(v, bytes):
                 attrs[k] = v.decode("utf-8")
                 continue
             raise TypeError(
@@ -338,6 +343,12 @@ class Client(object):
         def on_publish_done(future):
             self._flow_controller.release(message)
 
+        if retry is gapic_v1.method.DEFAULT:  # if custom retry not passed in
+            retry = self.publisher_options.retry
+
+        if timeout is gapic_v1.method.DEFAULT:  # if custom timeout not passed in
+            timeout = self.publisher_options.timeout
+
         with self._batch_lock:
             if self._is_stopped:
                 raise RuntimeError("Cannot publish on a stopped publisher.")
@@ -354,7 +365,7 @@ class Client(object):
 
             # Delegate the publishing to the sequencer.
             sequencer = self._get_or_create_sequencer(topic, ordering_key)
-            future = sequencer.publish(message, retry=retry)
+            future = sequencer.publish(message, retry=retry, timeout=timeout)
             future.add_done_callback(on_publish_done)
 
             # Create a timer thread if necessary to enforce the batching
@@ -382,8 +393,13 @@ class Client(object):
 
     def _start_commit_thread(self):
         """Start a new thread to actually wait and commit the sequencers."""
+        # NOTE: If the thread is *not* a daemon, a memory leak exists due to a CPython issue.
+        # https://github.com/googleapis/python-pubsub/issues/395#issuecomment-829910303
+        # https://github.com/googleapis/python-pubsub/issues/395#issuecomment-830092418
         self._commit_thread = threading.Thread(
-            name="Thread-PubSubBatchCommitter", target=self._wait_and_commit_sequencers
+            name="Thread-PubSubBatchCommitter",
+            target=self._wait_and_commit_sequencers,
+            daemon=True,
         )
         self._commit_thread.start()
 

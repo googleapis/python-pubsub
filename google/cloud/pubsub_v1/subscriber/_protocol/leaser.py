@@ -21,8 +21,6 @@ import random
 import threading
 import time
 
-import six
-
 from google.cloud.pubsub_v1.subscriber._protocol import requests
 
 
@@ -126,11 +124,13 @@ class Leaser(object):
         ack IDs, then waits for most of that time (but with jitter), and
         repeats.
         """
-        while self._manager.is_active and not self._stop_event.is_set():
+        while not self._stop_event.is_set():
             # Determine the appropriate duration for the lease. This is
             # based off of how long previous messages have taken to ack, with
             # a sensible default and within the ranges allowed by Pub/Sub.
-            deadline = self._manager.ack_deadline
+            # Also update the deadline currently used if enough new ACK data has been
+            # gathered since the last deadline update.
+            deadline = self._manager._obtain_ack_deadline(maybe_update=True)
             _LOGGER.debug("The current deadline value is %d seconds.", deadline)
 
             # Make a copy of the leased messages. This is needed because it's
@@ -144,7 +144,7 @@ class Leaser(object):
             cutoff = time.time() - self._manager.flow_control.max_lease_duration
             to_drop = [
                 requests.DropRequest(ack_id, item.size, item.ordering_key)
-                for ack_id, item in six.iteritems(leased_messages)
+                for ack_id, item in leased_messages.items()
                 if item.sent_time < cutoff
             ]
 

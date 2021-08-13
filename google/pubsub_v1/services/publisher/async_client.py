@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 # Copyright 2020 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 from collections import OrderedDict
 import functools
 import re
@@ -22,17 +20,18 @@ from typing import Dict, Sequence, Tuple, Type, Union
 import pkg_resources
 
 import google.api_core.client_options as ClientOptions  # type: ignore
-from google.api_core import exceptions  # type: ignore
+from google.api_core import exceptions as core_exceptions  # type: ignore
 from google.api_core import gapic_v1  # type: ignore
 from google.api_core import retry as retries  # type: ignore
-from google.auth import credentials  # type: ignore
+from google.api_core import timeout as timeouts  # type: ignore
+from google.auth import credentials as ga_credentials  # type: ignore
 from google.oauth2 import service_account  # type: ignore
 
-from google.iam.v1 import iam_policy_pb2 as iam_policy  # type: ignore
-from google.iam.v1 import policy_pb2 as policy  # type: ignore
+from google.iam.v1 import iam_policy_pb2  # type: ignore
+from google.iam.v1 import policy_pb2  # type: ignore
 from google.pubsub_v1.services.publisher import pagers
 from google.pubsub_v1.types import pubsub
-
+from google.pubsub_v1.types import TimeoutType
 from .transports.base import PublisherTransport, DEFAULT_CLIENT_INFO
 from .transports.grpc_asyncio import PublisherGrpcAsyncIOTransport
 from .client import PublisherClient
@@ -54,25 +53,20 @@ class PublisherAsyncClient:
     parse_subscription_path = staticmethod(PublisherClient.parse_subscription_path)
     topic_path = staticmethod(PublisherClient.topic_path)
     parse_topic_path = staticmethod(PublisherClient.parse_topic_path)
-
     common_billing_account_path = staticmethod(
         PublisherClient.common_billing_account_path
     )
     parse_common_billing_account_path = staticmethod(
         PublisherClient.parse_common_billing_account_path
     )
-
     common_folder_path = staticmethod(PublisherClient.common_folder_path)
     parse_common_folder_path = staticmethod(PublisherClient.parse_common_folder_path)
-
     common_organization_path = staticmethod(PublisherClient.common_organization_path)
     parse_common_organization_path = staticmethod(
         PublisherClient.parse_common_organization_path
     )
-
     common_project_path = staticmethod(PublisherClient.common_project_path)
     parse_common_project_path = staticmethod(PublisherClient.parse_common_project_path)
-
     common_location_path = staticmethod(PublisherClient.common_location_path)
     parse_common_location_path = staticmethod(
         PublisherClient.parse_common_location_path
@@ -80,7 +74,8 @@ class PublisherAsyncClient:
 
     @classmethod
     def from_service_account_info(cls, info: dict, *args, **kwargs):
-        """Creates an instance of this client using the provided credentials info.
+        """Creates an instance of this client using the provided credentials
+            info.
 
         Args:
             info (dict): The service account private key info.
@@ -95,7 +90,7 @@ class PublisherAsyncClient:
     @classmethod
     def from_service_account_file(cls, filename: str, *args, **kwargs):
         """Creates an instance of this client using the provided credentials
-        file.
+            file.
 
         Args:
             filename (str): The path to the service account private key json
@@ -112,7 +107,7 @@ class PublisherAsyncClient:
 
     @property
     def transport(self) -> PublisherTransport:
-        """Return the transport used by the client instance.
+        """Returns the transport used by the client instance.
 
         Returns:
             PublisherTransport: The transport used by the client instance.
@@ -126,12 +121,12 @@ class PublisherAsyncClient:
     def __init__(
         self,
         *,
-        credentials: credentials.Credentials = None,
+        credentials: ga_credentials.Credentials = None,
         transport: Union[str, PublisherTransport] = "grpc_asyncio",
         client_options: ClientOptions = None,
         client_info: gapic_v1.client_info.ClientInfo = DEFAULT_CLIENT_INFO,
     ) -> None:
-        """Instantiate the publisher client.
+        """Instantiates the publisher client.
 
         Args:
             credentials (Optional[google.auth.credentials.Credentials]): The
@@ -163,7 +158,6 @@ class PublisherAsyncClient:
             google.auth.exceptions.MutualTlsChannelError: If mutual TLS transport
                 creation failed for any reason.
         """
-
         self._client = PublisherClient(
             credentials=credentials,
             transport=transport,
@@ -177,7 +171,7 @@ class PublisherAsyncClient:
         *,
         name: str = None,
         retry: retries.Retry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        timeout: TimeoutType = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pubsub.Topic:
         r"""Creates the given topic with the given name. See the [resource
@@ -200,10 +194,10 @@ class PublisherAsyncClient:
                 This corresponds to the ``name`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
-            timeout (float): The timeout for this request.
+            timeout (TimeoutType):
+                The timeout for this request.
             metadata (Sequence[Tuple[str, str]]): Strings which should be
                 sent along with the request as metadata.
 
@@ -225,7 +219,6 @@ class PublisherAsyncClient:
 
         # If we have keyword arguments corresponding to fields on the
         # request, apply these.
-
         if name is not None:
             request.name = name
 
@@ -237,7 +230,10 @@ class PublisherAsyncClient:
                 initial=0.1,
                 maximum=60.0,
                 multiplier=1.3,
-                predicate=retries.if_exception_type(exceptions.ServiceUnavailable,),
+                predicate=retries.if_exception_type(
+                    core_exceptions.ServiceUnavailable,
+                ),
+                deadline=60.0,
             ),
             default_timeout=60.0,
             client_info=DEFAULT_CLIENT_INFO,
@@ -260,7 +256,7 @@ class PublisherAsyncClient:
         request: pubsub.UpdateTopicRequest = None,
         *,
         retry: retries.Retry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        timeout: TimeoutType = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pubsub.Topic:
         r"""Updates an existing topic. Note that certain
@@ -269,10 +265,10 @@ class PublisherAsyncClient:
         Args:
             request (:class:`google.pubsub_v1.types.UpdateTopicRequest`):
                 The request object. Request for the UpdateTopic method.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
-            timeout (float): The timeout for this request.
+            timeout (TimeoutType):
+                The timeout for this request.
             metadata (Sequence[Tuple[str, str]]): Strings which should be
                 sent along with the request as metadata.
 
@@ -281,7 +277,6 @@ class PublisherAsyncClient:
                 A topic resource.
         """
         # Create or coerce a protobuf request object.
-
         request = pubsub.UpdateTopicRequest(request)
 
         # Wrap the RPC method; this adds retry and timeout information,
@@ -292,7 +287,10 @@ class PublisherAsyncClient:
                 initial=0.1,
                 maximum=60.0,
                 multiplier=1.3,
-                predicate=retries.if_exception_type(exceptions.ServiceUnavailable,),
+                predicate=retries.if_exception_type(
+                    core_exceptions.ServiceUnavailable,
+                ),
+                deadline=60.0,
             ),
             default_timeout=60.0,
             client_info=DEFAULT_CLIENT_INFO,
@@ -319,7 +317,7 @@ class PublisherAsyncClient:
         topic: str = None,
         messages: Sequence[pubsub.PubsubMessage] = None,
         retry: retries.Retry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        timeout: TimeoutType = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pubsub.PublishResponse:
         r"""Adds one or more messages to the topic. Returns ``NOT_FOUND`` if
@@ -341,10 +339,10 @@ class PublisherAsyncClient:
                 This corresponds to the ``messages`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
-            timeout (float): The timeout for this request.
+            timeout (TimeoutType):
+                The timeout for this request.
             metadata (Sequence[Tuple[str, str]]): Strings which should be
                 sent along with the request as metadata.
 
@@ -366,10 +364,8 @@ class PublisherAsyncClient:
 
         # If we have keyword arguments corresponding to fields on the
         # request, apply these.
-
         if topic is not None:
             request.topic = topic
-
         if messages:
             request.messages.extend(messages)
 
@@ -382,14 +378,15 @@ class PublisherAsyncClient:
                 maximum=60.0,
                 multiplier=1.3,
                 predicate=retries.if_exception_type(
-                    exceptions.Aborted,
-                    exceptions.Cancelled,
-                    exceptions.DeadlineExceeded,
-                    exceptions.InternalServerError,
-                    exceptions.ResourceExhausted,
-                    exceptions.ServiceUnavailable,
-                    exceptions.Unknown,
+                    core_exceptions.Aborted,
+                    core_exceptions.Cancelled,
+                    core_exceptions.DeadlineExceeded,
+                    core_exceptions.InternalServerError,
+                    core_exceptions.ResourceExhausted,
+                    core_exceptions.ServiceUnavailable,
+                    core_exceptions.Unknown,
                 ),
+                deadline=60.0,
             ),
             default_timeout=60.0,
             client_info=DEFAULT_CLIENT_INFO,
@@ -413,7 +410,7 @@ class PublisherAsyncClient:
         *,
         topic: str = None,
         retry: retries.Retry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        timeout: TimeoutType = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pubsub.Topic:
         r"""Gets the configuration of a topic.
@@ -428,10 +425,10 @@ class PublisherAsyncClient:
                 This corresponds to the ``topic`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
-            timeout (float): The timeout for this request.
+            timeout (TimeoutType):
+                The timeout for this request.
             metadata (Sequence[Tuple[str, str]]): Strings which should be
                 sent along with the request as metadata.
 
@@ -453,7 +450,6 @@ class PublisherAsyncClient:
 
         # If we have keyword arguments corresponding to fields on the
         # request, apply these.
-
         if topic is not None:
             request.topic = topic
 
@@ -466,10 +462,11 @@ class PublisherAsyncClient:
                 maximum=60.0,
                 multiplier=1.3,
                 predicate=retries.if_exception_type(
-                    exceptions.Aborted,
-                    exceptions.ServiceUnavailable,
-                    exceptions.Unknown,
+                    core_exceptions.Aborted,
+                    core_exceptions.ServiceUnavailable,
+                    core_exceptions.Unknown,
                 ),
+                deadline=60.0,
             ),
             default_timeout=60.0,
             client_info=DEFAULT_CLIENT_INFO,
@@ -493,7 +490,7 @@ class PublisherAsyncClient:
         *,
         project: str = None,
         retry: retries.Retry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        timeout: TimeoutType = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pagers.ListTopicsAsyncPager:
         r"""Lists matching topics.
@@ -508,10 +505,10 @@ class PublisherAsyncClient:
                 This corresponds to the ``project`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
-            timeout (float): The timeout for this request.
+            timeout (TimeoutType):
+                The timeout for this request.
             metadata (Sequence[Tuple[str, str]]): Strings which should be
                 sent along with the request as metadata.
 
@@ -537,7 +534,6 @@ class PublisherAsyncClient:
 
         # If we have keyword arguments corresponding to fields on the
         # request, apply these.
-
         if project is not None:
             request.project = project
 
@@ -550,10 +546,11 @@ class PublisherAsyncClient:
                 maximum=60.0,
                 multiplier=1.3,
                 predicate=retries.if_exception_type(
-                    exceptions.Aborted,
-                    exceptions.ServiceUnavailable,
-                    exceptions.Unknown,
+                    core_exceptions.Aborted,
+                    core_exceptions.ServiceUnavailable,
+                    core_exceptions.Unknown,
                 ),
+                deadline=60.0,
             ),
             default_timeout=60.0,
             client_info=DEFAULT_CLIENT_INFO,
@@ -583,7 +580,7 @@ class PublisherAsyncClient:
         *,
         topic: str = None,
         retry: retries.Retry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        timeout: TimeoutType = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pagers.ListTopicSubscriptionsAsyncPager:
         r"""Lists the names of the attached subscriptions on this
@@ -601,10 +598,10 @@ class PublisherAsyncClient:
                 This corresponds to the ``topic`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
-            timeout (float): The timeout for this request.
+            timeout (TimeoutType):
+                The timeout for this request.
             metadata (Sequence[Tuple[str, str]]): Strings which should be
                 sent along with the request as metadata.
 
@@ -630,7 +627,6 @@ class PublisherAsyncClient:
 
         # If we have keyword arguments corresponding to fields on the
         # request, apply these.
-
         if topic is not None:
             request.topic = topic
 
@@ -643,10 +639,11 @@ class PublisherAsyncClient:
                 maximum=60.0,
                 multiplier=1.3,
                 predicate=retries.if_exception_type(
-                    exceptions.Aborted,
-                    exceptions.ServiceUnavailable,
-                    exceptions.Unknown,
+                    core_exceptions.Aborted,
+                    core_exceptions.ServiceUnavailable,
+                    core_exceptions.Unknown,
                 ),
+                deadline=60.0,
             ),
             default_timeout=60.0,
             client_info=DEFAULT_CLIENT_INFO,
@@ -676,7 +673,7 @@ class PublisherAsyncClient:
         *,
         topic: str = None,
         retry: retries.Retry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        timeout: TimeoutType = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pagers.ListTopicSnapshotsAsyncPager:
         r"""Lists the names of the snapshots on this topic. Snapshots are
@@ -698,10 +695,10 @@ class PublisherAsyncClient:
                 This corresponds to the ``topic`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
-            timeout (float): The timeout for this request.
+            timeout (TimeoutType):
+                The timeout for this request.
             metadata (Sequence[Tuple[str, str]]): Strings which should be
                 sent along with the request as metadata.
 
@@ -727,7 +724,6 @@ class PublisherAsyncClient:
 
         # If we have keyword arguments corresponding to fields on the
         # request, apply these.
-
         if topic is not None:
             request.topic = topic
 
@@ -740,10 +736,11 @@ class PublisherAsyncClient:
                 maximum=60.0,
                 multiplier=1.3,
                 predicate=retries.if_exception_type(
-                    exceptions.Aborted,
-                    exceptions.ServiceUnavailable,
-                    exceptions.Unknown,
+                    core_exceptions.Aborted,
+                    core_exceptions.ServiceUnavailable,
+                    core_exceptions.Unknown,
                 ),
+                deadline=60.0,
             ),
             default_timeout=60.0,
             client_info=DEFAULT_CLIENT_INFO,
@@ -773,7 +770,7 @@ class PublisherAsyncClient:
         *,
         topic: str = None,
         retry: retries.Retry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        timeout: TimeoutType = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> None:
         r"""Deletes the topic with the given name. Returns ``NOT_FOUND`` if
@@ -794,10 +791,10 @@ class PublisherAsyncClient:
                 This corresponds to the ``topic`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
-            timeout (float): The timeout for this request.
+            timeout (TimeoutType):
+                The timeout for this request.
             metadata (Sequence[Tuple[str, str]]): Strings which should be
                 sent along with the request as metadata.
         """
@@ -815,7 +812,6 @@ class PublisherAsyncClient:
 
         # If we have keyword arguments corresponding to fields on the
         # request, apply these.
-
         if topic is not None:
             request.topic = topic
 
@@ -827,7 +823,10 @@ class PublisherAsyncClient:
                 initial=0.1,
                 maximum=60.0,
                 multiplier=1.3,
-                predicate=retries.if_exception_type(exceptions.ServiceUnavailable,),
+                predicate=retries.if_exception_type(
+                    core_exceptions.ServiceUnavailable,
+                ),
+                deadline=60.0,
             ),
             default_timeout=60.0,
             client_info=DEFAULT_CLIENT_INFO,
@@ -849,7 +848,7 @@ class PublisherAsyncClient:
         request: pubsub.DetachSubscriptionRequest = None,
         *,
         retry: retries.Retry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        timeout: TimeoutType = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pubsub.DetachSubscriptionResponse:
         r"""Detaches a subscription from this topic. All messages retained
@@ -862,10 +861,10 @@ class PublisherAsyncClient:
             request (:class:`google.pubsub_v1.types.DetachSubscriptionRequest`):
                 The request object. Request for the DetachSubscription
                 method.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
-            timeout (float): The timeout for this request.
+            timeout (TimeoutType):
+                The timeout for this request.
             metadata (Sequence[Tuple[str, str]]): Strings which should be
                 sent along with the request as metadata.
 
@@ -876,7 +875,6 @@ class PublisherAsyncClient:
 
         """
         # Create or coerce a protobuf request object.
-
         request = pubsub.DetachSubscriptionRequest(request)
 
         # Wrap the RPC method; this adds retry and timeout information,
@@ -887,7 +885,10 @@ class PublisherAsyncClient:
                 initial=0.1,
                 maximum=60.0,
                 multiplier=1.3,
-                predicate=retries.if_exception_type(exceptions.ServiceUnavailable,),
+                predicate=retries.if_exception_type(
+                    core_exceptions.ServiceUnavailable,
+                ),
+                deadline=60.0,
             ),
             default_timeout=60.0,
             client_info=DEFAULT_CLIENT_INFO,
@@ -909,25 +910,28 @@ class PublisherAsyncClient:
 
     async def set_iam_policy(
         self,
-        request: iam_policy.SetIamPolicyRequest = None,
+        request: iam_policy_pb2.SetIamPolicyRequest = None,
         *,
         retry: retries.Retry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        timeout: TimeoutType = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
-    ) -> policy.Policy:
-        r"""Sets the IAM access control policy on the specified
-        function. Replaces any existing policy.
+    ) -> policy_pb2.Policy:
+        r"""Sets the IAM access control policy on the specified function.
+
+        Replaces any existing policy.
+
         Args:
-            request (:class:`~.iam_policy.SetIamPolicyRequest`):
+            request (:class:`~.policy_pb2.SetIamPolicyRequest`):
                 The request object. Request message for `SetIamPolicy`
                 method.
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
-            timeout (float): The timeout for this request.
+            timeout (TimeoutType):
+                The timeout for this request.
             metadata (Sequence[Tuple[str, str]]): Strings which should be
                 sent along with the request as metadata.
         Returns:
-            ~.policy.Policy:
+            ~.policy_pb2.Policy:
                 Defines an Identity and Access Management (IAM) policy.
                 It is used to specify access control policies for Cloud
                 Platform resources.
@@ -991,7 +995,7 @@ class PublisherAsyncClient:
         # The request isn't a proto-plus wrapped type,
         # so it must be constructed via keyword expansion.
         if isinstance(request, dict):
-            request = iam_policy.SetIamPolicyRequest(**request)
+            request = iam_policy_pb2.SetIamPolicyRequest(**request)
 
         # Wrap the RPC method; this adds retry and timeout information,
         # and friendly error handling.
@@ -1015,26 +1019,29 @@ class PublisherAsyncClient:
 
     async def get_iam_policy(
         self,
-        request: iam_policy.GetIamPolicyRequest = None,
+        request: iam_policy_pb2.GetIamPolicyRequest = None,
         *,
         retry: retries.Retry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        timeout: TimeoutType = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
-    ) -> policy.Policy:
+    ) -> policy_pb2.Policy:
         r"""Gets the IAM access control policy for a function.
+
         Returns an empty policy if the function exists and does
         not have a policy set.
+
         Args:
-            request (:class:`~.iam_policy.GetIamPolicyRequest`):
+            request (:class:`~.iam_policy_pb2.GetIamPolicyRequest`):
                 The request object. Request message for `GetIamPolicy`
                 method.
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
-            timeout (float): The timeout for this request.
+            timeout (TimeoutType):
+                The timeout for this request.
             metadata (Sequence[Tuple[str, str]]): Strings which should be
                 sent along with the request as metadata.
         Returns:
-            ~.policy.Policy:
+            ~.policy_pb2.Policy:
                 Defines an Identity and Access Management (IAM) policy.
                 It is used to specify access control policies for Cloud
                 Platform resources.
@@ -1098,7 +1105,7 @@ class PublisherAsyncClient:
         # The request isn't a proto-plus wrapped type,
         # so it must be constructed via keyword expansion.
         if isinstance(request, dict):
-            request = iam_policy.GetIamPolicyRequest(**request)
+            request = iam_policy_pb2.GetIamPolicyRequest(**request)
 
         # Wrap the RPC method; this adds retry and timeout information,
         # and friendly error handling.
@@ -1122,26 +1129,30 @@ class PublisherAsyncClient:
 
     async def test_iam_permissions(
         self,
-        request: iam_policy.TestIamPermissionsRequest = None,
+        request: iam_policy_pb2.TestIamPermissionsRequest = None,
         *,
         retry: retries.Retry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        timeout: TimeoutType = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
-    ) -> iam_policy.TestIamPermissionsResponse:
+    ) -> iam_policy_pb2.TestIamPermissionsResponse:
         r"""Tests the specified permissions against the IAM access control
-        policy for a function. If the function does not exist, this will
+            policy for a function.
+
+        If the function does not exist, this will
         return an empty set of permissions, not a NOT_FOUND error.
+
         Args:
-            request (:class:`~.iam_policy.TestIamPermissionsRequest`):
+            request (:class:`~.iam_policy_pb2.TestIamPermissionsRequest`):
                 The request object. Request message for
                 `TestIamPermissions` method.
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
-            timeout (float): The timeout for this request.
+            timeout (TimeoutType):
+                The timeout for this request.
             metadata (Sequence[Tuple[str, str]]): Strings which should be
                 sent along with the request as metadata.
         Returns:
-            ~.iam_policy.TestIamPermissionsResponse:
+            ~iam_policy_pb2.PolicyTestIamPermissionsResponse:
                 Response message for ``TestIamPermissions`` method.
         """
         # Create or coerce a protobuf request object.
@@ -1149,7 +1160,7 @@ class PublisherAsyncClient:
         # The request isn't a proto-plus wrapped type,
         # so it must be constructed via keyword expansion.
         if isinstance(request, dict):
-            request = iam_policy.TestIamPermissionsRequest(**request)
+            request = iam_policy_pb2.TestIamPermissionsRequest(**request)
 
         # Wrap the RPC method; this adds retry and timeout information,
         # and friendly error handling.

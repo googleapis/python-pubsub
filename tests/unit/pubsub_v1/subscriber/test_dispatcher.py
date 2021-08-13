@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import collections
+import queue
 import threading
 
 from google.cloud.pubsub_v1.subscriber._protocol import dispatcher
@@ -22,21 +23,20 @@ from google.cloud.pubsub_v1.subscriber._protocol import streaming_pull_manager
 from google.pubsub_v1 import types as gapic_types
 
 import mock
-from six.moves import queue
 import pytest
 
 
 @pytest.mark.parametrize(
     "item,method_name",
     [
-        (requests.AckRequest(0, 0, 0, ""), "ack"),
-        (requests.DropRequest(0, 0, ""), "drop"),
-        (requests.LeaseRequest(0, 0, ""), "lease"),
-        (requests.ModAckRequest(0, 0), "modify_ack_deadline"),
-        (requests.NackRequest(0, 0, ""), "nack"),
+        (requests.AckRequest("0", 0, 0, ""), "ack"),
+        (requests.DropRequest("0", 0, ""), "drop"),
+        (requests.LeaseRequest("0", 0, ""), "lease"),
+        (requests.ModAckRequest("0", 0), "modify_ack_deadline"),
+        (requests.NackRequest("0", 0, ""), "nack"),
     ],
 )
-def test_dispatch_callback(item, method_name):
+def test_dispatch_callback_active_manager(item, method_name):
     manager = mock.create_autospec(
         streaming_pull_manager.StreamingPullManager, instance=True
     )
@@ -50,16 +50,29 @@ def test_dispatch_callback(item, method_name):
     method.assert_called_once_with([item])
 
 
-def test_dispatch_callback_inactive():
+@pytest.mark.parametrize(
+    "item,method_name",
+    [
+        (requests.AckRequest("0", 0, 0, ""), "ack"),
+        (requests.DropRequest("0", 0, ""), "drop"),
+        (requests.LeaseRequest("0", 0, ""), "lease"),
+        (requests.ModAckRequest("0", 0), "modify_ack_deadline"),
+        (requests.NackRequest("0", 0, ""), "nack"),
+    ],
+)
+def test_dispatch_callback_inactive_manager(item, method_name):
     manager = mock.create_autospec(
         streaming_pull_manager.StreamingPullManager, instance=True
     )
     manager.is_active = False
     dispatcher_ = dispatcher.Dispatcher(manager, mock.sentinel.queue)
 
-    dispatcher_.dispatch_callback([requests.AckRequest(0, 0, 0, "")])
+    items = [item]
 
-    manager.send.assert_not_called()
+    with mock.patch.object(dispatcher_, method_name) as method:
+        dispatcher_.dispatch_callback(items)
+
+    method.assert_called_once_with([item])
 
 
 def test_ack():

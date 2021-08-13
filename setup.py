@@ -22,17 +22,22 @@ import setuptools
 
 name = "google-cloud-pubsub"
 description = "Google Cloud Pub/Sub API client library"
-version = "2.4.0"
+version = "2.7.0"
 # Should be one of:
 # 'Development Status :: 3 - Alpha'
 # 'Development Status :: 4 - Beta'
 # 'Development Status :: 5 - Production/Stable'
 release_status = "Development Status :: 5 - Production/Stable"
 dependencies = [
-    "google-api-core[grpc] >= 1.22.2, < 2.0.0dev",
+    "grpcio >= 1.38.1, < 2.0dev",  # https://github.com/googleapis/python-pubsub/issues/414
+    # NOTE: Maintainers, please do not require google-api-core>=2.x.x
+    # Until this issue is closed
+    # https://github.com/googleapis/google-cloud-python/issues/10566
+    "google-api-core[grpc] >= 1.26.0, <3.0.0dev",
     "libcst >= 0.3.10",
     "proto-plus >= 1.7.1",
     "grpc-google-iam-v1 >= 0.12.3, < 0.13dev",
+    "packaging >= 14.3",
 ]
 extras = {}
 
