@@ -46,12 +46,12 @@ UPDATED_MAX_DELIVERY_ATTEMPTS = 20
 
 
 @pytest.fixture(scope="module")
-def publisher_client() -> Generator[pubsub_v1.PublisherClient]:
+def publisher_client() -> Generator[pubsub_v1.PublisherClient, None, None]:
     yield pubsub_v1.PublisherClient()
 
 
 @pytest.fixture(scope="module")
-def topic(publisher_client: pubsub_v1.PublisherClient) -> Generator[str]:
+def topic(publisher_client: pubsub_v1.PublisherClient) -> Generator[str, None, None]:
     topic_path = publisher_client.topic_path(PROJECT_ID, TOPIC)
 
     try:
@@ -65,7 +65,9 @@ def topic(publisher_client: pubsub_v1.PublisherClient) -> Generator[str]:
 
 
 @pytest.fixture(scope="module")
-def dead_letter_topic(publisher_client: pubsub_v1.PublisherClient) -> Generator[str]:
+def dead_letter_topic(
+    publisher_client: pubsub_v1.PublisherClient,
+) -> Generator[str, None, None]:
     topic_path = publisher_client.topic_path(PROJECT_ID, DEAD_LETTER_TOPIC)
 
     try:
@@ -79,7 +81,7 @@ def dead_letter_topic(publisher_client: pubsub_v1.PublisherClient) -> Generator[
 
 
 @pytest.fixture(scope="module")
-def subscriber_client() -> Generator[pubsub_v1.SubscriberClient]:
+def subscriber_client() -> Generator[pubsub_v1.SubscriberClient, None, None]:
     subscriber_client = pubsub_v1.SubscriberClient()
     yield subscriber_client
     subscriber_client.close()
@@ -88,7 +90,7 @@ def subscriber_client() -> Generator[pubsub_v1.SubscriberClient]:
 @pytest.fixture(scope="module")
 def subscription_admin(
     subscriber_client: pubsub_v1.SubscriberClient, topic: str
-) -> Generator[str]:
+) -> Generator[str, None, None]:
     subscription_path = subscriber_client.subscription_path(
         PROJECT_ID, SUBSCRIPTION_ADMIN
     )
@@ -108,7 +110,7 @@ def subscription_admin(
 @pytest.fixture(scope="module")
 def subscription_sync(
     subscriber_client: pubsub_v1.SubscriberClient, topic: str
-) -> Generator[str]:
+) -> Generator[str, None, None]:
     subscription_path = subscriber_client.subscription_path(
         PROJECT_ID, SUBSCRIPTION_SYNC
     )
@@ -143,7 +145,7 @@ def subscription_sync(
 @pytest.fixture(scope="module")
 def subscription_async(
     subscriber_client: pubsub_v1.SubscriberClient, topic: str
-) -> Generator[str]:
+) -> Generator[str, None, None]:
     subscription_path = subscriber_client.subscription_path(
         PROJECT_ID, SUBSCRIPTION_ASYNC
     )
@@ -165,7 +167,7 @@ def subscription_async(
 @pytest.fixture(scope="module")
 def subscription_dlq(
     subscriber_client: pubsub_v1.SubscriberClient, topic: str, dead_letter_topic: str
-) -> Generator[str]:
+) -> Generator[str, None, None]:
     from google.cloud.pubsub_v1.types import DeadLetterPolicy
 
     subscription_path = subscriber_client.subscription_path(

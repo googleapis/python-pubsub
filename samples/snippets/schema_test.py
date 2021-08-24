@@ -44,13 +44,15 @@ PROTO_FILE = "resources/us-states.proto"
 
 
 @pytest.fixture(scope="module")
-def schema_client() -> Generator[pubsub_v1.SchemaServiceClient]:
+def schema_client() -> Generator[pubsub_v1.SchemaServiceClient, None, None]:
     schema_client = SchemaServiceClient()
     yield schema_client
 
 
 @pytest.fixture(scope="module")
-def avro_schema(schema_client: pubsub_v1.SchemaServiceClient) -> Generator[str]:
+def avro_schema(
+    schema_client: pubsub_v1.SchemaServiceClient,
+) -> Generator[str, None, None]:
     avro_schema_path = schema_client.schema_path(PROJECT_ID, AVRO_SCHEMA_ID)
 
     yield avro_schema_path
@@ -62,7 +64,9 @@ def avro_schema(schema_client: pubsub_v1.SchemaServiceClient) -> Generator[str]:
 
 
 @pytest.fixture(scope="module")
-def proto_schema(schema_client: pubsub_v1.SchemaServiceClient) -> Generator[str]:
+def proto_schema(
+    schema_client: pubsub_v1.SchemaServiceClient,
+) -> Generator[str, None, None]:
     proto_schema_path = schema_client.schema_path(PROJECT_ID, PROTO_SCHEMA_ID)
 
     yield proto_schema_path
@@ -74,14 +78,14 @@ def proto_schema(schema_client: pubsub_v1.SchemaServiceClient) -> Generator[str]
 
 
 @pytest.fixture(scope="module")
-def publisher_client() -> Generator[pubsub_v1.PublisherClient]:
+def publisher_client() -> Generator[pubsub_v1.PublisherClient, None, None]:
     yield PublisherClient()
 
 
 @pytest.fixture(scope="module")
 def avro_topic(
     publisher_client: pubsub_v1.PublisherClient, avro_schema: str
-) -> Generator[str]:
+) -> Generator[str, None, None]:
     from google.pubsub_v1.types import Encoding
 
     avro_topic_path = publisher_client.topic_path(PROJECT_ID, AVRO_TOPIC_ID)
@@ -107,7 +111,7 @@ def avro_topic(
 @pytest.fixture(scope="module")
 def proto_topic(
     publisher_client: pubsub_v1.PublisherClient, proto_schema: str
-) -> Generator[str]:
+) -> Generator[str, None, None]:
     proto_topic_path = publisher_client.topic_path(PROJECT_ID, PROTO_TOPIC_ID)
 
     try:
@@ -129,7 +133,7 @@ def proto_topic(
 
 
 @pytest.fixture(scope="module")
-def subscriber_client() -> Generator[pubsub_v1.SubscriberClient]:
+def subscriber_client() -> Generator[pubsub_v1.SubscriberClient, None, None]:
     subscriber_client = SubscriberClient()
     yield subscriber_client
     subscriber_client.close()
@@ -138,7 +142,7 @@ def subscriber_client() -> Generator[pubsub_v1.SubscriberClient]:
 @pytest.fixture(scope="module")
 def avro_subscription(
     subscriber_client: pubsub_v1.SubscriberClient, avro_topic: str
-) -> Generator[str]:
+) -> Generator[str, None, None]:
     avro_subscription_path = subscriber_client.subscription_path(
         PROJECT_ID, AVRO_SUBSCRIPTION_ID
     )
@@ -162,7 +166,7 @@ def avro_subscription(
 @pytest.fixture(scope="module")
 def proto_subscription(
     subscriber_client: pubsub_v1.SubscriberClient, proto_topic: str
-) -> Generator[str]:
+) -> Generator[str, None, None]:
     proto_subscription_path = subscriber_client.subscription_path(
         PROJECT_ID, PROTO_SUBSCRIPTION_ID
     )

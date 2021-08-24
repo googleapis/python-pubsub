@@ -30,12 +30,14 @@ SUBSCRIPTION_ID = "iam-test-subscription-" + UUID
 
 
 @pytest.fixture(scope="module")
-def publisher_client() -> Generator[pubsub_v1.PublisherClient]:
+def publisher_client() -> Generator[pubsub_v1.PublisherClient, None, None]:
     yield pubsub_v1.PublisherClient()
 
 
 @pytest.fixture(scope="module")
-def topic_path(publisher_client: pubsub_v1.PublisherClient) -> Generator[str]:
+def topic_path(
+    publisher_client: pubsub_v1.PublisherClient,
+) -> Generator[str, None, None]:
     topic_path = publisher_client.topic_path(PROJECT_ID, TOPIC_ID)
 
     try:
@@ -52,7 +54,7 @@ def topic_path(publisher_client: pubsub_v1.PublisherClient) -> Generator[str]:
 
 
 @pytest.fixture(scope="module")
-def subscriber_client() -> Generator[pubsub_v1.SubscriberClient]:
+def subscriber_client() -> Generator[pubsub_v1.SubscriberClient, None, None]:
     subscriber_client = pubsub_v1.SubscriberClient()
     yield subscriber_client
     subscriber_client.close()
@@ -61,7 +63,7 @@ def subscriber_client() -> Generator[pubsub_v1.SubscriberClient]:
 @pytest.fixture(scope="module")
 def subscription_path(
     subscriber_client: pubsub_v1.SubscriberClient, topic_path: str,
-) -> Generator[str]:
+) -> Generator[str, None, None]:
     subscription_path = subscriber_client.subscription_path(PROJECT_ID, SUBSCRIPTION_ID)
     subscription = subscriber_client.create_subscription(
         request={"name": subscription_path, "topic": topic_path}
