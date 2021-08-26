@@ -321,6 +321,18 @@ for library in s.get_staging_dirs(default_version):
     if count < 1:
         raise Exception(".coveragerc replacement failed.")
 
+    s.move(
+        library,
+        excludes=[
+            "docs/**/*",
+            "nox.py",
+            "README.rst",
+            "setup.py",
+            f"google/cloud/pubsub_{library.name}/__init__.py",
+            f"google/cloud/pubsub_{library.name}/types.py",
+        ],
+    )
+
 s.remove_staging_dirs()
 
 # ----------------------------------------------------------------------------
@@ -384,18 +396,6 @@ s.replace(
 
 s.replace(
     "docs/conf.py", "# The master toctree document.", "# The root toctree document.",
-)
-
-s.move(
-    library,
-    excludes=[
-        "docs/**/*",
-        "nox.py",
-        "README.rst",
-        "setup.py",
-        f"google/cloud/pubsub_{library.name}/__init__.py",
-        f"google/cloud/pubsub_{library.name}/types.py",
-    ],
 )
 
 s.shell.run(["nox", "-s", "blacken"], hide_output=False)
