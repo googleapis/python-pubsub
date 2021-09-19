@@ -18,6 +18,8 @@ import collections
 import enum
 import inspect
 import sys
+import typing
+from typing import Dict
 
 import proto
 
@@ -35,6 +37,10 @@ from google.protobuf import timestamp_pb2
 from google.api_core.protobuf_helpers import get_messages
 
 from google.pubsub_v1.types import pubsub as pubsub_gapic_types
+
+
+if typing.TYPE_CHECKING:  # pragma: NO COVER
+    from types import ModuleType
 
 
 # Define the default values for batching.
@@ -173,7 +179,7 @@ FlowControl.max_duration_per_lease_extension.__doc__ = (
 # The current api core helper does not find new proto messages of type proto.Message,
 # thus we need our own helper. Adjusted from
 # https://github.com/googleapis/python-api-core/blob/8595f620e7d8295b6a379d6fd7979af3bef717e2/google/api_core/protobuf_helpers.py#L101-L118
-def _get_protobuf_messages(module):
+def _get_protobuf_messages(module: "ModuleType") -> Dict[str, proto.Message]:
     """Discover all protobuf Message classes in a given import module.
 
     Args:
