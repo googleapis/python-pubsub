@@ -479,7 +479,7 @@ class Client(object):
 
     # Used only for testing.
     def _set_batch(
-        self, topic: str, batch: "_batch.base.Batch", ordering_key: str = ""
+        self, topic: str, batch: "_batch.thread.Batch", ordering_key: str = ""
     ) -> None:
         sequencer = self._get_or_create_sequencer(topic, ordering_key)
         sequencer._set_batch(batch)
