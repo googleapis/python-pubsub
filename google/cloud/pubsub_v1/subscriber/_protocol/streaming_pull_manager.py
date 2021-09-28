@@ -231,7 +231,7 @@ class StreamingPullManager(object):
         return self._ack_histogram
 
     @property
-    def ack_deadline(self) -> int:
+    def ack_deadline(self) -> float:
         """Return the current ACK deadline based on historical data without updating it.
 
         Returns:
@@ -239,7 +239,7 @@ class StreamingPullManager(object):
         """
         return self._obtain_ack_deadline(maybe_update=False)
 
-    def _obtain_ack_deadline(self, maybe_update: bool) -> int:
+    def _obtain_ack_deadline(self, maybe_update: bool) -> float:
         """The actual `ack_deadline` implementation.
 
         This method is "sticky". It will only perform the computations to check on the

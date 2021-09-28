@@ -42,6 +42,7 @@ from google.pubsub_v1.types import pubsub as pubsub_gapic_types
 if typing.TYPE_CHECKING:  # pragma: NO COVER
     from types import ModuleType
     from google.api_core import retry as retries
+    from google.pubsub_v1 import types as gapic_types
 
 
 # Define the default values for batching.
@@ -116,7 +117,7 @@ class PublisherOptions(NamedTuple):
         "an instance of :class:`google.api_core.retry.Retry`."
     )
 
-    timeout: "pubsub_gapic_types.TimeoutType" = gapic_v1.method.DEFAULT  # use api_core default
+    timeout: "gapic_types.TimeoutType" = gapic_v1.method.DEFAULT  # use api_core default
     (
         "Timeout settings for message publishing by the client. It should be "
         "compatible with :class:`~.pubsub_v1.types.TimeoutType`."
