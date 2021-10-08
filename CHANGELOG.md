@@ -5,6 +5,19 @@
 [1]: https://pypi.org/project/google-cloud-pubsub/#history
 
 
+### [2.8.1](https://www.github.com/googleapis/python-pubsub/compare/v2.8.0...v2.8.1) (2021-10-08)
+
+
+### Bug Fixes
+
+* add 'dict' annotation type to 'request' ([b72522a](https://www.github.com/googleapis/python-pubsub/commit/b72522a4617c4b2773fb6a5a631038791aa08300))
+* improper types in pagers generation ([2ad639d](https://www.github.com/googleapis/python-pubsub/commit/2ad639d6370c7a085498595d7bd0d7eaadfff3c1))
+
+
+### Documentation
+
+* add type annotations to codebase ([#509](https://www.github.com/googleapis/python-pubsub/issues/509)) ([093cabf](https://www.github.com/googleapis/python-pubsub/commit/093cabff9f0464b1dfaa8f373b6fffbc439518de))
+
 ## [2.8.0](https://www.github.com/googleapis/python-pubsub/compare/v2.7.1...v2.8.0) (2021-09-02)
 
 
