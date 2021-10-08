@@ -364,7 +364,7 @@ def test_create_push_subscription(
 ) -> None:
     # The scope of `subscription_path` is limited to this function.
     @backoff.on_exception(backoff.expo, AssertionError, max_time=60)
-    def eventually_consistent_test():
+    def eventually_consistent_test() -> None:
         subscription_path = subscriber_client.subscription_path(
             PROJECT_ID, SUBSCRIPTION_ADMIN
         )
@@ -388,7 +388,7 @@ def test_update_push_suscription(
     capsys: CaptureFixture,
 ) -> None:
     @backoff.on_exception(backoff.expo, AssertionError, max_time=60)
-    def eventually_consistent_test():
+    def eventually_consistent_test() -> None:
         subscriber.update_push_subscription(
             PROJECT_ID, TOPIC, SUBSCRIPTION_ADMIN, NEW_ENDPOINT
         )
@@ -423,7 +423,7 @@ def test_receive(
 ) -> None:
 
     @backoff.on_exception(backoff.expo, Unknown, max_time=60)
-    def eventually_consistent_test():
+    def eventually_consistent_test() -> None:
         _publish_messages(publisher_client, topic)
 
         subscriber.receive_messages(PROJECT_ID, SUBSCRIPTION_ASYNC, 5)
@@ -444,7 +444,7 @@ def test_receive_with_custom_attributes(
 ) -> None:
 
     @backoff.on_exception(backoff.expo, Unknown, max_time=60)
-    def eventually_consistent_test():
+    def eventually_consistent_test() -> None:
         _publish_messages(publisher_client, topic, origin="python-sample")
 
         subscriber.receive_messages_with_custom_attributes(
@@ -468,7 +468,7 @@ def test_receive_with_flow_control(
 ) -> None:
 
     @backoff.on_exception(backoff.expo, Unknown, max_time=300)
-    def eventually_consistent_test():
+    def eventually_consistent_test() -> None:
         _publish_messages(publisher_client, topic)
 
         subscriber.receive_messages_with_flow_control(PROJECT_ID, SUBSCRIPTION_ASYNC, 5)
@@ -494,7 +494,7 @@ def test_receive_with_blocking_shutdown(
     _shut_down = re.compile(r".*done waiting.*stream shutdown.*", flags=re.IGNORECASE)
 
     @backoff.on_exception(backoff.expo, Unknown, max_time=300)
-    def eventually_consistent_test():
+    def eventually_consistent_test() -> None:
         _publish_messages(publisher_client, topic, message_num=3)
 
         subscriber.receive_messages_with_blocking_shutdown(
@@ -558,7 +558,7 @@ def test_listen_for_errors(
 ) -> None:
 
     @backoff.on_exception(backoff.expo, Unknown, max_time=60)
-    def eventually_consistent_test():
+    def eventually_consistent_test() -> None:
         _publish_messages(publisher_client, topic)
 
         subscriber.listen_for_errors(PROJECT_ID, SUBSCRIPTION_ASYNC, 5)
