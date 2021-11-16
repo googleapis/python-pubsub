@@ -23,7 +23,7 @@ import typing
 from typing import Any, Callable, Iterable
 import uuid
 
-import grpc
+import grpc  # type: ignore
 
 from google.api_core import bidi
 from google.api_core import exceptions

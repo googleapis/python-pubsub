@@ -24,8 +24,8 @@ import typing
 from typing import Any, Sequence, Type, Union
 
 from google.api_core import gapic_v1
-from google.auth.credentials import AnonymousCredentials
-from google.oauth2 import service_account
+from google.auth.credentials import AnonymousCredentials  # type: ignore
+from google.oauth2 import service_account  # type: ignore
 
 from google.cloud.pubsub_v1 import _gapic
 from google.cloud.pubsub_v1 import types

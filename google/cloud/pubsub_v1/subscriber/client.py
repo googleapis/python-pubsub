@@ -19,8 +19,8 @@ import pkg_resources
 import typing
 from typing import Any, Callable, Optional, Sequence, Union
 
-from google.auth.credentials import AnonymousCredentials
-from google.oauth2 import service_account
+from google.auth.credentials import AnonymousCredentials  # type: ignore
+from google.oauth2 import service_account  # type: ignore
 
 from google.cloud.pubsub_v1 import _gapic
 from google.cloud.pubsub_v1 import types
