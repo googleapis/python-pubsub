@@ -18,7 +18,7 @@ import logging
 import threading
 import time
 import typing
-from typing import Any, Callable, Optional, Sequence
+from typing import Any, Callable, List, Optional, Sequence, Union
 
 import google.api_core.exceptions
 from google.api_core import gapic_v1
@@ -28,10 +28,10 @@ from google.cloud.pubsub_v1.publisher._batch import base
 from google.pubsub_v1 import types as gapic_types
 
 if typing.TYPE_CHECKING:  # pragma: NO COVER
-    from google import api_core
     from google.cloud import pubsub_v1
     from google.cloud.pubsub_v1 import types
-    from google.cloud.pubsub_v1 import PublisherClient
+    from google.cloud.pubsub_v1.publisher import Client as PublisherClient
+    from google.pubsub_v1.services.publisher.client import OptionalRetry
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -39,6 +39,8 @@ _CAN_COMMIT = (base.BatchStatus.ACCEPTING_MESSAGES, base.BatchStatus.STARTING)
 _SERVER_PUBLISH_MAX_BYTES = 10 * 1000 * 1000  # max accepted size of PublishRequest
 
 _raw_proto_pubbsub_message = gapic_types.PubsubMessage.pb()
+
+_TimeoutType = Union[gapic_types.TimeoutType, gapic_v1.method._MethodDefault]
 
 
 class Batch(base.Batch):
@@ -93,8 +95,8 @@ class Batch(base.Batch):
         settings: "types.BatchSettings",
         batch_done_callback: Callable[[bool], Any] = None,
         commit_when_full: bool = True,
-        commit_retry: "api_core.retry.Retry" = gapic_v1.method.DEFAULT,
-        commit_timeout: gapic_types.TimeoutType = gapic_v1.method.DEFAULT,
+        commit_retry: "OptionalRetry" = gapic_v1.method.DEFAULT,
+        commit_timeout: _TimeoutType = gapic_v1.method.DEFAULT,
     ):
         self._client = client
         self._topic = topic
@@ -108,8 +110,8 @@ class Batch(base.Batch):
         # _futures list should remain unchanged after batch
         # status changed from ACCEPTING_MESSAGES to any other
         # in order to avoid race conditions
-        self._futures = []
-        self._messages = []
+        self._futures: List[futures.Future] = []
+        self._messages: List[gapic_types.PubsubMessage] = []
         self._status = base.BatchStatus.ACCEPTING_MESSAGES
 
         # The initial size is not zero, we need to account for the size overhead
@@ -368,7 +370,7 @@ class Batch(base.Batch):
             ), "Publish after stop() or publish error."
 
             if self.status != base.BatchStatus.ACCEPTING_MESSAGES:
-                return
+                return None
 
             size_increase = gapic_types.PublishRequest(
                 messages=[message]
