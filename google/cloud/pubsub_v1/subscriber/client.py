@@ -17,7 +17,7 @@ from __future__ import absolute_import
 import os
 import pkg_resources
 import typing
-from typing import Any, Callable, Optional, Sequence, Union
+from typing import cast, Any, Callable, Optional, Sequence, Union
 
 from google.auth.credentials import AnonymousCredentials  # type: ignore
 from google.oauth2 import service_account  # type: ignore
@@ -30,6 +30,7 @@ from google.pubsub_v1.services.subscriber import client as subscriber_client
 
 if typing.TYPE_CHECKING:  # pragma: NO COVER
     from google.cloud.pubsub_v1 import subscriber
+    from google.pubsub_v1.services.subscriber.transports.grpc import SubscriberGrpcTransport
 
 
 try:
@@ -263,7 +264,8 @@ class Client(object):
 
         This method is idempotent.
         """
-        self.api._transport.grpc_channel.close()
+        transport = cast("SubscriberGrpcTransport", self.api._transport)
+        transport.grpc_channel.close()
         self._closed = True
 
     def __enter__(self) -> "Client":
