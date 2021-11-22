@@ -21,7 +21,7 @@ import logging
 import math
 import threading
 import typing
-from typing import Sequence, Union
+from typing import cast, List, Optional, Sequence, Union
 
 from google.cloud.pubsub_v1.subscriber._protocol import helper_threads
 from google.cloud.pubsub_v1.subscriber._protocol import requests
@@ -29,6 +29,7 @@ from google.pubsub_v1 import types as gapic_types
 
 if typing.TYPE_CHECKING:  # pragma: NO COVER
     import queue
+    from google.cloud.pubsub_v1.subscriber._protocol.leaser import Leaser
     from google.cloud.pubsub_v1.subscriber._protocol.streaming_pull_manager import (
         StreamingPullManager,
     )
@@ -71,7 +72,7 @@ class Dispatcher(object):
     def __init__(self, manager: "StreamingPullManager", queue: "queue.Queue"):
         self._manager = manager
         self._queue = queue
-        self._thread = None
+        self._thread: Optional[threading.Thread] = None
         self._operational_lock = threading.Lock()
 
     def start(self) -> None:
@@ -120,17 +121,38 @@ class Dispatcher(object):
         _LOGGER.debug("Handling %d batched requests", len(items))
 
         if batched_commands[requests.LeaseRequest]:
-            self.lease(batched_commands.pop(requests.LeaseRequest))
+            lease_requests = cast(
+                List[requests.LeaseRequest],
+                batched_commands.pop(requests.LeaseRequest),
+            )
+            self.lease(lease_requests)
+
         if batched_commands[requests.ModAckRequest]:
-            self.modify_ack_deadline(batched_commands.pop(requests.ModAckRequest))
+            modack_requests = cast(
+                List[requests.ModAckRequest],
+                batched_commands.pop(requests.ModAckRequest),
+            )
+            self.modify_ack_deadline(modack_requests)
+
         # Note: Drop and ack *must* be after lease. It's possible to get both
         # the lease and the ack/drop request in the same batch.
         if batched_commands[requests.AckRequest]:
-            self.ack(batched_commands.pop(requests.AckRequest))
+            ack_requests = cast(
+                List[requests.AckRequest], batched_commands.pop(requests.AckRequest),
+            )
+            self.ack(ack_requests)
+
         if batched_commands[requests.NackRequest]:
-            self.nack(batched_commands.pop(requests.NackRequest))
+            nack_requests = cast(
+                List[requests.NackRequest], batched_commands.pop(requests.NackRequest),
+            )
+            self.nack(nack_requests)
+
         if batched_commands[requests.DropRequest]:
-            self.drop(batched_commands.pop(requests.DropRequest))
+            drop_requests = cast(
+                List[requests.DropRequest], batched_commands.pop(requests.DropRequest),
+            )
+            self.drop(drop_requests)
 
     def ack(self, items: Sequence[requests.AckRequest]) -> None:
         """Acknowledge the given messages.
@@ -169,7 +191,8 @@ class Dispatcher(object):
         Args:
             items: The items to drop.
         """
-        self._manager.leaser.remove(items)
+        leaser = cast("Leaser", self._manager.leaser)
+        leaser.remove(items)
         ordering_keys = (k.ordering_key for k in items if k.ordering_key)
         self._manager.activate_ordering_keys(ordering_keys)
         self._manager.maybe_resume_consumer()
@@ -180,7 +203,8 @@ class Dispatcher(object):
         Args:
             items: The items to lease.
         """
-        self._manager.leaser.add(items)
+        leaser = cast("Leaser", self._manager.leaser)
+        leaser.add(items)
         self._manager.maybe_pause_consumer()
 
     def modify_ack_deadline(self, items: Sequence[requests.ModAckRequest]) -> None:
