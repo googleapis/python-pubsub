@@ -21,7 +21,7 @@ import pkg_resources
 import threading
 import time
 import typing
-from typing import Any, Sequence, Type, Union
+from typing import Any, Dict, Optional, Sequence, Tuple, Type, Union
 
 from google.api_core import gapic_v1
 from google.auth.credentials import AnonymousCredentials  # type: ignore
@@ -48,8 +48,8 @@ except pkg_resources.DistributionNotFound:
 if typing.TYPE_CHECKING:  # pragma: NO COVER
     from google import api_core
     from google.cloud import pubsub_v1
-    from google.cloud.pubsub_v1.publisher._sequencer.base import Sequencer
     from google.cloud.pubsub_v1.publisher import _batch
+    from google.pubsub_v1.services.publisher.client import OptionalRetry
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -61,6 +61,11 @@ _DENYLISTED_METHODS = (
 )
 
 _raw_proto_pubbsub_message = gapic_types.PubsubMessage.pb()
+
+_TimeoutType = Union[gapic_types.TimeoutType, gapic_v1.method._MethodDefault]
+SequencerType = Union[
+    ordered_sequencer.OrderedSequencer, unordered_sequencer.UnorderedSequencer
+]
 
 
 @_gapic.add_methods(publisher_client.PublisherClient, denylist=_DENYLISTED_METHODS)
@@ -152,10 +157,10 @@ class Client(object):
         # messages. One batch exists for each topic.
         self._batch_lock = self._batch_class.make_lock()
         # (topic, ordering_key) => sequencers object
-        self._sequencers = {}
+        self._sequencers: Dict[Tuple[str, str], SequencerType] = {}
         self._is_stopped = False
         # Thread created to commit all sequencers after a timeout.
-        self._commit_thread = None
+        self._commit_thread: Optional[threading.Thread] = None
 
         # The object controlling the message publishing flow
         self._flow_controller = FlowController(self.publisher_options.flow_control)
@@ -196,7 +201,7 @@ class Client(object):
         """
         return self._target
 
-    def _get_or_create_sequencer(self, topic: str, ordering_key: str) -> "Sequencer":
+    def _get_or_create_sequencer(self, topic: str, ordering_key: str) -> SequencerType:
         """ Get an existing sequencer or create a new one given the (topic,
             ordering_key) pair.
         """
@@ -254,8 +259,8 @@ class Client(object):
         topic: str,
         data: bytes,
         ordering_key: str = "",
-        retry: "api_core.retry.Retry" = gapic_v1.method.DEFAULT,
-        timeout: gapic_types.TimeoutType = gapic_v1.method.DEFAULT,
+        retry: "OptionalRetry" = gapic_v1.method.DEFAULT,
+        timeout: _TimeoutType = gapic_v1.method.DEFAULT,
         **attrs: Union[bytes, str],
     ) -> "pubsub_v1.publisher.futures.Future":
         """Publish a single message.
@@ -380,7 +385,10 @@ class Client(object):
                 if retry is gapic_v1.method.DEFAULT:
                     # use the default retry for the publish GRPC method as a base
                     transport = self.api._transport
-                    retry = transport._wrapped_methods[transport.publish]._retry
+                    retry = typing.cast(
+                        "api_core.retry.Retry",
+                        transport._wrapped_methods[transport.publish]._retry,
+                    )
                 retry = retry.with_deadline(2.0 ** 32)
 
             # Delegate the publishing to the sequencer.
@@ -490,7 +498,7 @@ class Client(object):
 
     # Used only for testing.
     def _set_sequencer(
-        self, topic: str, sequencer: "Sequencer", ordering_key: str = ""
+        self, topic: str, sequencer: SequencerType, ordering_key: str = ""
     ) -> None:
         sequencer_key = (topic, ordering_key)
         self._sequencers[sequencer_key] = sequencer
