@@ -30,7 +30,9 @@ from google.pubsub_v1.services.subscriber import client as subscriber_client
 
 if typing.TYPE_CHECKING:  # pragma: NO COVER
     from google.cloud.pubsub_v1 import subscriber
-    from google.pubsub_v1.services.subscriber.transports.grpc import SubscriberGrpcTransport
+    from google.pubsub_v1.services.subscriber.transports.grpc import (
+        SubscriberGrpcTransport,
+    )
 
 
 try:
@@ -139,7 +141,7 @@ class Client(object):
         subscription: str,
         callback: Callable[["subscriber.message.Message"], Any],
         flow_control: Union[types.FlowControl, Sequence] = (),
-        scheduler: Optional["subscriber.scheduler.Scheduler"] = None,
+        scheduler: Optional["subscriber.scheduler.ThreadScheduler"] = None,
         use_legacy_flow_control: bool = False,
         await_callbacks_on_shutdown: bool = False,
     ) -> futures.StreamingPullFuture:
