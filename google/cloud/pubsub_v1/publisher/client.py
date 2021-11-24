@@ -62,7 +62,6 @@ _DENYLISTED_METHODS = (
 
 _raw_proto_pubbsub_message = gapic_types.PubsubMessage.pb()
 
-_TimeoutType = Union[gapic_types.TimeoutType, gapic_v1.method._MethodDefault]
 SequencerType = Union[
     ordered_sequencer.OrderedSequencer, unordered_sequencer.UnorderedSequencer
 ]
@@ -260,7 +259,7 @@ class Client(object):
         data: bytes,
         ordering_key: str = "",
         retry: "OptionalRetry" = gapic_v1.method.DEFAULT,
-        timeout: _TimeoutType = gapic_v1.method.DEFAULT,
+        timeout: "types.OptionalTimeout" = gapic_v1.method.DEFAULT,
         **attrs: Union[bytes, str],
     ) -> "pubsub_v1.publisher.futures.Future":
         """Publish a single message.

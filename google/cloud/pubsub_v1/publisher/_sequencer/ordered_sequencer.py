@@ -16,7 +16,7 @@ import enum
 import collections
 import threading
 import typing
-from typing import cast, Deque, Iterable, Optional, Sequence, Union
+from typing import cast, Deque, Iterable, Optional, Sequence
 
 from google.api_core import gapic_v1
 from google.cloud.pubsub_v1.publisher import futures
@@ -26,12 +26,10 @@ from google.cloud.pubsub_v1.publisher._batch import base as batch_base
 from google.pubsub_v1 import types as gapic_types
 
 if typing.TYPE_CHECKING:  # pragma: NO COVER
+    from google.cloud.pubsub_v1 import types
     from google.cloud.pubsub_v1.publisher import _batch
     from google.cloud.pubsub_v1.publisher.client import Client as PublisherClient
     from google.pubsub_v1.services.publisher.client import OptionalRetry
-
-
-_TimeoutType = Union[gapic_types.TimeoutType, gapic_v1.method._MethodDefault]
 
 
 class _OrderedSequencerStatus(str, enum.Enum):
@@ -241,7 +239,7 @@ class OrderedSequencer(sequencer_base.Sequencer):
     def _create_batch(
         self,
         commit_retry: "OptionalRetry" = gapic_v1.method.DEFAULT,
-        commit_timeout: _TimeoutType = gapic_v1.method.DEFAULT,
+        commit_timeout: "types.OptionalTimeout" = gapic_v1.method.DEFAULT,
     ) -> "_batch.thread.Batch":
         """ Create a new batch using the client's batch class and other stored
             settings.
@@ -266,7 +264,7 @@ class OrderedSequencer(sequencer_base.Sequencer):
         self,
         message: gapic_types.PubsubMessage,
         retry: "OptionalRetry" = gapic_v1.method.DEFAULT,
-        timeout: _TimeoutType = gapic_v1.method.DEFAULT,
+        timeout: "types.OptionalTimeout" = gapic_v1.method.DEFAULT,
     ) -> futures.Future:
         """ Publish message for this ordering key.
 

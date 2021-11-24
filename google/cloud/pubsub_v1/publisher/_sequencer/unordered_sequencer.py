@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import typing
-from typing import Optional, Union
+from typing import Optional
 
 from google.api_core import gapic_v1
 
@@ -26,8 +26,7 @@ if typing.TYPE_CHECKING:  # pragma: NO COVER
     from google.cloud.pubsub_v1.publisher.client import Client as PublisherClient
     from google.pubsub_v1.services.publisher.client import OptionalRetry
 
-
-_TimeoutType = Union[gapic_types.TimeoutType, gapic_v1.method._MethodDefault]
+    from google.cloud.pubsub_v1 import types
 
 
 class UnorderedSequencer(base.Sequencer):
@@ -93,7 +92,7 @@ class UnorderedSequencer(base.Sequencer):
     def _create_batch(
         self,
         commit_retry: "OptionalRetry" = gapic_v1.method.DEFAULT,
-        commit_timeout: _TimeoutType = gapic_v1.method.DEFAULT,
+        commit_timeout: "types.OptionalTimeout" = gapic_v1.method.DEFAULT,
     ) -> "_batch.thread.Batch":
         """ Create a new batch using the client's batch class and other stored
             settings.
@@ -118,7 +117,7 @@ class UnorderedSequencer(base.Sequencer):
         self,
         message: gapic_types.PubsubMessage,
         retry: "OptionalRetry" = gapic_v1.method.DEFAULT,
-        timeout: _TimeoutType = gapic_v1.method.DEFAULT,
+        timeout: "types.OptionalTimeout" = gapic_v1.method.DEFAULT,
     ) -> "futures.Future":
         """ Batch message into existing or new batch.
 

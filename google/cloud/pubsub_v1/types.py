@@ -44,8 +44,15 @@ if typing.TYPE_CHECKING:  # pragma: NO COVER
     from google.pubsub_v1 import types as gapic_types
     from google.pubsub_v1.services.publisher.client import OptionalRetry
 
-
-_TimeoutType = Union["gapic_types.TimeoutType", gapic_v1.method._MethodDefault]
+    # TODO: Eventually implement OptionalTimeout in the GAPIC code generator and import
+    # it from the generated code. It's the same solution that is used for OptionalRetry.
+    # https://github.com/googleapis/gapic-generator-python/pull/1032/files
+    # https://github.com/googleapis/gapic-generator-python/pull/1065/files
+    if hasattr(gapic_v1.method, "_MethodDefault"):
+        # _MethodDefault was only added in google-api-core==2.2.2
+        OptionalTimeout = Union[gapic_types.TimeoutType, gapic_v1.method._MethodDefault]
+    else:
+        OptionalTimeout = Union[gapic_types.TimeoutType, object]  # type: ignore
 
 
 # Define the default values for batching.
@@ -120,11 +127,13 @@ class PublisherOptions(NamedTuple):
         "an instance of :class:`google.api_core.retry.Retry`."
     )
 
-    timeout: _TimeoutType = gapic_v1.method.DEFAULT  # use api_core default
+    # pytype: disable=invalid-annotation
+    timeout: "OptionalTimeout" = gapic_v1.method.DEFAULT  # use api_core default
     (
         "Timeout settings for message publishing by the client. It should be "
         "compatible with :class:`~.pubsub_v1.types.TimeoutType`."
     )
+    # pytype: enable=invalid-annotation
 
 
 # Define the type class and default values for flow control settings.

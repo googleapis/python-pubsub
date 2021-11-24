@@ -18,7 +18,7 @@ import logging
 import threading
 import time
 import typing
-from typing import Any, Callable, List, Optional, Sequence, Union
+from typing import Any, Callable, List, Optional, Sequence
 
 import google.api_core.exceptions
 from google.api_core import gapic_v1
@@ -33,14 +33,11 @@ if typing.TYPE_CHECKING:  # pragma: NO COVER
     from google.cloud.pubsub_v1.publisher import Client as PublisherClient
     from google.pubsub_v1.services.publisher.client import OptionalRetry
 
-
 _LOGGER = logging.getLogger(__name__)
 _CAN_COMMIT = (base.BatchStatus.ACCEPTING_MESSAGES, base.BatchStatus.STARTING)
 _SERVER_PUBLISH_MAX_BYTES = 10 * 1000 * 1000  # max accepted size of PublishRequest
 
 _raw_proto_pubbsub_message = gapic_types.PubsubMessage.pb()
-
-_TimeoutType = Union[gapic_types.TimeoutType, gapic_v1.method._MethodDefault]
 
 
 class Batch(base.Batch):
@@ -96,7 +93,7 @@ class Batch(base.Batch):
         batch_done_callback: Callable[[bool], Any] = None,
         commit_when_full: bool = True,
         commit_retry: "OptionalRetry" = gapic_v1.method.DEFAULT,
-        commit_timeout: _TimeoutType = gapic_v1.method.DEFAULT,
+        commit_timeout: "types.OptionalTimeout" = gapic_v1.method.DEFAULT,
     ):
         self._client = client
         self._topic = topic
