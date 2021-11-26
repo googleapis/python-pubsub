@@ -384,11 +384,10 @@ class Client(object):
                 if retry is gapic_v1.method.DEFAULT:
                     # use the default retry for the publish GRPC method as a base
                     transport = self.api._transport
-                    retry = typing.cast(
-                        "api_core.retry.Retry",
-                        transport._wrapped_methods[transport.publish]._retry,
-                    )
-                retry = retry.with_deadline(2.0 ** 32)
+                    base_retry = transport._wrapped_methods[transport.publish]._retry
+                    retry = base_retry.with_deadline(2.0 ** 32)
+                else:
+                    retry = retry.with_deadline(2.0 ** 32)
 
             # Delegate the publishing to the sequencer.
             sequencer = self._get_or_create_sequencer(topic, ordering_key)
