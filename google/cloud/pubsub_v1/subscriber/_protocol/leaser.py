@@ -194,8 +194,8 @@ class Leaser(object):
                 #       without any sort of race condition would require a
                 #       way for ``send_request`` to fail when the consumer
                 #       is inactive.
-                dispatcher = cast("Dispatcher", self._manager.dispatcher)
-                dispatcher.modify_ack_deadline(
+                assert self._manager.dispatcher is not None
+                self._manager.dispatcher.modify_ack_deadline(
                     [requests.ModAckRequest(ack_id, deadline) for ack_id in ack_ids]
                 )
 
