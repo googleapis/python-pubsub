@@ -23,6 +23,4 @@ try:
 except ImportError:
     import pkgutil
 
-    __path__: List[str] = pkgutil.extend_path(
-        __path__, __name__
-    )  # pytype: disable=annotation-type-mismatch
+    __path__: List[str] = pkgutil.extend_path(__path__, __name__)  # type: ignore
