@@ -15,7 +15,6 @@
 from __future__ import absolute_import
 from __future__ import division
 
-import collections
 import itertools
 import logging
 import math
@@ -113,45 +112,41 @@ class Dispatcher(object):
             items:
                 Queued requests to dispatch.
         """
-        batched_commands = collections.defaultdict(list)
+        lease_requests: List[requests.LeaseRequest] = []
+        modack_requests: List[requests.ModAckRequest] = []
+        ack_requests: List[requests.AckRequest] = []
+        nack_requests: List[requests.NackRequest] = []
+        drop_requests: List[requests.DropRequest] = []
 
         for item in items:
-            batched_commands[item.__class__].append(item)
+            if isinstance(item, requests.LeaseRequest):
+                lease_requests.append(item)
+            elif isinstance(item, requests.ModAckRequest):
+                modack_requests.append(item)
+            elif isinstance(item, requests.AckRequest):
+                ack_requests.append(item)
+            elif isinstance(item, requests.NackRequest):
+                nack_requests.append(item)
+            elif isinstance(item, requests.DropRequest):
+                drop_requests.append(item)
 
         _LOGGER.debug("Handling %d batched requests", len(items))
 
-        if batched_commands[requests.LeaseRequest]:
-            lease_requests = cast(
-                List[requests.LeaseRequest],
-                batched_commands.pop(requests.LeaseRequest),
-            )
+        if lease_requests:
             self.lease(lease_requests)
 
-        if batched_commands[requests.ModAckRequest]:
-            modack_requests = cast(
-                List[requests.ModAckRequest],
-                batched_commands.pop(requests.ModAckRequest),
-            )
+        if modack_requests:
             self.modify_ack_deadline(modack_requests)
 
         # Note: Drop and ack *must* be after lease. It's possible to get both
         # the lease and the ack/drop request in the same batch.
-        if batched_commands[requests.AckRequest]:
-            ack_requests = cast(
-                List[requests.AckRequest], batched_commands.pop(requests.AckRequest),
-            )
+        if ack_requests:
             self.ack(ack_requests)
 
-        if batched_commands[requests.NackRequest]:
-            nack_requests = cast(
-                List[requests.NackRequest], batched_commands.pop(requests.NackRequest),
-            )
+        if nack_requests:
             self.nack(nack_requests)
 
-        if batched_commands[requests.DropRequest]:
-            drop_requests = cast(
-                List[requests.DropRequest], batched_commands.pop(requests.DropRequest),
-            )
+        if drop_requests:
             self.drop(drop_requests)
 
     def ack(self, items: Sequence[requests.AckRequest]) -> None:
