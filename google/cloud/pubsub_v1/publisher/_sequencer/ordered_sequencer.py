@@ -290,12 +290,12 @@ class OrderedSequencer(sequencer_base.Sequencer):
         """
         with self._state_lock:
             if self._state == _OrderedSequencerStatus.PAUSED:
-                future: Optional[futures.Future] = futures.Future()
+                errored_future = futures.Future()
                 exception = exceptions.PublishToPausedOrderingKeyException(
                     self._ordering_key
                 )
-                cast(futures.Future, future).set_exception(exception)
-                return cast(futures.Future, future)
+                errored_future.set_exception(exception)
+                return errored_future
 
             # If waiting to be cleaned-up, convert to accepting messages to
             # prevent this sequencer from being cleaned-up only to have another
