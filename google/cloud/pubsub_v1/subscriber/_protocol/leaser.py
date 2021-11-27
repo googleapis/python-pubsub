@@ -20,7 +20,7 @@ import random
 import threading
 import time
 import typing
-from typing import cast, Dict, Iterable, Optional, Union
+from typing import Dict, Iterable, Optional, Union
 
 try:
     from collections.abc import KeysView
@@ -33,7 +33,6 @@ except TypeError:
 from google.cloud.pubsub_v1.subscriber._protocol import requests
 
 if typing.TYPE_CHECKING:  # pragma: NO COVER
-    from google.cloud.pubsub_v1.subscriber._protocol.dispatcher import Dispatcher
     from google.cloud.pubsub_v1.subscriber._protocol.streaming_pull_manager import (
         StreamingPullManager,
     )
@@ -173,8 +172,8 @@ class Leaser(object):
                 _LOGGER.warning(
                     "Dropping %s items because they were leased too long.", len(to_drop)
                 )
-                dispatcher = cast("Dispatcher", self._manager.dispatcher)
-                dispatcher.drop(to_drop)
+                assert self._manager.dispatcher is not None
+                self._manager.dispatcher.drop(to_drop)
 
             # Remove dropped items from our copy of the leased messages (they
             # have already been removed from the real one by

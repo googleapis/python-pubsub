@@ -20,7 +20,7 @@ import logging
 import math
 import threading
 import typing
-from typing import cast, List, Optional, Sequence, Union
+from typing import List, Optional, Sequence, Union
 
 from google.cloud.pubsub_v1.subscriber._protocol import helper_threads
 from google.cloud.pubsub_v1.subscriber._protocol import requests
@@ -28,7 +28,6 @@ from google.pubsub_v1 import types as gapic_types
 
 if typing.TYPE_CHECKING:  # pragma: NO COVER
     import queue
-    from google.cloud.pubsub_v1.subscriber._protocol.leaser import Leaser
     from google.cloud.pubsub_v1.subscriber._protocol.streaming_pull_manager import (
         StreamingPullManager,
     )
@@ -198,8 +197,8 @@ class Dispatcher(object):
         Args:
             items: The items to lease.
         """
-        leaser = cast("Leaser", self._manager.leaser)
-        leaser.add(items)
+        assert self._manager.leaser is not None
+        self._manager.leaser.add(items)
         self._manager.maybe_pause_consumer()
 
     def modify_ack_deadline(self, items: Sequence[requests.ModAckRequest]) -> None:
