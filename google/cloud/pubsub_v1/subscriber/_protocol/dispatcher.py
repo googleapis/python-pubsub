@@ -21,6 +21,7 @@ import math
 import threading
 import typing
 from typing import List, Optional, Sequence, Union
+import warnings
 
 from google.cloud.pubsub_v1.subscriber._protocol import helper_threads
 from google.cloud.pubsub_v1.subscriber._protocol import requests
@@ -128,6 +129,11 @@ class Dispatcher(object):
                 nack_requests.append(item)
             elif isinstance(item, requests.DropRequest):
                 drop_requests.append(item)
+            else:
+                warnings.warn(
+                    f'Skipping unknown request item of type "{type(item)}"',
+                    category=RuntimeWarning,
+                )
 
         _LOGGER.debug("Handling %d batched requests", len(items))
 
