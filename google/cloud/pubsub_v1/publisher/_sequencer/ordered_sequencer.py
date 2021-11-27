@@ -16,7 +16,7 @@ import enum
 import collections
 import threading
 import typing
-from typing import cast, Deque, Iterable, Optional, Sequence
+from typing import Deque, Iterable, Sequence
 
 from google.api_core import gapic_v1
 from google.cloud.pubsub_v1.publisher import futures

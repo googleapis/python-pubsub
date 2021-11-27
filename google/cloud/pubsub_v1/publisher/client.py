@@ -46,7 +46,6 @@ except pkg_resources.DistributionNotFound:
     __version__ = "0.0"
 
 if typing.TYPE_CHECKING:  # pragma: NO COVER
-    from google import api_core
     from google.cloud import pubsub_v1
     from google.cloud.pubsub_v1.publisher import _batch
     from google.pubsub_v1.services.publisher.client import OptionalRetry
