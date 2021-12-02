@@ -425,7 +425,7 @@ s.replace(
 s.replace(
     "noxfile.py",
     r"BLACK_PATHS = \[.*?\]",
-    '\g<0>\nMYPY_VERSION = "mypy==0.910"',
+    '\g<0>\n\nMYPY_VERSION = "mypy==0.910"',
 )
 s.replace(
     "noxfile.py", r'"blacken",', '\g<0>\n    "mypy",',
