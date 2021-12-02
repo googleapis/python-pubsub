@@ -398,7 +398,7 @@ s.replace(
 s.replace(
     "noxfile.py",
     r"BLACK_PATHS = \[.*?\]",
-    '\g<0>\n\nPYTYPE_VERSION = "pytype==2021.4.9"\n',
+    '\g<0>\nPYTYPE_VERSION = "pytype==2021.4.9"\n',
 )
 s.replace(
     "noxfile.py", r'"blacken",', '\g<0>\n    "pytype",',
@@ -425,7 +425,7 @@ s.replace(
 s.replace(
     "noxfile.py",
     r"BLACK_PATHS = \[.*?\]",
-    '\g<0>\n\nMYPY_VERSION = "mypy==0.910"\n',
+    '\g<0>\nMYPY_VERSION = "mypy==0.910"',
 )
 s.replace(
     "noxfile.py", r'"blacken",', '\g<0>\n    "mypy",',
