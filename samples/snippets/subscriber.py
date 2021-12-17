@@ -22,6 +22,11 @@ at https://cloud.google.com/pubsub/docs.
 """
 
 import argparse
+import typing
+from typing import Optional
+
+if typing.TYPE_CHECKING:
+    from google.pubsub_v1 import types as gapic_types
 
 
 def list_subscriptions_in_topic(project_id: str, topic_id: str) -> None:
@@ -278,7 +283,7 @@ def update_subscription_with_dead_letter_policy(
     subscription_id: str,
     dead_letter_topic_id: str,
     max_delivery_attempts: int = 5,
-) -> None:
+) -> "gapic_types.Subscription":
     """Update a subscription's dead letter policy."""
     # [START pubsub_dead_letter_update_subscription]
     from google.cloud import pubsub_v1
@@ -327,8 +332,11 @@ def update_subscription_with_dead_letter_policy(
     )
 
     with subscriber:
-        subscription_after_update = subscriber.update_subscription(
-            request={"subscription": subscription, "update_mask": update_mask}
+        subscription_after_update = typing.cast(
+            "gapic_types.Subscription",
+            subscriber.update_subscription(
+                request={"subscription": subscription, "update_mask": update_mask}
+            ),
         )
 
     print(f"After the update: {subscription_after_update}.")
@@ -338,7 +346,7 @@ def update_subscription_with_dead_letter_policy(
 
 def remove_dead_letter_policy(
     project_id: str, topic_id: str, subscription_id: str
-) -> None:
+) -> "gapic_types.Subscription":
     """Remove dead letter policy from a subscription."""
     # [START pubsub_dead_letter_remove]
     from google.cloud import pubsub_v1
@@ -372,8 +380,11 @@ def remove_dead_letter_policy(
     )
 
     with subscriber:
-        subscription_after_update = subscriber.update_subscription(
-            request={"subscription": subscription, "update_mask": update_mask}
+        subscription_after_update = typing.cast(
+            "gapic_types.Subscription",
+            subscriber.update_subscription(
+                request={"subscription": subscription, "update_mask": update_mask}
+            ),
         )
 
     print(f"After removing the policy: {subscription_after_update}.")
@@ -382,7 +393,7 @@ def remove_dead_letter_policy(
 
 
 def receive_messages(
-    project_id: str, subscription_id: str, timeout: float = None
+    project_id: str, subscription_id: str, timeout: Optional[float] = None
 ) -> None:
     """Receives messages from a pull subscription."""
     # [START pubsub_subscriber_async_pull]
@@ -422,7 +433,7 @@ def receive_messages(
 
 
 def receive_messages_with_custom_attributes(
-    project_id: str, subscription_id: str, timeout: float = None
+    project_id: str, subscription_id: str, timeout: Optional[float] = None
 ) -> None:
     """Receives messages from a pull subscription."""
     # [START pubsub_subscriber_async_pull_custom_attributes]
@@ -463,7 +474,7 @@ def receive_messages_with_custom_attributes(
 
 
 def receive_messages_with_flow_control(
-    project_id: str, subscription_id: str, timeout: float = None
+    project_id: str, subscription_id: str, timeout: Optional[float] = None
 ) -> None:
     """Receives messages from a pull subscription with flow control."""
     # [START pubsub_subscriber_flow_settings]
@@ -665,7 +676,7 @@ def synchronous_pull_with_lease_management(
 
 
 def listen_for_errors(
-    project_id: str, subscription_id: str, timeout: float = None
+    project_id: str, subscription_id: str, timeout: Optional[float] = None
 ) -> None:
     """Receives messages and catches errors from a pull subscription."""
     # [START pubsub_subscriber_error_listener]
@@ -703,7 +714,7 @@ def listen_for_errors(
 
 
 def receive_messages_with_delivery_attempts(
-    project_id: str, subscription_id: str, timeout: float = None
+    project_id: str, subscription_id: str, timeout: Optional[float] = None
 ) -> None:
     # [START pubsub_dead_letter_delivery_attempt]
     from concurrent.futures import TimeoutError
