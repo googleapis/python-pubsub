@@ -205,7 +205,7 @@ def _publish_messages(
     publisher_client: pubsub_v1.PublisherClient,
     topic: str,
     message_num: int = 5,
-    **attrs: str,
+    **attrs: Any,
 ) -> None:
     for n in range(message_num):
         data = f"message {n}".encode("utf-8")

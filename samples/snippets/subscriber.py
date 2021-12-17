@@ -450,7 +450,7 @@ def receive_messages_with_custom_attributes(
     subscription_path = subscriber.subscription_path(project_id, subscription_id)
 
     def callback(message: pubsub_v1.subscriber.message.Message) -> None:
-        print(f"Received {message.data}.")
+        print(f"Received {message.data!r}.")
         if message.attributes:
             print("Attributes:")
             for key in message.attributes:
@@ -491,7 +491,7 @@ def receive_messages_with_flow_control(
     subscription_path = subscriber.subscription_path(project_id, subscription_id)
 
     def callback(message: pubsub_v1.subscriber.message.Message) -> None:
-        print(f"Received {message.data}.")
+        print(f"Received {message.data!r}.")
         message.ack()
 
     # Limit the subscriber to only have ten outstanding messages at a time.
@@ -533,10 +533,10 @@ def receive_messages_with_blocking_shutdown(
     subscription_path = subscriber.subscription_path(project_id, subscription_id)
 
     def callback(message: pubsub_v1.subscriber.message.Message) -> None:
-        print(f"Received {message.data}.")
+        print(f"Received {message.data!r}.")
         time.sleep(timeout + 3.0)  # Pocess longer than streaming pull future timeout.
         message.ack()
-        print(f"Done processing the message {message.data}.")
+        print(f"Done processing the message {message.data!r}.")
 
     streaming_pull_future = subscriber.subscribe(
         subscription_path, callback=callback, await_callbacks_on_shutdown=True,

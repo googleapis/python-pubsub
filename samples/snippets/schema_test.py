@@ -15,7 +15,7 @@
 # limitations under the License.
 
 import os
-from typing import Generator
+from typing import Any, Callable, cast, Generator, TypeVar
 import uuid
 
 from _pytest.capture import CaptureFixture
@@ -290,7 +290,11 @@ def test_subscribe_with_proto_schema(
     assert "Received a binary-encoded message" in out
 
 
-@flaky(max_runs=3, min_passes=1)
+C = TypeVar("C", bound=Callable[..., Any])
+typed_flaky = cast(Callable[[C], C], flaky(max_runs=3, min_passes=1))
+
+
+@typed_flaky
 def test_delete_schema(proto_schema: str, capsys: CaptureFixture[str]) -> None:
     schema.delete_schema(PROJECT_ID, PROTO_SCHEMA_ID)
     out, _ = capsys.readouterr()
