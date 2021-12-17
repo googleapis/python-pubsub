@@ -46,6 +46,7 @@ nox.options.sessions = [
     "lint_setup_py",
     "blacken",
     "mypy",
+    "mypy_samples",
     "pytype",
     "docs",
 ]
@@ -76,6 +77,28 @@ def pytype(session):
     session.install("-e", ".[all]")
     session.install(PYTYPE_VERSION)
     session.run("pytype")
+
+
+@nox.session(python=DEFAULT_PYTHON_VERSION)
+def mypy_samples(session):
+    """Run type checks with mypy."""
+
+    session.install("-e", ".[all]")
+
+    session.install("pytest")
+    session.install(MYPY_VERSION)
+
+    # Just install the type info directly, since "mypy --install-types" might
+    # require an additional pass.
+    session.install("types-mock", "types-protobuf", "types-setuptools")
+
+    session.run(
+        "mypy",
+        "--config-file",
+        str(CURRENT_DIRECTORY / "samples" / "snippets" / "mypy.ini"),
+        "--no-incremental",  # Required by warn-unused-configs from mypy.ini to work
+        "samples/",
+    )
 
 
 @nox.session(python=DEFAULT_PYTHON_VERSION)
