@@ -27,7 +27,6 @@ from google.api_core import gapic_v1
 from google.auth.credentials import AnonymousCredentials  # type: ignore
 from google.oauth2 import service_account  # type: ignore
 
-from google.cloud.pubsub_v1 import _gapic
 from google.cloud.pubsub_v1 import types
 from google.cloud.pubsub_v1.publisher import exceptions
 from google.cloud.pubsub_v1.publisher import futures
@@ -49,15 +48,11 @@ if typing.TYPE_CHECKING:  # pragma: NO COVER
     from google.cloud import pubsub_v1
     from google.cloud.pubsub_v1.publisher import _batch
     from google.pubsub_v1.services.publisher.client import OptionalRetry
+    from google.pubsub_v1.types import pubsub as pubsub_types
 
 
 _LOGGER = logging.getLogger(__name__)
 
-_DENYLISTED_METHODS = (
-    "publish",
-    "from_service_account_file",
-    "from_service_account_json",
-)
 
 _raw_proto_pubbsub_message = gapic_types.PubsubMessage.pb()
 
@@ -66,8 +61,7 @@ SequencerType = Union[
 ]
 
 
-@_gapic.add_methods(publisher_client.PublisherClient, denylist=_DENYLISTED_METHODS)
-class Client(object):
+class Client(publisher_client.PublisherClient):
     """A publisher client for Google Cloud Pub/Sub.
 
     This creates an object that is capable of publishing messages.
@@ -146,8 +140,8 @@ class Client(object):
 
         # Add the metrics headers, and instantiate the underlying GAPIC
         # client.
-        self.api = publisher_client.PublisherClient(**kwargs)
-        self._target = self.api._transport._host
+        super().__init__(**kwargs)
+        self._target = self._transport._host
         self._batch_class = thread.Batch
         self.batch_settings = types.BatchSettings(*batch_settings)
 
@@ -164,7 +158,7 @@ class Client(object):
         self._flow_controller = FlowController(self.publisher_options.flow_control)
 
     @classmethod
-    def from_service_account_file(
+    def from_service_account_file(  # type: ignore[override]
         cls,
         filename: str,
         batch_settings: Union[types.BatchSettings, Sequence] = (),
@@ -188,7 +182,7 @@ class Client(object):
         kwargs["credentials"] = credentials
         return cls(batch_settings, **kwargs)
 
-    from_service_account_json = from_service_account_file
+    from_service_account_json = from_service_account_file  # type: ignore[assignment]
 
     @property
     def target(self) -> str:
@@ -206,12 +200,15 @@ class Client(object):
         sequencer_key = (topic, ordering_key)
         sequencer = self._sequencers.get(sequencer_key)
         if sequencer is None:
+            # Disable pytype false positive...
+            # pytype: disable=wrong-arg-types
             if ordering_key == "":
                 sequencer = unordered_sequencer.UnorderedSequencer(self, topic)
             else:
                 sequencer = ordered_sequencer.OrderedSequencer(
                     self, topic, ordering_key
                 )
+            # pytype: enable=wrong-arg-types
             self._sequencers[sequencer_key] = sequencer
 
         return sequencer
@@ -252,7 +249,12 @@ class Client(object):
             else:
                 sequencer.unpause()
 
-    def publish(
+    def _gapic_publish(self, *args, **kwargs) -> "pubsub_types.PublishResponse":
+        """TODO: docstrings"""
+        # Call GAPIC publish API directly
+        return super().publish(*args, **kwargs)
+
+    def publish(  # type: ignore[override]
         self,
         topic: str,
         data: bytes,
@@ -382,7 +384,7 @@ class Client(object):
             if self._enable_message_ordering:
                 if retry is gapic_v1.method.DEFAULT:
                     # use the default retry for the publish GRPC method as a base
-                    transport = self.api._transport
+                    transport = self._transport
                     base_retry = transport._wrapped_methods[transport.publish]._retry
                     retry = base_retry.with_deadline(2.0 ** 32)
                 else:
