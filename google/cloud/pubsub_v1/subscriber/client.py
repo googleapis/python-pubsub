@@ -22,7 +22,6 @@ from typing import cast, Any, Callable, Optional, Sequence, Union
 from google.auth.credentials import AnonymousCredentials  # type: ignore
 from google.oauth2 import service_account  # type: ignore
 
-from google.cloud.pubsub_v1 import _gapic
 from google.cloud.pubsub_v1 import types
 from google.cloud.pubsub_v1.subscriber import futures
 from google.cloud.pubsub_v1.subscriber._protocol import streaming_pull_manager
@@ -42,15 +41,8 @@ except pkg_resources.DistributionNotFound:
     # a PIP package.
     __version__ = "0.0"
 
-_DENYLISTED_METHODS = (
-    "publish",
-    "from_service_account_file",
-    "from_service_account_json",
-)
 
-
-@_gapic.add_methods(subscriber_client.SubscriberClient, denylist=_DENYLISTED_METHODS)
-class Client(object):
+class Client(subscriber_client.SubscriberClient):
     """A subscriber client for Google Cloud Pub/Sub.
 
     This creates an object that is capable of subscribing to messages.
@@ -91,12 +83,14 @@ class Client(object):
             kwargs["credentials"] = AnonymousCredentials()
 
         # Instantiate the underlying GAPIC client.
-        self._api = subscriber_client.SubscriberClient(**kwargs)
-        self._target = self._api._transport._host
+        super().__init__(**kwargs)
+        self._target = self._transport._host
         self._closed = False
 
     @classmethod
-    def from_service_account_file(cls, filename: str, **kwargs: Any) -> "Client":
+    def from_service_account_file(  # type: ignore[override]
+        cls, filename: str, **kwargs: Any
+    ) -> "Client":
         """Creates an instance of this client using the provided credentials
         file.
 
@@ -112,7 +106,7 @@ class Client(object):
         kwargs["credentials"] = credentials
         return cls(**kwargs)
 
-    from_service_account_json = from_service_account_file
+    from_service_account_json = from_service_account_file  # type: ignore[assignment]
 
     @property
     def target(self) -> str:
@@ -122,11 +116,6 @@ class Client(object):
             The location of the API.
         """
         return self._target
-
-    @property
-    def api(self) -> subscriber_client.SubscriberClient:
-        """The underlying gapic API client."""
-        return self._api
 
     @property
     def closed(self) -> bool:
@@ -243,6 +232,8 @@ class Client(object):
         """
         flow_control = types.FlowControl(*flow_control)
 
+        # Disable pytype false positive...
+        # pytype: disable=wrong-arg-types
         manager = streaming_pull_manager.StreamingPullManager(
             self,
             subscription,
@@ -251,6 +242,7 @@ class Client(object):
             use_legacy_flow_control=use_legacy_flow_control,
             await_callbacks_on_shutdown=await_callbacks_on_shutdown,
         )
+        # pytype: enable=wrong-arg-types
 
         future = futures.StreamingPullFuture(manager)
 
@@ -266,7 +258,7 @@ class Client(object):
 
         This method is idempotent.
         """
-        transport = cast("SubscriberGrpcTransport", self.api._transport)
+        transport = cast("SubscriberGrpcTransport", self._transport)
         transport.grpc_channel.close()
         self._closed = True
 

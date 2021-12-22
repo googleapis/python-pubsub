@@ -532,7 +532,7 @@ class StreamingPullManager(object):
             self._get_initial_request, stream_ack_deadline_seconds
         )
         self._rpc = bidi.ResumableBidiRpc(
-            start_rpc=self._client.api.streaming_pull,
+            start_rpc=self._client.streaming_pull,
             initial_request=get_initial_request,
             should_recover=self._should_recover,
             should_terminate=self._should_terminate,
