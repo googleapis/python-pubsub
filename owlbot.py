@@ -447,6 +447,13 @@ s.replace(
         # require an additional pass.
         session.install("types-protobuf", "types-setuptools")
 
+        # Version 2.1.1 of google-api-core version is the first type-checked release.
+        # Version 2.2.0 of google-cloud-core version is the first type-checked release.
+        session.install(
+            "google-api-core[grpc]>=2.1.1",
+            "google-cloud-core>=2.2.0",
+        )
+
         # TODO: Only check the hand-written layer, the generated code does not pass
         # mypy checks yet.
         # https://github.com/googleapis/gapic-generator-python/issues/1092

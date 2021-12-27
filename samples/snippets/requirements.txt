@@ -1,6 +1,2 @@
-# Version 2.1.1 of google-api-core version is the first type-checked release.
-google-api-core[grpc]==2.1.1
-# Version 2.2.0 of google-cloud-core version is the first type-checked release.
-google-cloud-core==2.2.0
 google-cloud-pubsub==2.9.0
 avro==1.11.0
