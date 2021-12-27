@@ -232,8 +232,6 @@ class Client(subscriber_client.SubscriberClient):
         """
         flow_control = types.FlowControl(*flow_control)
 
-        # Disable pytype false positive...
-        # pytype: disable=wrong-arg-types
         manager = streaming_pull_manager.StreamingPullManager(
             self,
             subscription,
@@ -242,7 +240,6 @@ class Client(subscriber_client.SubscriberClient):
             use_legacy_flow_control=use_legacy_flow_control,
             await_callbacks_on_shutdown=await_callbacks_on_shutdown,
         )
-        # pytype: enable=wrong-arg-types
 
         future = futures.StreamingPullFuture(manager)
 

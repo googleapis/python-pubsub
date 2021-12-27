@@ -548,14 +548,11 @@ class StreamingPullManager(object):
 
         # Create references to threads
         assert self._scheduler is not None
-        # pytype: disable=wrong-arg-types
-        # (pytype incorrectly complains about "self" not being the right argument type)
         scheduler_queue = self._scheduler.queue
         self._dispatcher = dispatcher.Dispatcher(self, scheduler_queue)
         self._consumer = bidi.BackgroundConsumer(self._rpc, self._on_response)
         self._leaser = leaser.Leaser(self)
         self._heartbeater = heartbeater.Heartbeater(self)
-        # pytype: enable=wrong-arg-types
 
         # Start the thread to pass the requests.
         self._dispatcher.start()

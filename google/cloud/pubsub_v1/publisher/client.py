@@ -200,15 +200,12 @@ class Client(publisher_client.PublisherClient):
         sequencer_key = (topic, ordering_key)
         sequencer = self._sequencers.get(sequencer_key)
         if sequencer is None:
-            # Disable pytype false positive...
-            # pytype: disable=wrong-arg-types
             if ordering_key == "":
                 sequencer = unordered_sequencer.UnorderedSequencer(self, topic)
             else:
                 sequencer = ordered_sequencer.OrderedSequencer(
                     self, topic, ordering_key
                 )
-            # pytype: enable=wrong-arg-types
             self._sequencers[sequencer_key] = sequencer
 
         return sequencer
