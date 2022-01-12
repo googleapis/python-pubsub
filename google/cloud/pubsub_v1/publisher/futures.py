@@ -69,7 +69,7 @@ class Future(futures.Future):
     def add_done_callback(
         self, callback: Callable[["pubsub_v1.publisher.futures.Future"], Any]
     ) -> None:
-        """Attache a callable that will be called when the future finishes.
+        """Attach a callable that will be called when the future finishes.
 
         Args:
             callback:
