@@ -79,10 +79,10 @@ for file in python-pubsublite/samples/**/requirements.txt; do
     python3.6 -m venv py-3.6
     source py-3.6/bin/activate
     # Install python-pubsublite samples tests requirements.
-    python -m pip install -r requirements.txt -q
-    python -m pip install -r requirements-test.txt -q
+    python -m pip install -r requirements.txt
+    python -m pip install -r requirements-test.txt
     # Install python-pubsub from source.
-    python -m pip install -e "$ROOT" -q
+    python -m pip install -e "$ROOT"
     python -m pytest quickstart_test.py
     EXIT=$?
     
