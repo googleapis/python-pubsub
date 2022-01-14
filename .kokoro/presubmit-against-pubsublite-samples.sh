@@ -79,7 +79,8 @@ for file in python-pubsublite/samples/**/requirements.txt; do
     python3.6 -m venv py-3.6
     source py-3.6/bin/activate
     # Install python-pubsublite samples tests requirements.
-    python -m pip install --upgrade google-cloud-pubsublite==1.2.0 -q
+    python -m pip install --upgrade pip
+    python -m pip install -r requirements.txt -q
     python -m pip install -r requirements-test.txt -q
     # Install python-pubsub from source.
     python -m pip install -e "$ROOT" -q
