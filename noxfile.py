@@ -44,7 +44,7 @@ nox.options.sessions = [
     "lint_setup_py",
     "blacken",
     "mypy",
-    # "mypy_samples",  # TODO: uncomment when the checks pass
+    "mypy_samples",
     "docs",
 ]
 
