@@ -208,6 +208,38 @@ def test_context_manager_raises_if_closed(creds):
             pass
 
 
+def test_api_property_deprecated(creds):
+    client = subscriber.Client(credentials=creds)
+
+    with warnings.catch_warnings(record=True) as warned:
+        client.api
+
+    assert len(warned) == 1
+    assert issubclass(warned[0].category, DeprecationWarning)
+    warning_msg = str(warned[0].message)
+    assert "client.api" in warning_msg
+
+
+def test_api_property_proxy_to_generated_client(creds):
+    client = subscriber.Client(credentials=creds)
+
+    with warnings.catch_warnings(record=True):
+        api_object = client.api
+
+    # Not a perfect check, but we are satisficed if the returned API object indeed
+    # contains all methods of the generated class.
+    superclass_attrs = (attr for attr in dir(type(client).__mro__[1]))
+    assert all(
+        hasattr(api_object, attr)
+        for attr in superclass_attrs
+        if callable(getattr(client, attr))
+    )
+
+    # The close() method only exists on the hand-written wrapper class.
+    assert hasattr(client, "close")
+    assert not hasattr(api_object, "close")
+
+
 def test_streaming_pull_gapic_monkeypatch(creds):
     client = subscriber.Client(credentials=creds)
 

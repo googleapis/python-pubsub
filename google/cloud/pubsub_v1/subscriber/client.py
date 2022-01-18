@@ -18,6 +18,7 @@ import os
 import pkg_resources
 import typing
 from typing import cast, Any, Callable, Optional, Sequence, Union
+import warnings
 
 from google.auth.credentials import AnonymousCredentials  # type: ignore
 from google.oauth2 import service_account  # type: ignore
@@ -124,6 +125,26 @@ class Client(subscriber_client.SubscriberClient):
         .. versionadded:: 2.8.0
         """
         return self._closed
+
+    @property
+    def api(self):
+        """The underlying gapic API client.
+
+        .. versionchanged:: 2.10.0
+            Instead of a GAPIC ``SubscriberClient`` client instance, this property is a
+            proxy object to it with the same interface.
+
+        .. deprecated:: 2.10.0
+            Use the GAPIC methods and properties on the client instance directly
+            instead of through the :attr:`api` attribute.
+        """
+        msg = (
+            'The "api" property only exists for backward compatibility, access its '
+            'attributes directly thorugh the client instance (e.g. "client.foo" '
+            'instead of "client.api.foo").'
+        )
+        warnings.warn(msg, category=DeprecationWarning)
+        return super()
 
     def subscribe(
         self,

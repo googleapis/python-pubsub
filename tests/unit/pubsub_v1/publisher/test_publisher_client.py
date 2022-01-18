@@ -22,6 +22,7 @@ import grpc
 import mock
 import pytest
 import time
+import warnings
 
 from google.api_core import gapic_v1
 from google.api_core import retry as retries
@@ -48,6 +49,38 @@ def _assert_retries_equal(retry, retry2):
     pred2 = retry2._predicate
     assert inspect.getsource(pred) == inspect.getsource(pred2)
     assert inspect.getclosurevars(pred) == inspect.getclosurevars(pred2)
+
+
+def test_api_property_deprecated(creds):
+    client = publisher.Client(credentials=creds)
+
+    with warnings.catch_warnings(record=True) as warned:
+        client.api
+
+    assert len(warned) == 1
+    assert issubclass(warned[0].category, DeprecationWarning)
+    warning_msg = str(warned[0].message)
+    assert "client.api" in warning_msg
+
+
+def test_api_property_proxy_to_generated_client(creds):
+    client = publisher.Client(credentials=creds)
+
+    with warnings.catch_warnings(record=True):
+        api_object = client.api
+
+    # Not a perfect check, but we are satisficed if the returned API object indeed
+    # contains all methods of the generated class.
+    superclass_attrs = (attr for attr in dir(type(client).__mro__[1]))
+    assert all(
+        hasattr(api_object, attr)
+        for attr in superclass_attrs
+        if callable(getattr(client, attr))
+    )
+
+    # The resume_publish() method only exists on the hand-written wrapper class.
+    assert hasattr(client, "resume_publish")
+    assert not hasattr(api_object, "resume_publish")
 
 
 def test_init(creds):

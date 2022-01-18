@@ -22,6 +22,7 @@ import threading
 import time
 import typing
 from typing import Any, Dict, Optional, Sequence, Tuple, Type, Union
+import warnings
 
 from google.api_core import gapic_v1
 from google.auth.credentials import AnonymousCredentials  # type: ignore
@@ -192,6 +193,26 @@ class Client(publisher_client.PublisherClient):
             The location of the API.
         """
         return self._target
+
+    @property
+    def api(self):
+        """The underlying gapic API client.
+
+        .. versionchanged:: 2.10.0
+            Instead of a GAPIC ``PublisherClient`` client instance, this property is a
+            proxy object to it with the same interface.
+
+        .. deprecated:: 2.10.0
+            Use the GAPIC methods and properties on the client instance directly
+            instead of through the :attr:`api` attribute.
+        """
+        msg = (
+            'The "api" property only exists for backward compatibility, access its '
+            'attributes directly thorugh the client instance (e.g. "client.foo" '
+            'instead of "client.api.foo").'
+        )
+        warnings.warn(msg, category=DeprecationWarning)
+        return super()
 
     def _get_or_create_sequencer(self, topic: str, ordering_key: str) -> SequencerType:
         """ Get an existing sequencer or create a new one given the (topic,
