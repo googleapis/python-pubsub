@@ -247,8 +247,7 @@ class Client(publisher_client.PublisherClient):
                 sequencer.unpause()
 
     def _gapic_publish(self, *args, **kwargs) -> "pubsub_types.PublishResponse":
-        """TODO: docstrings"""
-        # Call GAPIC publish API directly
+        """Call the GAPIC public API directly."""
         return super().publish(*args, **kwargs)
 
     def publish(  # type: ignore[override]
