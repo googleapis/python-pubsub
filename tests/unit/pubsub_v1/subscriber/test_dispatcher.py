@@ -15,7 +15,6 @@
 import collections
 import queue
 import threading
-import warnings
 
 from google.cloud.pubsub_v1.subscriber._protocol import dispatcher
 from google.cloud.pubsub_v1.subscriber._protocol import helper_threads
@@ -30,11 +29,11 @@ import pytest
 @pytest.mark.parametrize(
     "item,method_name",
     [
-        (requests.AckRequest("0", 0, 0, ""), "ack"),
+        (requests.AckRequest("0", 0, 0, "", None), "ack"),
         (requests.DropRequest("0", 0, ""), "drop"),
         (requests.LeaseRequest("0", 0, ""), "lease"),
-        (requests.ModAckRequest("0", 0), "modify_ack_deadline"),
-        (requests.NackRequest("0", 0, ""), "nack"),
+        (requests.ModAckRequest("0", 0, None), "modify_ack_deadline"),
+        (requests.NackRequest("0", 0, "", None), "nack"),
     ],
 )
 def test_dispatch_callback_active_manager(item, method_name):
@@ -54,11 +53,11 @@ def test_dispatch_callback_active_manager(item, method_name):
 @pytest.mark.parametrize(
     "item,method_name",
     [
-        (requests.AckRequest("0", 0, 0, ""), "ack"),
+        (requests.AckRequest("0", 0, 0, "", None), "ack"),
         (requests.DropRequest("0", 0, ""), "drop"),
         (requests.LeaseRequest("0", 0, ""), "lease"),
-        (requests.ModAckRequest("0", 0), "modify_ack_deadline"),
-        (requests.NackRequest("0", 0, ""), "nack"),
+        (requests.ModAckRequest("0", 0, None), "modify_ack_deadline"),
+        (requests.NackRequest("0", 0, "", None), "nack"),
     ],
 )
 def test_dispatch_callback_inactive_manager(item, method_name):
@@ -76,26 +75,6 @@ def test_dispatch_callback_inactive_manager(item, method_name):
     method.assert_called_once_with([item])
 
 
-def test_dispatch_callback_inactive_manager_unknown_request():
-    manager = mock.create_autospec(
-        streaming_pull_manager.StreamingPullManager, instance=True
-    )
-    manager.is_active = False
-    dispatcher_ = dispatcher.Dispatcher(manager, mock.sentinel.queue)
-
-    FooType = type("FooType", (), {})
-    items = [FooType()]
-
-    with warnings.catch_warnings(record=True) as warned:
-        dispatcher_.dispatch_callback(items)
-
-    assert len(warned) == 1
-    assert issubclass(warned[0].category, RuntimeWarning)
-    warning_msg = str(warned[0].message)
-    assert "unknown request item" in warning_msg
-    assert "FooType" in warning_msg
-
-
 def test_ack():
     manager = mock.create_autospec(
         streaming_pull_manager.StreamingPullManager, instance=True
@@ -104,14 +83,14 @@ def test_ack():
 
     items = [
         requests.AckRequest(
-            ack_id="ack_id_string", byte_size=0, time_to_ack=20, ordering_key=""
+            ack_id="ack_id_string", byte_size=0, time_to_ack=20, ordering_key="",
+            future=None
         )
     ]
+    manager.send_unary_ack.return_value = (items, [])
     dispatcher_.ack(items)
 
-    manager.send.assert_called_once_with(
-        gapic_types.StreamingPullRequest(ack_ids=["ack_id_string"])
-    )
+    manager.send_unary_ack.assert_called_once_with(ack_ids=["ack_id_string"], future_reqs_dict={})
 
     manager.leaser.remove.assert_called_once_with(items)
     manager.maybe_resume_consumer.assert_called_once()
@@ -126,14 +105,14 @@ def test_ack_no_time():
 
     items = [
         requests.AckRequest(
-            ack_id="ack_id_string", byte_size=0, time_to_ack=None, ordering_key=""
+            ack_id="ack_id_string", byte_size=0, time_to_ack=None, ordering_key="",
+            future=None
         )
     ]
+    manager.send_unary_ack.return_value = (items, [])
     dispatcher_.ack(items)
 
-    manager.send.assert_called_once_with(
-        gapic_types.StreamingPullRequest(ack_ids=["ack_id_string"])
-    )
+    manager.send_unary_ack.assert_called_once_with(ack_ids=["ack_id_string"], future_reqs_dict={})
 
     manager.ack_histogram.add.assert_not_called()
 
@@ -147,22 +126,24 @@ def test_ack_splitting_large_payload():
     items = [
         # use realistic lengths for ACK IDs (max 176 bytes)
         requests.AckRequest(
-            ack_id=str(i).zfill(176), byte_size=0, time_to_ack=20, ordering_key=""
+            ack_id=str(i).zfill(176), byte_size=0, time_to_ack=20, ordering_key="",
+            future=None
         )
         for i in range(5001)
     ]
+    manager.send_unary_ack.return_value = (items, [])
     dispatcher_.ack(items)
 
-    calls = manager.send.call_args_list
+    calls = manager.send_unary_ack.call_args_list
     assert len(calls) == 3
 
     all_ack_ids = {item.ack_id for item in items}
     sent_ack_ids = collections.Counter()
 
     for call in calls:
-        message = call.args[0]
-        assert message._pb.ByteSize() <= 524288  # server-side limit (2**19)
-        sent_ack_ids.update(message.ack_ids)
+        ack_ids = call[1]["ack_ids"]
+        assert len(ack_ids) <= dispatcher._ACK_IDS_BATCH_SIZE
+        sent_ack_ids.update(ack_ids)
 
     assert set(sent_ack_ids) == all_ack_ids  # all messages should have been ACK-ed
     assert sent_ack_ids.most_common(1)[0][1] == 1  # each message ACK-ed exactly once
@@ -224,14 +205,13 @@ def test_nack():
     dispatcher_ = dispatcher.Dispatcher(manager, mock.sentinel.queue)
 
     items = [
-        requests.NackRequest(ack_id="ack_id_string", byte_size=10, ordering_key="")
+        requests.NackRequest(ack_id="ack_id_string", byte_size=10, ordering_key="", future=None)
     ]
+    manager.send_unary_modack.return_value = (items, [])
     dispatcher_.nack(items)
 
-    manager.send.assert_called_once_with(
-        gapic_types.StreamingPullRequest(
-            modify_deadline_ack_ids=["ack_id_string"], modify_deadline_seconds=[0]
-        )
+    manager.send_unary_modack.assert_called_once_with(
+        modify_deadline_ack_ids=["ack_id_string"], modify_deadline_seconds=[0], future_reqs_dict={}
     )
 
 
@@ -241,13 +221,12 @@ def test_modify_ack_deadline():
     )
     dispatcher_ = dispatcher.Dispatcher(manager, mock.sentinel.queue)
 
-    items = [requests.ModAckRequest(ack_id="ack_id_string", seconds=60)]
+    items = [requests.ModAckRequest(ack_id="ack_id_string", seconds=60, future=None)]
+    manager.send_unary_modack.return_value = (items, [])
     dispatcher_.modify_ack_deadline(items)
 
-    manager.send.assert_called_once_with(
-        gapic_types.StreamingPullRequest(
-            modify_deadline_ack_ids=["ack_id_string"], modify_deadline_seconds=[60]
-        )
+    manager.send_unary_modack.assert_called_once_with(
+        modify_deadline_ack_ids=["ack_id_string"], modify_deadline_seconds=[60], future_reqs_dict={}
     )
 
 
@@ -259,21 +238,23 @@ def test_modify_ack_deadline_splitting_large_payload():
 
     items = [
         # use realistic lengths for ACK IDs (max 176 bytes)
-        requests.ModAckRequest(ack_id=str(i).zfill(176), seconds=60)
+        requests.ModAckRequest(ack_id=str(i).zfill(176), seconds=60, future=None)
         for i in range(5001)
     ]
+    manager.send_unary_modack.return_value = (items, [])
     dispatcher_.modify_ack_deadline(items)
 
-    calls = manager.send.call_args_list
+    calls = manager.send_unary_modack.call_args_list
     assert len(calls) == 3
 
     all_ack_ids = {item.ack_id for item in items}
     sent_ack_ids = collections.Counter()
 
     for call in calls:
-        message = call.args[0]
-        assert message._pb.ByteSize() <= 524288  # server-side limit (2**19)
-        sent_ack_ids.update(message.modify_deadline_ack_ids)
+        modack_ackids = call[1]["modify_deadline_ack_ids"]
+        print(type(modack_ackids))
+        assert len(modack_ackids) <= dispatcher._ACK_IDS_BATCH_SIZE
+        sent_ack_ids.update(modack_ackids)
 
     assert set(sent_ack_ids) == all_ack_ids  # all messages should have been MODACK-ed
     assert sent_ack_ids.most_common(1)[0][1] == 1  # each message MODACK-ed exactly once

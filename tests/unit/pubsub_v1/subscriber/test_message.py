@@ -127,6 +127,7 @@ def test_ack():
                 byte_size=30,
                 time_to_ack=mock.ANY,
                 ordering_key="",
+                future=None
             )
         )
         check_call_types(put, requests.AckRequest)
@@ -147,7 +148,7 @@ def test_modify_ack_deadline():
     with mock.patch.object(msg._request_queue, "put") as put:
         msg.modify_ack_deadline(60)
         put.assert_called_once_with(
-            requests.ModAckRequest(ack_id="bogus_ack_id", seconds=60)
+            requests.ModAckRequest(ack_id="bogus_ack_id", seconds=60, future=None)
         )
         check_call_types(put, requests.ModAckRequest)
 
@@ -157,7 +158,7 @@ def test_nack():
     with mock.patch.object(msg._request_queue, "put") as put:
         msg.nack()
         put.assert_called_once_with(
-            requests.NackRequest(ack_id="bogus_ack_id", byte_size=30, ordering_key="")
+            requests.NackRequest(ack_id="bogus_ack_id", byte_size=30, ordering_key="", future=None)
         )
         check_call_types(put, requests.NackRequest)
 

@@ -22,6 +22,7 @@ import typing
 from typing import Optional
 
 from google.cloud.pubsub_v1.subscriber._protocol import requests
+from google.cloud.pubsub_v1.subscriber import futures
 
 if typing.TYPE_CHECKING:  # pragma: NO COVER
     import datetime
@@ -242,8 +243,43 @@ class Message(object):
                 byte_size=self.size,
                 time_to_ack=time_to_ack,
                 ordering_key=self.ordering_key,
+                future=None
             )
         )
+
+    def ack_with_response(self) -> "pubsub_v1.subscriber.futures.Future":
+        """Acknowledge the given message.
+
+        Acknowledging a message in Pub/Sub means that you are done
+        with it, and it will not be delivered to this subscription again.
+        You should avoid acknowledging messages until you have
+        *finished* processing them, so that in the event of a failure,
+        you receive the message again.
+
+        .. warning::
+            Acks in Pub/Sub are best effort. You should always
+            ensure that your processing code is idempotent, as you may
+            receive any given message more than once.
+
+        Returns:
+            A :class:`~google.cloud.pubsub_v1.subscriber.futures.Future`
+            instance that conforms to Python Standard library's
+            :class:`~concurrent.futures.Future` interface (but not an
+            instance of that class).
+        """
+        future = futures.Future()
+        time_to_ack = math.ceil(time.time() - self._received_timestamp)
+        self._request_queue.put(
+            requests.AckRequest(
+                ack_id=self._ack_id,
+                byte_size=self.size,
+                time_to_ack=time_to_ack,
+                ordering_key=self.ordering_key,
+                future=future
+            )
+        )
+        return future
+
 
     def drop(self) -> None:
         """Release the message from lease management.
@@ -269,8 +305,8 @@ class Message(object):
 
         New deadline will be the given value of seconds from now.
 
-        The default implementation handles this for you; you should not need
-        to manually deal with setting ack deadlines. The exception case is
+        The default implementation handles automatically modacking received messages for you;
+        you should not need to manually deal with setting ack deadlines. The exception case is
         if you are implementing your own custom subclass of
         :class:`~.pubsub_v1.subcriber._consumer.Consumer`.
 
@@ -281,16 +317,70 @@ class Message(object):
                 against.
         """
         self._request_queue.put(
-            requests.ModAckRequest(ack_id=self._ack_id, seconds=seconds)
+            requests.ModAckRequest(ack_id=self._ack_id, seconds=seconds, future=None)
         )
 
-    def nack(self) -> None:
-        """Decline to acknowldge the given message.
+    def modify_ack_deadline_with_response(self, seconds: int) -> "pubsub_v1.subscriber.futures.Future":
+        """Resets the deadline for acknowledgement and returns the response
+        status via a future.
 
-        This will cause the message to be re-delivered to the subscription.
+        New deadline will be the given value of seconds from now.
+
+        The default implementation handles automatically modacking received messages for you;
+        you should not need to manually deal with setting ack deadlines. The exception case is
+        if you are implementing your own custom subclass of
+        :class:`~.pubsub_v1.subcriber._consumer.Consumer`.
+
+        Args:
+            seconds:
+                The number of seconds to set the lease deadline to. This should be
+                between 0 and 600. Due to network latency, values below 10 are advised
+                against.
+        Returns:
+            A :class:`~google.cloud.pubsub_v1.subscriber.futures.Future`
+            instance that conforms to Python Standard library's
+            :class:`~concurrent.futures.Future` interface (but not an
+            instance of that class).
+        """
+        future = futures.Future()
+        self._request_queue.put(
+            requests.ModAckRequest(ack_id=self._ack_id, seconds=seconds, future=future)
+        )
+        return future
+
+    def nack(self) -> None:
+        """Decline to acknowledge the given message.
+
+        This will cause the message to be re-delivered to subscribers. Re-deliveries
+        may take place immediately or after a delay, and may arrive at this subscriber
+        or another.
         """
         self._request_queue.put(
             requests.NackRequest(
-                ack_id=self._ack_id, byte_size=self.size, ordering_key=self.ordering_key
+                ack_id=self._ack_id, byte_size=self.size, ordering_key=self.ordering_key,
+                future=None
             )
         )
+
+    def nack_with_response(self) -> "pubsub_v1.subscriber.futures.Future":
+        """Decline to acknowledge the given message, returning the response status via
+        a future.
+
+        This will cause the message to be re-delivered to subscribers. Re-deliveries
+        may take place immediately or after a delay, and may arrive at this subscriber
+        or another.
+
+        Returns:
+            A :class:`~google.cloud.pubsub_v1.subscriber.futures.Future`
+            instance that conforms to Python Standard library's
+            :class:`~concurrent.futures.Future` interface (but not an
+            instance of that class).
+        """
+        future = futures.Future()
+        self._request_queue.put(
+            requests.NackRequest(
+                ack_id=self._ack_id, byte_size=self.size, ordering_key=self.ordering_key,
+                future=future
+            )
+        )
+        return future

@@ -16,6 +16,7 @@ from __future__ import absolute_import
 
 import typing
 from typing import Any
+from typing import Union
 
 from google.cloud.pubsub_v1 import futures
 
@@ -80,3 +81,47 @@ class StreamingPullFuture(futures.Future):
             ``True`` if the subscription has been cancelled.
         """
         return self.__cancelled
+
+
+class Future(futures.Future):
+    # TODO: update docs as necessary
+    """This future object for subscribe-side calls.
+
+    Calling :meth:`result` will resolve the future by returning the message
+    ID, unless an error occurs.
+    """
+
+    def cancel(self) -> bool:
+        """Actions in Pub/Sub generally may not be canceled.
+
+        This method always returns ``False``.
+        """
+        return False
+
+    def cancelled(self) -> bool:
+        """Actions in Pub/Sub generally may not be canceled.
+
+        This method always returns ``False``.
+        """
+        return False
+
+    # TODO modify return type annotation
+    def result(self, timeout: Union[int, float] = None) -> str:
+        """Return the message ID or raise an exception.
+
+        This blocks until the operation completes successfully and
+        returns the error code unless an exception is raised.
+
+        Args:
+            timeout: The number of seconds before this call
+                times out and raises TimeoutError.
+
+        Returns:
+            The message ID.
+
+        Raises:
+            concurrent.futures.TimeoutError: If the request times out.
+            Exception: For undefined exceptions in the underlying
+                call execution.
+        """
+        return super().result(timeout=timeout)

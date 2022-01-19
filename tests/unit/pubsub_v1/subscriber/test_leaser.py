@@ -139,7 +139,7 @@ def test_maintain_leases_ack_ids():
     leaser_.maintain_leases()
 
     manager.dispatcher.modify_ack_deadline.assert_called_once_with(
-        [requests.ModAckRequest(ack_id="my ack id", seconds=10)]
+        [requests.ModAckRequest(ack_id="my ack id", seconds=10, future=None)]
     )
 
 
@@ -184,9 +184,9 @@ def test_maintain_leases_outdated_items(time):
     # ack2, ack3, and ack4 should be renewed. ack1 should've been dropped
     modacks = manager.dispatcher.modify_ack_deadline.call_args.args[0]
     expected = [
-        requests.ModAckRequest(ack_id="ack2", seconds=10),
-        requests.ModAckRequest(ack_id="ack3", seconds=10),
-        requests.ModAckRequest(ack_id="ack4", seconds=10),
+        requests.ModAckRequest(ack_id="ack2", seconds=10, future=None),
+        requests.ModAckRequest(ack_id="ack3", seconds=10, future=None),
+        requests.ModAckRequest(ack_id="ack4", seconds=10, future=None),
     ]
     # Use sorting to allow for ordering variance.
     assert sorted(modacks) == sorted(expected)
