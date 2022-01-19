@@ -413,7 +413,7 @@ s.replace(
 s.replace(
     "noxfile.py",
     r'    "mypy",',
-    '\g<0>\n    # "mypy_samples",  # TODO: uncomment when the checks pass',
+    '\g<0>\n    "mypy_samples",',
 )
 s.replace(
     "noxfile.py",
