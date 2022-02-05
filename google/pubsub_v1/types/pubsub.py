@@ -558,6 +558,22 @@ class Subscription(proto.Message):
             ``StreamingPull`` requests will return FAILED_PRECONDITION.
             If the subscription is a push subscription, pushes to the
             endpoint will not be made.
+        enable_exactly_once_delivery (bool):
+            If true, Pub/Sub provides the following guarantees for the
+            delivery of a message with a given value of ``message_id``
+            on this subscription:
+
+            -  The message sent to a subscriber is guaranteed not to be
+               resent before the message's acknowledgement deadline
+               expires.
+            -  An acknowledged message will not be resent to a
+               subscriber.
+
+            Note that subscribers may still receive multiple copies of a
+            message when ``enable_exactly_once_delivery`` is true if the
+            message was published multiple times by a publisher client.
+            These copies are considered distinct by Pub/Sub and have
+            distinct ``message_id`` values.
         topic_message_retention_duration (google.protobuf.duration_pb2.Duration):
             Output only. Indicates the minimum duration for which a
             message is retained after it is published to the
@@ -588,6 +604,7 @@ class Subscription(proto.Message):
     )
     retry_policy = proto.Field(proto.MESSAGE, number=14, message="RetryPolicy",)
     detached = proto.Field(proto.BOOL, number=15,)
+    enable_exactly_once_delivery = proto.Field(proto.BOOL, number=16,)
     topic_message_retention_duration = proto.Field(
         proto.MESSAGE, number=17, message=duration_pb2.Duration,
     )
@@ -1106,23 +1123,75 @@ class StreamingPullResponse(proto.Message):
         received_messages (Sequence[google.pubsub_v1.types.ReceivedMessage]):
             Received Pub/Sub messages. This will not be
             empty.
+        acknowlege_confirmation (google.pubsub_v1.types.StreamingPullResponse.AcknowledgeConfirmation):
+            This field will only be set if
+            ``enable_exactly_once_delivery`` is set to ``true``.
+        modify_ack_deadline_confirmation (google.pubsub_v1.types.StreamingPullResponse.ModifyAckDeadlineConfirmation):
+            This field will only be set if
+            ``enable_exactly_once_delivery`` is set to ``true``.
         subscription_properties (google.pubsub_v1.types.StreamingPullResponse.SubscriptionProperties):
             Properties associated with this subscription.
     """
+
+    class AcknowledgeConfirmation(proto.Message):
+        r"""Acknowledgement IDs sent in one or more previous requests to
+        acknowledge a previously received message.
+
+        Attributes:
+            ack_ids (Sequence[str]):
+                Successfully processed acknowledgement IDs.
+            invalid_ack_ids (Sequence[str]):
+                List of acknowledgement IDs that were
+                malformed or whose acknowledgement deadline has
+                expired.
+            unordered_ack_ids (Sequence[str]):
+                List of acknowledgement IDs that were out of
+                order.
+        """
+
+        ack_ids = proto.RepeatedField(proto.STRING, number=1,)
+        invalid_ack_ids = proto.RepeatedField(proto.STRING, number=2,)
+        unordered_ack_ids = proto.RepeatedField(proto.STRING, number=3,)
+
+    class ModifyAckDeadlineConfirmation(proto.Message):
+        r"""Acknowledgement IDs sent in one or more previous requests to
+        modify the deadline for a specific message.
+
+        Attributes:
+            ack_ids (Sequence[str]):
+                Successfully processed acknowledgement IDs.
+            invalid_ack_ids (Sequence[str]):
+                List of acknowledgement IDs that were
+                malformed or whose acknowledgement deadline has
+                expired.
+        """
+
+        ack_ids = proto.RepeatedField(proto.STRING, number=1,)
+        invalid_ack_ids = proto.RepeatedField(proto.STRING, number=2,)
 
     class SubscriptionProperties(proto.Message):
         r"""Subscription properties sent as part of the response.
 
         Attributes:
+            exactly_once_delivery_enabled (bool):
+                True iff exactly once delivery is enabled for
+                this subscription.
             message_ordering_enabled (bool):
                 True iff message ordering is enabled for this
                 subscription.
         """
 
+        exactly_once_delivery_enabled = proto.Field(proto.BOOL, number=1,)
         message_ordering_enabled = proto.Field(proto.BOOL, number=2,)
 
     received_messages = proto.RepeatedField(
         proto.MESSAGE, number=1, message="ReceivedMessage",
+    )
+    acknowlege_confirmation = proto.Field(
+        proto.MESSAGE, number=2, message=AcknowledgeConfirmation,
+    )
+    modify_ack_deadline_confirmation = proto.Field(
+        proto.MESSAGE, number=3, message=ModifyAckDeadlineConfirmation,
     )
     subscription_properties = proto.Field(
         proto.MESSAGE, number=4, message=SubscriptionProperties,
