@@ -1040,9 +1040,7 @@ class SchemaServiceAsyncClient:
 
 try:
     DEFAULT_CLIENT_INFO = gapic_v1.client_info.ClientInfo(
-        client_library_version=pkg_resources.get_distribution(
-            "google-cloud-pubsub",
-        ).version,
+        gapic_version=pkg_resources.get_distribution("google-cloud-pubsub",).version,
     )
 except pkg_resources.DistributionNotFound:
     DEFAULT_CLIENT_INFO = gapic_v1.client_info.ClientInfo()
