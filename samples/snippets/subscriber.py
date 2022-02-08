@@ -236,11 +236,7 @@ def create_subscription_with_filtering(
 
     with subscriber:
         subscription = subscriber.create_subscription(
-            request={
-                "name": subscription_path,
-                "topic": topic_path,
-                "filter": filter,
-            }
+            request={"name": subscription_path, "topic": topic_path, "filter": filter}
         )
         print(f"Created subscription with filtering enabled: {subscription}")
     # [END pubsub_create_subscription_with_filter]
@@ -771,7 +767,7 @@ def receive_messages_with_delivery_attempts(
     # [END pubsub_dead_letter_delivery_attempt]
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # noqa
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter,
     )

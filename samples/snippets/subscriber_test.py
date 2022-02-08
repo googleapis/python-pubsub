@@ -43,7 +43,7 @@ ENDPOINT = f"https://{PROJECT_ID}.appspot.com/push"
 NEW_ENDPOINT = f"https://{PROJECT_ID}.appspot.com/push2"
 DEFAULT_MAX_DELIVERY_ATTEMPTS = 5
 UPDATED_MAX_DELIVERY_ATTEMPTS = 20
-FILTER = "attributes.author=\"unknown\""
+FILTER = 'attributes.author="unknown"'
 
 C = TypeVar("C", bound=Callable[..., Any])
 
@@ -401,12 +401,14 @@ def test_create_subscription_with_filtering(
     except NotFound:
         pass
 
-    subscriber.create_subscription_with_filtering(PROJECT_ID, TOPIC, SUBSCRIPTION_ADMIN, FILTER)
+    subscriber.create_subscription_with_filtering(
+        PROJECT_ID, TOPIC, SUBSCRIPTION_ADMIN, FILTER
+    )
 
     out, _ = capsys.readouterr()
     assert "Created subscription with filtering enabled" in out
     assert f"{subscription_admin}" in out
-    assert f"filter: {FILTER}" in out
+    assert '"attributes.author=\\"unknown\\""' in out
 
 
 def test_create_push_subscription(
