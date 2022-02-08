@@ -237,7 +237,7 @@ class PublisherAsyncClient:
                 # Make the request
                 response = client.create_topic(request=request)
 
-                # Handle response
+                # Handle the response
                 print(response)
 
         Args:
@@ -344,7 +344,7 @@ class PublisherAsyncClient:
                 # Make the request
                 response = client.update_topic(request=request)
 
-                # Handle response
+                # Handle the response
                 print(response)
 
         Args:
@@ -425,7 +425,7 @@ class PublisherAsyncClient:
                 # Make the request
                 response = client.publish(request=request)
 
-                # Handle response
+                # Handle the response
                 print(response)
 
         Args:
@@ -536,7 +536,7 @@ class PublisherAsyncClient:
                 # Make the request
                 response = client.get_topic(request=request)
 
-                # Handle response
+                # Handle the response
                 print(response)
 
         Args:
@@ -634,6 +634,8 @@ class PublisherAsyncClient:
 
                 # Make the request
                 page_result = client.list_topics(request=request)
+
+                # Handle the response
                 for response in page_result:
                     print(response)
 
@@ -744,6 +746,8 @@ class PublisherAsyncClient:
 
                 # Make the request
                 page_result = client.list_topic_subscriptions(request=request)
+
+                # Handle the response
                 for response in page_result:
                     print(response)
 
@@ -860,6 +864,8 @@ class PublisherAsyncClient:
 
                 # Make the request
                 page_result = client.list_topic_snapshots(request=request)
+
+                # Handle the response
                 for response in page_result:
                     print(response)
 
@@ -975,7 +981,7 @@ class PublisherAsyncClient:
                 )
 
                 # Make the request
-                response = client.delete_topic(request=request)
+                client.delete_topic(request=request)
 
         Args:
             request (Union[google.pubsub_v1.types.DeleteTopicRequest, dict]):
@@ -1071,7 +1077,7 @@ class PublisherAsyncClient:
                 # Make the request
                 response = client.detach_subscription(request=request)
 
-                # Handle response
+                # Handle the response
                 print(response)
 
         Args:
@@ -1408,7 +1414,9 @@ class PublisherAsyncClient:
 
 try:
     DEFAULT_CLIENT_INFO = gapic_v1.client_info.ClientInfo(
-        gapic_version=pkg_resources.get_distribution("google-cloud-pubsub",).version,
+        client_library_version=pkg_resources.get_distribution(
+            "google-cloud-pubsub",
+        ).version,
     )
 except pkg_resources.DistributionNotFound:
     DEFAULT_CLIENT_INFO = gapic_v1.client_info.ClientInfo()
