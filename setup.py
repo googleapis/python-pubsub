@@ -36,7 +36,7 @@ dependencies = [
     "google-api-core[grpc] >= 1.28.0, <3.0.0dev",
     "proto-plus >= 1.7.1",
     "grpc-google-iam-v1 >= 0.12.3, < 0.13dev",
-    "grpc-status >= 1.0.0",
+    "grpcio-status >= 1.43.0",
 ]
 extras = {"libcst": "libcst >= 0.3.10"}
 
