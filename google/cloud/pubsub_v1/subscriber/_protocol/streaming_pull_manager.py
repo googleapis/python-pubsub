@@ -114,7 +114,7 @@ def _wrap_callback_errors(
 
 
 def _get_ack_errors(
-    exc: exceptions.GoogleAPICallError
+    exc: exceptions.GoogleAPICallError,
 ) -> Optional["containers.ScalarMap"]:
     if not exc.response:
         _LOGGER.debug("No response obj in errored RPC call.")
