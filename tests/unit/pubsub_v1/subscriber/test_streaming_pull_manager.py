@@ -152,8 +152,9 @@ def test__obtain_ack_deadline_no_custom_flow_control_setting():
 
     # Make sure that min_duration_per_lease_extension and
     # max_duration_per_lease_extension is disabled.
-    manager._flow_control = types.FlowControl(min_duration_per_lease_extension=0,
-                                              max_duration_per_lease_extension=0)
+    manager._flow_control = types.FlowControl(
+        min_duration_per_lease_extension=0, max_duration_per_lease_extension=0
+    )
 
     deadline = manager._obtain_ack_deadline(maybe_update=True)
     assert deadline == histogram.MIN_ACK_DEADLINE
@@ -228,10 +229,12 @@ def test__obtain_ack_deadline_with_exactly_once_enabled():
 
     manager = make_manager()
     manager._flow_control = types.FlowControl(
-        min_duration_per_lease_extension=0 # leave as default value
+        min_duration_per_lease_extension=0  # leave as default value
     )
     manager._exactly_once_enabled = True
-    manager.ack_histogram.add(10)  # reduce p99 value below 60s min for exactly_once subscriptions
+    manager.ack_histogram.add(
+        10
+    )  # reduce p99 value below 60s min for exactly_once subscriptions
 
     deadline = manager._obtain_ack_deadline(maybe_update=True)
     # Since the 60-second min ack_deadline value for exactly_once subscriptions
@@ -509,7 +512,7 @@ def test_send_unary_modack():
     manager.send_unary_modack(
         modify_deadline_ack_ids=["ack_id3", "ack_id4", "ack_id5"],
         modify_deadline_seconds=[10, 20, 20],
-        future_reqs_dict={}
+        future_reqs_dict={},
     )
 
     manager._client.modify_ack_deadline.assert_has_calls(
@@ -550,9 +553,11 @@ def test_send_unary_modack_api_call_error(caplog):
     error = exceptions.GoogleAPICallError("The front fell off")
     manager._client.modify_ack_deadline.side_effect = error
 
-    manager.send_unary_modack(modify_deadline_ack_ids=["ack_id_string"],
-                              modify_deadline_seconds=[0],
-                              future_reqs_dict={})
+    manager.send_unary_modack(
+        modify_deadline_ack_ids=["ack_id_string"],
+        modify_deadline_seconds=[0],
+        future_reqs_dict={},
+    )
 
     assert "The front fell off" in caplog.text
 
@@ -585,9 +590,11 @@ def test_send_unary_modack_retry_error(caplog):
     manager._client.modify_ack_deadline.side_effect = error
 
     with pytest.raises(exceptions.RetryError):
-        manager.send_unary_modack(modify_deadline_ack_ids=["ack_id_string"],
-                                  modify_deadline_seconds=[0],
-                                  future_reqs_dict={})
+        manager.send_unary_modack(
+            modify_deadline_ack_ids=["ack_id_string"],
+            modify_deadline_seconds=[0],
+            future_reqs_dict={},
+        )
 
     assert "RetryError while sending unary RPC" in caplog.text
     assert "signaled streaming pull manager shutdown" in caplog.text
@@ -624,9 +631,9 @@ def test_heartbeat_stream_ack_deadline_seconds():
 
     result = manager.heartbeat()
 
-    manager._rpc.send.assert_called_once_with(gapic_types.StreamingPullRequest(
-        stream_ack_deadline_seconds=10
-    ))
+    manager._rpc.send.assert_called_once_with(
+        gapic_types.StreamingPullRequest(stream_ack_deadline_seconds=10)
+    )
     assert result
     # Set to false after a send is initiated.
     assert not manager._send_new_ack_deadline
@@ -973,7 +980,10 @@ def test__on_response_modifies_ack_deadline():
         manager._on_response(response)
 
     dispatcher.modify_ack_deadline.assert_called_once_with(
-        [requests.ModAckRequest("ack_1", 18, None), requests.ModAckRequest("ack_2", 18, None)]
+        [
+            requests.ModAckRequest("ack_1", 18, None),
+            requests.ModAckRequest("ack_2", 18, None),
+        ]
     )
 
 
@@ -1001,10 +1011,9 @@ def test__on_response_modifies_ack_deadline_with_exactly_once_min_lease():
                 message=gapic_types.PubsubMessage(data=b"bar", message_id="2"),
             ),
         ],
-        subscription_properties = gapic_types.StreamingPullResponse.SubscriptionProperties(
-            exactly_once_delivery_enabled = False
-        )
-
+        subscription_properties=gapic_types.StreamingPullResponse.SubscriptionProperties(
+            exactly_once_delivery_enabled=False
+        ),
     )
 
     # Set up the response with the second set of messages and exactly_once enabled.
@@ -1019,19 +1028,27 @@ def test__on_response_modifies_ack_deadline_with_exactly_once_min_lease():
                 message=gapic_types.PubsubMessage(data=b"bar", message_id="2"),
             ),
         ],
-        subscription_properties = gapic_types.StreamingPullResponse.SubscriptionProperties(
-            exactly_once_delivery_enabled = True
-        )
-
+        subscription_properties=gapic_types.StreamingPullResponse.SubscriptionProperties(
+            exactly_once_delivery_enabled=True
+        ),
     )
 
     # assertions for the _on_response calls below
     dispatcher.assert_has_calls(
         # assertion 1: mod-acks called with histogram-based lease value
-        dispatcher.modify_ack_deadline([requests.ModAckRequest("ack_1", 10, None), requests.ModAckRequest("ack_2", 10, None)]),
-
+        dispatcher.modify_ack_deadline(
+            [
+                requests.ModAckRequest("ack_1", 10, None),
+                requests.ModAckRequest("ack_2", 10, None),
+            ]
+        ),
         # assertion 2: mod-acks called with 60 sec min lease value for exactly_once subscriptions
-        dispatcher.modify_ack_deadline([requests.ModAckRequest("ack_3", 60, None), requests.ModAckRequest("ack_4", 60, None)])
+        dispatcher.modify_ack_deadline(
+            [
+                requests.ModAckRequest("ack_3", 60, None),
+                requests.ModAckRequest("ack_4", 60, None),
+            ]
+        ),
     )
 
     # exactly_once is still disabled b/c subscription_properties says so
@@ -1064,11 +1081,11 @@ def test__on_response_send_ack_deadline_after_enabling_exactly_once():
             gapic_types.ReceivedMessage(
                 ack_id="ack_1",
                 message=gapic_types.PubsubMessage(data=b"foo", message_id="1"),
-            ),
+            )
         ],
-        subscription_properties = gapic_types.StreamingPullResponse.SubscriptionProperties(
-            exactly_once_delivery_enabled = True
-        )
+        subscription_properties=gapic_types.StreamingPullResponse.SubscriptionProperties(
+            exactly_once_delivery_enabled=True
+        ),
     )
 
     # exactly_once should be enabled after this request b/c subscription_properties says so
@@ -1081,9 +1098,9 @@ def test__on_response_send_ack_deadline_after_enabling_exactly_once():
     result = manager.heartbeat()
 
     # heartbeat request is sent with the 60 sec min lease value for exactly_once subscriptions
-    manager._rpc.send.assert_called_once_with(gapic_types.StreamingPullRequest(
-        stream_ack_deadline_seconds=60
-    ))
+    manager._rpc.send.assert_called_once_with(
+        gapic_types.StreamingPullRequest(stream_ack_deadline_seconds=60)
+    )
 
 
 def test__on_response_no_leaser_overload():
@@ -1112,7 +1129,10 @@ def test__on_response_no_leaser_overload():
     manager._on_response(response)
 
     dispatcher.modify_ack_deadline.assert_called_once_with(
-        [requests.ModAckRequest("fack", 10, None), requests.ModAckRequest("back", 10, None)]
+        [
+            requests.ModAckRequest("fack", 10, None),
+            requests.ModAckRequest("back", 10, None),
+        ]
     )
 
     schedule_calls = scheduler.schedule.mock_calls
@@ -1292,11 +1312,11 @@ def test__on_response_enable_exactly_once():
             gapic_types.ReceivedMessage(
                 ack_id="fack",
                 message=gapic_types.PubsubMessage(data=b"foo", message_id="1"),
-            ),
+            )
         ],
-        subscription_properties = gapic_types.StreamingPullResponse.SubscriptionProperties(
-            exactly_once_delivery_enabled = True
-        )
+        subscription_properties=gapic_types.StreamingPullResponse.SubscriptionProperties(
+            exactly_once_delivery_enabled=True
+        ),
     )
 
     # adjust message bookkeeping in leaser
@@ -1328,11 +1348,11 @@ def test__on_response_disable_exactly_once():
             gapic_types.ReceivedMessage(
                 ack_id="fack",
                 message=gapic_types.PubsubMessage(data=b"foo", message_id="1"),
-            ),
+            )
         ],
-        subscription_properties = gapic_types.StreamingPullResponse.SubscriptionProperties(
-            exactly_once_delivery_enabled = False
-        )
+        subscription_properties=gapic_types.StreamingPullResponse.SubscriptionProperties(
+            exactly_once_delivery_enabled=False
+        ),
     )
 
     # adjust message bookkeeping in leaser
@@ -1434,7 +1454,9 @@ def test_get_ack_errors_unable_to_unpack(from_call, unpack):
     error_info.metadata["ack_1"] = "error1"
     st.details.add().Pack(error_info)
     mock_gprc_call = mock.Mock(spec=grpc.Call)
-    exception = exceptions.InternalServerError("msg", errors=(), response=mock_gprc_call)
+    exception = exceptions.InternalServerError(
+        "msg", errors=(), response=mock_gprc_call
+    )
     from_call.return_value = st
     # Unpack() failed
     unpack.return_value = None
@@ -1456,7 +1478,9 @@ def test_get_ack_errors_from_call_returned_none(from_call):
     manager = make_manager()
 
     mock_gprc_call = mock.Mock(spec=grpc.Call)
-    exception = exceptions.InternalServerError("msg", errors=(), response=mock_gprc_call)
+    exception = exceptions.InternalServerError(
+        "msg", errors=(), response=mock_gprc_call
+    )
     from_call.return_value = None
     # rpc_status.from_call() returned None
     assert not streaming_pull_manager._get_ack_errors(exception)
@@ -1467,7 +1491,9 @@ def test_get_ack_errors_value_error_thrown(from_call):
     manager = make_manager()
 
     mock_gprc_call = mock.Mock(spec=grpc.Call)
-    exception = exceptions.InternalServerError("msg", errors=(), response=mock_gprc_call)
+    exception = exceptions.InternalServerError(
+        "msg", errors=(), response=mock_gprc_call
+    )
     from_call.side_effect = ValueError("val error msg")
     # ValueError thrown, so return None
     assert not streaming_pull_manager._get_ack_errors(exception)
@@ -1484,7 +1510,9 @@ def test_get_ack_errors_happy_case(from_call):
     error_info.metadata["ack_1"] = "error1"
     st.details.add().Pack(error_info)
     mock_gprc_call = mock.Mock(spec=grpc.Call)
-    exception = exceptions.InternalServerError("msg", errors=(), response=mock_gprc_call)
+    exception = exceptions.InternalServerError(
+        "msg", errors=(), response=mock_gprc_call
+    )
     from_call.side_effect = None
     from_call.return_value = st
     # happy case - errors returned in a map
@@ -1497,7 +1525,9 @@ def test_process_futures_no_requests():
     # no requests so no items in results lists
     future_reqs_dict = {}
     errors_dict = {}
-    requests_completed, requests_to_retry = streaming_pull_manager._process_futures(future_reqs_dict, errors_dict)
+    requests_completed, requests_to_retry = streaming_pull_manager._process_futures(
+        future_reqs_dict, errors_dict
+    )
     assert not requests_completed
     assert not requests_to_retry
 
@@ -1506,7 +1536,9 @@ def test_process_futures_error_dict_is_none():
     # it's valid to pass in `None` for `errors_dict`
     future_reqs_dict = {}
     errors_dict = None
-    requests_completed, requests_to_retry = streaming_pull_manager._process_futures(future_reqs_dict, errors_dict)
+    requests_completed, requests_to_retry = streaming_pull_manager._process_futures(
+        future_reqs_dict, errors_dict
+    )
     assert not requests_completed
     assert not requests_to_retry
 
@@ -1515,12 +1547,16 @@ def test_process_futures_no_errors():
     # no errors so request should be completed
     future = futures.Future()
     future_reqs_dict = {
-        'ackid1': requests.AckRequest(ack_id='ackid1', byte_size=0, time_to_ack=20, ordering_key="", future=future)
+        "ackid1": requests.AckRequest(
+            ack_id="ackid1", byte_size=0, time_to_ack=20, ordering_key="", future=future
+        )
     }
     errors_dict = {}
-    requests_completed, requests_to_retry = streaming_pull_manager._process_futures(future_reqs_dict, errors_dict)
-    assert requests_completed[0].ack_id == 'ackid1'
-    assert future.result() == 'ackid1'
+    requests_completed, requests_to_retry = streaming_pull_manager._process_futures(
+        future_reqs_dict, errors_dict
+    )
+    assert requests_completed[0].ack_id == "ackid1"
+    assert future.result() == "ackid1"
     assert not requests_to_retry
 
 
@@ -1528,11 +1564,15 @@ def test_process_futures_permanent_error_raises_exception():
     # a permanent error raises an exception
     future = futures.Future()
     future_reqs_dict = {
-        'ackid1': requests.AckRequest(ack_id='ackid1', byte_size=0, time_to_ack=20, ordering_key="", future=future)
+        "ackid1": requests.AckRequest(
+            ack_id="ackid1", byte_size=0, time_to_ack=20, ordering_key="", future=future
+        )
     }
-    errors_dict = {'ackid1': 'PERMANENT_FAILURE_INVALID_ACK_ID'}
-    requests_completed, requests_to_retry = streaming_pull_manager._process_futures(future_reqs_dict, errors_dict)
-    assert requests_completed[0].ack_id == 'ackid1'
+    errors_dict = {"ackid1": "PERMANENT_FAILURE_INVALID_ACK_ID"}
+    requests_completed, requests_to_retry = streaming_pull_manager._process_futures(
+        future_reqs_dict, errors_dict
+    )
+    assert requests_completed[0].ack_id == "ackid1"
     with pytest.raises(RuntimeError) as exc_info:
         future.result()
     assert str(exc_info.value) == "Permanent error: PERMANENT_FAILURE_INVALID_ACK_ID"
@@ -1543,12 +1583,16 @@ def test_process_futures_transient_error_returns_request():
     # a transient error returns the request in `requests_to_retry`
     future = futures.Future()
     future_reqs_dict = {
-        'ackid1': requests.AckRequest(ack_id='ackid1', byte_size=0, time_to_ack=20, ordering_key="", future=future)
+        "ackid1": requests.AckRequest(
+            ack_id="ackid1", byte_size=0, time_to_ack=20, ordering_key="", future=future
+        )
     }
-    errors_dict = {'ackid1': 'TRANSIENT_FAILURE_INVALID_ACK_ID'}
-    requests_completed, requests_to_retry = streaming_pull_manager._process_futures(future_reqs_dict, errors_dict)
+    errors_dict = {"ackid1": "TRANSIENT_FAILURE_INVALID_ACK_ID"}
+    requests_completed, requests_to_retry = streaming_pull_manager._process_futures(
+        future_reqs_dict, errors_dict
+    )
     assert not requests_completed
-    assert requests_to_retry[0].ack_id == 'ackid1'
+    assert requests_to_retry[0].ack_id == "ackid1"
     assert not future.done()
 
 
@@ -1556,11 +1600,15 @@ def test_process_futures_unknown_error_raises_exception():
     # an unknown error raises an exception
     future = futures.Future()
     future_reqs_dict = {
-        'ackid1': requests.AckRequest(ack_id='ackid1', byte_size=0, time_to_ack=20, ordering_key="", future=future)
+        "ackid1": requests.AckRequest(
+            ack_id="ackid1", byte_size=0, time_to_ack=20, ordering_key="", future=future
+        )
     }
-    errors_dict = {'ackid1': 'unknown_error'}
-    requests_completed, requests_to_retry = streaming_pull_manager._process_futures(future_reqs_dict, errors_dict)
-    assert requests_completed[0].ack_id == 'ackid1'
+    errors_dict = {"ackid1": "unknown_error"}
+    requests_completed, requests_to_retry = streaming_pull_manager._process_futures(
+        future_reqs_dict, errors_dict
+    )
+    assert requests_completed[0].ack_id == "ackid1"
     with pytest.raises(RuntimeError) as exc_info:
         future.result()
     assert str(exc_info.value) == "Unknown error: unknown_error"
@@ -1573,23 +1621,46 @@ def test_process_futures_mixed_success_and_failure_acks():
     future2 = futures.Future()
     future3 = futures.Future()
     future_reqs_dict = {
-        'ackid1': requests.AckRequest(ack_id='ackid1', byte_size=0, time_to_ack=20, ordering_key="", future=future1),
-        'ackid2': requests.AckRequest(ack_id='ackid2', byte_size=0, time_to_ack=20, ordering_key="", future=future2),
-        'ackid3': requests.AckRequest(ack_id='ackid3', byte_size=0, time_to_ack=20, ordering_key="", future=future3)
+        "ackid1": requests.AckRequest(
+            ack_id="ackid1",
+            byte_size=0,
+            time_to_ack=20,
+            ordering_key="",
+            future=future1,
+        ),
+        "ackid2": requests.AckRequest(
+            ack_id="ackid2",
+            byte_size=0,
+            time_to_ack=20,
+            ordering_key="",
+            future=future2,
+        ),
+        "ackid3": requests.AckRequest(
+            ack_id="ackid3",
+            byte_size=0,
+            time_to_ack=20,
+            ordering_key="",
+            future=future3,
+        ),
     }
-    errors_dict = {'ackid1': 'PERMANENT_FAILURE_INVALID_ACK_ID', 'ackid2': 'TRANSIENT_FAILURE_INVALID_ACK_ID'}
-    requests_completed, requests_to_retry = streaming_pull_manager._process_futures(future_reqs_dict, errors_dict)
+    errors_dict = {
+        "ackid1": "PERMANENT_FAILURE_INVALID_ACK_ID",
+        "ackid2": "TRANSIENT_FAILURE_INVALID_ACK_ID",
+    }
+    requests_completed, requests_to_retry = streaming_pull_manager._process_futures(
+        future_reqs_dict, errors_dict
+    )
     # message with ack_id 'ackid1' fails with an exception
-    assert requests_completed[0].ack_id == 'ackid1'
+    assert requests_completed[0].ack_id == "ackid1"
     with pytest.raises(RuntimeError) as exc_info:
         future1.result()
     assert str(exc_info.value) == "Permanent error: PERMANENT_FAILURE_INVALID_ACK_ID"
     # message with ack_id 'ackid2' is to be retried
-    assert requests_to_retry[0].ack_id == 'ackid2'
+    assert requests_to_retry[0].ack_id == "ackid2"
     assert not requests_to_retry[0].future.done()
     # message with ack_id 'ackid3' succeeds
-    assert requests_completed[1].ack_id == 'ackid3'
-    assert future3.result() == 'ackid3'
+    assert requests_completed[1].ack_id == "ackid3"
+    assert future3.result() == "ackid3"
 
 
 def test_process_futures_mixed_success_and_failure_modacks():
@@ -1598,21 +1669,25 @@ def test_process_futures_mixed_success_and_failure_modacks():
     future2 = futures.Future()
     future3 = futures.Future()
     future_reqs_dict = {
-        'ackid1': requests.ModAckRequest(ack_id='ackid1', seconds=60, future=future1),
-        'ackid2': requests.ModAckRequest(ack_id='ackid2', seconds=60, future=future2),
-        'ackid3': requests.ModAckRequest(ack_id='ackid3', seconds=60, future=future3)
+        "ackid1": requests.ModAckRequest(ack_id="ackid1", seconds=60, future=future1),
+        "ackid2": requests.ModAckRequest(ack_id="ackid2", seconds=60, future=future2),
+        "ackid3": requests.ModAckRequest(ack_id="ackid3", seconds=60, future=future3),
     }
-    errors_dict = {'ackid1': 'PERMANENT_FAILURE_INVALID_ACK_ID', 'ackid2': 'TRANSIENT_FAILURE_INVALID_ACK_ID'}
-    requests_completed, requests_to_retry = streaming_pull_manager._process_futures(future_reqs_dict, errors_dict)
+    errors_dict = {
+        "ackid1": "PERMANENT_FAILURE_INVALID_ACK_ID",
+        "ackid2": "TRANSIENT_FAILURE_INVALID_ACK_ID",
+    }
+    requests_completed, requests_to_retry = streaming_pull_manager._process_futures(
+        future_reqs_dict, errors_dict
+    )
     # message with ack_id 'ackid1' fails with an exception
-    assert requests_completed[0].ack_id == 'ackid1'
+    assert requests_completed[0].ack_id == "ackid1"
     with pytest.raises(RuntimeError) as exc_info:
         future1.result()
     assert str(exc_info.value) == "Permanent error: PERMANENT_FAILURE_INVALID_ACK_ID"
     # message with ack_id 'ackid2' is to be retried
-    assert requests_to_retry[0].ack_id == 'ackid2'
+    assert requests_to_retry[0].ack_id == "ackid2"
     assert not requests_to_retry[0].future.done()
     # message with ack_id 'ackid3' succeeds
-    assert requests_completed[1].ack_id == 'ackid3'
-    assert future3.result() == 'ackid3'
-
+    assert requests_completed[1].ack_id == "ackid3"
+    assert future3.result() == "ackid3"

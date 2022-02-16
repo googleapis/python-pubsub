@@ -243,7 +243,7 @@ class Message(object):
                 byte_size=self.size,
                 time_to_ack=time_to_ack,
                 ordering_key=self.ordering_key,
-                future=None
+                future=None,
             )
         )
 
@@ -275,11 +275,10 @@ class Message(object):
                 byte_size=self.size,
                 time_to_ack=time_to_ack,
                 ordering_key=self.ordering_key,
-                future=future
+                future=future,
             )
         )
         return future
-
 
     def drop(self) -> None:
         """Release the message from lease management.
@@ -320,7 +319,9 @@ class Message(object):
             requests.ModAckRequest(ack_id=self._ack_id, seconds=seconds, future=None)
         )
 
-    def modify_ack_deadline_with_response(self, seconds: int) -> "pubsub_v1.subscriber.futures.Future":
+    def modify_ack_deadline_with_response(
+        self, seconds: int
+    ) -> "pubsub_v1.subscriber.futures.Future":
         """Resets the deadline for acknowledgement and returns the response
         status via a future.
 
@@ -357,8 +358,10 @@ class Message(object):
         """
         self._request_queue.put(
             requests.NackRequest(
-                ack_id=self._ack_id, byte_size=self.size, ordering_key=self.ordering_key,
-                future=None
+                ack_id=self._ack_id,
+                byte_size=self.size,
+                ordering_key=self.ordering_key,
+                future=None,
             )
         )
 
@@ -379,8 +382,10 @@ class Message(object):
         future = futures.Future()
         self._request_queue.put(
             requests.NackRequest(
-                ack_id=self._ack_id, byte_size=self.size, ordering_key=self.ordering_key,
-                future=future
+                ack_id=self._ack_id,
+                byte_size=self.size,
+                ordering_key=self.ordering_key,
+                future=future,
             )
         )
         return future

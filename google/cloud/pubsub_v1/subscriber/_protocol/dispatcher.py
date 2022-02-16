@@ -75,6 +75,7 @@ _MAX_EXACTLY_ONCE_ACK_MODACK_RETRY_DURATION_SECS = 10 * 60
 """The maximum amount of time in seconds to retry failed acks and modacks when
 exactly-once is enabled."""
 
+
 class Dispatcher(object):
     def __init__(self, manager: "StreamingPullManager", queue: "queue.Queue"):
         self._manager = manager
@@ -181,28 +182,43 @@ class Dispatcher(object):
         total_chunks = int(math.ceil(len(items) / _ACK_IDS_BATCH_SIZE))
 
         for _ in range(total_chunks):
-            future_reqs_dict = {req.ack_id: req for req in itertools.islice(items_gen, _ACK_IDS_BATCH_SIZE) if req.future}
-            requests_completed, requests_to_retry =  self._manager.send_unary_ack(
+            future_reqs_dict = {
+                req.ack_id: req
+                for req in itertools.islice(items_gen, _ACK_IDS_BATCH_SIZE)
+                if req.future
+            }
+            requests_completed, requests_to_retry = self._manager.send_unary_ack(
                 ack_ids=list(itertools.islice(ack_ids_gen, _ACK_IDS_BATCH_SIZE)),
-                future_reqs_dict=future_reqs_dict)
+                future_reqs_dict=future_reqs_dict,
+            )
 
             # Remove the completed messages from lease management.
             self.drop(requests_completed)
 
             # retry acks
-            retry_delay_gen = exponential_sleep_generator(initial=_MIN_EXACTLY_ONCE_ACK_MODACK_RETRY_DURATION_SECS,
-                                                          maximum=_MAX_EXACTLY_ONCE_ACK_MODACK_RETRY_DURATION_SECS)
+            retry_delay_gen = exponential_sleep_generator(
+                initial=_MIN_EXACTLY_ONCE_ACK_MODACK_RETRY_DURATION_SECS,
+                maximum=_MAX_EXACTLY_ONCE_ACK_MODACK_RETRY_DURATION_SECS,
+            )
             while requests_to_retry:
                 time_to_wait = retry_delay_gen()
-                _LOGGER.debug("Retrying {len(requests_to_retry)} ack(s) after delay of " +
-                              str(time_to_wait) + " seconds")
+                _LOGGER.debug(
+                    "Retrying {len(requests_to_retry)} ack(s) after delay of "
+                    + str(time_to_wait)
+                    + " seconds"
+                )
                 time.sleep(time_to_wait)
 
-                future_reqs_dict = {req.ack_id: req for req in requests_to_retry if req.future}
+                future_reqs_dict = {
+                    req.ack_id: req for req in requests_to_retry if req.future
+                }
                 requests_completed, requests_to_retry = self._manager.send_unary_ack(
                     ack_ids=[req.ack_id for req in requests_to_retry],
-                    future_reqs_dict=future_reqs_dict)
-                assert len(requests_to_retry) <= _ACK_IDS_BATCH_SIZE, "Too many requests to be retried."
+                    future_reqs_dict=future_reqs_dict,
+                )
+                assert (
+                    len(requests_to_retry) <= _ACK_IDS_BATCH_SIZE
+                ), "Too many requests to be retried."
                 # Remove the completed messages from lease management.
                 self.drop(requests_completed)
 
@@ -247,29 +263,48 @@ class Dispatcher(object):
         total_chunks = int(math.ceil(len(items) / _ACK_IDS_BATCH_SIZE))
 
         for _ in range(total_chunks):
-            future_reqs_dict = {req.ack_id: req for req in itertools.islice(items_gen, _ACK_IDS_BATCH_SIZE) if req.future}
+            future_reqs_dict = {
+                req.ack_id: req
+                for req in itertools.islice(items_gen, _ACK_IDS_BATCH_SIZE)
+                if req.future
+            }
             # no further work needs to be done for `requests_to_retry`
             requests_completed, requests_to_retry = self._manager.send_unary_modack(
-                modify_deadline_ack_ids=list(itertools.islice(ack_ids_gen, _ACK_IDS_BATCH_SIZE)),
-                modify_deadline_seconds=list(itertools.islice(deadline_seconds_gen, _ACK_IDS_BATCH_SIZE)),
-                future_reqs_dict=future_reqs_dict)
-            assert len(requests_to_retry) <= _ACK_IDS_BATCH_SIZE, "Too many requests to be retried."
+                modify_deadline_ack_ids=list(
+                    itertools.islice(ack_ids_gen, _ACK_IDS_BATCH_SIZE)
+                ),
+                modify_deadline_seconds=list(
+                    itertools.islice(deadline_seconds_gen, _ACK_IDS_BATCH_SIZE)
+                ),
+                future_reqs_dict=future_reqs_dict,
+            )
+            assert (
+                len(requests_to_retry) <= _ACK_IDS_BATCH_SIZE
+            ), "Too many requests to be retried."
 
             # retry modacks
-            retry_delay_gen = exponential_sleep_generator(initial=_MIN_EXACTLY_ONCE_ACK_MODACK_RETRY_DURATION_SECS,
-                                                          maximum=_MAX_EXACTLY_ONCE_ACK_MODACK_RETRY_DURATION_SECS)
+            retry_delay_gen = exponential_sleep_generator(
+                initial=_MIN_EXACTLY_ONCE_ACK_MODACK_RETRY_DURATION_SECS,
+                maximum=_MAX_EXACTLY_ONCE_ACK_MODACK_RETRY_DURATION_SECS,
+            )
             while requests_to_retry:
                 time_to_wait = retry_delay_gen()
-                _LOGGER.debug("Retrying {len(requests_to_retry)} modack(s) after delay of " +
-                              str(time_to_wait) + " seconds")
+                _LOGGER.debug(
+                    "Retrying {len(requests_to_retry)} modack(s) after delay of "
+                    + str(time_to_wait)
+                    + " seconds"
+                )
                 time.sleep(time_to_wait)
 
                 print(requests_to_retry)
-                future_reqs_dict = {req.ack_id: req for req in requests_to_retry if req.future}
+                future_reqs_dict = {
+                    req.ack_id: req for req in requests_to_retry if req.future
+                }
                 requests_to_retry = self._manager.send_unary_modack(
                     modify_deadline_ack_ids=[req.ack_id for req in requests_to_retry],
                     modify_deadline_seconds=[req.seconds for req in requests_to_retry],
-                    future_reqs_dict=future_reqs_dict)
+                    future_reqs_dict=future_reqs_dict,
+                )
 
     def nack(self, items: Sequence[requests.NackRequest]) -> None:
         """Explicitly deny receipt of messages.
@@ -278,6 +313,20 @@ class Dispatcher(object):
             items: The items to deny.
         """
         self.modify_ack_deadline(
-            [requests.ModAckRequest(ack_id=item.ack_id, seconds=0, future=item.future) for item in items]
+            [
+                requests.ModAckRequest(
+                    ack_id=item.ack_id, seconds=0, future=item.future
+                )
+                for item in items
+            ]
         )
-        self.drop([requests.DropRequest(ack_id=item.ack_id, byte_size=item.byte_size, ordering_key=item.ordering_key) for item in items])
+        self.drop(
+            [
+                requests.DropRequest(
+                    ack_id=item.ack_id,
+                    byte_size=item.byte_size,
+                    ordering_key=item.ordering_key,
+                )
+                for item in items
+            ]
+        )

@@ -195,7 +195,10 @@ class Leaser(object):
                 #       is inactive.
                 assert self._manager.dispatcher is not None
                 self._manager.dispatcher.modify_ack_deadline(
-                    [requests.ModAckRequest(ack_id, deadline, None) for ack_id in ack_ids]
+                    [
+                        requests.ModAckRequest(ack_id, deadline, None)
+                        for ack_id in ack_ids
+                    ]
                 )
 
             # Now wait an appropriate period of time and do this again.

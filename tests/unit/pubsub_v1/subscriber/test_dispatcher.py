@@ -83,14 +83,19 @@ def test_ack():
 
     items = [
         requests.AckRequest(
-            ack_id="ack_id_string", byte_size=0, time_to_ack=20, ordering_key="",
-            future=None
+            ack_id="ack_id_string",
+            byte_size=0,
+            time_to_ack=20,
+            ordering_key="",
+            future=None,
         )
     ]
     manager.send_unary_ack.return_value = (items, [])
     dispatcher_.ack(items)
 
-    manager.send_unary_ack.assert_called_once_with(ack_ids=["ack_id_string"], future_reqs_dict={})
+    manager.send_unary_ack.assert_called_once_with(
+        ack_ids=["ack_id_string"], future_reqs_dict={}
+    )
 
     manager.leaser.remove.assert_called_once_with(items)
     manager.maybe_resume_consumer.assert_called_once()
@@ -105,14 +110,19 @@ def test_ack_no_time():
 
     items = [
         requests.AckRequest(
-            ack_id="ack_id_string", byte_size=0, time_to_ack=None, ordering_key="",
-            future=None
+            ack_id="ack_id_string",
+            byte_size=0,
+            time_to_ack=None,
+            ordering_key="",
+            future=None,
         )
     ]
     manager.send_unary_ack.return_value = (items, [])
     dispatcher_.ack(items)
 
-    manager.send_unary_ack.assert_called_once_with(ack_ids=["ack_id_string"], future_reqs_dict={})
+    manager.send_unary_ack.assert_called_once_with(
+        ack_ids=["ack_id_string"], future_reqs_dict={}
+    )
 
     manager.ack_histogram.add.assert_not_called()
 
@@ -126,8 +136,11 @@ def test_ack_splitting_large_payload():
     items = [
         # use realistic lengths for ACK IDs (max 176 bytes)
         requests.AckRequest(
-            ack_id=str(i).zfill(176), byte_size=0, time_to_ack=20, ordering_key="",
-            future=None
+            ack_id=str(i).zfill(176),
+            byte_size=0,
+            time_to_ack=20,
+            ordering_key="",
+            future=None,
         )
         for i in range(5001)
     ]
@@ -205,13 +218,17 @@ def test_nack():
     dispatcher_ = dispatcher.Dispatcher(manager, mock.sentinel.queue)
 
     items = [
-        requests.NackRequest(ack_id="ack_id_string", byte_size=10, ordering_key="", future=None)
+        requests.NackRequest(
+            ack_id="ack_id_string", byte_size=10, ordering_key="", future=None
+        )
     ]
     manager.send_unary_modack.return_value = (items, [])
     dispatcher_.nack(items)
 
     manager.send_unary_modack.assert_called_once_with(
-        modify_deadline_ack_ids=["ack_id_string"], modify_deadline_seconds=[0], future_reqs_dict={}
+        modify_deadline_ack_ids=["ack_id_string"],
+        modify_deadline_seconds=[0],
+        future_reqs_dict={},
     )
 
 
@@ -226,7 +243,9 @@ def test_modify_ack_deadline():
     dispatcher_.modify_ack_deadline(items)
 
     manager.send_unary_modack.assert_called_once_with(
-        modify_deadline_ack_ids=["ack_id_string"], modify_deadline_seconds=[60], future_reqs_dict={}
+        modify_deadline_ack_ids=["ack_id_string"],
+        modify_deadline_seconds=[60],
+        future_reqs_dict={},
     )
 
 

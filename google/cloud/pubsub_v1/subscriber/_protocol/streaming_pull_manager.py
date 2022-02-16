@@ -69,6 +69,7 @@ _MIN_ACK_DEADLINE_SECS_WHEN_EXACTLY_ONCE_ENABLED = 60
 a subscription. We do this to reduce premature ack expiration.
 """
 
+
 def _wrap_as_exception(maybe_exception: Any) -> BaseException:
     """Wrap an object as a Python exception, if needed.
 
@@ -112,7 +113,9 @@ def _wrap_callback_errors(
         on_callback_error(exc)
 
 
-def _get_ack_errors(exc: exceptions.GoogleAPICallError) -> Optional["containers.ScalarMap"]:
+def _get_ack_errors(
+    exc: exceptions.GoogleAPICallError
+) -> Optional["containers.ScalarMap"]:
     if not exc.response:
         _LOGGER.debug("No response obj in errored RPC call.")
         return None
@@ -132,11 +135,14 @@ def _get_ack_errors(exc: exceptions.GoogleAPICallError) -> Optional["containers.
     # with the status code and message inside of the
     # google.rpc.status.Status"
     except ValueError:
-        _LOGGER.debug( "ValueError when parsing ErrorInfo.", exc_info=True)
+        _LOGGER.debug("ValueError when parsing ErrorInfo.", exc_info=True)
         return None
 
-def _process_futures(future_reqs_dict: "containers.ScalarMap",
-                    errors_dict: Optional["containers.ScalarMap"]):
+
+def _process_futures(
+    future_reqs_dict: "containers.ScalarMap",
+    errors_dict: Optional["containers.ScalarMap"],
+):
     """Process futures by referring to errors_dict.
 
     The errors returned by the server in `errors_dict` are used to complete
@@ -358,8 +364,9 @@ class StreamingPullManager(object):
                 self._ack_deadline = max(self._ack_deadline, flow_control_setting)
             elif self._exactly_once_enabled:
                 # Higher minimum ack_deadline for exactly_once subscriptions.
-                self._ack_deadline = max(self._ack_deadline,
-                                         _MIN_ACK_DEADLINE_SECS_WHEN_EXACTLY_ONCE_ENABLED)
+                self._ack_deadline = max(
+                    self._ack_deadline, _MIN_ACK_DEADLINE_SECS_WHEN_EXACTLY_ONCE_ENABLED
+                )
 
             return self._ack_deadline
 
@@ -399,7 +406,7 @@ class StreamingPullManager(object):
         )
 
     def add_close_callback(
-        self, callback: Callable[["StreamingPullManager", Any], Any],
+        self, callback: Callable[["StreamingPullManager", Any], Any]
     ) -> None:
         """Schedules a callable when the manager closes.
 
@@ -523,8 +530,9 @@ class StreamingPullManager(object):
         assert self._callback is not None
         self._scheduler.schedule(self._callback, msg)
 
-
-    def send_unary_ack(self, ack_ids, future_reqs_dict) -> Tuple[List[requests.AckRequest], List[requests.AckRequest]]:
+    def send_unary_ack(
+        self, ack_ids, future_reqs_dict
+    ) -> Tuple[List[requests.AckRequest], List[requests.AckRequest]]:
         """Send a request using a separate unary request instead of over the stream.
 
         If a RetryError occurs, the manager shutdown is triggered, and the
@@ -535,9 +543,7 @@ class StreamingPullManager(object):
         success = True
         ack_errors_dict = None
         try:
-            self._client.acknowledge(
-                subscription=self._subscription, ack_ids=ack_ids
-            )
+            self._client.acknowledge(subscription=self._subscription, ack_ids=ack_ids)
         except exceptions.GoogleAPICallError as exc:
             _LOGGER.debug(
                 "Exception while sending unary RPC. This is typically "
@@ -556,11 +562,14 @@ class StreamingPullManager(object):
             self._on_rpc_done(exc)
             raise
 
-        requests_completed, requests_to_retry = _process_futures(future_reqs_dict, ack_errors_dict)
+        requests_completed, requests_to_retry = _process_futures(
+            future_reqs_dict, ack_errors_dict
+        )
         return requests_completed, requests_to_retry
 
-
-    def send_unary_modack(self, modify_deadline_ack_ids, modify_deadline_seconds, future_reqs_dict) -> Tuple[List[requests.ModAckRequest], List[requests.ModAckRequest]]:
+    def send_unary_modack(
+        self, modify_deadline_ack_ids, modify_deadline_seconds, future_reqs_dict
+    ) -> Tuple[List[requests.ModAckRequest], List[requests.ModAckRequest]]:
         """Send a request using a separate unary request instead of over the stream.
 
         If a RetryError occurs, the manager shutdown is triggered, and the
@@ -601,7 +610,9 @@ class StreamingPullManager(object):
             self._on_rpc_done(exc)
             raise
 
-        requests_completed, requests_to_retry = _process_futures(future_reqs_dict, modack_errors_dict)
+        requests_completed, requests_to_retry = _process_futures(
+            future_reqs_dict, modack_errors_dict
+        )
         return requests_completed, requests_to_retry
 
     def heartbeat(self) -> bool:
@@ -621,7 +632,8 @@ class StreamingPullManager(object):
 
             if send_new_ack_deadline:
                 request = gapic_types.StreamingPullRequest(
-                    stream_ack_deadline_seconds=self.ack_deadline)
+                    stream_ack_deadline_seconds=self.ack_deadline
+                )
             else:
                 request = gapic_types.StreamingPullRequest()
 
@@ -861,13 +873,17 @@ class StreamingPullManager(object):
         )
 
         with self._exactly_once_enabled_lock:
-            if response.subscription_properties.exactly_once_delivery_enabled != \
-               self._exactly_once_enabled:
-                 self._exactly_once_enabled = response.subscription_properties.exactly_once_delivery_enabled
-                 # Update ack_deadline, whose minimum depends on self._exactly_once_enabled
-                 # This method acquires the self._ack_deadline_lock lock.
-                 self._obtain_ack_deadline(maybe_update=True)
-                 self._send_new_ack_deadline = True
+            if (
+                response.subscription_properties.exactly_once_delivery_enabled
+                != self._exactly_once_enabled
+            ):
+                self._exactly_once_enabled = (
+                    response.subscription_properties.exactly_once_delivery_enabled
+                )
+                # Update ack_deadline, whose minimum depends on self._exactly_once_enabled
+                # This method acquires the self._ack_deadline_lock lock.
+                self._obtain_ack_deadline(maybe_update=True)
+                self._send_new_ack_deadline = True
 
         # Immediately (i.e. without waiting for the auto lease management)
         # modack the messages we received, as this tells the server that we've
