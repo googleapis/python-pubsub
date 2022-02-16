@@ -67,11 +67,11 @@ Accounting for some overhead, we should thus only send a maximum of 2500 ACK
 IDs at a time.
 """
 
-_MIN_ACK_MODACK_RETRY_DURATION_SECS = 1
+_MIN_EXACTLY_ONCE_ACK_MODACK_RETRY_DURATION_SECS = 1
 """The time to wait for the first retry of failed acks and modacks when exactly-once
 is enabled."""
 
-_MAX_ACK_MODACK_RETRY_DURATION_SECS = 20 * 60
+_MAX_EXACTLY_ONCE_ACK_MODACK_RETRY_DURATION_SECS = 10 * 60
 """The maximum amount of time in seconds to retry failed acks and modacks when
 exactly-once is enabled."""
 
@@ -190,8 +190,8 @@ class Dispatcher(object):
             self.drop(requests_completed)
 
             # retry acks
-            retry_delay_gen = exponential_sleep_generator(initial=_MIN_ACK_MODACK_RETRY_DURATION_SECS,
-                                                          maximum=_MAX_ACK_MODACK_RETRY_DURATION_SECS)
+            retry_delay_gen = exponential_sleep_generator(initial=_MIN_EXACTLY_ONCE_ACK_MODACK_RETRY_DURATION_SECS,
+                                                          maximum=_MAX_EXACTLY_ONCE_ACK_MODACK_RETRY_DURATION_SECS)
             while requests_to_retry:
                 time_to_wait = retry_delay_gen()
                 _LOGGER.debug("Retrying {len(requests_to_retry)} ack(s) after delay of " +
@@ -256,8 +256,8 @@ class Dispatcher(object):
             assert len(requests_to_retry) <= _ACK_IDS_BATCH_SIZE, "Too many requests to be retried."
 
             # retry modacks
-            retry_delay_gen = exponential_sleep_generator(initial=_MIN_ACK_MODACK_RETRY_DURATION_SECS,
-                                                          maximum=_MAX_ACK_MODACK_RETRY_DURATION_SECS)
+            retry_delay_gen = exponential_sleep_generator(initial=_MIN_EXACTLY_ONCE_ACK_MODACK_RETRY_DURATION_SECS,
+                                                          maximum=_MAX_EXACTLY_ONCE_ACK_MODACK_RETRY_DURATION_SECS)
             while requests_to_retry:
                 time_to_wait = retry_delay_gen()
                 _LOGGER.debug("Retrying {len(requests_to_retry)} modack(s) after delay of " +
