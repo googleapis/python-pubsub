@@ -194,12 +194,6 @@ class Leaser(object):
                 #       way for ``send_request`` to fail when the consumer
                 #       is inactive.
                 assert self._manager.dispatcher is not None
-                self._manager.dispatcher.modify_ack_deadline(
-                    [
-                        requests.ModAckRequest(ack_id, deadline, None)
-                        for ack_id in ack_ids
-                    ]
-                )
                 ack_id_gen = (ack_id for ack_id in ack_ids)
                 self._manager._send_lease_modacks(ack_id_gen, ack_deadline)
 

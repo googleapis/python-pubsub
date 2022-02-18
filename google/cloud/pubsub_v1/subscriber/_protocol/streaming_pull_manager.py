@@ -887,7 +887,7 @@ class StreamingPullManager(object):
                 try:
                     req.future.result()
                 except pubsub_1.subscriber.exceptions.AcknowledgeError as e:
-                    _LOGGER.debug(
+                    _LOGGER.warning(
                         f"AcknowledgeError when modacking a message immediately after receiving it.",
                         exc_info=False,
                     )

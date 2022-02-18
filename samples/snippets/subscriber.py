@@ -588,6 +588,7 @@ def receive_messages_with_exactly_once_subscribe(
     # [START pubsub_quickstart_subscriber]
     from concurrent.futures import TimeoutError
     from google.cloud import pubsub_v1
+    from google.cloud.pubsub_v1.subscriber import sub_exceptions
 
     # TODO(developer)
     # project_id = "your-project-id"
@@ -609,7 +610,7 @@ def receive_messages_with_exactly_once_subscribe(
             # Block on result of acknowledge call.
             ack_future.result()
             print(f"Ack for message {message.message_id} successful.")
-        except pubsub_1.subscriber.exceptions.AcknowledgeError as e:
+        except sub_exceptions.AcknowledgeError as e:
             print(
                 f"Ack for message {message.message_id} failed with error: {e.error_code}"
             )
