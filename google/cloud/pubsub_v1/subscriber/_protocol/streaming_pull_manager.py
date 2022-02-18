@@ -34,16 +34,19 @@ from google.cloud.pubsub_v1.subscriber._protocol import histogram
 from google.cloud.pubsub_v1.subscriber._protocol import leaser
 from google.cloud.pubsub_v1.subscriber._protocol import messages_on_hold
 from google.cloud.pubsub_v1.subscriber._protocol import requests
+from google.cloud.pubsub_v1.subscriber.exceptions import AcknowledgeError, AcknowledgeErrorCode
 import google.cloud.pubsub_v1.subscriber.message
 from google.cloud.pubsub_v1.subscriber.scheduler import ThreadScheduler
 from google.pubsub_v1 import types as gapic_types
 from grpc_status import rpc_status
 from google.rpc.error_details_pb2 import ErrorInfo
+from google.rpc import code_pb2
 
 if typing.TYPE_CHECKING:  # pragma: NO COVER
     from google.cloud.pubsub_v1 import subscriber
     from google.cloud.pubsub_v1.subscriber.scheduler import Scheduler
     from google.protobuf.internal import containers
+    from google.rpc import status_pb2
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -113,24 +116,12 @@ def _wrap_callback_errors(
         on_callback_error(exc)
 
 
-def _get_ack_errors(
-    exc: exceptions.GoogleAPICallError,
-) -> Optional["containers.ScalarMap"]:
+def _get_status(exc: exceptions.GoogleAPICallError,) -> Optional["status_pb2.Status"]:
     if not exc.response:
         _LOGGER.debug("No response obj in errored RPC call.")
         return None
     try:
-        status = rpc_status.from_call(exc.response)
-        if not status:
-            _LOGGER.debug("Unable to get status of errored RPC.")
-            return None
-        for detail in status.details:
-            if detail.Is(ErrorInfo.DESCRIPTOR):
-                info = ErrorInfo()
-                if not detail.Unpack(info):
-                    _LOGGER.debug("Unable to unpack ErrorInfo.")
-                    return None
-                return info.metadata
+        return rpc_status.from_call(exc.response)
     # Possible "If the gRPC call’s code or details are inconsistent
     # with the status code and message inside of the
     # google.rpc.status.Status"
@@ -139,7 +130,25 @@ def _get_ack_errors(
         return None
 
 
+def _get_ack_errors(
+    exc: exceptions.GoogleAPICallError,
+) -> Optional["containers.ScalarMap"]:
+    status = _get_status(exc)
+    if not status:
+        _LOGGER.debug("Unable to get status of errored RPC.")
+        return None
+    for detail in status.details:
+        if detail.Is(ErrorInfo.DESCRIPTOR):
+            info = ErrorInfo()
+            if not detail.Unpack(info):
+                _LOGGER.debug("Unable to unpack ErrorInfo.")
+                return None
+            return info.metadata
+    return None
+
+
 def _process_futures(
+    error_status: Optional["status_pb2.Status"],
     future_reqs_dict: "containers.ScalarMap",
     errors_dict: Optional["containers.ScalarMap"],
 ):
@@ -154,18 +163,39 @@ def _process_futures(
     for ack_id in future_reqs_dict:
         if errors_dict and ack_id in errors_dict:
             exactly_once_error = errors_dict[ack_id]
-            if exactly_once_error.startswith("PERMANENT_"):
-                exc = RuntimeError("Permanent error: " + exactly_once_error)
-                future = future_reqs_dict[ack_id].future
-                future.set_exception(exc)
-                requests_completed.append(future_reqs_dict[ack_id])
-            elif exactly_once_error.startswith("TRANSIENT_"):
+            if exactly_once_error.startswith("TRANSIENT_"):
                 requests_to_retry.append(future_reqs_dict[ack_id])
             else:
-                exc = RuntimeError("Unknown error: " + exactly_once_error)
+                if exactly_once_error == "PERMANENT_FAILURE_INVALID_ACK_ID":
+                    exc = AcknowledgeError(
+                        AcknowledgeErrorCode.INVALID_ACK_ID, info = None
+                    )
+                else:
+                    exc = AcknowledgeError(
+                        AcknowledgeErrorCode.OTHER, exactly_once_error
+                    )
+
                 future = future_reqs_dict[ack_id].future
                 future.set_exception(exc)
                 requests_completed.append(future_reqs_dict[ack_id])
+        elif error_status:
+            # Only permanent errors are expected here b/c retriable errors are
+            # retried at the lower, GRPC level.
+            if error_status.code == code_pb2.PERMISSION_DENIED:
+                exc = AcknowledgeError(
+                    AcknowledgeErrorCode.PERMISSION_DENIED, info = None
+                )
+            elif error_status.code == code_pb2.FAILED_PRECONDITION:
+                exc = AcknowledgeError(
+                    AcknowledgeErrorCode.FAILED_PRECONDITION, info = None
+                )
+            else:
+                exc = AcknowledgeError(
+                    AcknowledgeErrorCode.OTHER, str(error_status)
+                )
+            future = future_reqs_dict[ack_id].future
+            future.set_exception(exc)
+            requests_completed.append(future_reqs_dict[ack_id])
         else:
             future = future_reqs_dict[ack_id].future
             # success
@@ -540,7 +570,7 @@ class StreamingPullManager(object):
         """
         assert ack_ids
 
-        success = True
+        error_status = None
         ack_errors_dict = None
         try:
             self._client.acknowledge(subscription=self._subscription, ack_ids=ack_ids)
@@ -550,6 +580,7 @@ class StreamingPullManager(object):
                 "non-fatal as stream requests are best-effort.",
                 exc_info=True,
             )
+            error_status = _get_status(exc)
             ack_errors_dict = _get_ack_errors(exc)
         except exceptions.RetryError as exc:
             _LOGGER.debug(
@@ -563,7 +594,7 @@ class StreamingPullManager(object):
             raise
 
         requests_completed, requests_to_retry = _process_futures(
-            future_reqs_dict, ack_errors_dict
+            error_status, future_reqs_dict, ack_errors_dict
         )
         return requests_completed, requests_to_retry
 
@@ -577,6 +608,7 @@ class StreamingPullManager(object):
         """
         assert modify_deadline_ack_ids
 
+        error_status = None
         modack_errors_dict = None
         try:
             # Send ack_ids with the same deadline seconds together.
@@ -598,6 +630,7 @@ class StreamingPullManager(object):
                 "non-fatal as stream requests are best-effort.",
                 exc_info=True,
             )
+            error_status = _get_status(exc)
             modack_errors_dict = _get_ack_errors(exc)
         except exceptions.RetryError as exc:
             _LOGGER.debug(
@@ -611,7 +644,7 @@ class StreamingPullManager(object):
             raise
 
         requests_completed, requests_to_retry = _process_futures(
-            future_reqs_dict, modack_errors_dict
+            error_status, future_reqs_dict, modack_errors_dict
         )
         return requests_completed, requests_to_retry
 

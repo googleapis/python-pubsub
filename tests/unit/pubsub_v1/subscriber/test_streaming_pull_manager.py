@@ -33,6 +33,7 @@ from google.cloud.pubsub_v1.subscriber._protocol import leaser
 from google.cloud.pubsub_v1.subscriber._protocol import messages_on_hold
 from google.cloud.pubsub_v1.subscriber._protocol import requests
 from google.cloud.pubsub_v1.subscriber._protocol import streaming_pull_manager
+from google.cloud.pubsub_v1.subscriber import exceptions as subscriber_exceptions
 from google.cloud.pubsub_v1.subscriber import futures
 from google.pubsub_v1 import types as gapic_types
 import grpc_status
@@ -1526,7 +1527,7 @@ def test_process_futures_no_requests():
     future_reqs_dict = {}
     errors_dict = {}
     requests_completed, requests_to_retry = streaming_pull_manager._process_futures(
-        future_reqs_dict, errors_dict
+        None, future_reqs_dict, errors_dict
     )
     assert not requests_completed
     assert not requests_to_retry
@@ -1537,7 +1538,7 @@ def test_process_futures_error_dict_is_none():
     future_reqs_dict = {}
     errors_dict = None
     requests_completed, requests_to_retry = streaming_pull_manager._process_futures(
-        future_reqs_dict, errors_dict
+        None, future_reqs_dict, errors_dict
     )
     assert not requests_completed
     assert not requests_to_retry
@@ -1553,7 +1554,7 @@ def test_process_futures_no_errors():
     }
     errors_dict = {}
     requests_completed, requests_to_retry = streaming_pull_manager._process_futures(
-        future_reqs_dict, errors_dict
+        None, future_reqs_dict, errors_dict
     )
     assert requests_completed[0].ack_id == "ackid1"
     assert future.result() == "ackid1"
@@ -1570,12 +1571,12 @@ def test_process_futures_permanent_error_raises_exception():
     }
     errors_dict = {"ackid1": "PERMANENT_FAILURE_INVALID_ACK_ID"}
     requests_completed, requests_to_retry = streaming_pull_manager._process_futures(
-        future_reqs_dict, errors_dict
+        None, future_reqs_dict, errors_dict
     )
     assert requests_completed[0].ack_id == "ackid1"
-    with pytest.raises(RuntimeError) as exc_info:
+    with pytest.raises(subscriber_exceptions.AcknowledgeError) as exc_info:
         future.result()
-    assert str(exc_info.value) == "Permanent error: PERMANENT_FAILURE_INVALID_ACK_ID"
+    assert exc_info.value.error_code == subscriber_exceptions.AcknowledgeErrorCode.INVALID_ACK_ID
     assert not requests_to_retry
 
 
@@ -1589,7 +1590,7 @@ def test_process_futures_transient_error_returns_request():
     }
     errors_dict = {"ackid1": "TRANSIENT_FAILURE_INVALID_ACK_ID"}
     requests_completed, requests_to_retry = streaming_pull_manager._process_futures(
-        future_reqs_dict, errors_dict
+        None, future_reqs_dict, errors_dict
     )
     assert not requests_completed
     assert requests_to_retry[0].ack_id == "ackid1"
@@ -1606,12 +1607,13 @@ def test_process_futures_unknown_error_raises_exception():
     }
     errors_dict = {"ackid1": "unknown_error"}
     requests_completed, requests_to_retry = streaming_pull_manager._process_futures(
-        future_reqs_dict, errors_dict
+        None, future_reqs_dict, errors_dict
     )
     assert requests_completed[0].ack_id == "ackid1"
-    with pytest.raises(RuntimeError) as exc_info:
+    with pytest.raises(subscriber_exceptions.AcknowledgeError) as exc_info:
         future.result()
-    assert str(exc_info.value) == "Unknown error: unknown_error"
+    assert exc_info.value.error_code == subscriber_exceptions.AcknowledgeErrorCode.OTHER
+    assert exc_info.value.info == "unknown_error"
     assert not requests_to_retry
 
 
@@ -1648,13 +1650,13 @@ def test_process_futures_mixed_success_and_failure_acks():
         "ackid2": "TRANSIENT_FAILURE_INVALID_ACK_ID",
     }
     requests_completed, requests_to_retry = streaming_pull_manager._process_futures(
-        future_reqs_dict, errors_dict
+        None, future_reqs_dict, errors_dict
     )
     # message with ack_id 'ackid1' fails with an exception
     assert requests_completed[0].ack_id == "ackid1"
-    with pytest.raises(RuntimeError) as exc_info:
+    with pytest.raises(subscriber_exceptions.AcknowledgeError) as exc_info:
         future1.result()
-    assert str(exc_info.value) == "Permanent error: PERMANENT_FAILURE_INVALID_ACK_ID"
+    assert exc_info.value.error_code == subscriber_exceptions.AcknowledgeErrorCode.INVALID_ACK_ID
     # message with ack_id 'ackid2' is to be retried
     assert requests_to_retry[0].ack_id == "ackid2"
     assert not requests_to_retry[0].future.done()
@@ -1678,13 +1680,13 @@ def test_process_futures_mixed_success_and_failure_modacks():
         "ackid2": "TRANSIENT_FAILURE_INVALID_ACK_ID",
     }
     requests_completed, requests_to_retry = streaming_pull_manager._process_futures(
-        future_reqs_dict, errors_dict
+        None, future_reqs_dict, errors_dict
     )
     # message with ack_id 'ackid1' fails with an exception
     assert requests_completed[0].ack_id == "ackid1"
-    with pytest.raises(RuntimeError) as exc_info:
+    with pytest.raises(subscriber_exceptions.AcknowledgeError) as exc_info:
         future1.result()
-    assert str(exc_info.value) == "Permanent error: PERMANENT_FAILURE_INVALID_ACK_ID"
+    assert exc_info.value.error_code == subscriber_exceptions.AcknowledgeErrorCode.INVALID_ACK_ID
     # message with ack_id 'ackid2' is to be retried
     assert requests_to_retry[0].ack_id == "ackid2"
     assert not requests_to_retry[0].future.done()
