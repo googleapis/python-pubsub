@@ -20,7 +20,7 @@ import itertools
 import logging
 import threading
 import typing
-from typing import Any, Callable, Iterable, List, Optional, Tuple, Union
+from typing import Any, Callable, Iterable, List, Optional, Sequence, Tuple, Union
 import uuid
 
 import grpc  # type: ignore
@@ -34,8 +34,12 @@ from google.cloud.pubsub_v1.subscriber._protocol import histogram
 from google.cloud.pubsub_v1.subscriber._protocol import leaser
 from google.cloud.pubsub_v1.subscriber._protocol import messages_on_hold
 from google.cloud.pubsub_v1.subscriber._protocol import requests
-from google.cloud.pubsub_v1.subscriber.exceptions import AcknowledgeError, AcknowledgeStatus
+from google.cloud.pubsub_v1.subscriber.exceptions import (
+    AcknowledgeError,
+    AcknowledgeStatus,
+)
 import google.cloud.pubsub_v1.subscriber.message
+from google.cloud.pubsub_v1.subscriber import futures
 from google.cloud.pubsub_v1.subscriber.scheduler import ThreadScheduler
 from google.pubsub_v1 import types as gapic_types
 from grpc_status import rpc_status
@@ -167,13 +171,9 @@ def _process_futures(
                 requests_to_retry.append(future_reqs_dict[ack_id])
             else:
                 if exactly_once_error == "PERMANENT_FAILURE_INVALID_ACK_ID":
-                    exc = AcknowledgeError(
-                        AcknowledgeStatus.INVALID_ACK_ID, info = None
-                    )
+                    exc = AcknowledgeError(AcknowledgeStatus.INVALID_ACK_ID, info=None)
                 else:
-                    exc = AcknowledgeError(
-                        AcknowledgeStatus.OTHER, exactly_once_error
-                    )
+                    exc = AcknowledgeError(AcknowledgeStatus.OTHER, exactly_once_error)
 
                 future = future_reqs_dict[ack_id].future
                 future.set_exception(exc)
@@ -182,17 +182,11 @@ def _process_futures(
             # Only permanent errors are expected here b/c retriable errors are
             # retried at the lower, GRPC level.
             if error_status.code == code_pb2.PERMISSION_DENIED:
-                exc = AcknowledgeError(
-                    AcknowledgeStatus.PERMISSION_DENIED, info = None
-                )
+                exc = AcknowledgeError(AcknowledgeStatus.PERMISSION_DENIED, info=None)
             elif error_status.code == code_pb2.FAILED_PRECONDITION:
-                exc = AcknowledgeError(
-                    AcknowledgeStatus.FAILED_PRECONDITION, info = None
-                )
+                exc = AcknowledgeError(AcknowledgeStatus.FAILED_PRECONDITION, info=None)
             else:
-                exc = AcknowledgeError(
-                    AcknowledgeStatus.OTHER, str(error_status)
-                )
+                exc = AcknowledgeError(AcknowledgeStatus.OTHER, str(error_status))
             future = future_reqs_dict[ack_id].future
             future.set_exception(exc)
             requests_completed.append(future_reqs_dict[ack_id])
@@ -875,6 +869,36 @@ class StreamingPullManager(object):
         # Return the initial request.
         return request
 
+    def _send_lease_modacks(self, ack_ids: Sequence[str], ack_deadline: int):
+        exactly_once_enabled = None
+        with self._exactly_once_enabled_lock:
+            exactly_once_enabled = self._exactly_once_enabled
+        if exactly_once_enabled:
+            items = []
+            for ack_id in ack_ids:
+                future = futures.Future()
+                request = requests.ModAckRequest(ack_id, ack_deadline, future)
+                items.append(request)
+
+            assert self._dispatcher is not None
+            self._dispatcher.modify_ack_deadline(items)
+
+            for req in items:
+                try:
+                    req.future.result()
+                except pubsub_1.subscriber.exceptions.AcknowledgeError as e:
+                    _LOGGER.debug(
+                        f"AcknowledgeError when modacking a message immediately after receiving it.",
+                        exc_info=False,
+                    )
+        else:
+            items = [
+                requests.ModAckRequest(message.ack_id, self.ack_deadline, None)
+                for message in received_messages
+            ]
+            assert self._dispatcher is not None
+            self._dispatcher.modify_ack_deadline(items)
+
     def _on_response(self, response: gapic_types.StreamingPullResponse) -> None:
         """Process all received Pub/Sub messages.
 
@@ -921,12 +945,8 @@ class StreamingPullManager(object):
         # Immediately (i.e. without waiting for the auto lease management)
         # modack the messages we received, as this tells the server that we've
         # received them.
-        items = [
-            requests.ModAckRequest(message.ack_id, self.ack_deadline, None)
-            for message in received_messages
-        ]
-        assert self._dispatcher is not None
-        self._dispatcher.modify_ack_deadline(items)
+        ack_id_gen = (message.ack_id for message in received_messages)
+        self._send_lease_modacks(ack_id_gen, self.ack_deadline)
 
         with self._pause_resume_lock:
             assert self._scheduler is not None

@@ -1576,7 +1576,10 @@ def test_process_futures_permanent_error_raises_exception():
     assert requests_completed[0].ack_id == "ackid1"
     with pytest.raises(subscriber_exceptions.AcknowledgeError) as exc_info:
         future.result()
-    assert exc_info.value.error_code == subscriber_exceptions.AcknowledgeStatus.INVALID_ACK_ID
+    assert (
+        exc_info.value.error_code
+        == subscriber_exceptions.AcknowledgeStatus.INVALID_ACK_ID
+    )
     assert not requests_to_retry
 
 
@@ -1656,7 +1659,10 @@ def test_process_futures_mixed_success_and_failure_acks():
     assert requests_completed[0].ack_id == "ackid1"
     with pytest.raises(subscriber_exceptions.AcknowledgeError) as exc_info:
         future1.result()
-    assert exc_info.value.error_code == subscriber_exceptions.AcknowledgeStatus.INVALID_ACK_ID
+    assert (
+        exc_info.value.error_code
+        == subscriber_exceptions.AcknowledgeStatus.INVALID_ACK_ID
+    )
     # message with ack_id 'ackid2' is to be retried
     assert requests_to_retry[0].ack_id == "ackid2"
     assert not requests_to_retry[0].future.done()
@@ -1686,7 +1692,10 @@ def test_process_futures_mixed_success_and_failure_modacks():
     assert requests_completed[0].ack_id == "ackid1"
     with pytest.raises(subscriber_exceptions.AcknowledgeError) as exc_info:
         future1.result()
-    assert exc_info.value.error_code == subscriber_exceptions.AcknowledgeStatus.INVALID_ACK_ID
+    assert (
+        exc_info.value.error_code
+        == subscriber_exceptions.AcknowledgeStatus.INVALID_ACK_ID
+    )
     # message with ack_id 'ackid2' is to be retried
     assert requests_to_retry[0].ack_id == "ackid2"
     assert not requests_to_retry[0].future.done()
