@@ -19,7 +19,7 @@ from google.api_core.exceptions import GoogleAPICallError
 from typing import Optional
 
 
-class AcknowledgeErrorCode(Enum):
+class AcknowledgeStatus(Enum):
     SUCCESS = 1
     PERMISSION_DENIED = 2
     FAILED_PRECONDITION = 3

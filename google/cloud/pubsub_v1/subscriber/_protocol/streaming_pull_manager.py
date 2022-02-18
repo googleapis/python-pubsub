@@ -34,7 +34,7 @@ from google.cloud.pubsub_v1.subscriber._protocol import histogram
 from google.cloud.pubsub_v1.subscriber._protocol import leaser
 from google.cloud.pubsub_v1.subscriber._protocol import messages_on_hold
 from google.cloud.pubsub_v1.subscriber._protocol import requests
-from google.cloud.pubsub_v1.subscriber.exceptions import AcknowledgeError, AcknowledgeErrorCode
+from google.cloud.pubsub_v1.subscriber.exceptions import AcknowledgeError, AcknowledgeStatus
 import google.cloud.pubsub_v1.subscriber.message
 from google.cloud.pubsub_v1.subscriber.scheduler import ThreadScheduler
 from google.pubsub_v1 import types as gapic_types
@@ -168,11 +168,11 @@ def _process_futures(
             else:
                 if exactly_once_error == "PERMANENT_FAILURE_INVALID_ACK_ID":
                     exc = AcknowledgeError(
-                        AcknowledgeErrorCode.INVALID_ACK_ID, info = None
+                        AcknowledgeStatus.INVALID_ACK_ID, info = None
                     )
                 else:
                     exc = AcknowledgeError(
-                        AcknowledgeErrorCode.OTHER, exactly_once_error
+                        AcknowledgeStatus.OTHER, exactly_once_error
                     )
 
                 future = future_reqs_dict[ack_id].future
@@ -183,15 +183,15 @@ def _process_futures(
             # retried at the lower, GRPC level.
             if error_status.code == code_pb2.PERMISSION_DENIED:
                 exc = AcknowledgeError(
-                    AcknowledgeErrorCode.PERMISSION_DENIED, info = None
+                    AcknowledgeStatus.PERMISSION_DENIED, info = None
                 )
             elif error_status.code == code_pb2.FAILED_PRECONDITION:
                 exc = AcknowledgeError(
-                    AcknowledgeErrorCode.FAILED_PRECONDITION, info = None
+                    AcknowledgeStatus.FAILED_PRECONDITION, info = None
                 )
             else:
                 exc = AcknowledgeError(
-                    AcknowledgeErrorCode.OTHER, str(error_status)
+                    AcknowledgeStatus.OTHER, str(error_status)
                 )
             future = future_reqs_dict[ack_id].future
             future.set_exception(exc)
@@ -199,7 +199,7 @@ def _process_futures(
         else:
             future = future_reqs_dict[ack_id].future
             # success
-            future.set_result(AcknowledgeErrorCode.SUCCESS)
+            future.set_result(AcknowledgeStatus.SUCCESS)
             requests_completed.append(future_reqs_dict[ack_id])
 
     return requests_completed, requests_to_retry
