@@ -1557,7 +1557,7 @@ def test_process_futures_no_errors():
         None, future_reqs_dict, errors_dict
     )
     assert requests_completed[0].ack_id == "ackid1"
-    assert future.result() == "ackid1"
+    assert future.result() == subscriber_exceptions.AcknowledgeErrorCode.SUCCESS
     assert not requests_to_retry
 
 
@@ -1662,7 +1662,7 @@ def test_process_futures_mixed_success_and_failure_acks():
     assert not requests_to_retry[0].future.done()
     # message with ack_id 'ackid3' succeeds
     assert requests_completed[1].ack_id == "ackid3"
-    assert future3.result() == "ackid3"
+    assert future3.result() == subscriber_exceptions.AcknowledgeErrorCode.SUCCESS
 
 
 def test_process_futures_mixed_success_and_failure_modacks():
@@ -1692,4 +1692,4 @@ def test_process_futures_mixed_success_and_failure_modacks():
     assert not requests_to_retry[0].future.done()
     # message with ack_id 'ackid3' succeeds
     assert requests_completed[1].ack_id == "ackid3"
-    assert future3.result() == "ackid3"
+    assert future3.result() == subscriber_exceptions.AcknowledgeErrorCode.SUCCESS

@@ -199,7 +199,7 @@ def _process_futures(
         else:
             future = future_reqs_dict[ack_id].future
             # success
-            future.set_result(ack_id)
+            future.set_result(AcknowledgeErrorCode.SUCCESS)
             requests_completed.append(future_reqs_dict[ack_id])
 
     return requests_completed, requests_to_retry

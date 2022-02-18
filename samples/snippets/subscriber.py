@@ -583,7 +583,7 @@ def receive_messages_with_blocking_shutdown(
 def receive_messages_with_exactly_once_subscribe(
     project_id: str, subscription_id: str, timeout: Optional[float] = None
 ) -> None:
-    """Receives messages from a pull subscription with exactly-once enabled."""
+    """Receives messages from a pull subscription with exactly-once delivery enabled."""
     # [START pubsub_subscriber_async_pull]
     # [START pubsub_quickstart_subscriber]
     from concurrent.futures import TimeoutError
@@ -607,15 +607,12 @@ def receive_messages_with_exactly_once_subscribe(
 
         try:
             # Block on result of acknowledge call.
-            ack_id = ack_future.result()
-            print(f"Ack for id {ack_id} successful.")
+            ack_future.result()
+            print(f"Ack for message {message.message_id} successful.")
         except pubsub_1.subscriber.exceptions.AcknowledgeError as e:
-            print(f"Ack for id {message.ack_id} failed with error: {e.error_code}")
-            if (
-                e.error_code
-                == pubsub_1.subscriber.exceptions.AcknowledgeErrorCode.OTHER
-            ):
-                print(f"Additional error info: {e.info}.")
+            print(
+                f"Ack for message {message.message_id} failed with error: {e.error_code}"
+            )
 
     streaming_pull_future = subscriber.subscribe(subscription_path, callback=callback)
     print(f"Listening for messages on {subscription_path}..\n")
