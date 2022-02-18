@@ -606,18 +606,16 @@ def receive_messages_with_exactly_once_subscribe(
         ack_future = message.ack_with_response()
 
         try:
-           # Block on result of acknowledge call.
-           ack_id = ack_future.result()
-           print(f"Ack for id {ack_id} successful.")
-        except RuntimeError as e:
-          # A permanent error indicates the ack_id is no longer valid - retries
-          # will always fail.
-          if "Permanent error" in str(e):
-            print(f"Ack for id {message.ack_id} failed with permanent error: {e}")
-        except Exception as e:
-          # All other errors, including failures after retries, fall here.
-          print(f"An ack error occurred: {e}")
-
+            # Block on result of acknowledge call.
+            ack_id = ack_future.result()
+            print(f"Ack for id {ack_id} successful.")
+        except pubsub_1.subscriber.exceptions.AcknowledgeError as e:
+            print(f"Ack for id {message.ack_id} failed with error: {e.error_code}")
+            if (
+                e.error_code
+                == pubsub_1.subscriber.exceptions.AcknowledgeErrorCode.OTHER
+            ):
+                print(f"Additional error info: {e.info}.")
 
     streaming_pull_future = subscriber.subscribe(subscription_path, callback=callback)
     print(f"Listening for messages on {subscription_path}..\n")
