@@ -30,17 +30,15 @@ class AcknowledgeErrorCode(Enum):
 class AcknowledgeError(GoogleAPICallError):
     """Error during ack/modack/nack operation on exactly-once-enabled subscription."""
 
-
     def __init__(self, error_code: str, info: Optional[str]):
         self.error_code = error_code
         self.info = info
         message = None
         if info:
-          message = str(self.error_code)  + " : " + self.info
+            message = str(self.error_code) + " : " + self.info
         else:
-          message = str(self.error_code)
+            message = str(self.error_code)
         super(AcknowledgeError, self).__init__(message)
 
-__all__ = (
-    "AcknowledgeError",
-)
+
+__all__ = ("AcknowledgeError",)
