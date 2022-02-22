@@ -870,7 +870,7 @@ class StreamingPullManager(object):
         return request
 
     def _send_lease_modacks(self, ack_ids: Sequence[str], ack_deadline: int):
-        exactly_once_enabled = None
+        exactly_once_enabled = False
         with self._exactly_once_enabled_lock:
             exactly_once_enabled = self._exactly_once_enabled
         if exactly_once_enabled:
@@ -893,8 +893,8 @@ class StreamingPullManager(object):
                     )
         else:
             items = [
-                requests.ModAckRequest(message.ack_id, self.ack_deadline, None)
-                for message in received_messages
+                requests.ModAckRequest(ack_id, self.ack_deadline, None)
+                for ack_id in ack_ids
             ]
             assert self._dispatcher is not None
             self._dispatcher.modify_ack_deadline(items)

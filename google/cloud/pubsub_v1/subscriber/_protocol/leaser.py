@@ -195,7 +195,7 @@ class Leaser(object):
                 #       is inactive.
                 assert self._manager.dispatcher is not None
                 ack_id_gen = (ack_id for ack_id in ack_ids)
-                self._manager._send_lease_modacks(ack_id_gen, ack_deadline)
+                self._manager._send_lease_modacks(ack_id_gen, deadline)
 
             # Now wait an appropriate period of time and do this again.
             #

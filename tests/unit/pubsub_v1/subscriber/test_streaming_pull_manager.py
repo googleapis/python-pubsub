@@ -129,6 +129,16 @@ def make_manager(**kwargs):
     )
 
 
+def complete_modify_ack_deadline_calls(dispatcher):
+    def complete_futures(*args, **kwargs):
+        modack_requests = args[0]
+        for req in modack_requests:
+            if req.future:
+                req.future.set_result(subscriber_exceptions.AcknowledgeStatus.SUCCESS)
+
+    dispatcher.modify_ack_deadline.side_effect = complete_futures
+
+
 def fake_leaser_add(leaser, init_msg_count=0, assumed_msg_size=10):
     """Add a simplified fake add() method to a leaser instance.
 
@@ -992,6 +1002,7 @@ def test__on_response_modifies_ack_deadline_with_exactly_once_min_lease():
     # exactly_once is disabled by default.
     manager, _, dispatcher, leaser, _, scheduler = make_running_manager()
     manager._callback = mock.sentinel.callback
+    complete_modify_ack_deadline_calls(dispatcher)
 
     # make p99 value smaller than exactly_once min lease
     manager.ack_histogram.add(10)
@@ -1034,37 +1045,36 @@ def test__on_response_modifies_ack_deadline_with_exactly_once_min_lease():
         ),
     )
 
-    # assertions for the _on_response calls below
-    dispatcher.assert_has_calls(
-        # assertion 1: mod-acks called with histogram-based lease value
-        dispatcher.modify_ack_deadline(
-            [
-                requests.ModAckRequest("ack_1", 10, None),
-                requests.ModAckRequest("ack_2", 10, None),
-            ]
-        ),
-        # assertion 2: mod-acks called with 60 sec min lease value for exactly_once subscriptions
-        dispatcher.modify_ack_deadline(
-            [
-                requests.ModAckRequest("ack_3", 60, None),
-                requests.ModAckRequest("ack_4", 60, None),
-            ]
-        ),
-    )
-
     # exactly_once is still disabled b/c subscription_properties says so
-    # should satisfy assertion 1
     manager._on_response(response1)
 
+    # expect mod-acks are called with histogram-based lease value
+    assert len(dispatcher.modify_ack_deadline.mock_calls) == 1
+    call = dispatcher.modify_ack_deadline.mock_calls[0]
+    assert call.args[0] == [
+        requests.ModAckRequest("ack_1", 10, None),
+        requests.ModAckRequest("ack_2", 10, None),
+    ]
+
     # exactly_once should be enabled after this request b/c subscription_properties says so
-    # should satisfy assertion 2
     manager._on_response(response2)
+
+    # expect mod-acks called with 60 sec min lease value for exactly_once subscriptions
+    # ignore the futures here
+    assert len(dispatcher.modify_ack_deadline.mock_calls) == 2
+    call = dispatcher.modify_ack_deadline.mock_calls[1]
+    modack_reqs = call.args[0]
+    assert modack_reqs[0].ack_id == "ack_3"
+    assert modack_reqs[0].seconds == 60
+    assert modack_reqs[1].ack_id == "ack_4"
+    assert modack_reqs[1].seconds == 60
 
 
 def test__on_response_send_ack_deadline_after_enabling_exactly_once():
     # exactly_once is disabled by default.
     manager, _, dispatcher, leaser, _, scheduler = make_running_manager()
     manager._callback = mock.sentinel.callback
+    complete_modify_ack_deadline_calls(dispatcher)
 
     # set up an active RPC
     manager._rpc = mock.create_autospec(bidi.BidiRpc, instance=True)
@@ -1306,6 +1316,7 @@ def test__on_response_enable_exactly_once():
 
     manager, _, dispatcher, leaser, _, scheduler = make_running_manager()
     manager._callback = mock.sentinel.callback
+    complete_modify_ack_deadline_calls(dispatcher)
 
     # Set up the messages.
     response = gapic_types.StreamingPullResponse(
