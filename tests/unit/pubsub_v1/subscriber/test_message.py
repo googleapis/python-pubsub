@@ -133,6 +133,22 @@ def test_ack():
         check_call_types(put, requests.AckRequest)
 
 
+def test_ack_with_response():
+    msg = create_message(b"foo", ack_id="bogus_ack_id")
+    with mock.patch.object(msg._request_queue, "put") as put:
+        future = msg.ack_with_response()
+        put.assert_called_once_with(
+            requests.AckRequest(
+                ack_id="bogus_ack_id",
+                byte_size=30,
+                time_to_ack=mock.ANY,
+                ordering_key="",
+                future=future,
+            )
+        )
+        check_call_types(put, requests.AckRequest)
+
+
 def test_drop():
     msg = create_message(b"foo", ack_id="bogus_ack_id")
     with mock.patch.object(msg._request_queue, "put") as put:
@@ -153,6 +169,16 @@ def test_modify_ack_deadline():
         check_call_types(put, requests.ModAckRequest)
 
 
+def test_modify_ack_deadline_with_response():
+    msg = create_message(b"foo", ack_id="bogus_ack_id")
+    with mock.patch.object(msg._request_queue, "put") as put:
+        future = msg.modify_ack_deadline_with_response(60)
+        put.assert_called_once_with(
+            requests.ModAckRequest(ack_id="bogus_ack_id", seconds=60, future=future)
+        )
+        check_call_types(put, requests.ModAckRequest)
+
+
 def test_nack():
     msg = create_message(b"foo", ack_id="bogus_ack_id")
     with mock.patch.object(msg._request_queue, "put") as put:
@@ -164,6 +190,17 @@ def test_nack():
         )
         check_call_types(put, requests.NackRequest)
 
+
+def test_nack_with_response():
+    msg = create_message(b"foo", ack_id="bogus_ack_id")
+    with mock.patch.object(msg._request_queue, "put") as put:
+        future = msg.nack_with_response()
+        put.assert_called_once_with(
+            requests.NackRequest(
+                ack_id="bogus_ack_id", byte_size=30, ordering_key="", future=future
+            )
+        )
+        check_call_types(put, requests.NackRequest)
 
 def test_repr():
     data = b"foo"

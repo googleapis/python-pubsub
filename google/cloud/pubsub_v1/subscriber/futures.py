@@ -19,6 +19,10 @@ from typing import Any
 from typing import Union
 
 from google.cloud.pubsub_v1 import futures
+from google.cloud.pubsub_v1.subscriber.exceptions import (
+    AcknowledgeError,
+    AcknowledgeStatus,
+)
 
 
 if typing.TYPE_CHECKING:  # pragma: NO COVER
@@ -84,8 +88,7 @@ class StreamingPullFuture(futures.Future):
 
 
 class Future(futures.Future):
-    # TODO: update docs as necessary
-    """This future object for subscribe-side calls.
+    """This future object is for subscribe-side calls.
 
     Calling :meth:`result` will resolve the future by returning the message
     ID, unless an error occurs.
@@ -105,9 +108,8 @@ class Future(futures.Future):
         """
         return False
 
-    # TODO modify return type annotation
-    def result(self, timeout: Union[int, float] = None) -> str:
-        """Return the message ID or raise an exception.
+    def result(self, timeout: Union[int, float] = None) -> AcknowledgeStatus:
+        """Return a success code or raise an exception.
 
         This blocks until the operation completes successfully and
         returns the error code unless an exception is raised.
@@ -117,11 +119,11 @@ class Future(futures.Future):
                 times out and raises TimeoutError.
 
         Returns:
-            The message ID.
+            AcknowledgeStatus.SUCCESS if the operation succeeded.
 
         Raises:
             concurrent.futures.TimeoutError: If the request times out.
-            Exception: For undefined exceptions in the underlying
-                call execution.
+            AcknowledgeError: If the operation did not succeed for another
+                reason.
         """
         return super().result(timeout=timeout)
