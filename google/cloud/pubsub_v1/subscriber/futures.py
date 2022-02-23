@@ -19,11 +19,7 @@ from typing import Any
 from typing import Union
 
 from google.cloud.pubsub_v1 import futures
-from google.cloud.pubsub_v1.subscriber.exceptions import (
-    AcknowledgeError,
-    AcknowledgeStatus,
-)
-
+from google.cloud.pubsub_v1.subscriber.exceptions import AcknowledgeStatus
 
 if typing.TYPE_CHECKING:  # pragma: NO COVER
     from google.cloud.pubsub_v1.subscriber._protocol.streaming_pull_manager import (

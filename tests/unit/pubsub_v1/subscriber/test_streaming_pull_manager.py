@@ -1668,7 +1668,7 @@ def test_process_futures_permission_denied_error_status_raises_exception():
         exc_info.value.error_code
         == subscriber_exceptions.AcknowledgeStatus.PERMISSION_DENIED
     )
-    assert exc_info.value.info == None
+    assert exc_info.value.info is None
     assert not requests_to_retry
 
 
@@ -1692,7 +1692,7 @@ def test_process_futures_failed_precondition_error_status_raises_exception():
         exc_info.value.error_code
         == subscriber_exceptions.AcknowledgeStatus.FAILED_PRECONDITION
     )
-    assert exc_info.value.info == None
+    assert exc_info.value.info is None
     assert not requests_to_retry
 
 
