@@ -75,6 +75,17 @@ def test_dispatch_callback_inactive_manager(item, method_name):
     method.assert_called_once_with([item])
 
 
+def test_unknown_request_type():
+    manager = mock.create_autospec(
+        streaming_pull_manager.StreamingPullManager, instance=True
+    )
+    dispatcher_ = dispatcher.Dispatcher(manager, mock.sentinel.queue)
+
+    items = ["a random string, not a known request type"]
+    manager.send_unary_ack.return_value = (items, [])
+    dispatcher_.dispatch_callback(items)
+
+
 def test_ack():
     manager = mock.create_autospec(
         streaming_pull_manager.StreamingPullManager, instance=True

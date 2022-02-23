@@ -1499,6 +1499,21 @@ def test_get_ack_errors_value_error_thrown(from_call):
 
 
 @mock.patch("grpc_status.rpc_status.from_call")
+def test_get_ack_errors_no_error_details(from_call):
+    st = status_pb2.Status()
+    st.code = code_pb2.Code.INTERNAL
+    st.message = "qmsg"
+    mock_gprc_call = mock.Mock(spec=grpc.Call)
+    exception = exceptions.InternalServerError(
+        "msg", errors=(), response=mock_gprc_call
+    )
+    from_call.side_effect = None
+    from_call.return_value = st
+    # status has no details to extract exactly-once error info from
+    assert not streaming_pull_manager._get_ack_errors(exception)
+
+
+@mock.patch("grpc_status.rpc_status.from_call")
 def test_get_ack_errors_happy_case(from_call):
     st = status_pb2.Status()
     st.code = code_pb2.Code.INTERNAL
@@ -1613,6 +1628,68 @@ def test_process_futures_unknown_error_raises_exception():
         future.result()
     assert exc_info.value.error_code == subscriber_exceptions.AcknowledgeStatus.OTHER
     assert exc_info.value.info == "unknown_error"
+    assert not requests_to_retry
+
+
+def test_process_futures_permission_denied_error_status_raises_exception():
+    # a permission-denied error status raises an exception
+    future = futures.Future()
+    future_reqs_dict = {
+        "ackid1": requests.AckRequest(
+            ack_id="ackid1", byte_size=0, time_to_ack=20, ordering_key="", future=future
+        )
+    }
+    st = status_pb2.Status()
+    st.code = code_pb2.Code.PERMISSION_DENIED
+    requests_completed, requests_to_retry = streaming_pull_manager._process_futures(
+        st, future_reqs_dict, None
+    )
+    assert requests_completed[0].ack_id == "ackid1"
+    with pytest.raises(subscriber_exceptions.AcknowledgeError) as exc_info:
+        future.result()
+    assert exc_info.value.error_code == subscriber_exceptions.AcknowledgeStatus.PERMISSION_DENIED
+    assert exc_info.value.info == None
+    assert not requests_to_retry
+
+
+def test_process_futures_failed_precondition_error_status_raises_exception():
+    # a failed-precondition error status raises an exception
+    future = futures.Future()
+    future_reqs_dict = {
+        "ackid1": requests.AckRequest(
+            ack_id="ackid1", byte_size=0, time_to_ack=20, ordering_key="", future=future
+        )
+    }
+    st = status_pb2.Status()
+    st.code = code_pb2.Code.FAILED_PRECONDITION
+    requests_completed, requests_to_retry = streaming_pull_manager._process_futures(
+        st, future_reqs_dict, None
+    )
+    assert requests_completed[0].ack_id == "ackid1"
+    with pytest.raises(subscriber_exceptions.AcknowledgeError) as exc_info:
+        future.result()
+    assert exc_info.value.error_code == subscriber_exceptions.AcknowledgeStatus.FAILED_PRECONDITION
+    assert exc_info.value.info == None
+    assert not requests_to_retry
+
+
+def test_process_futures_other_error_status_raises_exception():
+    # an unrecognized error status raises an exception
+    future = futures.Future()
+    future_reqs_dict = {
+        "ackid1": requests.AckRequest(
+            ack_id="ackid1", byte_size=0, time_to_ack=20, ordering_key="", future=future
+        )
+    }
+    st = status_pb2.Status()
+    st.code = code_pb2.Code.OUT_OF_RANGE
+    requests_completed, requests_to_retry = streaming_pull_manager._process_futures(
+        st, future_reqs_dict, None
+    )
+    assert requests_completed[0].ack_id == "ackid1"
+    with pytest.raises(subscriber_exceptions.AcknowledgeError) as exc_info:
+        future.result()
+    assert exc_info.value.error_code == subscriber_exceptions.AcknowledgeStatus.OTHER
     assert not requests_to_retry
 
 
