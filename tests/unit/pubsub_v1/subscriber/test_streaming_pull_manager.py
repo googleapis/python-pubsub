@@ -1378,10 +1378,16 @@ def test__on_response_disable_exactly_once():
 def test__on_response_exactly_once_immediate_modacks_fail():
     manager, _, dispatcher, leaser, _, scheduler = make_running_manager()
     manager._callback = mock.sentinel.callback
+
     def complete_futures_with_error(*args, **kwargs):
         modack_requests = args[0]
         for req in modack_requests:
-                req.future.set_exception(subscriber_exceptions.AcknowledgeError(subscriber_exceptions.AcknowledgeStatus.SUCCESS, None))
+            req.future.set_exception(
+                subscriber_exceptions.AcknowledgeError(
+                    subscriber_exceptions.AcknowledgeStatus.SUCCESS, None
+                )
+            )
+
     dispatcher.modify_ack_deadline.side_effect = complete_futures_with_error
 
     # Set up the messages.
