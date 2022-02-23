@@ -1375,6 +1375,36 @@ def test__on_response_disable_exactly_once():
     assert deadline == histogram.MIN_ACK_DEADLINE
 
 
+def test__on_response_exactly_once_immediate_modacks_fail():
+    manager, _, dispatcher, leaser, _, scheduler = make_running_manager()
+    manager._callback = mock.sentinel.callback
+    def complete_futures_with_error(*args, **kwargs):
+        modack_requests = args[0]
+        for req in modack_requests:
+                req.future.set_exception(subscriber_exceptions.AcknowledgeError(subscriber_exceptions.AcknowledgeStatus.SUCCESS, None))
+    dispatcher.modify_ack_deadline.side_effect = complete_futures_with_error
+
+    # Set up the messages.
+    response = gapic_types.StreamingPullResponse(
+        received_messages=[
+            gapic_types.ReceivedMessage(
+                ack_id="fack",
+                message=gapic_types.PubsubMessage(data=b"foo", message_id="1"),
+            )
+        ],
+        subscription_properties=gapic_types.StreamingPullResponse.SubscriptionProperties(
+            exactly_once_delivery_enabled=True
+        ),
+    )
+
+    # adjust message bookkeeping in leaser
+    fake_leaser_add(leaser, init_msg_count=0, assumed_msg_size=42)
+
+    # exactly_once should be enabled
+    manager._on_response(response)
+    # exceptions are logged, but otherwise no effect
+
+
 def test__should_recover_true():
     manager = make_manager()
 
