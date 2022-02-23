@@ -18,6 +18,7 @@ from __future__ import division
 import itertools
 import logging
 import math
+import time
 import threading
 import typing
 from typing import List, Optional, Sequence, Union
@@ -26,7 +27,6 @@ from google.api_core.retry import exponential_sleep_generator
 
 from google.cloud.pubsub_v1.subscriber._protocol import helper_threads
 from google.cloud.pubsub_v1.subscriber._protocol import requests
-from google.pubsub_v1 import types as gapic_types
 
 if typing.TYPE_CHECKING:  # pragma: NO COVER
     import queue
@@ -296,7 +296,6 @@ class Dispatcher(object):
                 )
                 time.sleep(time_to_wait)
 
-                print(requests_to_retry)
                 future_reqs_dict = {
                     req.ack_id: req for req in requests_to_retry if req.future
                 }

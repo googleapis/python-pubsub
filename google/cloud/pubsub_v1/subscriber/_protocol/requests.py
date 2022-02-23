@@ -18,6 +18,7 @@ from typing import NamedTuple, Optional
 if typing.TYPE_CHECKING:  # pragma: NO COVER
     from google.cloud.pubsub_v1.subscriber import futures
 
+
 # Namedtuples for management requests. Used by the Message class to communicate
 # items of work back to the policy.
 class AckRequest(NamedTuple):
@@ -25,7 +26,7 @@ class AckRequest(NamedTuple):
     byte_size: int
     time_to_ack: float
     ordering_key: Optional[str]
-    future: Optional["pubsub_v1.subscriber.futures.Future"]
+    future: Optional["futures.Future"]
 
 
 class DropRequest(NamedTuple):
@@ -43,11 +44,11 @@ class LeaseRequest(NamedTuple):
 class ModAckRequest(NamedTuple):
     ack_id: str
     seconds: float
-    future: Optional["pubsub_v1.subscriber.futures.Future"]
+    future: Optional["futures.Future"]
 
 
 class NackRequest(NamedTuple):
     ack_id: str
     byte_size: int
     ordering_key: Optional[str]
-    future: Optional["pubsub_v1.subscriber.futures.Future"]
+    future: Optional["futures.Future"]

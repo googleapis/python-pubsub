@@ -48,7 +48,6 @@ from google.rpc import code_pb2
 
 if typing.TYPE_CHECKING:  # pragma: NO COVER
     from google.cloud.pubsub_v1 import subscriber
-    from google.cloud.pubsub_v1.subscriber.scheduler import Scheduler
     from google.protobuf.internal import containers
     from google.rpc import status_pb2
 
@@ -886,10 +885,10 @@ class StreamingPullManager(object):
             for req in items:
                 try:
                     req.future.result()
-                except AcknowledgeError as e:
+                except AcknowledgeError:
                     _LOGGER.warning(
-                        f"AcknowledgeError when modacking a message immediately after receiving it.",
-                        exc_info=False,
+                        "AcknowledgeError when modacking a message immediately after receiving it.",
+                        exc_info=True,
                     )
         else:
             items = [

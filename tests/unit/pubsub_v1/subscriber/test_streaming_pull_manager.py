@@ -36,12 +36,10 @@ from google.cloud.pubsub_v1.subscriber._protocol import streaming_pull_manager
 from google.cloud.pubsub_v1.subscriber import exceptions as subscriber_exceptions
 from google.cloud.pubsub_v1.subscriber import futures
 from google.pubsub_v1 import types as gapic_types
-import grpc_status
 import grpc
 from google.rpc import status_pb2
 from google.rpc import code_pb2
 from google.rpc import error_details_pb2
-from google.protobuf.any_pb2 import Any
 
 
 @pytest.mark.parametrize(
@@ -236,8 +234,6 @@ def test__obtain_ack_deadline_with_min_duration_per_lease_extension_too_high():
 
 
 def test__obtain_ack_deadline_with_exactly_once_enabled():
-    from google.cloud.pubsub_v1.subscriber._protocol import histogram
-
     manager = make_manager()
     manager._flow_control = types.FlowControl(
         min_duration_per_lease_extension=0  # leave as default value
@@ -1106,7 +1102,8 @@ def test__on_response_send_ack_deadline_after_enabling_exactly_once():
     manager._on_response(response2)
 
     # simulate periodic heartbeat trigger
-    result = manager.heartbeat()
+    heartbeat_request_sent = manager.heartbeat()
+    assert heartbeat_request_sent
 
     # heartbeat request is sent with the 60 sec min lease value for exactly_once subscriptions
     manager._rpc.send.assert_called_once_with(
@@ -1312,8 +1309,6 @@ def test__on_response_with_ordering_keys():
 
 
 def test__on_response_enable_exactly_once():
-    from google.cloud.pubsub_v1.subscriber._protocol import histogram
-
     manager, _, dispatcher, leaser, _, scheduler = make_running_manager()
     manager._callback = mock.sentinel.callback
     complete_modify_ack_deadline_calls(dispatcher)
@@ -1457,8 +1452,6 @@ def test_activate_ordering_keys_stopped_scheduler():
 @mock.patch("grpc_status.rpc_status.from_call")
 @mock.patch("google.protobuf.any_pb2.Any.Unpack")
 def test_get_ack_errors_unable_to_unpack(from_call, unpack):
-    manager = make_manager()
-
     st = status_pb2.Status()
     st.code = code_pb2.Code.INTERNAL
     st.message = "qmsg"
@@ -1478,8 +1471,6 @@ def test_get_ack_errors_unable_to_unpack(from_call, unpack):
 
 @mock.patch("grpc_status.rpc_status.from_call")
 def test_get_ack_errors_no_response_obj(from_call):
-    manager = make_manager()
-
     exception = exceptions.InternalServerError("msg", errors=(), response=None)
     # No response obj
     assert not streaming_pull_manager._get_ack_errors(exception)
@@ -1487,8 +1478,6 @@ def test_get_ack_errors_no_response_obj(from_call):
 
 @mock.patch("grpc_status.rpc_status.from_call")
 def test_get_ack_errors_from_call_returned_none(from_call):
-    manager = make_manager()
-
     mock_gprc_call = mock.Mock(spec=grpc.Call)
     exception = exceptions.InternalServerError(
         "msg", errors=(), response=mock_gprc_call
@@ -1500,8 +1489,6 @@ def test_get_ack_errors_from_call_returned_none(from_call):
 
 @mock.patch("grpc_status.rpc_status.from_call")
 def test_get_ack_errors_value_error_thrown(from_call):
-    manager = make_manager()
-
     mock_gprc_call = mock.Mock(spec=grpc.Call)
     exception = exceptions.InternalServerError(
         "msg", errors=(), response=mock_gprc_call
@@ -1513,8 +1500,6 @@ def test_get_ack_errors_value_error_thrown(from_call):
 
 @mock.patch("grpc_status.rpc_status.from_call")
 def test_get_ack_errors_happy_case(from_call):
-    manager = make_manager()
-
     st = status_pb2.Status()
     st.code = code_pb2.Code.INTERNAL
     st.message = "qmsg"

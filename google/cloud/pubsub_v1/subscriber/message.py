@@ -247,7 +247,7 @@ class Message(object):
             )
         )
 
-    def ack_with_response(self) -> "pubsub_v1.subscriber.futures.Future":
+    def ack_with_response(self) -> "futures.Future":
         """Acknowledge the given message.
 
         Acknowledging a message in Pub/Sub means that you are done
@@ -319,9 +319,7 @@ class Message(object):
             requests.ModAckRequest(ack_id=self._ack_id, seconds=seconds, future=None)
         )
 
-    def modify_ack_deadline_with_response(
-        self, seconds: int
-    ) -> "pubsub_v1.subscriber.futures.Future":
+    def modify_ack_deadline_with_response(self, seconds: int) -> "futures.Future":
         """Resets the deadline for acknowledgement and returns the response
         status via a future.
 
@@ -365,7 +363,7 @@ class Message(object):
             )
         )
 
-    def nack_with_response(self) -> "pubsub_v1.subscriber.futures.Future":
+    def nack_with_response(self) -> "futures.Future":
         """Decline to acknowledge the given message, returning the response status via
         a future.
 

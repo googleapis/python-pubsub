@@ -20,7 +20,6 @@ from google.cloud.pubsub_v1.subscriber._protocol import dispatcher
 from google.cloud.pubsub_v1.subscriber._protocol import helper_threads
 from google.cloud.pubsub_v1.subscriber._protocol import requests
 from google.cloud.pubsub_v1.subscriber._protocol import streaming_pull_manager
-from google.pubsub_v1 import types as gapic_types
 
 import mock
 import pytest
