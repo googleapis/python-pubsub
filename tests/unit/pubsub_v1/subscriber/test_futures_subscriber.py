@@ -98,7 +98,11 @@ class TestFuture(object):
 
     def test_result_on_failure(self):
         future = futures.Future()
-        future.set_exception(AcknowledgeError(AcknowledgeStatus.PERMISSION_DENIED, "Something bad happened."))
+        future.set_exception(
+            AcknowledgeError(
+                AcknowledgeStatus.PERMISSION_DENIED, "Something bad happened."
+            )
+        )
         with pytest.raises(AcknowledgeError) as e:
             future.result()
             assert e.error_code == AcknowledgeStatus.PERMISSION_DENIED

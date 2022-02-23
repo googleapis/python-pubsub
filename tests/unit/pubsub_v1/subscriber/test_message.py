@@ -202,6 +202,7 @@ def test_nack_with_response():
         )
         check_call_types(put, requests.NackRequest)
 
+
 def test_repr():
     data = b"foo"
     ordering_key = "ord_key"

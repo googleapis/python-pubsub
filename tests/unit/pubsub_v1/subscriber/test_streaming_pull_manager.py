@@ -1520,7 +1520,7 @@ def test_get_ack_errors_detail_not_error_info(from_call):
     st.message = "qmsg"
     # pack a dummy status instead of an ErrorInfo
     dummy_status = status_pb2.Status()
-    st.details.add().Pack(dummy_status )
+    st.details.add().Pack(dummy_status)
     mock_gprc_call = mock.Mock(spec=grpc.Call)
     exception = exceptions.InternalServerError(
         "msg", errors=(), response=mock_gprc_call
@@ -1664,7 +1664,10 @@ def test_process_futures_permission_denied_error_status_raises_exception():
     assert requests_completed[0].ack_id == "ackid1"
     with pytest.raises(subscriber_exceptions.AcknowledgeError) as exc_info:
         future.result()
-    assert exc_info.value.error_code == subscriber_exceptions.AcknowledgeStatus.PERMISSION_DENIED
+    assert (
+        exc_info.value.error_code
+        == subscriber_exceptions.AcknowledgeStatus.PERMISSION_DENIED
+    )
     assert exc_info.value.info == None
     assert not requests_to_retry
 
@@ -1685,7 +1688,10 @@ def test_process_futures_failed_precondition_error_status_raises_exception():
     assert requests_completed[0].ack_id == "ackid1"
     with pytest.raises(subscriber_exceptions.AcknowledgeError) as exc_info:
         future.result()
-    assert exc_info.value.error_code == subscriber_exceptions.AcknowledgeStatus.FAILED_PRECONDITION
+    assert (
+        exc_info.value.error_code
+        == subscriber_exceptions.AcknowledgeStatus.FAILED_PRECONDITION
+    )
     assert exc_info.value.info == None
     assert not requests_to_retry
 
