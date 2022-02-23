@@ -1514,6 +1514,23 @@ def test_get_ack_errors_no_error_details(from_call):
 
 
 @mock.patch("grpc_status.rpc_status.from_call")
+def test_get_ack_errors_detail_not_error_info(from_call):
+    st = status_pb2.Status()
+    st.code = code_pb2.Code.INTERNAL
+    st.message = "qmsg"
+    # pack a dummy status instead of an ErrorInfo
+    dummy_status = status_pb2.Status()
+    st.details.add().Pack(dummy_status )
+    mock_gprc_call = mock.Mock(spec=grpc.Call)
+    exception = exceptions.InternalServerError(
+        "msg", errors=(), response=mock_gprc_call
+    )
+    from_call.side_effect = None
+    from_call.return_value = st
+    assert not streaming_pull_manager._get_ack_errors(exception)
+
+
+@mock.patch("grpc_status.rpc_status.from_call")
 def test_get_ack_errors_happy_case(from_call):
     st = status_pb2.Status()
     st.code = code_pb2.Code.INTERNAL
