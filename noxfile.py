@@ -159,7 +159,6 @@ def default(session):
         "--cov-config=.coveragerc",
         "--cov-report=",
         "--cov-fail-under=0",
-        "-s",
         os.path.join("tests", "unit"),
         *session.posargs,
     )
@@ -231,7 +230,7 @@ def cover(session):
     """
     session.install("coverage", "pytest-cov")
     # Tip: The "-i" flag lets you ignore errors with specific files.
-    session.run("coverage", "report", "-i", "--show-missing", "--fail-under=100")
+    session.run("coverage", "report", "--show-missing", "--fail-under=100")
 
     session.run("coverage", "erase")
 

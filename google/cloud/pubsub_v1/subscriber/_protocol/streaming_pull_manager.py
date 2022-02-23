@@ -141,12 +141,11 @@ def _get_ack_errors(
         _LOGGER.debug("Unable to get status of errored RPC.")
         return None
     for detail in status.details:
-        if detail.Is(ErrorInfo.DESCRIPTOR):
-            info = ErrorInfo()
-            if not detail.Unpack(info):
-                _LOGGER.debug("Unable to unpack ErrorInfo.")
-                return None
-            return info.metadata
+        info = ErrorInfo()
+        if not (detail.Is(ErrorInfo.DESCRIPTOR) and detail.Unpack(info)):
+            _LOGGER.debug("Unable to unpack ErrorInfo.")
+            return None
+        return info.metadata
     return None
 
 

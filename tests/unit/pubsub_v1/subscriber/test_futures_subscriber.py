@@ -105,5 +105,5 @@ class TestFuture(object):
         )
         with pytest.raises(AcknowledgeError) as e:
             future.result()
-            assert e.error_code == AcknowledgeStatus.PERMISSION_DENIED
-            assert e.info == "Something bad happened."
+        assert e.value.error_code == AcknowledgeStatus.PERMISSION_DENIED
+        assert e.value.info == "Something bad happened."
