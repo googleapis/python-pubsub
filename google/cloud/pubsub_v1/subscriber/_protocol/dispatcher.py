@@ -201,7 +201,7 @@ class Dispatcher(object):
                 maximum=_MAX_EXACTLY_ONCE_ACK_MODACK_RETRY_DURATION_SECS,
             )
             while requests_to_retry:
-                time_to_wait = retry_delay_gen()
+                time_to_wait = next(retry_delay_gen)
                 _LOGGER.debug(
                     "Retrying {len(requests_to_retry)} ack(s) after delay of "
                     + str(time_to_wait)
@@ -288,7 +288,7 @@ class Dispatcher(object):
                 maximum=_MAX_EXACTLY_ONCE_ACK_MODACK_RETRY_DURATION_SECS,
             )
             while requests_to_retry:
-                time_to_wait = retry_delay_gen()
+                time_to_wait = next(retry_delay_gen)
                 _LOGGER.debug(
                     "Retrying {len(requests_to_retry)} modack(s) after delay of "
                     + str(time_to_wait)
@@ -299,7 +299,7 @@ class Dispatcher(object):
                 future_reqs_dict = {
                     req.ack_id: req for req in requests_to_retry if req.future
                 }
-                requests_to_retry = self._manager.send_unary_modack(
+                requests_completed, requests_to_retry = self._manager.send_unary_modack(
                     modify_deadline_ack_ids=[req.ack_id for req in requests_to_retry],
                     modify_deadline_seconds=[req.seconds for req in requests_to_retry],
                     future_reqs_dict=future_reqs_dict,

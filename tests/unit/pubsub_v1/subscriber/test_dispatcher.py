@@ -20,6 +20,7 @@ from google.cloud.pubsub_v1.subscriber._protocol import dispatcher
 from google.cloud.pubsub_v1.subscriber._protocol import helper_threads
 from google.cloud.pubsub_v1.subscriber._protocol import requests
 from google.cloud.pubsub_v1.subscriber._protocol import streaming_pull_manager
+from google.cloud.pubsub_v1.subscriber import futures
 
 import mock
 import pytest
@@ -159,6 +160,76 @@ def test_ack_splitting_large_payload():
 
     assert set(sent_ack_ids) == all_ack_ids  # all messages should have been ACK-ed
     assert sent_ack_ids.most_common(1)[0][1] == 1  # each message ACK-ed exactly once
+
+
+def test_ack_retry_failed_exactly_once_acks():
+    manager = mock.create_autospec(
+        streaming_pull_manager.StreamingPullManager, instance=True
+    )
+    dispatcher_ = dispatcher.Dispatcher(manager, mock.sentinel.queue)
+
+    f = futures.Future()
+    items = [
+        requests.AckRequest(
+            ack_id="ack_id_string",
+            byte_size=0,
+            time_to_ack=20,
+            ordering_key="",
+            future=f,
+        )
+    ]
+    # first and second calls fail, third one succeeds
+    manager.send_unary_ack.side_effect = [([], items), ([], items), (items, [])]
+    with mock.patch("time.sleep", return_value=None):
+        dispatcher_.ack(items)
+
+    manager.send_unary_ack.assert_has_calls(
+        [
+            mock.call(
+                ack_ids=["ack_id_string"], future_reqs_dict={"ack_id_string": items[0]}
+            ),
+            mock.call(
+                ack_ids=["ack_id_string"], future_reqs_dict={"ack_id_string": items[0]}
+            ),
+            mock.call(
+                ack_ids=["ack_id_string"], future_reqs_dict={"ack_id_string": items[0]}
+            ),
+        ]
+    )
+
+
+def test_modack_retry_failed_exactly_once_acks():
+    manager = mock.create_autospec(
+        streaming_pull_manager.StreamingPullManager, instance=True
+    )
+    dispatcher_ = dispatcher.Dispatcher(manager, mock.sentinel.queue)
+
+    f = futures.Future()
+    items = [requests.ModAckRequest(ack_id="ack_id_string", seconds=20, future=f,)]
+    # first and second calls fail, third one succeeds
+    manager.send_unary_modack.side_effect = [([], items), ([], items), (items, [])]
+    with mock.patch("time.sleep", return_value=None):
+        dispatcher_.modify_ack_deadline(items)
+
+    manager.send_unary_modack.assert_has_calls(
+        [
+            mock.call(
+                modify_deadline_ack_ids=["ack_id_string"],
+                modify_deadline_seconds=[20],
+                future_reqs_dict={"ack_id_string": items[0]},
+            ),
+            mock.call(
+                modify_deadline_ack_ids=["ack_id_string"],
+                modify_deadline_seconds=[20],
+                future_reqs_dict={"ack_id_string": items[0]},
+            ),
+            mock.call(
+                modify_deadline_ack_ids=["ack_id_string"],
+                modify_deadline_seconds=[20],
+                future_reqs_dict={"ack_id_string": items[0]},
+            ),
+        ]
+    )
 
 
 def test_lease():
