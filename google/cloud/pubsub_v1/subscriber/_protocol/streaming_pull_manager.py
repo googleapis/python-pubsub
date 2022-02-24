@@ -20,7 +20,7 @@ import itertools
 import logging
 import threading
 import typing
-from typing import Any, Callable, Iterable, List, Optional, Sequence, Tuple, Union
+from typing import Any, Callable, Iterable, List, Optional, Tuple, Union
 import uuid
 
 import grpc  # type: ignore
@@ -42,9 +42,9 @@ import google.cloud.pubsub_v1.subscriber.message
 from google.cloud.pubsub_v1.subscriber import futures
 from google.cloud.pubsub_v1.subscriber.scheduler import ThreadScheduler
 from google.pubsub_v1 import types as gapic_types
-from grpc_status import rpc_status
-from google.rpc.error_details_pb2 import ErrorInfo
-from google.rpc import code_pb2
+from grpc_status import rpc_status  # type: ignore
+from google.rpc.error_details_pb2 import ErrorInfo  # type: ignore
+from google.rpc import code_pb2  # type: ignore
 
 if typing.TYPE_CHECKING:  # pragma: NO COVER
     from google.cloud.pubsub_v1 import subscriber
@@ -867,7 +867,7 @@ class StreamingPullManager(object):
         # Return the initial request.
         return request
 
-    def _send_lease_modacks(self, ack_ids: Sequence[str], ack_deadline: int):
+    def _send_lease_modacks(self, ack_ids: Iterable[str], ack_deadline: float):
         exactly_once_enabled = False
         with self._exactly_once_enabled_lock:
             exactly_once_enabled = self._exactly_once_enabled
@@ -883,6 +883,7 @@ class StreamingPullManager(object):
 
             for req in items:
                 try:
+                    assert req.future is not None
                     req.future.result()
                 except AcknowledgeError:
                     _LOGGER.warning(
