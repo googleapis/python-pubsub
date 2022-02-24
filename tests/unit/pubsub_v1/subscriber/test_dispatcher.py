@@ -173,7 +173,7 @@ def test_ack_splitting_large_payload():
     assert sent_ack_ids.most_common(1)[0][1] == 1  # each message ACK-ed exactly once
 
 
-def test_ack_retry_failed_exactly_once_acks():
+def test_retry_acks_in_new_thread():
     manager = mock.create_autospec(
         streaming_pull_manager.StreamingPullManager, instance=True
     )
@@ -189,10 +189,39 @@ def test_ack_retry_failed_exactly_once_acks():
             future=f,
         )
     ]
-    # first and second calls fail, third one succeeds
+    # failure triggers creation of new retry thread
+    manager.send_unary_ack.side_effect = [([], items)]
+    with mock.patch("time.sleep", return_value=None):
+        with mock.patch.object(threading, "Thread", autospec=True) as Thread:
+            dispatcher_.ack(items)
+
+            assert len(Thread.mock_calls) == 2
+            ctor_call = Thread.mock_calls[0]
+            assert ctor_call.kwargs["name"] == "Thread-RetryAcks"
+            assert ctor_call.kwargs["target"].args[0] == items
+            assert ctor_call.kwargs["daemon"]
+
+
+def test_retry_acks():
+    manager = mock.create_autospec(
+        streaming_pull_manager.StreamingPullManager, instance=True
+    )
+    dispatcher_ = dispatcher.Dispatcher(manager, mock.sentinel.queue)
+
+    f = futures.Future()
+    items = [
+        requests.AckRequest(
+            ack_id="ack_id_string",
+            byte_size=0,
+            time_to_ack=20,
+            ordering_key="",
+            future=f,
+        )
+    ]
+    # first and second `send_unary_ack` calls fail, third one succeeds
     manager.send_unary_ack.side_effect = [([], items), ([], items), (items, [])]
     with mock.patch("time.sleep", return_value=None):
-        dispatcher_.ack(items)
+        dispatcher_._retry_acks(items)
 
     manager.send_unary_ack.assert_has_calls(
         [
@@ -209,7 +238,28 @@ def test_ack_retry_failed_exactly_once_acks():
     )
 
 
-def test_modack_retry_failed_exactly_once_acks():
+def test_retry_modacks_in_new_thread():
+    manager = mock.create_autospec(
+        streaming_pull_manager.StreamingPullManager, instance=True
+    )
+    dispatcher_ = dispatcher.Dispatcher(manager, mock.sentinel.queue)
+
+    f = futures.Future()
+    items = [requests.ModAckRequest(ack_id="ack_id_string", seconds=20, future=f,)]
+    # failure triggers creation of new retry thread
+    manager.send_unary_modack.side_effect = [([], items)]
+    with mock.patch("time.sleep", return_value=None):
+        with mock.patch.object(threading, "Thread", autospec=True) as Thread:
+            dispatcher_.modify_ack_deadline(items)
+
+            assert len(Thread.mock_calls) == 2
+            ctor_call = Thread.mock_calls[0]
+            assert ctor_call.kwargs["name"] == "Thread-RetryModAcks"
+            assert ctor_call.kwargs["target"].args[0] == items
+            assert ctor_call.kwargs["daemon"]
+
+
+def test_retry_modacks():
     manager = mock.create_autospec(
         streaming_pull_manager.StreamingPullManager, instance=True
     )
@@ -220,7 +270,7 @@ def test_modack_retry_failed_exactly_once_acks():
     # first and second calls fail, third one succeeds
     manager.send_unary_modack.side_effect = [([], items), ([], items), (items, [])]
     with mock.patch("time.sleep", return_value=None):
-        dispatcher_.modify_ack_deadline(items)
+        dispatcher_._retry_modacks(items)
 
     manager.send_unary_modack.assert_has_calls(
         [
