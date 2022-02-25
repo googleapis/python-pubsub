@@ -18,6 +18,7 @@ from google.cloud.pubsub_v1.subscriber import message
 from google.cloud.pubsub_v1.subscriber._protocol import messages_on_hold
 from google.pubsub_v1 import types as gapic_types
 
+
 # Using this function instead of a lambda to satisfy the coverage tool
 def return_false():
     return False
