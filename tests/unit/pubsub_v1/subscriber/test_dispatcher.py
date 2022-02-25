@@ -402,7 +402,6 @@ def test_modify_ack_deadline_splitting_large_payload():
 
     for call in calls:
         modack_ackids = call[1]["modify_deadline_ack_ids"]
-        print(type(modack_ackids))
         assert len(modack_ackids) <= dispatcher._ACK_IDS_BATCH_SIZE
         sent_ack_ids.update(modack_ackids)
 
