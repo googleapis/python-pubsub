@@ -19,10 +19,12 @@ import json
 import math
 import time
 import typing
-from typing import Optional
+from typing import Optional, Callable
 
 from google.cloud.pubsub_v1.subscriber._protocol import requests
 from google.cloud.pubsub_v1.subscriber import futures
+from google.cloud.pubsub_v1.subscriber.exceptions import AcknowledgeStatus
+
 
 if typing.TYPE_CHECKING:  # pragma: NO COVER
     import datetime
@@ -88,6 +90,7 @@ class Message(object):
         ack_id: str,
         delivery_attempt: int,
         request_queue: "queue.Queue",
+        exactly_once_delivery_enabled_func: Callable[[], bool],
     ):
         """Construct the Message.
 
@@ -111,11 +114,14 @@ class Message(object):
             request_queue:
                 A queue provided by the policy that can accept requests; the policy is
                 responsible for handling those requests.
+            exactly_once_delivery_enabled_func:
+                A Callable that returns whether exactly-once delivery is currently-enabled.
         """
         self._message = message
         self._ack_id = ack_id
         self._delivery_attempt = delivery_attempt if delivery_attempt > 0 else None
         self._request_queue = request_queue
+        self._exactly_once_delivery_enabled_func = exactly_once_delivery_enabled_func
         self.message_id = message.message_id
 
         # The instantiation time is the time that this message
@@ -267,7 +273,7 @@ class Message(object):
         message may be re-delivered.
 
         If exactly-once delivery is NOT enabled on the subscription, the
-        future simply tracks the state of the acknowledgement operation.
+        future returns immediately with an AcknowledgeStatus.SUCCESS.
         Since acks in Cloud Pub/Sub are best effort when exactly-once
         delivery is disabled, the message may be re-delivered. Because
         re-deliveries are possible, you should ensure that your processing
@@ -286,6 +292,11 @@ class Message(object):
             will be thrown.
         """
         future = futures.Future()
+        req_future = None
+        if self._exactly_once_delivery_enabled_func():
+            req_future = future
+        else:
+            future.set_result(AcknowledgeStatus.SUCCESS)
         time_to_ack = math.ceil(time.time() - self._received_timestamp)
         self._request_queue.put(
             requests.AckRequest(
@@ -293,7 +304,7 @@ class Message(object):
                 byte_size=self.size,
                 time_to_ack=time_to_ack,
                 ordering_key=self.ordering_key,
-                future=future,
+                future=req_future,
             )
         )
         return future
@@ -357,10 +368,10 @@ class Message(object):
         currently-set ack deadline.
 
         If exactly-once delivery is NOT enabled on the subscription, the
-        future simply tracks the state of the modify-ack-deadline operation.
+        future returns immediately with an AcknowledgeStatus.SUCCESS.
         Since modify-ack-deadline operations in Cloud Pub/Sub are best effort
         when exactly-once delivery is disabled, the message may be re-delivered
-        within the set deadline, even if the operation was successful.
+        within the set deadline.
 
         Args:
             seconds:
@@ -380,9 +391,18 @@ class Message(object):
 
         """
         future = futures.Future()
+        req_future = None
+        if self._exactly_once_delivery_enabled_func():
+            req_future = future
+        else:
+            future.set_result(AcknowledgeStatus.SUCCESS)
+
         self._request_queue.put(
-            requests.ModAckRequest(ack_id=self._ack_id, seconds=seconds, future=future)
+            requests.ModAckRequest(
+                ack_id=self._ack_id, seconds=seconds, future=req_future
+            )
         )
+
         return future
 
     def nack(self) -> None:
@@ -409,6 +429,16 @@ class Message(object):
         may take place immediately or after a delay, and may arrive at this subscriber
         or another.
 
+        If exactly-once delivery is enabled on the subscription, the
+        future returned by this method tracks the state of the
+        nack operation. If the future completes successfully,
+        the future's result will be an AcknowledgeStatus.SUCCESS.
+        Otherwise, the future will contain an exception with more details about
+        the failure.
+
+        If exactly-once delivery is NOT enabled on the subscription, the
+        future returns immediately with an AcknowledgeStatus.SUCCESS.
+
         Returns:
             A :class:`~google.cloud.pubsub_v1.subscriber.futures.Future`
             instance that conforms to Python Standard library's
@@ -422,12 +452,19 @@ class Message(object):
 
         """
         future = futures.Future()
+        req_future = None
+        if self._exactly_once_delivery_enabled_func():
+            req_future = future
+        else:
+            future.set_result(AcknowledgeStatus.SUCCESS)
+
         self._request_queue.put(
             requests.NackRequest(
                 ack_id=self._ack_id,
                 byte_size=self.size,
                 ordering_key=self.ordering_key,
-                future=future,
+                future=req_future,
             )
         )
+
         return future

@@ -898,6 +898,11 @@ class StreamingPullManager(object):
             assert self._dispatcher is not None
             self._dispatcher.modify_ack_deadline(items)
 
+    def _exactly_once_delivery_enabled(self) -> bool:
+        """Whether exactly-once delivery is enabled for the subscription."""
+        with self._exactly_once_enabled_lock:
+            return self._exactly_once_enabled
+
     def _on_response(self, response: gapic_types.StreamingPullResponse) -> None:
         """Process all received Pub/Sub messages.
 
@@ -957,6 +962,7 @@ class StreamingPullManager(object):
                     received_message.ack_id,
                     received_message.delivery_attempt,
                     self._scheduler.queue,
+                    self._exactly_once_delivery_enabled,
                 )
                 self._messages_on_hold.put(message)
                 self._on_hold_bytes += message.size

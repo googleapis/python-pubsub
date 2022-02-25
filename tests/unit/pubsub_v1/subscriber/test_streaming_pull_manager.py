@@ -1332,7 +1332,7 @@ def test__on_response_enable_exactly_once():
     # exactly_once should be enabled
     manager._on_response(response)
 
-    assert manager._exactly_once_enabled
+    assert manager._exactly_once_delivery_enabled()
     # new deadline for exactly_once subscriptions should be used
     assert manager.ack_deadline == 60
 
