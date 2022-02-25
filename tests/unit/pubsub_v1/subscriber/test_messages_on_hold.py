@@ -19,11 +19,6 @@ from google.cloud.pubsub_v1.subscriber._protocol import messages_on_hold
 from google.pubsub_v1 import types as gapic_types
 
 
-# Using this function instead of a lambda to satisfy the coverage tool
-def return_false():
-    return False
-
-
 def make_message(ack_id, ordering_key):
     proto_msg = gapic_types.PubsubMessage(data=b"Q", ordering_key=ordering_key)
     return message.Message(
@@ -31,7 +26,7 @@ def make_message(ack_id, ordering_key):
         ack_id,
         0,
         queue.Queue(),
-        exactly_once_delivery_enabled_func=return_false,
+        exactly_once_delivery_enabled_func=lambda: False,  # pragma: NO COVER
     )
 
 
