@@ -90,7 +90,7 @@ class Message(object):
         ack_id: str,
         delivery_attempt: int,
         request_queue: "queue.Queue",
-        exactly_once_delivery_enabled_func: Callable[[], bool],
+        exactly_once_delivery_enabled_func: Callable[[], bool] = lambda: False,
     ):
         """Construct the Message.
 
@@ -115,7 +115,7 @@ class Message(object):
                 A queue provided by the policy that can accept requests; the policy is
                 responsible for handling those requests.
             exactly_once_delivery_enabled_func:
-                A Callable that returns whether exactly-once delivery is currently-enabled.
+                A Callable that returns whether exactly-once delivery is currently-enabled. Defaults to a lambda that always returns False.
         """
         self._message = message
         self._ack_id = ack_id

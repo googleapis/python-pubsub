@@ -20,7 +20,8 @@ from google.pubsub_v1 import types as gapic_types
 
 # Using this function instead of a lambda to satisfy the coverage tool
 def return_false():
-  return False
+    return False
+
 
 def make_message(ack_id, ordering_key):
     proto_msg = gapic_types.PubsubMessage(data=b"Q", ordering_key=ordering_key)
