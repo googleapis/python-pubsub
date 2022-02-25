@@ -45,11 +45,11 @@ from google.pubsub_v1 import types as gapic_types
 from grpc_status import rpc_status  # type: ignore
 from google.rpc.error_details_pb2 import ErrorInfo  # type: ignore
 from google.rpc import code_pb2  # type: ignore
+from google.rpc import status_pb2
 
 if typing.TYPE_CHECKING:  # pragma: NO COVER
     from google.cloud.pubsub_v1 import subscriber
     from google.protobuf.internal import containers
-    from google.rpc import status_pb2
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -575,6 +575,10 @@ class StreamingPullManager(object):
             error_status = _get_status(exc)
             ack_errors_dict = _get_ack_errors(exc)
         except exceptions.RetryError as exc:
+            status = status_pb2.Status()
+            status.code = code_pb2.DEADLINE_EXCEEDED
+            # Makes sure to complete futures so they don't block forever.
+            _process_futures(status, future_reqs_dict, None)
             _LOGGER.debug(
                 "RetryError while sending unary RPC. Waiting on a transient "
                 "error resolution for too long, will now trigger shutdown.",
@@ -625,6 +629,10 @@ class StreamingPullManager(object):
             error_status = _get_status(exc)
             modack_errors_dict = _get_ack_errors(exc)
         except exceptions.RetryError as exc:
+            status = status_pb2.Status()
+            status.code = code_pb2.DEADLINE_EXCEEDED
+            # Makes sure to complete futures so they don't block forever.
+            _process_futures(status, future_reqs_dict, None)
             _LOGGER.debug(
                 "RetryError while sending unary RPC. Waiting on a transient "
                 "error resolution for too long, will now trigger shutdown.",

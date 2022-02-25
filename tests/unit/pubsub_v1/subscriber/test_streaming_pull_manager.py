@@ -579,11 +579,23 @@ def test_send_unary_ack_retry_error(caplog):
     )
     manager._client.acknowledge.side_effect = error
 
+    future = futures.Future()
+    future_reqs_dict = {
+        "ackid1": requests.AckRequest(
+            ack_id="ackid1", byte_size=0, time_to_ack=20, ordering_key="", future=future
+        )
+    }
     with pytest.raises(exceptions.RetryError):
-        manager.send_unary_ack(ack_ids=["ack_id1", "ack_id2"], future_reqs_dict={})
+        manager.send_unary_ack(
+            ack_ids=["ack_id1", "ack_id2"], future_reqs_dict=future_reqs_dict
+        )
 
     assert "RetryError while sending unary RPC" in caplog.text
     assert "signaled streaming pull manager shutdown" in caplog.text
+    assert isinstance(future.exception(), subscriber_exceptions.AcknowledgeError)
+    assert (
+        future.exception().error_code is subscriber_exceptions.AcknowledgeStatus.OTHER
+    )
 
 
 def test_send_unary_modack_retry_error(caplog):
@@ -596,15 +608,23 @@ def test_send_unary_modack_retry_error(caplog):
     )
     manager._client.modify_ack_deadline.side_effect = error
 
+    future = futures.Future()
+    future_reqs_dict = {
+        "ackid1": requests.ModAckRequest(ack_id="ackid1", seconds=60, future=future)
+    }
     with pytest.raises(exceptions.RetryError):
         manager.send_unary_modack(
-            modify_deadline_ack_ids=["ack_id_string"],
+            modify_deadline_ack_ids=["ackid1"],
             modify_deadline_seconds=[0],
-            future_reqs_dict={},
+            future_reqs_dict=future_reqs_dict,
         )
 
     assert "RetryError while sending unary RPC" in caplog.text
     assert "signaled streaming pull manager shutdown" in caplog.text
+    assert isinstance(future.exception(), subscriber_exceptions.AcknowledgeError)
+    assert (
+        future.exception().error_code is subscriber_exceptions.AcknowledgeStatus.OTHER
+    )
 
 
 def test_heartbeat():
