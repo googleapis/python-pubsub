@@ -70,11 +70,11 @@ IDs at a time.
 
 _MIN_EXACTLY_ONCE_DELIVERY_ACK_MODACK_RETRY_DURATION_SECS = 1
 """The time to wait for the first retry of failed acks and modacks when exactly-once
-is enabled."""
+delivery is enabled."""
 
 _MAX_EXACTLY_ONCE_DELIVERY_ACK_MODACK_RETRY_DURATION_SECS = 10 * 60
 """The maximum amount of time in seconds to retry failed acks and modacks when
-exactly-once is enabled."""
+exactly-once delivery is enabled."""
 
 
 class Dispatcher(object):

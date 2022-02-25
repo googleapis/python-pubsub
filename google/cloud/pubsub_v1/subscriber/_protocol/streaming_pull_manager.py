@@ -385,7 +385,8 @@ class StreamingPullManager(object):
                 )
                 self._ack_deadline = max(self._ack_deadline, flow_control_setting)
             elif self._exactly_once_enabled:
-                # Higher minimum ack_deadline for exactly_once subscriptions.
+                # Higher minimum ack_deadline for subscriptions with
+                # exactly-once delivery enabled.
                 self._ack_deadline = max(
                     self._ack_deadline, _MIN_ACK_DEADLINE_SECS_WHEN_EXACTLY_ONCE_ENABLED
                 )
@@ -652,7 +653,7 @@ class StreamingPullManager(object):
         """Sends a heartbeat request over the streaming pull RPC.
 
         The request is empty by default, but may contain the current ack_deadline
-        if the exactly_once flag has changed.
+        if the self._exactly_once_enabled flag has changed.
 
         Returns:
             If a heartbeat request has actually been sent.
