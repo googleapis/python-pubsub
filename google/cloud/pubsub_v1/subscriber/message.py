@@ -234,7 +234,10 @@ class Message(object):
         .. warning::
             Acks in Pub/Sub are best effort. You should always
             ensure that your processing code is idempotent, as you may
-            receive any given message more than once.
+            receive any given message more than once. If you need strong
+            guarantees about acks and re-deliveres, enable exactly-once
+            delivery on your subscription and use the `ack_with_response`
+            method instead.
         """
         time_to_ack = math.ceil(time.time() - self._received_timestamp)
         self._request_queue.put(
@@ -256,16 +259,31 @@ class Message(object):
         *finished* processing them, so that in the event of a failure,
         you receive the message again.
 
-        .. warning::
-            Acks in Pub/Sub are best effort. You should always
-            ensure that your processing code is idempotent, as you may
-            receive any given message more than once.
+        If exactly-once delivery is enabled on the subscription, the
+        future returned by this method tracks the state of acknowledgement
+        operation. If the future completes successfully, the message is
+        guaranteed NOT to be re-delivered. Otherwise, the future will
+        contain an exception with more details about the failure and the
+        message may be re-delivered.
+
+        If exactly-once delivery is NOT enabled on the subscription, the
+        future simply tracks the state of the acknowledgement operation.
+        Since acks in Cloud Pub/Sub are best effort when exactly-once
+        delivery is disabled, the message may be re-delivered. Because
+        re-deliveries are possible, you should ensure that your processing
+        code is idempotent, as you may receive any given message more than
+        once.
 
         Returns:
             A :class:`~google.cloud.pubsub_v1.subscriber.futures.Future`
             instance that conforms to Python Standard library's
             :class:`~concurrent.futures.Future` interface (but not an
-            instance of that class).
+            instance of that class). Call `result()` to get the result
+            of the operation; upon success, a
+            pubsub_v1.subscriber.exceptions.AcknowledgeStatus.SUCCESS
+            will be returned and upon an error, an
+            pubsub_v1.subscriber.exceptions.AcknowledgeError exception
+            will be thrown.
         """
         future = futures.Future()
         time_to_ack = math.ceil(time.time() - self._received_timestamp)
@@ -330,6 +348,20 @@ class Message(object):
         if you are implementing your own custom subclass of
         :class:`~.pubsub_v1.subcriber._consumer.Consumer`.
 
+        If exactly-once delivery is enabled on the subscription, the
+        future returned by this method tracks the state of the
+        modify-ack-deadline operation. If the future completes successfully,
+        the message is guaranteed NOT to be re-delivered within the new deadline.
+        Otherwise, the future will contain an exception with more details about
+        the failure and the message will be redelivered according to its
+        currently-set ack deadline.
+
+        If exactly-once delivery is NOT enabled on the subscription, the
+        future simply tracks the state of the modify-ack-deadline operation.
+        Since modify-ack-deadline operations in Cloud Pub/Sub are best effort
+        when exactly-once delivery is disabled, the message may be re-delivered
+        within the set deadline, even if the operation was successful.
+
         Args:
             seconds:
                 The number of seconds to set the lease deadline to. This should be
@@ -339,7 +371,13 @@ class Message(object):
             A :class:`~google.cloud.pubsub_v1.subscriber.futures.Future`
             instance that conforms to Python Standard library's
             :class:`~concurrent.futures.Future` interface (but not an
-            instance of that class).
+            instance of that class). Call `result()` to get the result
+            of the operation; upon success, a
+            pubsub_v1.subscriber.exceptions.AcknowledgeStatus.SUCCESS
+            will be returned and upon an error, an
+            pubsub_v1.subscriber.exceptions.AcknowledgeError exception
+            will be thrown.
+
         """
         future = futures.Future()
         self._request_queue.put(
@@ -375,7 +413,13 @@ class Message(object):
             A :class:`~google.cloud.pubsub_v1.subscriber.futures.Future`
             instance that conforms to Python Standard library's
             :class:`~concurrent.futures.Future` interface (but not an
-            instance of that class).
+            instance of that class). Call `result()` to get the result
+            of the operation; upon success, a
+            pubsub_v1.subscriber.exceptions.AcknowledgeStatus.SUCCESS
+            will be returned and upon an error, an
+            pubsub_v1.subscriber.exceptions.AcknowledgeError exception
+            will be thrown.
+
         """
         future = futures.Future()
         self._request_queue.put(

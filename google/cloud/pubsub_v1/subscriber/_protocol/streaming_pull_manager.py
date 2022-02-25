@@ -887,7 +887,7 @@ class StreamingPullManager(object):
                     req.future.result()
                 except AcknowledgeError:
                     _LOGGER.warning(
-                        "AcknowledgeError when modacking a message immediately after receiving it.",
+                        "AcknowledgeError when lease-modacking a message.",
                         exc_info=True,
                     )
         else:
