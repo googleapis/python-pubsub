@@ -1628,8 +1628,23 @@ def test_process_futures_error_dict_is_none():
     assert not requests_to_retry
 
 
+def test_process_futures_no_errors_has_no_future():
+    # no errors so request should be completed, even with no future
+    future_reqs_dict = {
+        "ackid1": requests.AckRequest(
+            ack_id="ackid1", byte_size=0, time_to_ack=20, ordering_key="", future=None
+        )
+    }
+    errors_dict = {}
+    requests_completed, requests_to_retry = streaming_pull_manager._process_futures(
+        None, future_reqs_dict, errors_dict
+    )
+    assert requests_completed[0].ack_id == "ackid1"
+    assert not requests_to_retry
+
+
 def test_process_futures_no_errors():
-    # no errors so request should be completed
+    # no errors so request and its future should be completed
     future = futures.Future()
     future_reqs_dict = {
         "ackid1": requests.AckRequest(

@@ -204,6 +204,9 @@ def system(session):
     session.install("-e", ".", "-c", constraints_path)
 
     # Run py.test against the system tests.
+    # THe following flags are useful during development:
+    # "-s" -> show print() statement output
+    # "-k <test case prefix>" -> filter test cases
     if system_test_exists:
         session.run(
             "py.test",

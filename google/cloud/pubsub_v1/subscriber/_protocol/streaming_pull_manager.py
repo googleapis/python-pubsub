@@ -188,10 +188,12 @@ def _process_futures(
             future = future_reqs_dict[ack_id].future
             future.set_exception(exc)
             requests_completed.append(future_reqs_dict[ack_id])
-        else:
+        elif future_reqs_dict[ack_id].future:
             future = future_reqs_dict[ack_id].future
             # success
             future.set_result(AcknowledgeStatus.SUCCESS)
+            requests_completed.append(future_reqs_dict[ack_id])
+        else:
             requests_completed.append(future_reqs_dict[ack_id])
 
     return requests_completed, requests_to_retry

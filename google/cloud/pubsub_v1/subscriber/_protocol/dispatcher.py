@@ -186,7 +186,6 @@ class Dispatcher(object):
             future_reqs_dict = {
                 req.ack_id: req
                 for req in itertools.islice(items_gen, _ACK_IDS_BATCH_SIZE)
-                if req.future
             }
             requests_completed, requests_to_retry = self._manager.send_unary_ack(
                 ack_ids=list(itertools.islice(ack_ids_gen, _ACK_IDS_BATCH_SIZE)),
@@ -229,9 +228,7 @@ class Dispatcher(object):
             )
             time.sleep(time_to_wait)
 
-            future_reqs_dict = {
-                req.ack_id: req for req in requests_to_retry if req.future
-            }
+            future_reqs_dict = {req.ack_id: req for req in requests_to_retry}
             requests_completed, requests_to_retry = self._manager.send_unary_ack(
                 ack_ids=[req.ack_id for req in requests_to_retry],
                 future_reqs_dict=future_reqs_dict,
@@ -286,7 +283,6 @@ class Dispatcher(object):
             future_reqs_dict = {
                 req.ack_id: req
                 for req in itertools.islice(items_gen, _ACK_IDS_BATCH_SIZE)
-                if req.future
             }
             # no further work needs to be done for `requests_to_retry`
             requests_completed, requests_to_retry = self._manager.send_unary_modack(
@@ -324,9 +320,7 @@ class Dispatcher(object):
             )
             time.sleep(time_to_wait)
 
-            future_reqs_dict = {
-                req.ack_id: req for req in requests_to_retry if req.future
-            }
+            future_reqs_dict = {req.ack_id: req for req in requests_to_retry}
             requests_completed, requests_to_retry = self._manager.send_unary_modack(
                 modify_deadline_ack_ids=[req.ack_id for req in requests_to_retry],
                 modify_deadline_seconds=[req.seconds for req in requests_to_retry],
