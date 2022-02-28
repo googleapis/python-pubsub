@@ -183,13 +183,13 @@ class Dispatcher(object):
         total_chunks = int(math.ceil(len(items) / _ACK_IDS_BATCH_SIZE))
 
         for _ in range(total_chunks):
-            future_reqs_dict = {
+            ack_reqs_dict = {
                 req.ack_id: req
                 for req in itertools.islice(items_gen, _ACK_IDS_BATCH_SIZE)
             }
             requests_completed, requests_to_retry = self._manager.send_unary_ack(
                 ack_ids=list(itertools.islice(ack_ids_gen, _ACK_IDS_BATCH_SIZE)),
-                future_reqs_dict=future_reqs_dict,
+                ack_reqs_dict=ack_reqs_dict,
             )
 
             # Remove the completed messages from lease management.
@@ -228,10 +228,10 @@ class Dispatcher(object):
             )
             time.sleep(time_to_wait)
 
-            future_reqs_dict = {req.ack_id: req for req in requests_to_retry}
+            ack_reqs_dict = {req.ack_id: req for req in requests_to_retry}
             requests_completed, requests_to_retry = self._manager.send_unary_ack(
                 ack_ids=[req.ack_id for req in requests_to_retry],
-                future_reqs_dict=future_reqs_dict,
+                ack_reqs_dict=ack_reqs_dict,
             )
             assert (
                 len(requests_to_retry) <= _ACK_IDS_BATCH_SIZE
@@ -280,7 +280,7 @@ class Dispatcher(object):
         total_chunks = int(math.ceil(len(items) / _ACK_IDS_BATCH_SIZE))
 
         for _ in range(total_chunks):
-            future_reqs_dict = {
+            ack_reqs_dict = {
                 req.ack_id: req
                 for req in itertools.islice(items_gen, _ACK_IDS_BATCH_SIZE)
             }
@@ -292,7 +292,7 @@ class Dispatcher(object):
                 modify_deadline_seconds=list(
                     itertools.islice(deadline_seconds_gen, _ACK_IDS_BATCH_SIZE)
                 ),
-                future_reqs_dict=future_reqs_dict,
+                ack_reqs_dict=ack_reqs_dict,
             )
             assert (
                 len(requests_to_retry) <= _ACK_IDS_BATCH_SIZE
@@ -320,11 +320,11 @@ class Dispatcher(object):
             )
             time.sleep(time_to_wait)
 
-            future_reqs_dict = {req.ack_id: req for req in requests_to_retry}
+            ack_reqs_dict = {req.ack_id: req for req in requests_to_retry}
             requests_completed, requests_to_retry = self._manager.send_unary_modack(
                 modify_deadline_ack_ids=[req.ack_id for req in requests_to_retry],
                 modify_deadline_seconds=[req.seconds for req in requests_to_retry],
-                future_reqs_dict=future_reqs_dict,
+                ack_reqs_dict=ack_reqs_dict,
             )
 
     def nack(self, items: Sequence[requests.NackRequest]) -> None:

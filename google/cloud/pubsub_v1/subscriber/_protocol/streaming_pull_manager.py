@@ -149,33 +149,33 @@ def _get_ack_errors(
     return None
 
 
-def _process_futures(
+def _process_requests(
     error_status: Optional["status_pb2.Status"],
-    future_reqs_dict: "containers.ScalarMap",
+    ack_reqs_dict: "containers.ScalarMap",
     errors_dict: Optional["containers.ScalarMap"],
 ):
     """Process futures by referring to errors_dict.
 
     The errors returned by the server in `errors_dict` are used to complete
-    the request futures in `future_reqs_dict` (with a success or exception) or
+    the request futures in `ack_reqs_dict` (with a success or exception) or
     to return requests for further retries.
     """
     requests_completed = []
     requests_to_retry = []
-    for ack_id in future_reqs_dict:
+    for ack_id in ack_reqs_dict:
         if errors_dict and ack_id in errors_dict:
             exactly_once_error = errors_dict[ack_id]
             if exactly_once_error.startswith("TRANSIENT_"):
-                requests_to_retry.append(future_reqs_dict[ack_id])
+                requests_to_retry.append(ack_reqs_dict[ack_id])
             else:
                 if exactly_once_error == "PERMANENT_FAILURE_INVALID_ACK_ID":
                     exc = AcknowledgeError(AcknowledgeStatus.INVALID_ACK_ID, info=None)
                 else:
                     exc = AcknowledgeError(AcknowledgeStatus.OTHER, exactly_once_error)
 
-                future = future_reqs_dict[ack_id].future
+                future = ack_reqs_dict[ack_id].future
                 future.set_exception(exc)
-                requests_completed.append(future_reqs_dict[ack_id])
+                requests_completed.append(ack_reqs_dict[ack_id])
         elif error_status:
             # Only permanent errors are expected here b/c retriable errors are
             # retried at the lower, GRPC level.
@@ -185,16 +185,16 @@ def _process_futures(
                 exc = AcknowledgeError(AcknowledgeStatus.FAILED_PRECONDITION, info=None)
             else:
                 exc = AcknowledgeError(AcknowledgeStatus.OTHER, str(error_status))
-            future = future_reqs_dict[ack_id].future
+            future = ack_reqs_dict[ack_id].future
             future.set_exception(exc)
-            requests_completed.append(future_reqs_dict[ack_id])
-        elif future_reqs_dict[ack_id].future:
-            future = future_reqs_dict[ack_id].future
+            requests_completed.append(ack_reqs_dict[ack_id])
+        elif ack_reqs_dict[ack_id].future:
+            future = ack_reqs_dict[ack_id].future
             # success
             future.set_result(AcknowledgeStatus.SUCCESS)
-            requests_completed.append(future_reqs_dict[ack_id])
+            requests_completed.append(ack_reqs_dict[ack_id])
         else:
-            requests_completed.append(future_reqs_dict[ack_id])
+            requests_completed.append(ack_reqs_dict[ack_id])
 
     return requests_completed, requests_to_retry
 
@@ -556,7 +556,7 @@ class StreamingPullManager(object):
         self._scheduler.schedule(self._callback, msg)
 
     def send_unary_ack(
-        self, ack_ids, future_reqs_dict
+        self, ack_ids, ack_reqs_dict
     ) -> Tuple[List[requests.AckRequest], List[requests.AckRequest]]:
         """Send a request using a separate unary request instead of over the stream.
 
@@ -581,7 +581,7 @@ class StreamingPullManager(object):
             status = status_pb2.Status()
             status.code = code_pb2.DEADLINE_EXCEEDED
             # Makes sure to complete futures so they don't block forever.
-            _process_futures(status, future_reqs_dict, None)
+            _process_requests(status, ack_reqs_dict, None)
             _LOGGER.debug(
                 "RetryError while sending unary RPC. Waiting on a transient "
                 "error resolution for too long, will now trigger shutdown.",
@@ -592,13 +592,13 @@ class StreamingPullManager(object):
             self._on_rpc_done(exc)
             raise
 
-        requests_completed, requests_to_retry = _process_futures(
-            error_status, future_reqs_dict, ack_errors_dict
+        requests_completed, requests_to_retry = _process_requests(
+            error_status, ack_reqs_dict, ack_errors_dict
         )
         return requests_completed, requests_to_retry
 
     def send_unary_modack(
-        self, modify_deadline_ack_ids, modify_deadline_seconds, future_reqs_dict
+        self, modify_deadline_ack_ids, modify_deadline_seconds, ack_reqs_dict
     ) -> Tuple[List[requests.ModAckRequest], List[requests.ModAckRequest]]:
         """Send a request using a separate unary request instead of over the stream.
 
@@ -635,7 +635,7 @@ class StreamingPullManager(object):
             status = status_pb2.Status()
             status.code = code_pb2.DEADLINE_EXCEEDED
             # Makes sure to complete futures so they don't block forever.
-            _process_futures(status, future_reqs_dict, None)
+            _process_requests(status, ack_reqs_dict, None)
             _LOGGER.debug(
                 "RetryError while sending unary RPC. Waiting on a transient "
                 "error resolution for too long, will now trigger shutdown.",
@@ -646,8 +646,8 @@ class StreamingPullManager(object):
             self._on_rpc_done(exc)
             raise
 
-        requests_completed, requests_to_retry = _process_futures(
-            error_status, future_reqs_dict, modack_errors_dict
+        requests_completed, requests_to_retry = _process_requests(
+            error_status, ack_reqs_dict, modack_errors_dict
         )
         return requests_completed, requests_to_retry
 

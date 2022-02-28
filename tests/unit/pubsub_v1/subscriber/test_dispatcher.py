@@ -105,7 +105,7 @@ def test_ack():
     dispatcher_.ack(items)
 
     manager.send_unary_ack.assert_called_once_with(
-        ack_ids=["ack_id_string"], future_reqs_dict={"ack_id_string": items[0]}
+        ack_ids=["ack_id_string"], ack_reqs_dict={"ack_id_string": items[0]}
     )
 
     manager.leaser.remove.assert_called_once_with(items)
@@ -132,7 +132,7 @@ def test_ack_no_time():
     dispatcher_.ack(items)
 
     manager.send_unary_ack.assert_called_once_with(
-        ack_ids=["ack_id_string"], future_reqs_dict={"ack_id_string": items[0]}
+        ack_ids=["ack_id_string"], ack_reqs_dict={"ack_id_string": items[0]}
     )
 
     manager.ack_histogram.add.assert_not_called()
@@ -226,13 +226,13 @@ def test_retry_acks():
     manager.send_unary_ack.assert_has_calls(
         [
             mock.call(
-                ack_ids=["ack_id_string"], future_reqs_dict={"ack_id_string": items[0]}
+                ack_ids=["ack_id_string"], ack_reqs_dict={"ack_id_string": items[0]}
             ),
             mock.call(
-                ack_ids=["ack_id_string"], future_reqs_dict={"ack_id_string": items[0]}
+                ack_ids=["ack_id_string"], ack_reqs_dict={"ack_id_string": items[0]}
             ),
             mock.call(
-                ack_ids=["ack_id_string"], future_reqs_dict={"ack_id_string": items[0]}
+                ack_ids=["ack_id_string"], ack_reqs_dict={"ack_id_string": items[0]}
             ),
         ]
     )
@@ -277,17 +277,17 @@ def test_retry_modacks():
             mock.call(
                 modify_deadline_ack_ids=["ack_id_string"],
                 modify_deadline_seconds=[20],
-                future_reqs_dict={"ack_id_string": items[0]},
+                ack_reqs_dict={"ack_id_string": items[0]},
             ),
             mock.call(
                 modify_deadline_ack_ids=["ack_id_string"],
                 modify_deadline_seconds=[20],
-                future_reqs_dict={"ack_id_string": items[0]},
+                ack_reqs_dict={"ack_id_string": items[0]},
             ),
             mock.call(
                 modify_deadline_ack_ids=["ack_id_string"],
                 modify_deadline_seconds=[20],
-                future_reqs_dict={"ack_id_string": items[0]},
+                ack_reqs_dict={"ack_id_string": items[0]},
             ),
         ]
     )
@@ -359,7 +359,7 @@ def test_nack():
     manager.send_unary_modack.assert_called_once_with(
         modify_deadline_ack_ids=["ack_id_string"],
         modify_deadline_seconds=[0],
-        future_reqs_dict={
+        ack_reqs_dict={
             "ack_id_string": requests.ModAckRequest(
                 ack_id="ack_id_string", seconds=0, future=None
             )
@@ -380,7 +380,7 @@ def test_modify_ack_deadline():
     manager.send_unary_modack.assert_called_once_with(
         modify_deadline_ack_ids=["ack_id_string"],
         modify_deadline_seconds=[60],
-        future_reqs_dict={"ack_id_string": items[0]},
+        ack_reqs_dict={"ack_id_string": items[0]},
     )
 
 

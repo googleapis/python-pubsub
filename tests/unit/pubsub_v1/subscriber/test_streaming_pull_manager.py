@@ -506,7 +506,7 @@ def test__maybe_release_messages_negative_on_hold_bytes_warning(caplog):
 def test_send_unary_ack():
     manager = make_manager()
 
-    manager.send_unary_ack(ack_ids=["ack_id1", "ack_id2"], future_reqs_dict={})
+    manager.send_unary_ack(ack_ids=["ack_id1", "ack_id2"], ack_reqs_dict={})
 
     manager._client.acknowledge.assert_called_once_with(
         subscription=manager._subscription, ack_ids=["ack_id1", "ack_id2"]
@@ -519,7 +519,7 @@ def test_send_unary_modack():
     manager.send_unary_modack(
         modify_deadline_ack_ids=["ack_id3", "ack_id4", "ack_id5"],
         modify_deadline_seconds=[10, 20, 20],
-        future_reqs_dict={},
+        ack_reqs_dict={},
     )
 
     manager._client.modify_ack_deadline.assert_has_calls(
@@ -547,7 +547,7 @@ def test_send_unary_ack_api_call_error(caplog):
     error = exceptions.GoogleAPICallError("The front fell off")
     manager._client.acknowledge.side_effect = error
 
-    manager.send_unary_ack(ack_ids=["ack_id1", "ack_id2"], future_reqs_dict={})
+    manager.send_unary_ack(ack_ids=["ack_id1", "ack_id2"], ack_reqs_dict={})
 
     assert "The front fell off" in caplog.text
 
@@ -563,7 +563,7 @@ def test_send_unary_modack_api_call_error(caplog):
     manager.send_unary_modack(
         modify_deadline_ack_ids=["ack_id_string"],
         modify_deadline_seconds=[0],
-        future_reqs_dict={},
+        ack_reqs_dict={},
     )
 
     assert "The front fell off" in caplog.text
@@ -580,14 +580,14 @@ def test_send_unary_ack_retry_error(caplog):
     manager._client.acknowledge.side_effect = error
 
     future = futures.Future()
-    future_reqs_dict = {
+    ack_reqs_dict = {
         "ackid1": requests.AckRequest(
             ack_id="ackid1", byte_size=0, time_to_ack=20, ordering_key="", future=future
         )
     }
     with pytest.raises(exceptions.RetryError):
         manager.send_unary_ack(
-            ack_ids=["ack_id1", "ack_id2"], future_reqs_dict=future_reqs_dict
+            ack_ids=["ack_id1", "ack_id2"], ack_reqs_dict=ack_reqs_dict
         )
 
     assert "RetryError while sending unary RPC" in caplog.text
@@ -609,14 +609,14 @@ def test_send_unary_modack_retry_error(caplog):
     manager._client.modify_ack_deadline.side_effect = error
 
     future = futures.Future()
-    future_reqs_dict = {
+    ack_reqs_dict = {
         "ackid1": requests.ModAckRequest(ack_id="ackid1", seconds=60, future=future)
     }
     with pytest.raises(exceptions.RetryError):
         manager.send_unary_modack(
             modify_deadline_ack_ids=["ackid1"],
             modify_deadline_seconds=[0],
-            future_reqs_dict=future_reqs_dict,
+            ack_reqs_dict=ack_reqs_dict,
         )
 
     assert "RetryError while sending unary RPC" in caplog.text
@@ -1606,71 +1606,71 @@ def test_get_ack_errors_happy_case(from_call):
     assert ack_errors["ack_1"] == "error1"
 
 
-def test_process_futures_no_requests():
+def test_process_requests_no_requests():
     # no requests so no items in results lists
-    future_reqs_dict = {}
+    ack_reqs_dict = {}
     errors_dict = {}
-    requests_completed, requests_to_retry = streaming_pull_manager._process_futures(
-        None, future_reqs_dict, errors_dict
+    requests_completed, requests_to_retry = streaming_pull_manager._process_requests(
+        None, ack_reqs_dict, errors_dict
     )
     assert not requests_completed
     assert not requests_to_retry
 
 
-def test_process_futures_error_dict_is_none():
+def test_process_requests_error_dict_is_none():
     # it's valid to pass in `None` for `errors_dict`
-    future_reqs_dict = {}
+    ack_reqs_dict = {}
     errors_dict = None
-    requests_completed, requests_to_retry = streaming_pull_manager._process_futures(
-        None, future_reqs_dict, errors_dict
+    requests_completed, requests_to_retry = streaming_pull_manager._process_requests(
+        None, ack_reqs_dict, errors_dict
     )
     assert not requests_completed
     assert not requests_to_retry
 
 
-def test_process_futures_no_errors_has_no_future():
+def test_process_requests_no_errors_has_no_future():
     # no errors so request should be completed, even with no future
-    future_reqs_dict = {
+    ack_reqs_dict = {
         "ackid1": requests.AckRequest(
             ack_id="ackid1", byte_size=0, time_to_ack=20, ordering_key="", future=None
         )
     }
     errors_dict = {}
-    requests_completed, requests_to_retry = streaming_pull_manager._process_futures(
-        None, future_reqs_dict, errors_dict
+    requests_completed, requests_to_retry = streaming_pull_manager._process_requests(
+        None, ack_reqs_dict, errors_dict
     )
     assert requests_completed[0].ack_id == "ackid1"
     assert not requests_to_retry
 
 
-def test_process_futures_no_errors():
+def test_process_requests_no_errors():
     # no errors so request and its future should be completed
     future = futures.Future()
-    future_reqs_dict = {
+    ack_reqs_dict = {
         "ackid1": requests.AckRequest(
             ack_id="ackid1", byte_size=0, time_to_ack=20, ordering_key="", future=future
         )
     }
     errors_dict = {}
-    requests_completed, requests_to_retry = streaming_pull_manager._process_futures(
-        None, future_reqs_dict, errors_dict
+    requests_completed, requests_to_retry = streaming_pull_manager._process_requests(
+        None, ack_reqs_dict, errors_dict
     )
     assert requests_completed[0].ack_id == "ackid1"
     assert future.result() == subscriber_exceptions.AcknowledgeStatus.SUCCESS
     assert not requests_to_retry
 
 
-def test_process_futures_permanent_error_raises_exception():
+def test_process_requests_permanent_error_raises_exception():
     # a permanent error raises an exception
     future = futures.Future()
-    future_reqs_dict = {
+    ack_reqs_dict = {
         "ackid1": requests.AckRequest(
             ack_id="ackid1", byte_size=0, time_to_ack=20, ordering_key="", future=future
         )
     }
     errors_dict = {"ackid1": "PERMANENT_FAILURE_INVALID_ACK_ID"}
-    requests_completed, requests_to_retry = streaming_pull_manager._process_futures(
-        None, future_reqs_dict, errors_dict
+    requests_completed, requests_to_retry = streaming_pull_manager._process_requests(
+        None, ack_reqs_dict, errors_dict
     )
     assert requests_completed[0].ack_id == "ackid1"
     with pytest.raises(subscriber_exceptions.AcknowledgeError) as exc_info:
@@ -1682,34 +1682,34 @@ def test_process_futures_permanent_error_raises_exception():
     assert not requests_to_retry
 
 
-def test_process_futures_transient_error_returns_request():
+def test_process_requests_transient_error_returns_request():
     # a transient error returns the request in `requests_to_retry`
     future = futures.Future()
-    future_reqs_dict = {
+    ack_reqs_dict = {
         "ackid1": requests.AckRequest(
             ack_id="ackid1", byte_size=0, time_to_ack=20, ordering_key="", future=future
         )
     }
     errors_dict = {"ackid1": "TRANSIENT_FAILURE_INVALID_ACK_ID"}
-    requests_completed, requests_to_retry = streaming_pull_manager._process_futures(
-        None, future_reqs_dict, errors_dict
+    requests_completed, requests_to_retry = streaming_pull_manager._process_requests(
+        None, ack_reqs_dict, errors_dict
     )
     assert not requests_completed
     assert requests_to_retry[0].ack_id == "ackid1"
     assert not future.done()
 
 
-def test_process_futures_unknown_error_raises_exception():
+def test_process_requests_unknown_error_raises_exception():
     # an unknown error raises an exception
     future = futures.Future()
-    future_reqs_dict = {
+    ack_reqs_dict = {
         "ackid1": requests.AckRequest(
             ack_id="ackid1", byte_size=0, time_to_ack=20, ordering_key="", future=future
         )
     }
     errors_dict = {"ackid1": "unknown_error"}
-    requests_completed, requests_to_retry = streaming_pull_manager._process_futures(
-        None, future_reqs_dict, errors_dict
+    requests_completed, requests_to_retry = streaming_pull_manager._process_requests(
+        None, ack_reqs_dict, errors_dict
     )
     assert requests_completed[0].ack_id == "ackid1"
     with pytest.raises(subscriber_exceptions.AcknowledgeError) as exc_info:
@@ -1719,18 +1719,18 @@ def test_process_futures_unknown_error_raises_exception():
     assert not requests_to_retry
 
 
-def test_process_futures_permission_denied_error_status_raises_exception():
+def test_process_requests_permission_denied_error_status_raises_exception():
     # a permission-denied error status raises an exception
     future = futures.Future()
-    future_reqs_dict = {
+    ack_reqs_dict = {
         "ackid1": requests.AckRequest(
             ack_id="ackid1", byte_size=0, time_to_ack=20, ordering_key="", future=future
         )
     }
     st = status_pb2.Status()
     st.code = code_pb2.Code.PERMISSION_DENIED
-    requests_completed, requests_to_retry = streaming_pull_manager._process_futures(
-        st, future_reqs_dict, None
+    requests_completed, requests_to_retry = streaming_pull_manager._process_requests(
+        st, ack_reqs_dict, None
     )
     assert requests_completed[0].ack_id == "ackid1"
     with pytest.raises(subscriber_exceptions.AcknowledgeError) as exc_info:
@@ -1743,18 +1743,18 @@ def test_process_futures_permission_denied_error_status_raises_exception():
     assert not requests_to_retry
 
 
-def test_process_futures_failed_precondition_error_status_raises_exception():
+def test_process_requests_failed_precondition_error_status_raises_exception():
     # a failed-precondition error status raises an exception
     future = futures.Future()
-    future_reqs_dict = {
+    ack_reqs_dict = {
         "ackid1": requests.AckRequest(
             ack_id="ackid1", byte_size=0, time_to_ack=20, ordering_key="", future=future
         )
     }
     st = status_pb2.Status()
     st.code = code_pb2.Code.FAILED_PRECONDITION
-    requests_completed, requests_to_retry = streaming_pull_manager._process_futures(
-        st, future_reqs_dict, None
+    requests_completed, requests_to_retry = streaming_pull_manager._process_requests(
+        st, ack_reqs_dict, None
     )
     assert requests_completed[0].ack_id == "ackid1"
     with pytest.raises(subscriber_exceptions.AcknowledgeError) as exc_info:
@@ -1767,18 +1767,18 @@ def test_process_futures_failed_precondition_error_status_raises_exception():
     assert not requests_to_retry
 
 
-def test_process_futures_other_error_status_raises_exception():
+def test_process_requests_other_error_status_raises_exception():
     # an unrecognized error status raises an exception
     future = futures.Future()
-    future_reqs_dict = {
+    ack_reqs_dict = {
         "ackid1": requests.AckRequest(
             ack_id="ackid1", byte_size=0, time_to_ack=20, ordering_key="", future=future
         )
     }
     st = status_pb2.Status()
     st.code = code_pb2.Code.OUT_OF_RANGE
-    requests_completed, requests_to_retry = streaming_pull_manager._process_futures(
-        st, future_reqs_dict, None
+    requests_completed, requests_to_retry = streaming_pull_manager._process_requests(
+        st, ack_reqs_dict, None
     )
     assert requests_completed[0].ack_id == "ackid1"
     with pytest.raises(subscriber_exceptions.AcknowledgeError) as exc_info:
@@ -1787,12 +1787,12 @@ def test_process_futures_other_error_status_raises_exception():
     assert not requests_to_retry
 
 
-def test_process_futures_mixed_success_and_failure_acks():
+def test_process_requests_mixed_success_and_failure_acks():
     # mixed success and failure (acks)
     future1 = futures.Future()
     future2 = futures.Future()
     future3 = futures.Future()
-    future_reqs_dict = {
+    ack_reqs_dict = {
         "ackid1": requests.AckRequest(
             ack_id="ackid1",
             byte_size=0,
@@ -1819,8 +1819,8 @@ def test_process_futures_mixed_success_and_failure_acks():
         "ackid1": "PERMANENT_FAILURE_INVALID_ACK_ID",
         "ackid2": "TRANSIENT_FAILURE_INVALID_ACK_ID",
     }
-    requests_completed, requests_to_retry = streaming_pull_manager._process_futures(
-        None, future_reqs_dict, errors_dict
+    requests_completed, requests_to_retry = streaming_pull_manager._process_requests(
+        None, ack_reqs_dict, errors_dict
     )
     # message with ack_id 'ackid1' fails with an exception
     assert requests_completed[0].ack_id == "ackid1"
@@ -1838,12 +1838,12 @@ def test_process_futures_mixed_success_and_failure_acks():
     assert future3.result() == subscriber_exceptions.AcknowledgeStatus.SUCCESS
 
 
-def test_process_futures_mixed_success_and_failure_modacks():
+def test_process_requests_mixed_success_and_failure_modacks():
     # mixed success and failure (modacks)
     future1 = futures.Future()
     future2 = futures.Future()
     future3 = futures.Future()
-    future_reqs_dict = {
+    ack_reqs_dict = {
         "ackid1": requests.ModAckRequest(ack_id="ackid1", seconds=60, future=future1),
         "ackid2": requests.ModAckRequest(ack_id="ackid2", seconds=60, future=future2),
         "ackid3": requests.ModAckRequest(ack_id="ackid3", seconds=60, future=future3),
@@ -1852,8 +1852,8 @@ def test_process_futures_mixed_success_and_failure_modacks():
         "ackid1": "PERMANENT_FAILURE_INVALID_ACK_ID",
         "ackid2": "TRANSIENT_FAILURE_INVALID_ACK_ID",
     }
-    requests_completed, requests_to_retry = streaming_pull_manager._process_futures(
-        None, future_reqs_dict, errors_dict
+    requests_completed, requests_to_retry = streaming_pull_manager._process_requests(
+        None, ack_reqs_dict, errors_dict
     )
     # message with ack_id 'ackid1' fails with an exception
     assert requests_completed[0].ack_id == "ackid1"
