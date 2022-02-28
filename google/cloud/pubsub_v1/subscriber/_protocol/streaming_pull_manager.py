@@ -154,11 +154,11 @@ def _process_requests(
     ack_reqs_dict: "containers.ScalarMap",
     errors_dict: Optional["containers.ScalarMap"],
 ):
-    """Process futures by referring to errors_dict.
+    """Process requests by referring to error_status and errors_dict.
 
-    The errors returned by the server in `errors_dict` are used to complete
-    the request futures in `ack_reqs_dict` (with a success or exception) or
-    to return requests for further retries.
+    The errors returned by the server in as `error_status` or in `errors_dict`
+    are used to complete the request futures in `ack_reqs_dict` (with a success
+    or exception) or to return requests for further retries.
     """
     requests_completed = []
     requests_to_retry = []
@@ -564,6 +564,7 @@ class StreamingPullManager(object):
         error is re-raised.
         """
         assert ack_ids
+        assert len(ack_ids) == len(ack_reqs_dict)
 
         error_status = None
         ack_errors_dict = None
