@@ -580,7 +580,7 @@ def receive_messages_with_blocking_shutdown(
     # [END pubsub_subscriber_blocking_shutdown]
 
 
-def receive_messages_with_exactly_once_subscribe(
+def receive_messages_with_exactly_once_delivery_enabled(
     project_id: str, subscription_id: str, timeout: Optional[float] = None
 ) -> None:
     """Receives messages from a pull subscription with exactly-once delivery enabled."""
@@ -936,6 +936,15 @@ if __name__ == "__main__":  # noqa
         "timeout", default=None, type=float, nargs="?"
     )
 
+    receive_messages_with_exactly_once_delivery_enabled_parser = subparsers.add_parser(
+        "receive-messages-with-exactly-once-delivery-enabled",
+        help=receive_messages_with_exactly_once_delivery_enabled.__doc__,
+    )
+    receive_messages_with_exactly_once_delivery_enabled_parser.add_argument("subscription_id")
+    receive_messages_with_exactly_once_delivery_enabled_parser.add_argument(
+        "timeout", default=None, type=float, nargs="?"
+    )
+
     synchronous_pull_parser = subparsers.add_parser(
         "receive-synchronously", help=synchronous_pull.__doc__
     )
@@ -1020,6 +1029,10 @@ if __name__ == "__main__":  # noqa
         )
     elif args.command == "receive-blocking-shutdown":
         receive_messages_with_blocking_shutdown(
+            args.project_id, args.subscription_id, args.timeout
+        )
+    elif args.command == "receive-messages-with-exactly-once-delivery-enabled":
+        receive_messages_with_exactly_once_delivery_enabled(
             args.project_id, args.subscription_id, args.timeout
         )
     elif args.command == "receive-synchronously":
