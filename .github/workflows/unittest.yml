@@ -11,7 +11,7 @@ jobs:
         python: ['3.6', '3.7', '3.8', '3.9', '3.10']
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v2
     - name: Setup Python
       uses: actions/setup-python@v3
       with:
@@ -37,7 +37,7 @@ jobs:
         - unit
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v2
     - name: Setup Python
       uses: actions/setup-python@v3
       with:
@@ -47,7 +47,7 @@ jobs:
         python -m pip install --upgrade setuptools pip wheel
         python -m pip install coverage
     - name: Download coverage results
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v2
       with:
         name: coverage-artifacts
         path: .coverage-results/
