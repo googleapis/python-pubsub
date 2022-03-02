@@ -607,7 +607,9 @@ def receive_messages_with_exactly_once_delivery_enabled(
 
         try:
             # Block on result of acknowledge call.
-            ack_future.result()
+            # When `timeout` is not set, result() will block indefinitely,
+            # unless an exception is encountered first.
+            ack_future.result(timeout=timeout)
             print(f"Ack for message {message.message_id} successful.")
         except sub_exceptions.AcknowledgeError as e:
             print(
@@ -617,7 +619,6 @@ def receive_messages_with_exactly_once_delivery_enabled(
     # Set a high `min_duration_per_lease_extension` to ensure the subscriber
     # has plenty of time to process the message.
     flow_control = pubsub_v1.types.FlowControl(min_duration_per_lease_extension=120)
-
     streaming_pull_future = subscriber.subscribe(
         subscription_path, callback=callback, flow_control=flow_control
     )
