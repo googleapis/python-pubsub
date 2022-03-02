@@ -639,7 +639,9 @@ def test_receive_messages_with_exactly_once_delivery_enabled(
     def eventually_consistent_test() -> None:
         _publish_messages(publisher_client, topic)
 
-        subscriber.receive_messages_with_exactly_once_delivery_enabled(PROJECT_ID, SUBSCRIPTION_ASYNC, 10)
+        subscriber.receive_messages_with_exactly_once_delivery_enabled(
+            PROJECT_ID, SUBSCRIPTION_ASYNC, 10
+        )
 
         out, _ = capsys.readouterr()
         assert "Listening" in out

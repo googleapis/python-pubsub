@@ -616,12 +616,7 @@ def receive_messages_with_exactly_once_delivery_enabled(
                 f"Ack for message {message.message_id} failed with error: {e.error_code}"
             )
 
-    # Set a high `min_duration_per_lease_extension` to ensure the subscriber
-    # has plenty of time to process the message.
-    flow_control = pubsub_v1.types.FlowControl(min_duration_per_lease_extension=120)
-    streaming_pull_future = subscriber.subscribe(
-        subscription_path, callback=callback, flow_control=flow_control
-    )
+    streaming_pull_future = subscriber.subscribe(subscription_path, callback=callback)
     print(f"Listening for messages on {subscription_path}..\n")
 
     # Wrap subscriber in a 'with' block to automatically call close() when done.
@@ -941,7 +936,9 @@ if __name__ == "__main__":  # noqa
         "receive-messages-with-exactly-once-delivery-enabled",
         help=receive_messages_with_exactly_once_delivery_enabled.__doc__,
     )
-    receive_messages_with_exactly_once_delivery_enabled_parser.add_argument("subscription_id")
+    receive_messages_with_exactly_once_delivery_enabled_parser.add_argument(
+        "subscription_id"
+    )
     receive_messages_with_exactly_once_delivery_enabled_parser.add_argument(
         "timeout", default=None, type=float, nargs="?"
     )
