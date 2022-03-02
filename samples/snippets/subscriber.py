@@ -584,7 +584,7 @@ def receive_messages_with_exactly_once_delivery_enabled(
     project_id: str, subscription_id: str, timeout: Optional[float] = None
 ) -> None:
     """Receives messages from a pull subscription with exactly-once delivery enabled."""
-    # [START pubsub_subscriber_exactly_once_delivery]
+    # [START pubsub_subscriber_exactly_once]
     from concurrent.futures import TimeoutError
     from google.cloud import pubsub_v1
     from google.cloud.pubsub_v1.subscriber import sub_exceptions
@@ -603,6 +603,10 @@ def receive_messages_with_exactly_once_delivery_enabled(
     def callback(message: pubsub_v1.subscriber.message.Message) -> None:
         print(f"Received {message}.")
 
+        # Use `ack_with_response()` instead of `ack()` to get a future that tracks
+        # the result of the acknowledge call. When exactly-once delivery is enabled
+        # on the subscription, the message is guaranteed to not be delivered again
+        # if the ack future succeeds.
         ack_future = message.ack_with_response()
 
         try:
@@ -628,7 +632,7 @@ def receive_messages_with_exactly_once_delivery_enabled(
         except TimeoutError:
             streaming_pull_future.cancel()  # Trigger the shutdown.
             streaming_pull_future.result()  # Block until the shutdown is complete.
-    # [END pubsub_subscriber_exactly_once_delivery]
+    # [END pubsub_subscriber_exactly_once]
 
 
 def synchronous_pull(project_id: str, subscription_id: str) -> None:
