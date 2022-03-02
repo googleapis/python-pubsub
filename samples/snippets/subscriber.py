@@ -584,7 +584,7 @@ def receive_messages_with_exactly_once_subscribe(
     project_id: str, subscription_id: str, timeout: Optional[float] = None
 ) -> None:
     """Receives messages from a pull subscription with exactly-once delivery enabled."""
-    # [START pubsub_subscriber_pull_with_exactly_once_delivery_enabled]
+    # [START pubsub_subscriber_exactly_once_delivery]
     from concurrent.futures import TimeoutError
     from google.cloud import pubsub_v1
     from google.cloud.pubsub_v1.subscriber import sub_exceptions
@@ -614,7 +614,13 @@ def receive_messages_with_exactly_once_subscribe(
                 f"Ack for message {message.message_id} failed with error: {e.error_code}"
             )
 
-    streaming_pull_future = subscriber.subscribe(subscription_path, callback=callback)
+    # Set a high `min_duration_per_lease_extension` to ensure the subscriber
+    # has plenty of time to process the message.
+    flow_control = pubsub_v1.types.FlowControl(min_duration_per_lease_extension=120)
+
+    streaming_pull_future = subscriber.subscribe(
+        subscription_path, callback=callback, flow_control=flow_control
+    )
     print(f"Listening for messages on {subscription_path}..\n")
 
     # Wrap subscriber in a 'with' block to automatically call close() when done.
@@ -626,7 +632,7 @@ def receive_messages_with_exactly_once_subscribe(
         except TimeoutError:
             streaming_pull_future.cancel()  # Trigger the shutdown.
             streaming_pull_future.result()  # Block until the shutdown is complete.
-    # [END pubsub_subscriber_pull_with_exactly_once_delivery_enabled]
+    # [END pubsub_subscriber_exactly_once_delivery]
 
 
 def synchronous_pull(project_id: str, subscription_id: str) -> None:
