@@ -587,7 +587,7 @@ def receive_messages_with_exactly_once_delivery_enabled(
     # [START pubsub_subscriber_exactly_once]
     from concurrent.futures import TimeoutError
     from google.cloud import pubsub_v1
-    from google.cloud.pubsub_v1.subscriber import sub_exceptions
+    from google.cloud.pubsub_v1.subscriber import exceptions as sub_exceptions
 
     # TODO(developer)
     # project_id = "your-project-id"
