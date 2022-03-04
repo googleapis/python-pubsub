@@ -242,6 +242,37 @@ def create_subscription_with_filtering(
     # [END pubsub_create_subscription_with_filter]
 
 
+def create_subscription_with_exactly_once_delivery(
+    project_id: str, topic_id: str, subscription_id: str
+) -> None:
+    """Create a subscription with exactly once delivery enabled."""
+    # [START pubsub_create_subscription_with_exactly_once_delivery]
+    from google.cloud import pubsub_v1
+
+    # TODO(developer): Choose an existing topic.
+    # project_id = "your-project-id"
+    # topic_id = "your-topic-id"
+    # subscription_id = "your-subscription-id"
+
+    publisher = pubsub_v1.PublisherClient()
+    subscriber = pubsub_v1.SubscriberClient()
+    topic_path = publisher.topic_path(project_id, topic_id)
+    subscription_path = subscriber.subscription_path(project_id, subscription_id)
+
+    with subscriber:
+        subscription = subscriber.create_subscription(
+            request={
+                "name": subscription_path,
+                "topic": topic_path,
+                "enable_exactly_once_delivery": True,
+            }
+        )
+        print(
+            f"Created subscription with exactly once delivery enabled: {subscription}"
+        )
+    # [END pubsub_create_subscription_with_exactly_once_delivery]
+
+
 def delete_subscription(project_id: str, subscription_id: str) -> None:
     """Deletes an existing Pub/Sub topic."""
     # [START pubsub_delete_subscription]
@@ -580,6 +611,61 @@ def receive_messages_with_blocking_shutdown(
     # [END pubsub_subscriber_blocking_shutdown]
 
 
+def receive_messages_with_exactly_once_delivery_enabled(
+    project_id: str, subscription_id: str, timeout: Optional[float] = None
+) -> None:
+    """Receives messages from a pull subscription with exactly-once delivery enabled."""
+    # [START pubsub_subscriber_exactly_once]
+    from concurrent.futures import TimeoutError
+    from google.cloud import pubsub_v1
+    from google.cloud.pubsub_v1.subscriber import exceptions as sub_exceptions
+
+    # TODO(developer)
+    # project_id = "your-project-id"
+    # subscription_id = "your-subscription-id"
+    # Number of seconds the subscriber should listen for messages
+    # timeout = 5.0
+
+    subscriber = pubsub_v1.SubscriberClient()
+    # The `subscription_path` method creates a fully qualified identifier
+    # in the form `projects/{project_id}/subscriptions/{subscription_id}`
+    subscription_path = subscriber.subscription_path(project_id, subscription_id)
+
+    def callback(message: pubsub_v1.subscriber.message.Message) -> None:
+        print(f"Received {message}.")
+
+        # Use `ack_with_response()` instead of `ack()` to get a future that tracks
+        # the result of the acknowledge call. When exactly-once delivery is enabled
+        # on the subscription, the message is guaranteed to not be delivered again
+        # if the ack future succeeds.
+        ack_future = message.ack_with_response()
+
+        try:
+            # Block on result of acknowledge call.
+            # When `timeout` is not set, result() will block indefinitely,
+            # unless an exception is encountered first.
+            ack_future.result(timeout=timeout)
+            print(f"Ack for message {message.message_id} successful.")
+        except sub_exceptions.AcknowledgeError as e:
+            print(
+                f"Ack for message {message.message_id} failed with error: {e.error_code}"
+            )
+
+    streaming_pull_future = subscriber.subscribe(subscription_path, callback=callback)
+    print(f"Listening for messages on {subscription_path}..\n")
+
+    # Wrap subscriber in a 'with' block to automatically call close() when done.
+    with subscriber:
+        try:
+            # When `timeout` is not set, result() will block indefinitely,
+            # unless an exception is encountered first.
+            streaming_pull_future.result(timeout=timeout)
+        except TimeoutError:
+            streaming_pull_future.cancel()  # Trigger the shutdown.
+            streaming_pull_future.result()  # Block until the shutdown is complete.
+    # [END pubsub_subscriber_exactly_once]
+
+
 def synchronous_pull(project_id: str, subscription_id: str) -> None:
     """Pulling messages synchronously."""
     # [START pubsub_subscriber_sync_pull]
@@ -824,6 +910,15 @@ if __name__ == "__main__":  # noqa
     create_subscription_with_filtering_parser.add_argument("subscription_id")
     create_subscription_with_filtering_parser.add_argument("filter")
 
+    create_subscription_with_exactly_once_delivery_parser = subparsers.add_parser(
+        "create-with-exactly-once",
+        help=create_subscription_with_exactly_once_delivery.__doc__,
+    )
+    create_subscription_with_exactly_once_delivery_parser.add_argument("topic_id")
+    create_subscription_with_exactly_once_delivery_parser.add_argument(
+        "subscription_id"
+    )
+
     delete_parser = subparsers.add_parser("delete", help=delete_subscription.__doc__)
     delete_parser.add_argument("subscription_id")
 
@@ -878,6 +973,17 @@ if __name__ == "__main__":  # noqa
     )
     receive_with_blocking_shutdown_parser.add_argument("subscription_id")
     receive_with_blocking_shutdown_parser.add_argument(
+        "timeout", default=None, type=float, nargs="?"
+    )
+
+    receive_messages_with_exactly_once_delivery_enabled_parser = subparsers.add_parser(
+        "receive-messages-with-exactly-once-delivery-enabled",
+        help=receive_messages_with_exactly_once_delivery_enabled.__doc__,
+    )
+    receive_messages_with_exactly_once_delivery_enabled_parser.add_argument(
+        "subscription_id"
+    )
+    receive_messages_with_exactly_once_delivery_enabled_parser.add_argument(
         "timeout", default=None, type=float, nargs="?"
     )
 
@@ -937,6 +1043,10 @@ if __name__ == "__main__":  # noqa
         create_subscription_with_filtering(
             args.project_id, args.topic_id, args.subscription_id, args.filter
         )
+    elif args.command == "create-with-exactly-once":
+        create_subscription_with_exactly_once_delivery(
+            args.project_id, args.topic_id, args.subscription_id
+        )
     elif args.command == "delete":
         delete_subscription(args.project_id, args.subscription_id)
     elif args.command == "update-push":
@@ -965,6 +1075,10 @@ if __name__ == "__main__":  # noqa
         )
     elif args.command == "receive-blocking-shutdown":
         receive_messages_with_blocking_shutdown(
+            args.project_id, args.subscription_id, args.timeout
+        )
+    elif args.command == "receive-messages-with-exactly-once-delivery-enabled":
+        receive_messages_with_exactly_once_delivery_enabled(
             args.project_id, args.subscription_id, args.timeout
         )
     elif args.command == "receive-synchronously":
