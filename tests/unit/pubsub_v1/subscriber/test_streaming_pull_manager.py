@@ -1786,14 +1786,19 @@ def test_process_requests_retriable_error_status_returns_request_for_retrying():
         future = futures.Future()
         ack_reqs_dict = {
             "ackid1": requests.AckRequest(
-                ack_id="ackid1", byte_size=0, time_to_ack=20, ordering_key="", future=future
+                ack_id="ackid1",
+                byte_size=0,
+                time_to_ack=20,
+                ordering_key="",
+                future=future,
             )
         }
         st = status_pb2.Status()
         st.code = retriable_error
-        requests_completed, requests_to_retry = streaming_pull_manager._process_requests(
-            st, ack_reqs_dict, None
-        )
+        (
+            requests_completed,
+            requests_to_retry,
+        ) = streaming_pull_manager._process_requests(st, ack_reqs_dict, None)
         assert not requests_completed
         assert requests_to_retry[0].ack_id == "ackid1"
         assert not future.done()
