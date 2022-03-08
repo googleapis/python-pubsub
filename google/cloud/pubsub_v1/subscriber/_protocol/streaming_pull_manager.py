@@ -75,13 +75,13 @@ _MIN_ACK_DEADLINE_SECS_WHEN_EXACTLY_ONCE_ENABLED = 60
 a subscription. We do this to reduce premature ack expiration.
 """
 
-_EXACTLY_ONCE_DELIVERY_TEMPORARY_RETRY_ERRORS = [
+_EXACTLY_ONCE_DELIVERY_TEMPORARY_RETRY_ERRORS = {
     code_pb2.DEADLINE_EXCEEDED,
     code_pb2.RESOURCE_EXHAUSTED,
     code_pb2.ABORTED,
     code_pb2.INTERNAL,
     code_pb2.UNAVAILABLE,
-]
+}
 
 
 def _wrap_as_exception(maybe_exception: Any) -> BaseException:
