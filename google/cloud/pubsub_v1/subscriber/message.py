@@ -294,6 +294,7 @@ class Message(object):
             pubsub_v1.subscriber.exceptions.AcknowledgeError exception
             will be thrown.
         """
+        req_future: Optional[futures.Future]
         if self._exactly_once_delivery_enabled_func():
             future = futures.Future()
             req_future = future
@@ -393,6 +394,7 @@ class Message(object):
             will be thrown.
 
         """
+        req_future: Optional[futures.Future]
         if self._exactly_once_delivery_enabled_func():
             future = futures.Future()
             req_future = future
@@ -454,6 +456,7 @@ class Message(object):
             will be thrown.
 
         """
+        req_future: Optional[futures.Future]
         if self._exactly_once_delivery_enabled_func():
             future = futures.Future()
             req_future = future
