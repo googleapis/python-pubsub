@@ -191,10 +191,6 @@ def _process_requests(
             error_status
             and error_status.code in _EXACTLY_ONCE_DELIVERY_TEMPORARY_RETRY_ERRORS
         ):
-            import traceback
-
-            traceback.print_stack()
-            print("retrying temp error: " + str(error_status))
             requests_to_retry.append(ack_reqs_dict[ack_id])
         # Other GRPC errors are NOT retried
         elif error_status:
