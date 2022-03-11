@@ -32,7 +32,7 @@ dependencies = [
     # google-api-core[grpc] 1.17.0 up to 1.19.1 causes problems with stream
     # recovery, thus those versions should not be used.
     # https://github.com/googleapis/python-pubsub/issues/74
-    "google-api-core[grpc] >= 1.14.0, != 1.17.*, != 1.18.*, != 1.19.*",
+    "google-api-core[grpc] >= 1.31.5, <3.0.0dev,!=2.0.*,!=2.1.*,!=2.2.*,!=2.3.0",
     "grpc-google-iam-v1 >= 0.12.3, < 0.13dev",
     'enum34; python_version < "3.4"',
 ]
