@@ -49,7 +49,6 @@ from google.rpc import status_pb2
 
 if typing.TYPE_CHECKING:  # pragma: NO COVER
     from google.cloud.pubsub_v1 import subscriber
-    from google.protobuf.internal import containers
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -198,7 +197,6 @@ def _process_requests(
                 exc = AcknowledgeError(AcknowledgeStatus.FAILED_PRECONDITION, info=None)
             else:
                 exc = AcknowledgeError(AcknowledgeStatus.OTHER, str(error_status))
-            assert ack_reqs_dict[ack_id] is not None
             future = ack_reqs_dict[ack_id].future
             if future is not None:
                 future.set_exception(exc)
@@ -207,8 +205,8 @@ def _process_requests(
         elif ack_reqs_dict[ack_id].future:
             future = ack_reqs_dict[ack_id].future
             # success
-            if future is not None:
-                future.set_result(AcknowledgeStatus.SUCCESS)
+            assert future is not None
+            future.set_result(AcknowledgeStatus.SUCCESS)
             requests_completed.append(ack_reqs_dict[ack_id])
         # All other requests are considered completed.
         else:
