@@ -184,8 +184,8 @@ def _process_requests(
                     exc = AcknowledgeError(AcknowledgeStatus.OTHER, exactly_once_error)
                 future = ack_reqs_dict[ack_id].future
                 if future is not None:
-                  future.set_exception(exc)
-                  requests_completed.append(ack_reqs_dict[ack_id])
+                    future.set_exception(exc)
+                    requests_completed.append(ack_reqs_dict[ack_id])
         # Temporary GRPC errors are retried
         elif (
             error_status
@@ -201,17 +201,17 @@ def _process_requests(
             else:
                 exc = AcknowledgeError(AcknowledgeStatus.OTHER, str(error_status))
             if ack_id in ack_reqs_dict:
-              future = ack_reqs_dict[ack_id].future
-              if future is not None:
-                future.set_exception(exc)
-                requests_completed.append(ack_reqs_dict[ack_id])
+                future = ack_reqs_dict[ack_id].future
+                if future is not None:
+                    future.set_exception(exc)
+                    requests_completed.append(ack_reqs_dict[ack_id])
         # Since no error occurred, requests with futures are completed successfully.
         elif ack_reqs_dict[ack_id].future:
             future = ack_reqs_dict[ack_id].future
             # success
             if future is not None:
-              future.set_result(AcknowledgeStatus.SUCCESS)
-              requests_completed.append(ack_reqs_dict[ack_id])
+                future.set_result(AcknowledgeStatus.SUCCESS)
+                requests_completed.append(ack_reqs_dict[ack_id])
         # All other requests are considered completed.
         else:
             requests_completed.append(ack_reqs_dict[ack_id])
