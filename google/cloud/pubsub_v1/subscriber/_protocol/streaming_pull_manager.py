@@ -20,7 +20,7 @@ import itertools
 import logging
 import threading
 import typing
-from typing import Any, Callable, Iterable, List, Optional, Tuple, Union
+from typing import Any, Dict, Callable, Iterable, List, Optional, Tuple, Union
 import uuid
 
 import grpc  # type: ignore
@@ -159,7 +159,7 @@ def _get_ack_errors(
 
 def _process_requests(
     error_status: Optional["status_pb2.Status"],
-    ack_reqs_dict: "containers.ScalarMap",
+    ack_reqs_dict: Dict[str, requests.AckRequest],
     errors_dict: Optional["containers.ScalarMap"],
 ):
     """Process requests by referring to error_status and errors_dict.
@@ -174,7 +174,7 @@ def _process_requests(
         # Handle special errors returned for ack/modack RPCs via the ErrorInfo
         # sidecar metadata when exactly-once delivery is enabled.
         if errors_dict and ack_id in errors_dict:
-            exactly_once_error = errors_dict[ack_id]
+            exactly_once_error = str(errors_dict[ack_id])
             if exactly_once_error.startswith("TRANSIENT_"):
                 requests_to_retry.append(ack_reqs_dict[ack_id])
             else:
@@ -182,10 +182,10 @@ def _process_requests(
                     exc = AcknowledgeError(AcknowledgeStatus.INVALID_ACK_ID, info=None)
                 else:
                     exc = AcknowledgeError(AcknowledgeStatus.OTHER, exactly_once_error)
-
                 future = ack_reqs_dict[ack_id].future
-                future.set_exception(exc)
-                requests_completed.append(ack_reqs_dict[ack_id])
+                if future is not None:
+                  future.set_exception(exc)
+                  requests_completed.append(ack_reqs_dict[ack_id])
         # Temporary GRPC errors are retried
         elif (
             error_status
@@ -200,15 +200,18 @@ def _process_requests(
                 exc = AcknowledgeError(AcknowledgeStatus.FAILED_PRECONDITION, info=None)
             else:
                 exc = AcknowledgeError(AcknowledgeStatus.OTHER, str(error_status))
-            future = ack_reqs_dict[ack_id].future
-            future.set_exception(exc)
-            requests_completed.append(ack_reqs_dict[ack_id])
+            if ack_id in ack_reqs_dict:
+              future = ack_reqs_dict[ack_id].future
+              if future is not None:
+                future.set_exception(exc)
+                requests_completed.append(ack_reqs_dict[ack_id])
         # Since no error occurred, requests with futures are completed successfully.
         elif ack_reqs_dict[ack_id].future:
             future = ack_reqs_dict[ack_id].future
             # success
-            future.set_result(AcknowledgeStatus.SUCCESS)
-            requests_completed.append(ack_reqs_dict[ack_id])
+            if future is not None:
+              future.set_result(AcknowledgeStatus.SUCCESS)
+              requests_completed.append(ack_reqs_dict[ack_id])
         # All other requests are considered completed.
         else:
             requests_completed.append(ack_reqs_dict[ack_id])
