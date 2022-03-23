@@ -1751,7 +1751,7 @@ def test_process_requests_permanent_error_raises_exception():
 
 
 def test_process_requests_permanent_error_other_raises_exception():
-    # a permanent error raises an exception
+    # a permanent error of other raises an exception
     future = futures.Future()
     ack_reqs_dict = {
         "ackid1": requests.AckRequest(
