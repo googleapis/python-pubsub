@@ -1714,7 +1714,7 @@ def test_process_requests_no_errors():
 
 
 def test_process_requests_no_errors_no_future():
-    # no errors so request and its future should be completed
+    # no errors, request should be completed, even when future is None.
     ack_reqs_dict = {
         "ackid1": requests.AckRequest(
             ack_id="ackid1", byte_size=0, time_to_ack=20, ordering_key="", future=None
@@ -1770,7 +1770,7 @@ def test_process_requests_permanent_error_other_raises_exception():
 
 
 def test_process_requests_permanent_error_other_raises_exception_no_future():
-    # a permanent error raises an exception
+    # with a permanent error, request is completed even when future is None.
     ack_reqs_dict = {
         "ackid1": requests.AckRequest(
             ack_id="ackid1", byte_size=0, time_to_ack=20, ordering_key="", future=None
@@ -1922,7 +1922,8 @@ def test_process_requests_other_error_status_raises_exception():
 
 
 def test_process_requests_other_error_status_raises_exception_no_future():
-    # an unrecognized error status raises an exception
+    # with an unrecognized error status, requests are completed, even when
+    # future is None.
     ack_reqs_dict = {
         "ackid1": requests.AckRequest(
             ack_id="ackid1", byte_size=0, time_to_ack=20, ordering_key="", future=None
