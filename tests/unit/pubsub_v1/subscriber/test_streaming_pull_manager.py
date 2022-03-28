@@ -521,6 +521,37 @@ def test_send_unary_ack():
     )
 
 
+def test_send_unary_ack_exactly_once_enabled_with_futures():
+    manager = make_manager()
+    manager._exactly_once_enabled = True
+
+    future1 = futures.Future()
+    future2 = futures.Future()
+    ack_reqs_dict = {
+        "ack_id1": requests.AckRequest(
+            ack_id="ack_id1",
+            byte_size=0,
+            time_to_ack=20,
+            ordering_key="",
+            future=future1,
+        ),
+        "ack_id2": requests.AckRequest(
+            ack_id="ack_id2",
+            byte_size=0,
+            time_to_ack=20,
+            ordering_key="",
+            future=future2,
+        ),
+    }
+    manager.send_unary_ack(ack_ids=["ack_id1", "ack_id2"], ack_reqs_dict=ack_reqs_dict)
+
+    manager._client.acknowledge.assert_called_once_with(
+        subscription=manager._subscription, ack_ids=["ack_id1", "ack_id2"]
+    )
+    assert future1.result() == subscriber_exceptions.AcknowledgeStatus.SUCCESS
+    assert future2.result() == subscriber_exceptions.AcknowledgeStatus.SUCCESS
+
+
 def test_send_unary_ack_exactly_once_disabled_with_futures():
     manager = make_manager()
 
@@ -580,6 +611,44 @@ def test_send_unary_modack():
         ],
         any_order=True,
     )
+
+
+def test_send_unary_modack_exactly_once_enabled_with_futures():
+    manager = make_manager()
+    manager._exactly_once_enabled = True
+
+    future1 = futures.Future()
+    future2 = futures.Future()
+    future3 = futures.Future()
+    ack_reqs_dict = {
+        "ack_id3": requests.ModAckRequest(ack_id="ack_id3", seconds=60, future=future1),
+        "ack_id4": requests.ModAckRequest(ack_id="ack_id4", seconds=60, future=future2),
+        "ack_id5": requests.ModAckRequest(ack_id="ack_id5", seconds=60, future=future3),
+    }
+    manager.send_unary_modack(
+        modify_deadline_ack_ids=["ack_id3", "ack_id4", "ack_id5"],
+        modify_deadline_seconds=[10, 20, 20],
+        ack_reqs_dict=ack_reqs_dict,
+    )
+
+    manager._client.modify_ack_deadline.assert_has_calls(
+        [
+            mock.call(
+                subscription=manager._subscription,
+                ack_ids=["ack_id3"],
+                ack_deadline_seconds=10,
+            ),
+            mock.call(
+                subscription=manager._subscription,
+                ack_ids=["ack_id4", "ack_id5"],
+                ack_deadline_seconds=20,
+            ),
+        ],
+        any_order=True,
+    )
+    assert future1.result() == subscriber_exceptions.AcknowledgeStatus.SUCCESS
+    assert future2.result() == subscriber_exceptions.AcknowledgeStatus.SUCCESS
+    assert future3.result() == subscriber_exceptions.AcknowledgeStatus.SUCCESS
 
 
 def test_send_unary_modack_exactly_once_disabled_with_futures():
@@ -673,7 +742,7 @@ def test_send_unary_modack_api_call_error(caplog):
     assert "The front fell off" in caplog.text
 
 
-def test_send_unary_ack_retry_error_no_futures(caplog):
+def test_send_unary_ack_retry_error_exactly_once_disabled_no_futures(caplog):
     caplog.set_level(logging.DEBUG)
 
     manager, _, _, _, _, _ = make_running_manager()
@@ -741,6 +810,42 @@ def test_send_unary_ack_retry_error_exactly_once_disabled_with_futures(caplog):
     assert future2.result() == subscriber_exceptions.AcknowledgeStatus.SUCCESS
 
 
+def test_send_unary_ack_retry_error_exactly_once_enabled_no_futures(caplog):
+    caplog.set_level(logging.DEBUG)
+
+    manager, _, _, _, _, _ = make_running_manager()
+    manager._exactly_once_enabled = True
+
+    error = exceptions.RetryError(
+        "Too long a transient error", cause=Exception("Out of time!")
+    )
+    manager._client.acknowledge.side_effect = error
+
+    ack_reqs_dict = {
+        "ack_id1": requests.AckRequest(
+            ack_id="ack_id1",
+            byte_size=0,
+            time_to_ack=20,
+            ordering_key="",
+            future=None,
+        ),
+        "ack_id2": requests.AckRequest(
+            ack_id="ack_id2",
+            byte_size=0,
+            time_to_ack=20,
+            ordering_key="",
+            future=None,
+        ),
+    }
+    with pytest.raises(exceptions.RetryError):
+        manager.send_unary_ack(
+            ack_ids=["ack_id1", "ack_id2"], ack_reqs_dict=ack_reqs_dict
+        )
+
+    assert "RetryError while sending ack RPC" in caplog.text
+    assert "signaled streaming pull manager shutdown" in caplog.text
+
+
 def test_send_unary_ack_retry_error_exactly_once_enabled_with_futures(caplog):
     caplog.set_level(logging.DEBUG)
 
@@ -787,7 +892,7 @@ def test_send_unary_ack_retry_error_exactly_once_enabled_with_futures(caplog):
     )
 
 
-def test_send_unary_modack_retry_error_no_future(caplog):
+def test_send_unary_modack_retry_error_exactly_once_disabled_no_future(caplog):
     caplog.set_level(logging.DEBUG)
 
     manager, _, _, _, _, _ = make_running_manager()
@@ -812,7 +917,7 @@ def test_send_unary_modack_retry_error_no_future(caplog):
     assert "signaled streaming pull manager shutdown" in caplog.text
 
 
-def test_send_unary_modack_retry_error_exactly_once_delivery_disabled_with_futures(
+def test_send_unary_modack_retry_error_exactly_once_disabled_with_futures(
     caplog,
 ):
     caplog.set_level(logging.DEBUG)
@@ -841,7 +946,34 @@ def test_send_unary_modack_retry_error_exactly_once_delivery_disabled_with_futur
     assert future.result() == subscriber_exceptions.AcknowledgeStatus.SUCCESS
 
 
-def test_send_unary_modack_retry_error_exactly_once_delivery_enabled_with_futures(
+def test_send_unary_modack_retry_error_exactly_once_enabled_no_futures(
+    caplog,
+):
+    caplog.set_level(logging.DEBUG)
+
+    manager, _, _, _, _, _ = make_running_manager()
+    manager._exactly_once_enabled = True
+
+    error = exceptions.RetryError(
+        "Too long a transient error", cause=Exception("Out of time!")
+    )
+    manager._client.modify_ack_deadline.side_effect = error
+
+    ack_reqs_dict = {
+        "ackid1": requests.ModAckRequest(ack_id="ackid1", seconds=60, future=None)
+    }
+    with pytest.raises(exceptions.RetryError):
+        manager.send_unary_modack(
+            modify_deadline_ack_ids=["ackid1"],
+            modify_deadline_seconds=[0],
+            ack_reqs_dict=ack_reqs_dict,
+        )
+
+    assert "RetryError while sending modack RPC" in caplog.text
+    assert "signaled streaming pull manager shutdown" in caplog.text
+
+
+def test_send_unary_modack_retry_error_exactly_once_enabled_with_futures(
     caplog,
 ):
     caplog.set_level(logging.DEBUG)
