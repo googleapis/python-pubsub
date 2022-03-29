@@ -823,18 +823,10 @@ def test_send_unary_ack_retry_error_exactly_once_enabled_no_futures(caplog):
 
     ack_reqs_dict = {
         "ack_id1": requests.AckRequest(
-            ack_id="ack_id1",
-            byte_size=0,
-            time_to_ack=20,
-            ordering_key="",
-            future=None,
+            ack_id="ack_id1", byte_size=0, time_to_ack=20, ordering_key="", future=None,
         ),
         "ack_id2": requests.AckRequest(
-            ack_id="ack_id2",
-            byte_size=0,
-            time_to_ack=20,
-            ordering_key="",
-            future=None,
+            ack_id="ack_id2", byte_size=0, time_to_ack=20, ordering_key="", future=None,
         ),
     }
     with pytest.raises(exceptions.RetryError):
@@ -917,9 +909,7 @@ def test_send_unary_modack_retry_error_exactly_once_disabled_no_future(caplog):
     assert "signaled streaming pull manager shutdown" in caplog.text
 
 
-def test_send_unary_modack_retry_error_exactly_once_disabled_with_futures(
-    caplog,
-):
+def test_send_unary_modack_retry_error_exactly_once_disabled_with_futures(caplog,):
     caplog.set_level(logging.DEBUG)
 
     manager, _, _, _, _, _ = make_running_manager()
@@ -946,9 +936,7 @@ def test_send_unary_modack_retry_error_exactly_once_disabled_with_futures(
     assert future.result() == subscriber_exceptions.AcknowledgeStatus.SUCCESS
 
 
-def test_send_unary_modack_retry_error_exactly_once_enabled_no_futures(
-    caplog,
-):
+def test_send_unary_modack_retry_error_exactly_once_enabled_no_futures(caplog,):
     caplog.set_level(logging.DEBUG)
 
     manager, _, _, _, _, _ = make_running_manager()
@@ -973,9 +961,7 @@ def test_send_unary_modack_retry_error_exactly_once_enabled_no_futures(
     assert "signaled streaming pull manager shutdown" in caplog.text
 
 
-def test_send_unary_modack_retry_error_exactly_once_enabled_with_futures(
-    caplog,
-):
+def test_send_unary_modack_retry_error_exactly_once_enabled_with_futures(caplog,):
     caplog.set_level(logging.DEBUG)
 
     manager, _, _, _, _, _ = make_running_manager()

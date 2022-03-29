@@ -168,7 +168,6 @@ def _process_requests(
     """
     requests_completed = []
     requests_to_retry = []
-
     for ack_id in ack_reqs_dict:
         # Handle special errors returned for ack/modack RPCs via the ErrorInfo
         # sidecar metadata when exactly-once delivery is enabled.
