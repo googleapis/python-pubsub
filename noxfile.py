@@ -72,7 +72,7 @@ def lint_setup_py(session):
 
 def default(session):
     # Install all test dependencies, then install this package in-place.
-    session.install("mock", "pytest", "pytest-cov")
+    session.install("mock", "pytest", "pytest-cov", "pytz")
     session.install("-e", ".")
 
     # Run py.test against the unit tests.
