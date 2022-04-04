@@ -35,6 +35,7 @@ dependencies = [
     "google-api-core[grpc] >= 1.14.0, != 1.17.*, != 1.18.*, != 1.19.*",
     "grpc-google-iam-v1 >= 0.12.3, < 0.13dev",
     'enum34; python_version < "3.4"',
+    "pytz",
 ]
 extras = {}
 

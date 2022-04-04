@@ -46,7 +46,9 @@ from google.protobuf import field_mask_pb2
 from google.protobuf import timestamp_pb2
 
 
-_GAPIC_LIBRARY_VERSION = pkg_resources.get_distribution("google-cloud-pubsub",).version
+_GAPIC_LIBRARY_VERSION = pkg_resources.get_distribution(
+    "google-cloud-pubsub",
+).version
 
 
 class SubscriberClient(object):
@@ -94,7 +96,8 @@ class SubscriberClient(object):
     def project_path(cls, project):
         """Return a fully-qualified project string."""
         return google.api_core.path_template.expand(
-            "projects/{project}", project=project,
+            "projects/{project}",
+            project=project,
         )
 
     @classmethod
@@ -119,7 +122,9 @@ class SubscriberClient(object):
     def topic_path(cls, project, topic):
         """Return a fully-qualified topic string."""
         return google.api_core.path_template.expand(
-            "projects/{project}/topics/{topic}", project=project, topic=topic,
+            "projects/{project}/topics/{topic}",
+            project=project,
+            topic=topic,
         )
 
     def __init__(
@@ -209,7 +214,9 @@ class SubscriberClient(object):
                 self.transport = transport
         else:
             self.transport = subscriber_grpc_transport.SubscriberGrpcTransport(
-                address=api_endpoint, channel=channel, credentials=credentials,
+                address=api_endpoint,
+                channel=channel,
+                credentials=credentials,
             )
 
         if client_info is None:
@@ -491,7 +498,9 @@ class SubscriberClient(object):
                 client_info=self._client_info,
             )
 
-        request = pubsub_pb2.GetSubscriptionRequest(subscription=subscription,)
+        request = pubsub_pb2.GetSubscriptionRequest(
+            subscription=subscription,
+        )
         if metadata is None:
             metadata = []
         metadata = list(metadata)
@@ -579,7 +588,8 @@ class SubscriberClient(object):
             )
 
         request = pubsub_pb2.UpdateSubscriptionRequest(
-            subscription=subscription, update_mask=update_mask,
+            subscription=subscription,
+            update_mask=update_mask,
         )
         if metadata is None:
             metadata = []
@@ -672,7 +682,8 @@ class SubscriberClient(object):
             )
 
         request = pubsub_pb2.ListSubscriptionsRequest(
-            project=project, page_size=page_size,
+            project=project,
+            page_size=page_size,
         )
         if metadata is None:
             metadata = []
@@ -756,7 +767,9 @@ class SubscriberClient(object):
                 client_info=self._client_info,
             )
 
-        request = pubsub_pb2.DeleteSubscriptionRequest(subscription=subscription,)
+        request = pubsub_pb2.DeleteSubscriptionRequest(
+            subscription=subscription,
+        )
         if metadata is None:
             metadata = []
         metadata = list(metadata)
@@ -830,7 +843,9 @@ class SubscriberClient(object):
                 client_info=self._client_info,
             )
 
-        request = pubsub_pb2.GetSnapshotRequest(snapshot=snapshot,)
+        request = pubsub_pb2.GetSnapshotRequest(
+            snapshot=snapshot,
+        )
         if metadata is None:
             metadata = []
         metadata = list(metadata)
@@ -1003,7 +1018,8 @@ class SubscriberClient(object):
             )
 
         request = pubsub_pb2.AcknowledgeRequest(
-            subscription=subscription, ack_ids=ack_ids,
+            subscription=subscription,
+            ack_ids=ack_ids,
         )
         if metadata is None:
             metadata = []
@@ -1254,7 +1270,8 @@ class SubscriberClient(object):
             )
 
         request = pubsub_pb2.ModifyPushConfigRequest(
-            subscription=subscription, push_config=push_config,
+            subscription=subscription,
+            push_config=push_config,
         )
         if metadata is None:
             metadata = []
@@ -1351,7 +1368,10 @@ class SubscriberClient(object):
                 client_info=self._client_info,
             )
 
-        request = pubsub_pb2.ListSnapshotsRequest(project=project, page_size=page_size,)
+        request = pubsub_pb2.ListSnapshotsRequest(
+            project=project,
+            page_size=page_size,
+        )
         if metadata is None:
             metadata = []
         metadata = list(metadata)
@@ -1463,7 +1483,9 @@ class SubscriberClient(object):
             )
 
         request = pubsub_pb2.CreateSnapshotRequest(
-            name=name, subscription=subscription, labels=labels,
+            name=name,
+            subscription=subscription,
+            labels=labels,
         )
         if metadata is None:
             metadata = []
@@ -1557,7 +1579,8 @@ class SubscriberClient(object):
             )
 
         request = pubsub_pb2.UpdateSnapshotRequest(
-            snapshot=snapshot, update_mask=update_mask,
+            snapshot=snapshot,
+            update_mask=update_mask,
         )
         if metadata is None:
             metadata = []
@@ -1634,7 +1657,9 @@ class SubscriberClient(object):
                 client_info=self._client_info,
             )
 
-        request = pubsub_pb2.DeleteSnapshotRequest(snapshot=snapshot,)
+        request = pubsub_pb2.DeleteSnapshotRequest(
+            snapshot=snapshot,
+        )
         if metadata is None:
             metadata = []
         metadata = list(metadata)
@@ -1729,11 +1754,14 @@ class SubscriberClient(object):
         # Sanity check: We have some fields which are mutually exclusive;
         # raise ValueError if more than one is sent.
         google.api_core.protobuf_helpers.check_oneof(
-            time=time, snapshot=snapshot,
+            time=time,
+            snapshot=snapshot,
         )
 
         request = pubsub_pb2.SeekRequest(
-            subscription=subscription, time=time, snapshot=snapshot,
+            subscription=subscription,
+            time=time,
+            snapshot=snapshot,
         )
         if metadata is None:
             metadata = []
@@ -1820,7 +1848,10 @@ class SubscriberClient(object):
                 client_info=self._client_info,
             )
 
-        request = iam_policy_pb2.SetIamPolicyRequest(resource=resource, policy=policy,)
+        request = iam_policy_pb2.SetIamPolicyRequest(
+            resource=resource,
+            policy=policy,
+        )
         if metadata is None:
             metadata = []
         metadata = list(metadata)
@@ -1899,7 +1930,8 @@ class SubscriberClient(object):
             )
 
         request = iam_policy_pb2.GetIamPolicyRequest(
-            resource=resource, options=options_,
+            resource=resource,
+            options=options_,
         )
         if metadata is None:
             metadata = []
@@ -1986,7 +2018,8 @@ class SubscriberClient(object):
             )
 
         request = iam_policy_pb2.TestIamPermissionsRequest(
-            resource=resource, permissions=permissions,
+            resource=resource,
+            permissions=permissions,
         )
         if metadata is None:
             metadata = []
