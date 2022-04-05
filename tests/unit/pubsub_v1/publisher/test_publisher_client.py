@@ -54,9 +54,9 @@ def test_init_w_custom_transport():
     assert client.batch_settings.max_messages == 100
 
 
-def test_init_w_api_endpoint():
+def test_init_w_api_endpoint(creds):
     client_options = {"api_endpoint": "testendpoint.google.com"}
-    client = publisher.Client(client_options=client_options)
+    client = publisher.Client(credentials=creds, client_options=client_options)
 
     assert isinstance(client.api, publisher_client.PublisherClient)
     assert (client.api.transport._channel._channel.target()).decode(
@@ -64,9 +64,9 @@ def test_init_w_api_endpoint():
     ) == "testendpoint.google.com"
 
 
-def test_init_w_unicode_api_endpoint():
+def test_init_w_unicode_api_endpoint(creds):
     client_options = {"api_endpoint": u"testendpoint.google.com"}
-    client = publisher.Client(client_options=client_options)
+    client = publisher.Client(credentials=creds, client_options=client_options)
 
     assert isinstance(client.api, publisher_client.PublisherClient)
     assert (client.api.transport._channel._channel.target()).decode(
@@ -74,8 +74,8 @@ def test_init_w_unicode_api_endpoint():
     ) == "testendpoint.google.com"
 
 
-def test_init_w_empty_client_options():
-    client = publisher.Client(client_options={})
+def test_init_w_empty_client_options(creds):
+    client = publisher.Client(credentials=creds, client_options={})
 
     assert isinstance(client.api, publisher_client.PublisherClient)
     assert (client.api.transport._channel._channel.target()).decode(

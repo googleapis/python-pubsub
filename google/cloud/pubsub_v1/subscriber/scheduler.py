@@ -59,8 +59,7 @@ class Scheduler(object):
 
     @abc.abstractmethod
     def shutdown(self):
-        """Shuts down the scheduler and immediately end all pending callbacks.
-        """
+        """Shuts down the scheduler and immediately end all pending callbacks."""
         raise NotImplementedError
 
 
@@ -111,8 +110,7 @@ class ThreadScheduler(Scheduler):
         self._executor.submit(callback, *args, **kwargs)
 
     def shutdown(self):
-        """Shuts down the scheduler and immediately end all pending callbacks.
-        """
+        """Shuts down the scheduler and immediately end all pending callbacks."""
         # Drop all pending item from the executor. Without this, the executor
         # will block until all pending items are complete, which is
         # undesirable.

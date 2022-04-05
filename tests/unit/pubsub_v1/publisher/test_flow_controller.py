@@ -33,8 +33,7 @@ def _run_in_daemon(
     error_event=None,
     action_pause=None,
 ):
-    """Run flow controller action (add or remove messages) in a daemon thread.
-    """
+    """Run flow controller action (add or remove messages) in a daemon thread."""
     assert action in ("add", "release")
 
     def run_me():

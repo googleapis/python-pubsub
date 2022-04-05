@@ -240,8 +240,8 @@ class Client(object):
         return self._target
 
     def _get_or_create_sequencer(self, topic, ordering_key):
-        """ Get an existing sequencer or create a new one given the (topic,
-            ordering_key) pair.
+        """Get an existing sequencer or create a new one given the (topic,
+        ordering_key) pair.
         """
         sequencer_key = (topic, ordering_key)
         sequencer = self._sequencers.get(sequencer_key)
@@ -257,7 +257,7 @@ class Client(object):
         return sequencer
 
     def resume_publish(self, topic, ordering_key):
-        """ Resume publish on an ordering key that has had unrecoverable errors.
+        """Resume publish on an ordering key that has had unrecoverable errors.
 
         Args:
             topic (str): The topic to publish messages to.
@@ -403,18 +403,18 @@ class Client(object):
             return future
 
     def ensure_cleanup_and_commit_timer_runs(self):
-        """ Ensure a cleanup/commit timer thread is running.
+        """Ensure a cleanup/commit timer thread is running.
 
-            If a cleanup/commit timer thread is already running, this does nothing.
+        If a cleanup/commit timer thread is already running, this does nothing.
         """
         with self._batch_lock:
             self._ensure_commit_timer_runs_no_lock()
 
     def _ensure_commit_timer_runs_no_lock(self):
-        """ Ensure a commit timer thread is running, without taking
-            _batch_lock.
+        """Ensure a commit timer thread is running, without taking
+        _batch_lock.
 
-            _batch_lock must be held before calling this method.
+        _batch_lock must be held before calling this method.
         """
         if not self._commit_thread and self.batch_settings.max_latency < float("inf"):
             self._start_commit_thread()
@@ -427,8 +427,7 @@ class Client(object):
         self._commit_thread.start()
 
     def _wait_and_commit_sequencers(self):
-        """ Wait up to the batching timeout, and commit all sequencers.
-        """
+        """Wait up to the batching timeout, and commit all sequencers."""
         # Sleep for however long we should be waiting.
         time.sleep(self.batch_settings.max_latency)
         _LOGGER.debug("Commit thread is waking up")
@@ -440,7 +439,7 @@ class Client(object):
             self._commit_thread = None
 
     def _commit_sequencers(self):
-        """ Clean up finished sequencers and commit the rest. """
+        """Clean up finished sequencers and commit the rest."""
         finished_sequencer_keys = [
             key
             for key, sequencer in self._sequencers.items()

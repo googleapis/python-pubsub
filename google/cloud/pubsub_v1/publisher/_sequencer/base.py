@@ -22,23 +22,23 @@ import six
 @six.add_metaclass(abc.ABCMeta)
 class Sequencer(object):
     """The base class for sequencers for Pub/Sub publishing. A sequencer
-       sequences messages to be published.
+    sequences messages to be published.
     """
 
     @staticmethod
     @abc.abstractmethod
     def is_finished(self):
-        """ Whether the sequencer is finished and should be cleaned up.
+        """Whether the sequencer is finished and should be cleaned up.
 
-            Returns:
-                bool: Whether the sequencer is finished and should be cleaned up.
+        Returns:
+            bool: Whether the sequencer is finished and should be cleaned up.
         """
         raise NotImplementedError
 
     @staticmethod
     @abc.abstractmethod
     def unpause(self, message):
-        """ Unpauses this sequencer.
+        """Unpauses this sequencer.
 
         Raises:
             RuntimeError:
@@ -49,7 +49,7 @@ class Sequencer(object):
     @staticmethod
     @abc.abstractmethod
     def publish(self, message):
-        """ Publish message for this ordering key.
+        """Publish message for this ordering key.
 
         Args:
             message (~.pubsub_v1.types.PubsubMessage): The Pub/Sub message.

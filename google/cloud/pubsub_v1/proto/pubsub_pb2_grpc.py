@@ -97,22 +97,19 @@ class PublisherServicer(object):
         raise NotImplementedError("Method not implemented!")
 
     def GetTopic(self, request, context):
-        """Gets the configuration of a topic.
-        """
+        """Gets the configuration of a topic."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details("Method not implemented!")
         raise NotImplementedError("Method not implemented!")
 
     def ListTopics(self, request, context):
-        """Lists matching topics.
-        """
+        """Lists matching topics."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details("Method not implemented!")
         raise NotImplementedError("Method not implemented!")
 
     def ListTopicSubscriptions(self, request, context):
-        """Lists the names of the attached subscriptions on this topic.
-        """
+        """Lists the names of the attached subscriptions on this topic."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details("Method not implemented!")
         raise NotImplementedError("Method not implemented!")
@@ -575,8 +572,7 @@ class SubscriberServicer(object):
         raise NotImplementedError("Method not implemented!")
 
     def GetSubscription(self, request, context):
-        """Gets the configuration details of a subscription.
-        """
+        """Gets the configuration details of a subscription."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details("Method not implemented!")
         raise NotImplementedError("Method not implemented!")
@@ -590,8 +586,7 @@ class SubscriberServicer(object):
         raise NotImplementedError("Method not implemented!")
 
     def ListSubscriptions(self, request, context):
-        """Lists matching subscriptions.
-        """
+        """Lists matching subscriptions."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details("Method not implemented!")
         raise NotImplementedError("Method not implemented!")
