@@ -43,7 +43,7 @@ SUBSCRIPTION_DLQ = f"subscription-test-subscription-dlq-{PY_VERSION}-{UUID}"
 SUBSCRIPTION_EOD = f"subscription-test-subscription-eod-{PY_VERSION}-{UUID}"
 ENDPOINT = f"https://{PROJECT_ID}.appspot.com/push"
 NEW_ENDPOINT = f"https://{PROJECT_ID}.appspot.com/push2"
-REGIONAL_ENDPOINT = f"us-east1-pubsub.googleapis.com:443"
+REGIONAL_ENDPOINT = "us-east1-pubsub.googleapis.com:443"
 DEFAULT_MAX_DELIVERY_ATTEMPTS = 5
 UPDATED_MAX_DELIVERY_ATTEMPTS = 20
 FILTER = 'attributes.author="unknown"'
@@ -721,6 +721,7 @@ def test_receive_messages_with_exactly_once_delivery_enabled_regional_endpoint(
     assert subscription_eod in out
     for message_id in message_ids:
         assert message_id in out
+
 
 def test_receive_messages_with_exactly_once_delivery_enabled_(
     publisher_client: pubsub_v1.PublisherClient,
