@@ -703,7 +703,7 @@ def test_receive_with_blocking_shutdown(
 
     eventually_consistent_test()
 
-
+@typed_flaky
 def test_receive_messages_with_exactly_once_delivery_enabled_regional_endpoint(
     regional_publisher_client: pubsub_v1.PublisherClient,
     exactly_once_delivery_topic: str,
@@ -723,7 +723,7 @@ def test_receive_messages_with_exactly_once_delivery_enabled_regional_endpoint(
         assert message_id in out
 
 
-def test_receive_messages_with_exactly_once_delivery_enabled_(
+def test_receive_messages_with_exactly_once_delivery_enabled(
     publisher_client: pubsub_v1.PublisherClient,
     exactly_once_delivery_topic: str,
     subscription_eod: str,
