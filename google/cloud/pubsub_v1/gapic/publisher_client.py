@@ -47,7 +47,9 @@ from google.protobuf import empty_pb2
 from google.protobuf import field_mask_pb2
 
 
-_GAPIC_LIBRARY_VERSION = pkg_resources.get_distribution("google-cloud-pubsub",).version
+_GAPIC_LIBRARY_VERSION = pkg_resources.get_distribution(
+    "google-cloud-pubsub",
+).version
 
 
 # TODO: remove conditional import after Python 2 support is dropped
@@ -116,7 +118,8 @@ class PublisherClient(object):
     def project_path(cls, project):
         """Return a fully-qualified project string."""
         return google.api_core.path_template.expand(
-            "projects/{project}", project=project,
+            "projects/{project}",
+            project=project,
         )
 
     @classmethod
@@ -132,7 +135,9 @@ class PublisherClient(object):
     def topic_path(cls, project, topic):
         """Return a fully-qualified topic string."""
         return google.api_core.path_template.expand(
-            "projects/{project}/topics/{topic}", project=project, topic=topic,
+            "projects/{project}/topics/{topic}",
+            project=project,
+            topic=topic,
         )
 
     def __init__(
@@ -219,7 +224,9 @@ class PublisherClient(object):
                 self.transport = transport
         else:
             self.transport = publisher_grpc_transport.PublisherGrpcTransport(
-                address=api_endpoint, channel=channel, credentials=credentials,
+                address=api_endpoint,
+                channel=channel,
+                credentials=credentials,
             )
 
         if client_info is None:
@@ -411,7 +418,10 @@ class PublisherClient(object):
                 client_info=self._client_info,
             )
 
-        request = pubsub_pb2.UpdateTopicRequest(topic=topic, update_mask=update_mask,)
+        request = pubsub_pb2.UpdateTopicRequest(
+            topic=topic,
+            update_mask=update_mask,
+        )
         if metadata is None:
             metadata = []
         metadata = list(metadata)
@@ -490,7 +500,10 @@ class PublisherClient(object):
                 client_info=self._client_info,
             )
 
-        request = pubsub_pb2.PublishRequest(topic=topic, messages=messages,)
+        request = pubsub_pb2.PublishRequest(
+            topic=topic,
+            messages=messages,
+        )
         if metadata is None:
             metadata = []
         metadata = list(metadata)
@@ -560,7 +573,9 @@ class PublisherClient(object):
                 client_info=self._client_info,
             )
 
-        request = pubsub_pb2.GetTopicRequest(topic=topic,)
+        request = pubsub_pb2.GetTopicRequest(
+            topic=topic,
+        )
         if metadata is None:
             metadata = []
         metadata = list(metadata)
@@ -651,7 +666,10 @@ class PublisherClient(object):
                 client_info=self._client_info,
             )
 
-        request = pubsub_pb2.ListTopicsRequest(project=project, page_size=page_size,)
+        request = pubsub_pb2.ListTopicsRequest(
+            project=project,
+            page_size=page_size,
+        )
         if metadata is None:
             metadata = []
         metadata = list(metadata)
@@ -754,7 +772,8 @@ class PublisherClient(object):
             )
 
         request = pubsub_pb2.ListTopicSubscriptionsRequest(
-            topic=topic, page_size=page_size,
+            topic=topic,
+            page_size=page_size,
         )
         if metadata is None:
             metadata = []
@@ -863,7 +882,8 @@ class PublisherClient(object):
             )
 
         request = pubsub_pb2.ListTopicSnapshotsRequest(
-            topic=topic, page_size=page_size,
+            topic=topic,
+            page_size=page_size,
         )
         if metadata is None:
             metadata = []
@@ -947,7 +967,9 @@ class PublisherClient(object):
                 client_info=self._client_info,
             )
 
-        request = pubsub_pb2.DeleteTopicRequest(topic=topic,)
+        request = pubsub_pb2.DeleteTopicRequest(
+            topic=topic,
+        )
         if metadata is None:
             metadata = []
         metadata = list(metadata)
@@ -1033,7 +1055,10 @@ class PublisherClient(object):
                 client_info=self._client_info,
             )
 
-        request = iam_policy_pb2.SetIamPolicyRequest(resource=resource, policy=policy,)
+        request = iam_policy_pb2.SetIamPolicyRequest(
+            resource=resource,
+            policy=policy,
+        )
         if metadata is None:
             metadata = []
         metadata = list(metadata)
@@ -1112,7 +1137,8 @@ class PublisherClient(object):
             )
 
         request = iam_policy_pb2.GetIamPolicyRequest(
-            resource=resource, options=options_,
+            resource=resource,
+            options=options_,
         )
         if metadata is None:
             metadata = []
@@ -1199,7 +1225,8 @@ class PublisherClient(object):
             )
 
         request = iam_policy_pb2.TestIamPermissionsRequest(
-            resource=resource, permissions=permissions,
+            resource=resource,
+            permissions=permissions,
         )
         if metadata is None:
             metadata = []
@@ -1273,7 +1300,9 @@ class PublisherClient(object):
                 client_info=self._client_info,
             )
 
-        request = pubsub_pb2.DetachSubscriptionRequest(subscription=subscription,)
+        request = pubsub_pb2.DetachSubscriptionRequest(
+            subscription=subscription,
+        )
         if metadata is None:
             metadata = []
         metadata = list(metadata)

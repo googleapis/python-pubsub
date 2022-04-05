@@ -16,9 +16,9 @@ from google.cloud.pubsub_v1.publisher._sequencer import base
 
 
 class UnorderedSequencer(base.Sequencer):
-    """ Sequences messages into batches for one topic without any ordering.
+    """Sequences messages into batches for one topic without any ordering.
 
-        Public methods are NOT thread-safe.
+    Public methods are NOT thread-safe.
     """
 
     def __init__(self, client, topic):
@@ -28,10 +28,10 @@ class UnorderedSequencer(base.Sequencer):
         self._stopped = False
 
     def is_finished(self):
-        """ Whether the sequencer is finished and should be cleaned up.
+        """Whether the sequencer is finished and should be cleaned up.
 
-            Returns:
-                bool: Whether the sequencer is finished and should be cleaned up.
+        Returns:
+            bool: Whether the sequencer is finished and should be cleaned up.
         """
         # TODO: Implement. Not implementing yet because of possible performance
         # impact due to extra locking required. This does mean that
@@ -40,13 +40,13 @@ class UnorderedSequencer(base.Sequencer):
         return False
 
     def stop(self):
-        """ Stop the sequencer.
+        """Stop the sequencer.
 
-            Subsequent publishes will fail.
+        Subsequent publishes will fail.
 
-            Raises:
-                RuntimeError:
-                    If called after stop() has already been called.
+        Raises:
+            RuntimeError:
+                If called after stop() has already been called.
         """
         if self._stopped:
             raise RuntimeError("Unordered sequencer already stopped.")
@@ -54,11 +54,11 @@ class UnorderedSequencer(base.Sequencer):
         self._stopped = True
 
     def commit(self):
-        """ Commit the batch.
+        """Commit the batch.
 
-            Raises:
-                RuntimeError:
-                    If called after stop() has already been called.
+        Raises:
+            RuntimeError:
+                If called after stop() has already been called.
         """
         if self._stopped:
             raise RuntimeError("Unordered sequencer already stopped.")
@@ -72,12 +72,12 @@ class UnorderedSequencer(base.Sequencer):
             self._current_batch = None
 
     def unpause(self):
-        """ Not relevant for this class. """
+        """Not relevant for this class."""
         raise NotImplementedError
 
     def _create_batch(self):
-        """ Create a new batch using the client's batch class and other stored
-            settings.
+        """Create a new batch using the client's batch class and other stored
+        settings.
         """
         return self._client._batch_class(
             client=self._client,
@@ -88,7 +88,7 @@ class UnorderedSequencer(base.Sequencer):
         )
 
     def publish(self, message):
-        """ Batch message into existing or new batch.
+        """Batch message into existing or new batch.
 
         Args:
             message (~.pubsub_v1.types.PubsubMessage): The Pub/Sub message.
