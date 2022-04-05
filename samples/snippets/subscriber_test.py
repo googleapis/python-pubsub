@@ -703,6 +703,7 @@ def test_receive_with_blocking_shutdown(
 
     eventually_consistent_test()
 
+
 @typed_flaky
 def test_receive_messages_with_exactly_once_delivery_enabled_regional_endpoint(
     regional_publisher_client: pubsub_v1.PublisherClient,
