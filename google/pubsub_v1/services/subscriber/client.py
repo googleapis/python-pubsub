@@ -17,7 +17,17 @@ from collections import OrderedDict
 import functools
 import os
 import re
-from typing import Dict, Optional, Iterable, Iterator, Sequence, Tuple, Type, Union
+from typing import (
+    Dict,
+    Mapping,
+    Optional,
+    Iterable,
+    Iterator,
+    Sequence,
+    Tuple,
+    Type,
+    Union,
+)
 import warnings
 import pkg_resources
 
@@ -521,7 +531,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
 
         .. code-block:: python
 
-            from google import pubsub_v1
+                    from google import pubsub_v1
 
             def sample_create_subscription():
                 # Create a client
@@ -676,7 +686,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
 
         .. code-block:: python
 
-            from google import pubsub_v1
+                    from google import pubsub_v1
 
             def sample_get_subscription():
                 # Create a client
@@ -774,7 +784,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
 
         .. code-block:: python
 
-            from google import pubsub_v1
+                    from google import pubsub_v1
 
             def sample_update_subscription():
                 # Create a client
@@ -854,7 +864,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
 
         .. code-block:: python
 
-            from google import pubsub_v1
+                    from google import pubsub_v1
 
             def sample_list_subscriptions():
                 # Create a client
@@ -968,7 +978,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
 
         .. code-block:: python
 
-            from google import pubsub_v1
+                    from google import pubsub_v1
 
             def sample_delete_subscription():
                 # Create a client
@@ -1062,7 +1072,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
 
         .. code-block:: python
 
-            from google import pubsub_v1
+                    from google import pubsub_v1
 
             def sample_modify_ack_deadline():
                 # Create a client
@@ -1184,7 +1194,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
 
         .. code-block:: python
 
-            from google import pubsub_v1
+                    from google import pubsub_v1
 
             def sample_acknowledge():
                 # Create a client
@@ -1286,7 +1296,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
 
         .. code-block:: python
 
-            from google import pubsub_v1
+                    from google import pubsub_v1
 
             def sample_pull():
                 # Create a client
@@ -1424,7 +1434,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
 
         .. code-block:: python
 
-            from google import pubsub_v1
+                    from google import pubsub_v1
 
             def sample_streaming_pull():
                 # Create a client
@@ -1515,7 +1525,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
 
         .. code-block:: python
 
-            from google import pubsub_v1
+                    from google import pubsub_v1
 
             def sample_modify_push_config():
                 # Create a client
@@ -1622,7 +1632,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
 
         .. code-block:: python
 
-            from google import pubsub_v1
+                    from google import pubsub_v1
 
             def sample_get_snapshot():
                 # Create a client
@@ -1726,7 +1736,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
 
         .. code-block:: python
 
-            from google import pubsub_v1
+                    from google import pubsub_v1
 
             def sample_list_snapshots():
                 # Create a client
@@ -1854,7 +1864,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
 
         .. code-block:: python
 
-            from google import pubsub_v1
+                    from google import pubsub_v1
 
             def sample_create_snapshot():
                 # Create a client
@@ -1984,7 +1994,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
 
         .. code-block:: python
 
-            from google import pubsub_v1
+                    from google import pubsub_v1
 
             def sample_update_snapshot():
                 # Create a client
@@ -2075,7 +2085,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
 
         .. code-block:: python
 
-            from google import pubsub_v1
+                    from google import pubsub_v1
 
             def sample_delete_snapshot():
                 # Create a client
@@ -2167,7 +2177,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
 
         .. code-block:: python
 
-            from google import pubsub_v1
+                    from google import pubsub_v1
 
             def sample_seek():
                 # Create a client
