@@ -16,7 +16,7 @@
 from collections import OrderedDict
 import functools
 import re
-from typing import Dict, Optional, Sequence, Tuple, Type, Union
+from typing import Dict, Mapping, Optional, Sequence, Tuple, Type, Union
 import pkg_resources
 
 from google.api_core.client_options import ClientOptions
@@ -220,7 +220,6 @@ class PublisherAsyncClient:
         name rules]
         (https://cloud.google.com/pubsub/docs/admin#resource_names).
 
-
         .. code-block:: python
 
             from google import pubsub_v1
@@ -293,7 +292,7 @@ class PublisherAsyncClient:
                 maximum=60.0,
                 multiplier=1.3,
                 predicate=retries.if_exception_type(
-                    core_exceptions.ServiceUnavailable,
+                    core_exceptions.GoogleAPICallError,
                 ),
                 deadline=60.0,
             ),
@@ -328,7 +327,6 @@ class PublisherAsyncClient:
     ) -> pubsub.Topic:
         r"""Updates an existing topic. Note that certain
         properties of a topic are not modifiable.
-
 
         .. code-block:: python
 
@@ -378,7 +376,7 @@ class PublisherAsyncClient:
                 maximum=60.0,
                 multiplier=1.3,
                 predicate=retries.if_exception_type(
-                    core_exceptions.ServiceUnavailable,
+                    core_exceptions.GoogleAPICallError,
                 ),
                 deadline=60.0,
             ),
@@ -417,7 +415,6 @@ class PublisherAsyncClient:
     ) -> pubsub.PublishResponse:
         r"""Adds one or more messages to the topic. Returns ``NOT_FOUND`` if
         the topic does not exist.
-
 
         .. code-block:: python
 
@@ -493,13 +490,7 @@ class PublisherAsyncClient:
                 maximum=60.0,
                 multiplier=1.3,
                 predicate=retries.if_exception_type(
-                    core_exceptions.Aborted,
-                    core_exceptions.Cancelled,
-                    core_exceptions.DeadlineExceeded,
-                    core_exceptions.InternalServerError,
-                    core_exceptions.ResourceExhausted,
-                    core_exceptions.ServiceUnavailable,
-                    core_exceptions.Unknown,
+                    core_exceptions.GoogleAPICallError,
                 ),
                 deadline=60.0,
             ),
@@ -601,9 +592,7 @@ class PublisherAsyncClient:
                 maximum=60.0,
                 multiplier=1.3,
                 predicate=retries.if_exception_type(
-                    core_exceptions.Aborted,
-                    core_exceptions.ServiceUnavailable,
-                    core_exceptions.Unknown,
+                    core_exceptions.GoogleAPICallError,
                 ),
                 deadline=60.0,
             ),
@@ -710,9 +699,7 @@ class PublisherAsyncClient:
                 maximum=60.0,
                 multiplier=1.3,
                 predicate=retries.if_exception_type(
-                    core_exceptions.Aborted,
-                    core_exceptions.ServiceUnavailable,
-                    core_exceptions.Unknown,
+                    core_exceptions.GoogleAPICallError,
                 ),
                 deadline=60.0,
             ),
@@ -757,7 +744,6 @@ class PublisherAsyncClient:
     ) -> pagers.ListTopicSubscriptionsAsyncPager:
         r"""Lists the names of the attached subscriptions on this
         topic.
-
 
         .. code-block:: python
 
@@ -832,9 +818,7 @@ class PublisherAsyncClient:
                 maximum=60.0,
                 multiplier=1.3,
                 predicate=retries.if_exception_type(
-                    core_exceptions.Aborted,
-                    core_exceptions.ServiceUnavailable,
-                    core_exceptions.Unknown,
+                    core_exceptions.GoogleAPICallError,
                 ),
                 deadline=60.0,
             ),
@@ -883,7 +867,6 @@ class PublisherAsyncClient:
         operations, which allow you to manage message acknowledgments in
         bulk. That is, you can set the acknowledgment state of messages
         in an existing subscription to the state captured by a snapshot.
-
 
         .. code-block:: python
 
@@ -958,9 +941,7 @@ class PublisherAsyncClient:
                 maximum=60.0,
                 multiplier=1.3,
                 predicate=retries.if_exception_type(
-                    core_exceptions.Aborted,
-                    core_exceptions.ServiceUnavailable,
-                    core_exceptions.Unknown,
+                    core_exceptions.GoogleAPICallError,
                 ),
                 deadline=60.0,
             ),
@@ -1009,7 +990,6 @@ class PublisherAsyncClient:
         with none of the old configuration or subscriptions. Existing
         subscriptions to this topic are not deleted, but their ``topic``
         field is set to ``_deleted-topic_``.
-
 
         .. code-block:: python
 
@@ -1071,7 +1051,7 @@ class PublisherAsyncClient:
                 maximum=60.0,
                 multiplier=1.3,
                 predicate=retries.if_exception_type(
-                    core_exceptions.ServiceUnavailable,
+                    core_exceptions.GoogleAPICallError,
                 ),
                 deadline=60.0,
             ),
@@ -1106,7 +1086,6 @@ class PublisherAsyncClient:
         ``StreamingPull`` requests will return FAILED_PRECONDITION. If
         the subscription is a push subscription, pushes to the endpoint
         will stop.
-
 
         .. code-block:: python
 
@@ -1156,7 +1135,7 @@ class PublisherAsyncClient:
                 maximum=60.0,
                 multiplier=1.3,
                 predicate=retries.if_exception_type(
-                    core_exceptions.ServiceUnavailable,
+                    core_exceptions.GoogleAPICallError,
                 ),
                 deadline=60.0,
             ),
