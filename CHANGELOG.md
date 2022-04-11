@@ -5,6 +5,13 @@
 [1]: https://pypi.org/project/google-cloud-pubsub/#history
 
 
+### [2.12.1](https://github.com/googleapis/python-pubsub/compare/v2.12.0...v2.12.1) (2022-04-11)
+
+
+### Bug Fixes
+
+* fix eod snippets test ([#643](https://github.com/googleapis/python-pubsub/issues/643)) ([b59887f](https://github.com/googleapis/python-pubsub/commit/b59887f554d5024791c33d5cd295a89797376b25))
+
 ## [2.12.0](https://github.com/googleapis/python-pubsub/compare/v2.11.0...v2.12.0) (2022-04-06)
 
 
