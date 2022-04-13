@@ -111,6 +111,7 @@ def exactly_once_delivery_topic(
 
     publisher_client.delete_topic(request={"topic": topic.name})
 
+
 @pytest.fixture(scope="module")
 def subscriber_client() -> Generator[pubsub_v1.SubscriberClient, None, None]:
     subscriber_client = pubsub_v1.SubscriberClient()
@@ -236,7 +237,6 @@ def subscription_eod(
     subscription_path = subscriber_client.subscription_path(
         PROJECT_ID, SUBSCRIPTION_EOD
     )
-    print("for " + subscription_path)
 
     try:
         subscription = subscriber_client.get_subscription(
@@ -498,7 +498,7 @@ def test_create_push_subscription(
     capsys: CaptureFixture[str],
 ) -> None:
     typed_backoff = cast(
-    Callable[[C], C], backoff.on_exception(backoff.expo, Unknown, max_time=60),
+        Callable[[C], C], backoff.on_exception(backoff.expo, Unknown, max_time=60),
     )
 
     # The scope of `subscription_path` is limited to this function.
@@ -525,13 +525,11 @@ def test_create_push_subscription(
 
 
 def test_update_push_suscription(
-    subscription_admin: str,
-    capsys: CaptureFixture[str],
+    subscription_admin: str, capsys: CaptureFixture[str],
 ) -> None:
 
     typed_backoff = cast(
-        Callable[[C], C],
-        backoff.on_exception(backoff.expo, Unknown, max_time=60),
+        Callable[[C], C], backoff.on_exception(backoff.expo, Unknown, max_time=60),
     )
 
     @typed_backoff
