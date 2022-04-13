@@ -53,6 +53,7 @@ C = TypeVar("C", bound=Callable[..., Any])
 typed_flaky = cast(Callable[[C], C], flaky(max_runs=3, min_passes=1))
 typed_super_flaky = cast(Callable[[C], C], flaky(max_runs=5, min_passes=5))
 
+
 @pytest.fixture(scope="module")
 def publisher_client() -> Generator[pubsub_v1.PublisherClient, None, None]:
     yield pubsub_v1.PublisherClient()
@@ -256,7 +257,7 @@ def subscription_eod(
     print("returning subscription.name = " + subscription.name)
 
     yield subscription.name
-    
+
     subscriber_client.delete_subscription(request={"subscription": subscription.name})
 
 
@@ -726,18 +727,17 @@ def test_receive_messages_with_exactly_once_delivery_enabled(
 ) -> None:
 
     message_ids = _publish_messages(
-            regional_publisher_client, exactly_once_delivery_topic
-        )
+        regional_publisher_client, exactly_once_delivery_topic
+    )
 
     subscriber.receive_messages_with_exactly_once_delivery_enabled(
-            PROJECT_ID, SUBSCRIPTION_EOD, 100
-        )
+        PROJECT_ID, SUBSCRIPTION_EOD, 100
+    )
 
     out, _ = capsys.readouterr()
     assert subscription_eod in out
     for message_id in message_ids:
         assert message_id in out
-
 
 
 def test_listen_for_errors(
