@@ -85,6 +85,7 @@ for library in s.get_staging_dirs(default_version):
     clients_to_patch = [
         library / f"google/pubsub_{library.name}/services/publisher/client.py",
         library / f"google/pubsub_{library.name}/services/subscriber/client.py",
+        library / f"google/pubsub_{library.name}/services/schema_service/client.py",
     ]
     err_msg = (
         "Expected replacements for gRPC channel to use with the emulator not made."
