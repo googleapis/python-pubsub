@@ -382,7 +382,7 @@ class Message(object):
         Otherwise, the future will contain an exception with more details about
         the failure and the message will be redelivered according to its
         currently-set ack deadline.
-        
+
         Exactly once delivery is a preview feature. For more details,
         see https://cloud.google.com/pubsub/docs/exactly-once-delivery."
 
@@ -445,7 +445,7 @@ class Message(object):
 
         If exactly-once delivery is NOT enabled on the subscription, the
         future returns immediately with an AcknowledgeStatus.SUCCESS.
-        
+
         If exactly-once delivery is enabled on the subscription, the
         future returned by this method tracks the state of the
         nack operation. If the future completes successfully,
