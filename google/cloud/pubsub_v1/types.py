@@ -132,6 +132,9 @@ class PublisherOptions(NamedTuple):
         "Timeout settings for message publishing by the client. It should be "
         "compatible with :class:`~.pubsub_v1.types.TimeoutType`."
     )
+    enable_grpc_compression: bool = False
+
+    compression_bytes_threshold: int = 240
 
 
 # Define the type class and default values for flow control settings.

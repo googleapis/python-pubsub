@@ -764,6 +764,8 @@ class PublisherClient(metaclass=PublisherClientMeta):
             gapic_v1.routing_header.to_grpc_metadata((("topic", request.topic),)),
         )
 
+        self._transport.
+
         # Send the request.
         response = rpc(
             request,

@@ -13,12 +13,14 @@
 # limitations under the License.
 
 from __future__ import absolute_import
+import functools
 
 import logging
 import threading
 import time
 import typing
 from typing import Any, Callable, List, Optional, Sequence
+from xmlrpc.client import Transport
 
 import google.api_core.exceptions
 from google.api_core import gapic_v1
@@ -118,6 +120,9 @@ class Batch(base.Batch):
 
         self._commit_retry = commit_retry
         self._commit_timeout = commit_timeout
+        self._enable_grpc_compression = self.client.publisher_options.enable_grpc_compression
+        self._compression_bytes_threshold = self.client.publisher_options.compression_bytes_threshold
+        
 
     @staticmethod
     def make_lock() -> threading.Lock:
@@ -269,6 +274,9 @@ class Batch(base.Batch):
         start = time.time()
 
         batch_transport_succeeded = True
+
+        # need to add compression here
+        
         try:
             # Performs retries for errors defined by the retry configuration.
             response = self._client._gapic_publish(

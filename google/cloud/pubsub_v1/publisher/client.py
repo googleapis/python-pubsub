@@ -158,6 +158,9 @@ class Client(publisher_client.PublisherClient):
         # The object controlling the message publishing flow
         self._flow_controller = FlowController(self.publisher_options.flow_control)
 
+        self._enable_grpc_compression = self.publisher_options.enable_grpc_compression
+        self._compression_bytes_threshold = self.publisher_options.compression_bytes_threshold
+
     @classmethod
     def from_service_account_file(  # type: ignore[override]
         cls,
@@ -269,6 +272,7 @@ class Client(publisher_client.PublisherClient):
 
     def _gapic_publish(self, *args, **kwargs) -> "pubsub_types.PublishResponse":
         """Call the GAPIC public API directly."""
+        # can we add compression here?
         return super().publish(*args, **kwargs)
 
     def publish(  # type: ignore[override]
@@ -409,7 +413,7 @@ class Client(publisher_client.PublisherClient):
 
             # Delegate the publishing to the sequencer.
             sequencer = self._get_or_create_sequencer(topic, ordering_key)
-            future = sequencer.publish(message, retry=retry, timeout=timeout)
+            future = sequencer.publish(message, retry=retry, timeout=timeout, enable_grpc_compression=self._enable_grpc_compression, compression_bytes_threshold=self._compression_bytes_threshold)
             future.add_done_callback(on_publish_done)
 
             # Create a timer thread if necessary to enforce the batching

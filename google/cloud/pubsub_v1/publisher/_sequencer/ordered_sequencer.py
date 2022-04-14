@@ -240,6 +240,8 @@ class OrderedSequencer(sequencer_base.Sequencer):
         self,
         commit_retry: "OptionalRetry" = gapic_v1.method.DEFAULT,
         commit_timeout: "types.OptionalTimeout" = gapic_v1.method.DEFAULT,
+        enable_grpc_compression: bool = False,
+        compression_bytes_threshold: int = 240
     ) -> "_batch.thread.Batch":
         """Create a new batch using the client's batch class and other stored
             settings.
@@ -265,6 +267,8 @@ class OrderedSequencer(sequencer_base.Sequencer):
         message: gapic_types.PubsubMessage,
         retry: "OptionalRetry" = gapic_v1.method.DEFAULT,
         timeout: "types.OptionalTimeout" = gapic_v1.method.DEFAULT,
+        enable_grpc_compression: bool = False,
+        compression_bytes_threshold: int = 240
     ) -> futures.Future:
         """Publish message for this ordering key.
 
@@ -319,7 +323,7 @@ class OrderedSequencer(sequencer_base.Sequencer):
             batch = self._ordered_batches[-1]
             future = batch.publish(message)
             while future is None:
-                batch = self._create_batch(commit_retry=retry, commit_timeout=timeout)
+                batch = self._create_batch(commit_retry=retry, commit_timeout=timeout,enable_grpc_compression=enable_grpc_compression, compression_bytes_threshold=compression_bytes_threshold)
                 self._ordered_batches.append(batch)
                 future = batch.publish(message)
 
