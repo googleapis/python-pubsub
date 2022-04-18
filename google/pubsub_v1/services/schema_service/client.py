@@ -14,6 +14,8 @@
 # limitations under the License.
 #
 from collections import OrderedDict
+import functools
+import grpc
 import os
 import re
 from typing import Dict, Mapping, Optional, Sequence, Tuple, Type, Union
@@ -411,6 +413,15 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
                 )
 
             Transport = type(self).get_transport_class(transport)
+
+            emulator_host = os.environ.get("PUBSUB_EMULATOR_HOST")
+            if emulator_host:
+                if issubclass(Transport, type(self)._transport_registry["grpc"]):
+                    channel = grpc.insecure_channel(target=emulator_host)
+                else:
+                    channel = grpc.aio.insecure_channel(target=emulator_host)
+                Transport = functools.partial(Transport, channel=channel)
+
             self._transport = Transport(
                 credentials=credentials,
                 credentials_file=client_options.credentials_file,

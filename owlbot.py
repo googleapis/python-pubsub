@@ -91,16 +91,7 @@ for library in s.get_staging_dirs(default_version):
         "Expected replacements for gRPC channel to use with the emulator not made."
     )
 
-    count = s.replace(clients_to_patch, r"import os", "import functools\n\g<0>")
-
-    if count < len(clients_to_patch):
-        raise Exception(err_msg)
-
-    count = s.replace(
-        clients_to_patch,
-        f"from google\.pubsub_{library.name}\.types import pubsub",
-        "\g<0>\n\nimport grpc",
-    )
+    count = s.replace(clients_to_patch, r"import os", "import functools\nimport grpc\n\g<0>")
 
     if count < len(clients_to_patch):
         raise Exception(err_msg)
