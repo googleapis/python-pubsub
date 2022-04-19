@@ -224,7 +224,9 @@ def test_duplicate_ack_eod_with_future():
     manager.maybe_resume_consumer.assert_called_once()
     manager.ack_histogram.add.assert_called()
     manager._exactly_once_delivery_enabled.assert_called()
-    assert future.exception() == ValueError("Sending duplicate ack.")
+    with pytest.raises(ValueError) as err:
+        future.result()
+    assert err.errisinstance(ValueError)
 
 
 def test_duplicate_ack_no_eod_with_future():
