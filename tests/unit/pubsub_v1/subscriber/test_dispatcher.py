@@ -213,7 +213,7 @@ def test_duplicate_ack_eod_with_future():
         ),
     ]
     manager.send_unary_ack.return_value = ([items[0]], [])
-    manager._exactly_once_delivery.return_value = True
+    manager._exactly_once_delivery_enabled.return_value = True
     dispatcher_.ack(items)
 
     manager.send_unary_ack.assert_called_once_with(
