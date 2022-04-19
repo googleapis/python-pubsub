@@ -13,8 +13,6 @@
 # limitations under the License.
 
 import collections
-from multiprocessing.reduction import ACKNOWLEDGE
-from multiprocessing.sharedctypes import Value
 import queue
 import threading
 

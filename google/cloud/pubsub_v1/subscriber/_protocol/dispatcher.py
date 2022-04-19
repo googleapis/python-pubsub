@@ -19,7 +19,6 @@ import functools
 import itertools
 import logging
 import math
-from multiprocessing.managers import ValueProxy
 import time
 import threading
 import typing
@@ -30,7 +29,6 @@ from google.api_core.retry import exponential_sleep_generator
 from google.cloud.pubsub_v1.subscriber._protocol import helper_threads
 from google.cloud.pubsub_v1.subscriber._protocol import requests
 from google.cloud.pubsub_v1.subscriber.exceptions import (
-    AcknowledgeError,
     AcknowledgeStatus,
 )
 
