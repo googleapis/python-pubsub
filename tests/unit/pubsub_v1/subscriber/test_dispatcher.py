@@ -148,6 +148,7 @@ def test_duplicate_ack_no_eod_no_future():
 
     manager.leaser.remove.assert_called_once_with([items[0]])
     manager.maybe_resume_consumer.assert_called_once()
+    manager._exactly_once_delivery_enabled.assert_called_once()
     manager.ack_histogram.add.assert_called()
 
 
@@ -184,6 +185,7 @@ def test_duplicate_ack_eod_no_future():
     manager.leaser.remove.assert_called_once_with([items[0]])
     manager.maybe_resume_consumer.assert_called_once()
     manager.ack_histogram.add.assert_called()
+    manager._exactly_once_delivery_enabled.assert_called()
 
 
 def test_duplicate_ack_eod_with_future():
@@ -221,6 +223,7 @@ def test_duplicate_ack_eod_with_future():
     manager.leaser.remove.assert_called_once_with([items[0]])
     manager.maybe_resume_consumer.assert_called_once()
     manager.ack_histogram.add.assert_called()
+    manager._exactly_once_delivery_enabled.assert_called()
     assert future.result() == ValueError("Sending duplicate ack.")
 
 
@@ -258,6 +261,7 @@ def test_duplicate_ack_no_eod_with_future():
     manager.leaser.remove.assert_called_once_with([items[0]])
     manager.maybe_resume_consumer.assert_called_once()
     manager.ack_histogram.add.assert_called()
+    manager._exactly_once_delivery_enabled.assert_called()
     assert future.result() == AcknowledgeStatus.SUCCESS
 
 

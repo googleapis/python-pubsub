@@ -186,6 +186,7 @@ class Dispatcher(object):
         items_gen = iter(items)
         total_chunks = int(math.ceil(len(items) / _ACK_IDS_BATCH_SIZE))
 
+        exactly_once_delivery_enabled = self._manager._exactly_once_delivery_enabled()
         for _ in range(total_chunks):
             ack_reqs_dict = {}
             ack_ids = []
@@ -197,7 +198,7 @@ class Dispatcher(object):
                         "This is a duplicate AckRequest with the same ack_id: %s. Only sending the first AckRequest.",
                         req.ack_id,
                     )
-                    if self._manager._exactly_once_delivery_enabled() and req.future:
+                    if exactly_once_delivery_enabled and req.future:
                         req.future.set_exception(ValueError("Sending duplicate ack."))
                     # Futures may be present even with exactly-once delivery
                     # disabled, in transition periods after the setting is changed on
