@@ -13,6 +13,8 @@
 # limitations under the License.
 
 import collections
+from multiprocessing.reduction import ACKNOWLEDGE
+from multiprocessing.sharedctypes import Value
 import queue
 import threading
 
@@ -24,6 +26,9 @@ from google.cloud.pubsub_v1.subscriber import futures
 
 import mock
 import pytest
+from google.cloud.pubsub_v1.subscriber.exceptions import AcknowledgeStatus
+
+from samples.snippets.subscriber_test import exactly_once_delivery_topic
 
 
 @pytest.mark.parametrize(
@@ -111,6 +116,151 @@ def test_ack():
     manager.leaser.remove.assert_called_once_with(items)
     manager.maybe_resume_consumer.assert_called_once()
     manager.ack_histogram.add.assert_called_once_with(20)
+
+
+def test_duplicate_ack_no_eod_no_future():
+    manager = mock.create_autospec(
+        streaming_pull_manager.StreamingPullManager, instance=True
+    )
+    dispatcher_ = dispatcher.Dispatcher(manager, mock.sentinel.queue)
+
+    items = [
+        requests.AckRequest(
+            ack_id="ack_id_string",
+            byte_size=0,
+            time_to_ack=20,
+            ordering_key="",
+            future=None,
+        ),
+        requests.AckRequest(
+            ack_id="ack_id_string",
+            byte_size=0,
+            time_to_ack=30,
+            ordering_key="",
+            future=None,
+        ),
+    ]
+    manager.send_unary_ack.return_value = ([items[0]], [])
+    manager._exactly_once_delivery_enabled.return_value = False
+    dispatcher_.ack(items)
+
+    manager.send_unary_ack.assert_called_once_with(
+        ack_ids=["ack_id_string"], ack_reqs_dict={"ack_id_string": items[0]}
+    )
+
+    manager.leaser.remove.assert_called_once_with([items[0]])
+    manager.maybe_resume_consumer.assert_called_once()
+    manager.ack_histogram.add.assert_called()
+
+
+def test_duplicate_ack_eod_no_future():
+    manager = mock.create_autospec(
+        streaming_pull_manager.StreamingPullManager, instance=True
+    )
+    dispatcher_ = dispatcher.Dispatcher(manager, mock.sentinel.queue)
+
+    items = [
+        requests.AckRequest(
+            ack_id="ack_id_string",
+            byte_size=0,
+            time_to_ack=20,
+            ordering_key="",
+            future=None,
+        ),
+        requests.AckRequest(
+            ack_id="ack_id_string",
+            byte_size=0,
+            time_to_ack=30,
+            ordering_key="",
+            future=None,
+        ),
+    ]
+    manager.send_unary_ack.return_value = ([items[0]], [])
+    manager._exactly_once_delivery_enabled.return_value = True
+    dispatcher_.ack(items)
+
+    manager.send_unary_ack.assert_called_once_with(
+        ack_ids=["ack_id_string"], ack_reqs_dict={"ack_id_string": items[0]}
+    )
+
+    manager.leaser.remove.assert_called_once_with([items[0]])
+    manager.maybe_resume_consumer.assert_called_once()
+    manager.ack_histogram.add.assert_called()
+
+
+def test_duplicate_ack_eod_with_future():
+    manager = mock.create_autospec(
+        streaming_pull_manager.StreamingPullManager,
+        instance=True,
+    )
+    dispatcher_ = dispatcher.Dispatcher(manager, mock.sentinel.queue)
+    future = futures.Future()
+
+    items = [
+        requests.AckRequest(
+            ack_id="ack_id_string",
+            byte_size=0,
+            time_to_ack=20,
+            ordering_key="",
+            future=None,
+        ),
+        requests.AckRequest(
+            ack_id="ack_id_string",
+            byte_size=0,
+            time_to_ack=30,
+            ordering_key="",
+            future=future,
+        ),
+    ]
+    manager.send_unary_ack.return_value = ([items[0]], [])
+    manager._exactly_once_delivery.return_value = True
+    dispatcher_.ack(items)
+
+    manager.send_unary_ack.assert_called_once_with(
+        ack_ids=["ack_id_string"], ack_reqs_dict={"ack_id_string": items[0]}
+    )
+
+    manager.leaser.remove.assert_called_once_with([items[0]])
+    manager.maybe_resume_consumer.assert_called_once()
+    manager.ack_histogram.add.assert_called()
+    assert future.result() == ValueError("Sending duplicate ack.")
+
+
+def test_duplicate_ack_no_eod_with_future():
+    manager = mock.create_autospec(
+        streaming_pull_manager.StreamingPullManager, instance=True
+    )
+    dispatcher_ = dispatcher.Dispatcher(manager, mock.sentinel.queue)
+    future = futures.Future()
+
+    items = [
+        requests.AckRequest(
+            ack_id="ack_id_string",
+            byte_size=0,
+            time_to_ack=20,
+            ordering_key="",
+            future=None,
+        ),
+        requests.AckRequest(
+            ack_id="ack_id_string",
+            byte_size=0,
+            time_to_ack=30,
+            ordering_key="",
+            future=future,
+        ),
+    ]
+    manager.send_unary_ack.return_value = ([items[0]], [])
+    manager._exactly_once_delivery_enabled.return_value = False
+    dispatcher_.ack(items)
+
+    manager.send_unary_ack.assert_called_once_with(
+        ack_ids=["ack_id_string"], ack_reqs_dict={"ack_id_string": items[0]}
+    )
+
+    manager.leaser.remove.assert_called_once_with([items[0]])
+    manager.maybe_resume_consumer.assert_called_once()
+    manager.ack_histogram.add.assert_called()
+    assert future.result() == AcknowledgeStatus.SUCCESS
 
 
 def test_ack_no_time():
