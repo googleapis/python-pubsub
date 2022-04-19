@@ -28,8 +28,6 @@ import mock
 import pytest
 from google.cloud.pubsub_v1.subscriber.exceptions import AcknowledgeStatus
 
-from samples.snippets.subscriber_test import exactly_once_delivery_topic
-
 
 @pytest.mark.parametrize(
     "item,method_name",
