@@ -20,7 +20,16 @@ import itertools
 import logging
 import threading
 import typing
-from typing import Any, Dict, Callable, Iterable, List, NamedTuple, Optional, Tuple, Union
+from typing import (
+    Any,
+    Dict,
+    Callable,
+    Iterable,
+    List,
+    Optional,
+    Tuple,
+    Union,
+)
 import uuid
 
 import grpc  # type: ignore
@@ -645,7 +654,10 @@ class StreamingPullManager(object):
         return requests_completed, requests_to_retry
 
     def send_unary_modack(
-        self, modify_deadline_ack_ids, modify_deadline_seconds, ack_reqs_dict: Dict[str, List[requests.ModAckRequest]]
+        self,
+        modify_deadline_ack_ids,
+        modify_deadline_seconds,
+        ack_reqs_dict: Dict[str, List[requests.ModAckRequest]],
     ) -> Tuple[List[requests.ModAckRequest], List[requests.ModAckRequest]]:
         """Send a request using a separate unary request instead of over the stream.
 

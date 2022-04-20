@@ -24,7 +24,6 @@ from google.cloud.pubsub_v1.subscriber import futures
 
 import mock
 import pytest
-from google.cloud.pubsub_v1.subscriber.exceptions import AcknowledgeStatus
 
 
 @pytest.mark.parametrize(
@@ -140,7 +139,8 @@ def test_duplicate_ack():
     dispatcher_.ack(items)
 
     manager.send_unary_ack.assert_called_once_with(
-        ack_ids=["ack_id_string", "ack_id_string"], ack_reqs_dict={"ack_id_string": items}
+        ack_ids=["ack_id_string", "ack_id_string"],
+        ack_reqs_dict={"ack_id_string": items},
     )
 
     manager.leaser.remove.assert_called()

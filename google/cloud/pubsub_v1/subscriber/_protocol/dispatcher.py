@@ -28,9 +28,6 @@ from google.api_core.retry import exponential_sleep_generator
 
 from google.cloud.pubsub_v1.subscriber._protocol import helper_threads
 from google.cloud.pubsub_v1.subscriber._protocol import requests
-from google.cloud.pubsub_v1.subscriber.exceptions import (
-    AcknowledgeStatus,
-)
 
 if typing.TYPE_CHECKING:  # pragma: NO COVER
     import queue
@@ -182,9 +179,9 @@ class Dispatcher(object):
         # We must potentially split the request into multiple smaller requests
         # to avoid the server-side max request size limit.
         items_gen = iter(items)
+        ack_ids_gen = (item.ack_id for item in items)
         total_chunks = int(math.ceil(len(items) / _ACK_IDS_BATCH_SIZE))
 
-        exactly_once_delivery_enabled = self._manager._exactly_once_delivery_enabled()
         for _ in range(total_chunks):
             ack_reqs_dict = {}
             for req in itertools.islice(items_gen, _ACK_IDS_BATCH_SIZE):
@@ -192,7 +189,7 @@ class Dispatcher(object):
                     ack_reqs_dict[req.ack_id] = []
                 ack_reqs_dict[req.ack_id].append(req)
             requests_completed, requests_to_retry = self._manager.send_unary_ack(
-                ack_ids=ack_ids,
+                ack_ids=list(itertools.islice(ack_ids_gen, _ACK_IDS_BATCH_SIZE)),
                 ack_reqs_dict=ack_reqs_dict,
             )
 

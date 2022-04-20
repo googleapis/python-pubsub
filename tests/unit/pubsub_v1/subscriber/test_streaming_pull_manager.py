@@ -507,12 +507,24 @@ def test_send_unary_ack():
     manager = make_manager()
 
     ack_reqs_dict = {
-        "ack_id1": [requests.AckRequest(
-            ack_id="ack_id1", byte_size=0, time_to_ack=20, ordering_key="", future=None
-        )],
-        "ack_id2": [requests.AckRequest(
-            ack_id="ack_id2", byte_size=0, time_to_ack=20, ordering_key="", future=None
-        )],
+        "ack_id1": [
+            requests.AckRequest(
+                ack_id="ack_id1",
+                byte_size=0,
+                time_to_ack=20,
+                ordering_key="",
+                future=None,
+            )
+        ],
+        "ack_id2": [
+            requests.AckRequest(
+                ack_id="ack_id2",
+                byte_size=0,
+                time_to_ack=20,
+                ordering_key="",
+                future=None,
+            )
+        ],
     }
     manager.send_unary_ack(ack_ids=["ack_id1", "ack_id2"], ack_reqs_dict=ack_reqs_dict)
 
@@ -528,20 +540,24 @@ def test_send_unary_ack_exactly_once_enabled_with_futures():
     future1 = futures.Future()
     future2 = futures.Future()
     ack_reqs_dict = {
-        "ack_id1": [requests.AckRequest(
-            ack_id="ack_id1",
-            byte_size=0,
-            time_to_ack=20,
-            ordering_key="",
-            future=future1,
-        )],
-        "ack_id2": [requests.AckRequest(
-            ack_id="ack_id2",
-            byte_size=0,
-            time_to_ack=20,
-            ordering_key="",
-            future=future2,
-        )],
+        "ack_id1": [
+            requests.AckRequest(
+                ack_id="ack_id1",
+                byte_size=0,
+                time_to_ack=20,
+                ordering_key="",
+                future=future1,
+            )
+        ],
+        "ack_id2": [
+            requests.AckRequest(
+                ack_id="ack_id2",
+                byte_size=0,
+                time_to_ack=20,
+                ordering_key="",
+                future=future2,
+            )
+        ],
     }
     manager.send_unary_ack(ack_ids=["ack_id1", "ack_id2"], ack_reqs_dict=ack_reqs_dict)
 
@@ -558,20 +574,24 @@ def test_send_unary_ack_exactly_once_disabled_with_futures():
     future1 = futures.Future()
     future2 = futures.Future()
     ack_reqs_dict = {
-        "ack_id1": [requests.AckRequest(
-            ack_id="ack_id1",
-            byte_size=0,
-            time_to_ack=20,
-            ordering_key="",
-            future=future1,
-        )],
-        "ack_id2": [requests.AckRequest(
-            ack_id="ack_id2",
-            byte_size=0,
-            time_to_ack=20,
-            ordering_key="",
-            future=future2,
-        )],
+        "ack_id1": [
+            requests.AckRequest(
+                ack_id="ack_id1",
+                byte_size=0,
+                time_to_ack=20,
+                ordering_key="",
+                future=future1,
+            )
+        ],
+        "ack_id2": [
+            requests.AckRequest(
+                ack_id="ack_id2",
+                byte_size=0,
+                time_to_ack=20,
+                ordering_key="",
+                future=future2,
+            )
+        ],
     }
     manager.send_unary_ack(ack_ids=["ack_id1", "ack_id2"], ack_reqs_dict=ack_reqs_dict)
 
@@ -621,9 +641,15 @@ def test_send_unary_modack_exactly_once_enabled_with_futures():
     future2 = futures.Future()
     future3 = futures.Future()
     ack_reqs_dict = {
-        "ack_id3": [requests.ModAckRequest(ack_id="ack_id3", seconds=60, future=future1)],
-        "ack_id4": [requests.ModAckRequest(ack_id="ack_id4", seconds=60, future=future2)],
-        "ack_id5": [requests.ModAckRequest(ack_id="ack_id5", seconds=60, future=future3)],
+        "ack_id3": [
+            requests.ModAckRequest(ack_id="ack_id3", seconds=60, future=future1)
+        ],
+        "ack_id4": [
+            requests.ModAckRequest(ack_id="ack_id4", seconds=60, future=future2)
+        ],
+        "ack_id5": [
+            requests.ModAckRequest(ack_id="ack_id5", seconds=60, future=future3)
+        ],
     }
     manager.send_unary_modack(
         modify_deadline_ack_ids=["ack_id3", "ack_id4", "ack_id5"],
@@ -658,9 +684,15 @@ def test_send_unary_modack_exactly_once_disabled_with_futures():
     future2 = futures.Future()
     future3 = futures.Future()
     ack_reqs_dict = {
-        "ack_id3": [requests.ModAckRequest(ack_id="ack_id3", seconds=60, future=future1)],
-        "ack_id4": [requests.ModAckRequest(ack_id="ack_id4", seconds=60, future=future2)],
-        "ack_id5": [requests.ModAckRequest(ack_id="ack_id5", seconds=60, future=future3)],
+        "ack_id3": [
+            requests.ModAckRequest(ack_id="ack_id3", seconds=60, future=future1)
+        ],
+        "ack_id4": [
+            requests.ModAckRequest(ack_id="ack_id4", seconds=60, future=future2)
+        ],
+        "ack_id5": [
+            requests.ModAckRequest(ack_id="ack_id5", seconds=60, future=future3)
+        ],
     }
     manager.send_unary_modack(
         modify_deadline_ack_ids=["ack_id3", "ack_id4", "ack_id5"],
@@ -697,12 +729,24 @@ def test_send_unary_ack_api_call_error(caplog):
     manager._client.acknowledge.side_effect = error
 
     ack_reqs_dict = {
-        "ack_id1": [requests.AckRequest(
-            ack_id="ack_id1", byte_size=0, time_to_ack=20, ordering_key="", future=None
-        )],
-        "ack_id2": [requests.AckRequest(
-            ack_id="ack_id2", byte_size=0, time_to_ack=20, ordering_key="", future=None
-        )],
+        "ack_id1": [
+            requests.AckRequest(
+                ack_id="ack_id1",
+                byte_size=0,
+                time_to_ack=20,
+                ordering_key="",
+                future=None,
+            )
+        ],
+        "ack_id2": [
+            requests.AckRequest(
+                ack_id="ack_id2",
+                byte_size=0,
+                time_to_ack=20,
+                ordering_key="",
+                future=None,
+            )
+        ],
     }
     manager.send_unary_ack(ack_ids=["ack_id1", "ack_id2"], ack_reqs_dict=ack_reqs_dict)
 
@@ -718,20 +762,24 @@ def test_send_unary_modack_api_call_error(caplog):
     manager._client.modify_ack_deadline.side_effect = error
 
     ack_reqs_dict = {
-        "ack_id1": [requests.AckRequest(
-            ack_id="ack_id1",
-            byte_size=0,
-            time_to_ack=20,
-            ordering_key="",
-            future=futures.Future(),
-        )],
-        "ack_id2": [requests.AckRequest(
-            ack_id="ack_id2",
-            byte_size=0,
-            time_to_ack=20,
-            ordering_key="",
-            future=futures.Future(),
-        )],
+        "ack_id1": [
+            requests.AckRequest(
+                ack_id="ack_id1",
+                byte_size=0,
+                time_to_ack=20,
+                ordering_key="",
+                future=futures.Future(),
+            )
+        ],
+        "ack_id2": [
+            requests.AckRequest(
+                ack_id="ack_id2",
+                byte_size=0,
+                time_to_ack=20,
+                ordering_key="",
+                future=futures.Future(),
+            )
+        ],
     }
     manager.send_unary_modack(
         modify_deadline_ack_ids=["ack_id_string"],
@@ -754,20 +802,24 @@ def test_send_unary_ack_retry_error_exactly_once_disabled_no_futures(caplog):
     manager._client.acknowledge.side_effect = error
 
     ack_reqs_dict = {
-        "ack_id1": [requests.AckRequest(
-            ack_id="ack_id1",
-            byte_size=0,
-            time_to_ack=20,
-            ordering_key="",
-            future=None,
-        )],
-        "ack_id2": [requests.AckRequest(
-            ack_id="ack_id2",
-            byte_size=0,
-            time_to_ack=20,
-            ordering_key="",
-            future=None,
-        )],
+        "ack_id1": [
+            requests.AckRequest(
+                ack_id="ack_id1",
+                byte_size=0,
+                time_to_ack=20,
+                ordering_key="",
+                future=None,
+            )
+        ],
+        "ack_id2": [
+            requests.AckRequest(
+                ack_id="ack_id2",
+                byte_size=0,
+                time_to_ack=20,
+                ordering_key="",
+                future=None,
+            )
+        ],
     }
     with pytest.raises(exceptions.RetryError):
         manager.send_unary_ack(
@@ -792,20 +844,24 @@ def test_send_unary_ack_retry_error_exactly_once_disabled_with_futures(caplog):
     future1 = futures.Future()
     future2 = futures.Future()
     ack_reqs_dict = {
-        "ack_id1": [requests.AckRequest(
-            ack_id="ack_id1",
-            byte_size=0,
-            time_to_ack=20,
-            ordering_key="",
-            future=future1,
-        )],
-        "ack_id2": [requests.AckRequest(
-            ack_id="ack_id2",
-            byte_size=0,
-            time_to_ack=20,
-            ordering_key="",
-            future=future2,
-        )],
+        "ack_id1": [
+            requests.AckRequest(
+                ack_id="ack_id1",
+                byte_size=0,
+                time_to_ack=20,
+                ordering_key="",
+                future=future1,
+            )
+        ],
+        "ack_id2": [
+            requests.AckRequest(
+                ack_id="ack_id2",
+                byte_size=0,
+                time_to_ack=20,
+                ordering_key="",
+                future=future2,
+            )
+        ],
     }
     with pytest.raises(exceptions.RetryError):
         manager.send_unary_ack(
@@ -830,20 +886,24 @@ def test_send_unary_ack_retry_error_exactly_once_enabled_no_futures(caplog):
     manager._client.acknowledge.side_effect = error
 
     ack_reqs_dict = {
-        "ack_id1": [requests.AckRequest(
-            ack_id="ack_id1",
-            byte_size=0,
-            time_to_ack=20,
-            ordering_key="",
-            future=None,
-        )],
-        "ack_id2": [requests.AckRequest(
-            ack_id="ack_id2",
-            byte_size=0,
-            time_to_ack=20,
-            ordering_key="",
-            future=None,
-        )],
+        "ack_id1": [
+            requests.AckRequest(
+                ack_id="ack_id1",
+                byte_size=0,
+                time_to_ack=20,
+                ordering_key="",
+                future=None,
+            )
+        ],
+        "ack_id2": [
+            requests.AckRequest(
+                ack_id="ack_id2",
+                byte_size=0,
+                time_to_ack=20,
+                ordering_key="",
+                future=None,
+            )
+        ],
     }
     with pytest.raises(exceptions.RetryError):
         manager.send_unary_ack(
@@ -868,20 +928,24 @@ def test_send_unary_ack_retry_error_exactly_once_enabled_with_futures(caplog):
     future1 = futures.Future()
     future2 = futures.Future()
     ack_reqs_dict = {
-        "ack_id1": [requests.AckRequest(
-            ack_id="ack_id1",
-            byte_size=0,
-            time_to_ack=20,
-            ordering_key="",
-            future=future1,
-        )],
-        "ack_id2": [requests.AckRequest(
-            ack_id="ack_id2",
-            byte_size=0,
-            time_to_ack=20,
-            ordering_key="",
-            future=future2,
-        )],
+        "ack_id1": [
+            requests.AckRequest(
+                ack_id="ack_id1",
+                byte_size=0,
+                time_to_ack=20,
+                ordering_key="",
+                future=future1,
+            )
+        ],
+        "ack_id2": [
+            requests.AckRequest(
+                ack_id="ack_id2",
+                byte_size=0,
+                time_to_ack=20,
+                ordering_key="",
+                future=future2,
+            )
+        ],
     }
     with pytest.raises(exceptions.RetryError):
         manager.send_unary_ack(
@@ -940,8 +1004,8 @@ def test_send_unary_modack_retry_error_exactly_once_disabled_with_futures(
 
     future = futures.Future()
     ack_reqs_dict = {
-        "ackid1": [requests.ModAckRequest(ack_id="ackid1", seconds=60, future=future)
-        ]}
+        "ackid1": [requests.ModAckRequest(ack_id="ackid1", seconds=60, future=future)]
+    }
     with pytest.raises(exceptions.RetryError):
         manager.send_unary_modack(
             modify_deadline_ack_ids=["ackid1"],
@@ -2013,16 +2077,25 @@ def test_process_requests_error_dict_is_none():
     assert not requests_completed
     assert not requests_to_retry
 
+
 def test_process_requests_no_errors_has_no_future_with_duplicate():
     # no errors so request should be completed, even with no future
     ack_reqs_dict = {
         "ackid1": [
             requests.AckRequest(
-            ack_id="ackid1", byte_size=0, time_to_ack=20, ordering_key="", future=None
-        ),
+                ack_id="ackid1",
+                byte_size=0,
+                time_to_ack=20,
+                ordering_key="",
+                future=None,
+            ),
             requests.AckRequest(
-            ack_id="ackid1", byte_size=0, time_to_ack=20, ordering_key="", future=None
-        ),
+                ack_id="ackid1",
+                byte_size=0,
+                time_to_ack=20,
+                ordering_key="",
+                future=None,
+            ),
         ]
     }
     errors_dict = {}
@@ -2041,11 +2114,19 @@ def test_process_requests_no_errors_with_duplicate():
     ack_reqs_dict = {
         "ackid1": [
             requests.AckRequest(
-            ack_id="ackid1", byte_size=0, time_to_ack=20, ordering_key="", future=future1
-        ),
+                ack_id="ackid1",
+                byte_size=0,
+                time_to_ack=20,
+                ordering_key="",
+                future=future1,
+            ),
             requests.AckRequest(
-            ack_id="ackid1", byte_size=0, time_to_ack=30, ordering_key="", future=future2
-        ),
+                ack_id="ackid1",
+                byte_size=0,
+                time_to_ack=30,
+                ordering_key="",
+                future=future2,
+            ),
         ]
     }
     errors_dict = {}
@@ -2064,11 +2145,19 @@ def test_process_requests_no_errors_no_future_with_duplicate():
     ack_reqs_dict = {
         "ackid1": [
             requests.AckRequest(
-            ack_id="ackid1", byte_size=0, time_to_ack=20, ordering_key="", future=None
-        ),
+                ack_id="ackid1",
+                byte_size=0,
+                time_to_ack=20,
+                ordering_key="",
+                future=None,
+            ),
             requests.AckRequest(
-            ack_id="ackid1", byte_size=0, time_to_ack=30, ordering_key="", future=None
-        ),
+                ack_id="ackid1",
+                byte_size=0,
+                time_to_ack=30,
+                ordering_key="",
+                future=None,
+            ),
         ]
     }
     errors_dict = {}
@@ -2087,11 +2176,19 @@ def test_process_requests_permanent_error_raises_exception_with_duplicate():
     ack_reqs_dict = {
         "ackid1": [
             requests.AckRequest(
-            ack_id="ackid1", byte_size=0, time_to_ack=20, ordering_key="", future=future1
-        ),
+                ack_id="ackid1",
+                byte_size=0,
+                time_to_ack=20,
+                ordering_key="",
+                future=future1,
+            ),
             requests.AckRequest(
-            ack_id="ackid1", byte_size=0, time_to_ack=30, ordering_key="", future=future2
-        )
+                ack_id="ackid1",
+                byte_size=0,
+                time_to_ack=30,
+                ordering_key="",
+                future=future2,
+            ),
         ]
     }
     errors_dict = {"ackid1": "PERMANENT_FAILURE_INVALID_ACK_ID"}
@@ -2122,11 +2219,19 @@ def test_process_requests_permanent_error_other_raises_exception_with_duplicate(
     ack_reqs_dict = {
         "ackid1": [
             requests.AckRequest(
-            ack_id="ackid1", byte_size=0, time_to_ack=20, ordering_key="", future=future1
-        ),
+                ack_id="ackid1",
+                byte_size=0,
+                time_to_ack=20,
+                ordering_key="",
+                future=future1,
+            ),
             requests.AckRequest(
-            ack_id="ackid1", byte_size=0, time_to_ack=30, ordering_key="", future=future2
-        ),
+                ack_id="ackid1",
+                byte_size=0,
+                time_to_ack=30,
+                ordering_key="",
+                future=future2,
+            ),
         ]
     }
     errors_dict = {"ackid1": "PERMANENT_FAILURE_OTHER"}
@@ -2149,11 +2254,19 @@ def test_process_requests_permanent_error_other_raises_exception_no_future_with_
     ack_reqs_dict = {
         "ackid1": [
             requests.AckRequest(
-            ack_id="ackid1", byte_size=0, time_to_ack=20, ordering_key="", future=None
-        ),
+                ack_id="ackid1",
+                byte_size=0,
+                time_to_ack=20,
+                ordering_key="",
+                future=None,
+            ),
             requests.AckRequest(
-            ack_id="ackid1", byte_size=0, time_to_ack=30, ordering_key="", future=None
-        ),
+                ack_id="ackid1",
+                byte_size=0,
+                time_to_ack=30,
+                ordering_key="",
+                future=None,
+            ),
         ]
     }
     errors_dict = {"ackid1": "PERMANENT_FAILURE_OTHER"}
@@ -2172,11 +2285,19 @@ def test_process_requests_transient_error_returns_request_for_retrying_with_dupl
     ack_reqs_dict = {
         "ackid1": [
             requests.AckRequest(
-            ack_id="ackid1", byte_size=0, time_to_ack=20, ordering_key="", future=future1
-        ),
+                ack_id="ackid1",
+                byte_size=0,
+                time_to_ack=20,
+                ordering_key="",
+                future=future1,
+            ),
             requests.AckRequest(
-            ack_id="ackid1", byte_size=0, time_to_ack=20, ordering_key="", future=future2
-        ),
+                ack_id="ackid1",
+                byte_size=0,
+                time_to_ack=20,
+                ordering_key="",
+                future=future2,
+            ),
         ]
     }
     errors_dict = {"ackid1": "TRANSIENT_FAILURE_INVALID_ACK_ID"}
@@ -2197,11 +2318,19 @@ def test_process_requests_unknown_error_raises_exception_with_duplicate():
     ack_reqs_dict = {
         "ackid1": [
             requests.AckRequest(
-            ack_id="ackid1", byte_size=0, time_to_ack=20, ordering_key="", future=future1
-        ),
+                ack_id="ackid1",
+                byte_size=0,
+                time_to_ack=20,
+                ordering_key="",
+                future=future1,
+            ),
             requests.AckRequest(
-            ack_id="ackid1", byte_size=0, time_to_ack=20, ordering_key="", future=future2
-        ),
+                ack_id="ackid1",
+                byte_size=0,
+                time_to_ack=20,
+                ordering_key="",
+                future=future2,
+            ),
         ]
     }
     errors_dict = {"ackid1": "unknown_error"}
@@ -2237,19 +2366,19 @@ def test_process_requests_retriable_error_status_returns_request_for_retrying_wi
         ack_reqs_dict = {
             "ackid1": [
                 requests.AckRequest(
-                ack_id="ackid1",
-                byte_size=0,
-                time_to_ack=20,
-                ordering_key="",
-                future=future1,
-            ),
-            requests.AckRequest(
-                ack_id="ackid1",
-                byte_size=0,
-                time_to_ack=30,
-                ordering_key="",
-                future=future2,
-            ),
+                    ack_id="ackid1",
+                    byte_size=0,
+                    time_to_ack=20,
+                    ordering_key="",
+                    future=future1,
+                ),
+                requests.AckRequest(
+                    ack_id="ackid1",
+                    byte_size=0,
+                    time_to_ack=30,
+                    ordering_key="",
+                    future=future2,
+                ),
             ]
         }
         st = status_pb2.Status()
@@ -2272,10 +2401,19 @@ def test_process_requests_permission_denied_error_status_raises_exception_with_d
     ack_reqs_dict = {
         "ackid1": [
             requests.AckRequest(
-            ack_id="ackid1", byte_size=0, time_to_ack=20, ordering_key="", future=future1
-        ),
+                ack_id="ackid1",
+                byte_size=0,
+                time_to_ack=20,
+                ordering_key="",
+                future=future1,
+            ),
             requests.AckRequest(
-            ack_id="ackid1", byte_size=0, time_to_ack=30, ordering_key="", future=future2)
+                ack_id="ackid1",
+                byte_size=0,
+                time_to_ack=30,
+                ordering_key="",
+                future=future2,
+            ),
         ]
     }
     st = status_pb2.Status()
@@ -2309,11 +2447,19 @@ def test_process_requests_failed_precondition_error_status_raises_exception_with
     ack_reqs_dict = {
         "ackid1": [
             requests.AckRequest(
-            ack_id="ackid1", byte_size=0, time_to_ack=20, ordering_key="", future=future1
-        ),
+                ack_id="ackid1",
+                byte_size=0,
+                time_to_ack=20,
+                ordering_key="",
+                future=future1,
+            ),
             requests.AckRequest(
-            ack_id="ackid1", byte_size=0, time_to_ack=30, ordering_key="", future=future2
-        ),
+                ack_id="ackid1",
+                byte_size=0,
+                time_to_ack=30,
+                ordering_key="",
+                future=future2,
+            ),
         ]
     }
     st = status_pb2.Status()
@@ -2347,11 +2493,19 @@ def test_process_requests_other_error_status_raises_exception_with_duplicate():
     ack_reqs_dict = {
         "ackid1": [
             requests.AckRequest(
-            ack_id="ackid1", byte_size=0, time_to_ack=20, ordering_key="", future=future1
-        ),
+                ack_id="ackid1",
+                byte_size=0,
+                time_to_ack=20,
+                ordering_key="",
+                future=future1,
+            ),
             requests.AckRequest(
-            ack_id="ackid1", byte_size=0, time_to_ack=30, ordering_key="", future=future2
-        ),
+                ack_id="ackid1",
+                byte_size=0,
+                time_to_ack=30,
+                ordering_key="",
+                future=future2,
+            ),
         ]
     }
     st = status_pb2.Status()
@@ -2376,11 +2530,19 @@ def test_process_requests_other_error_status_raises_exception_no_future_with_dup
     ack_reqs_dict = {
         "ackid1": [
             requests.AckRequest(
-            ack_id="ackid1", byte_size=0, time_to_ack=20, ordering_key="", future=None
-        ),
+                ack_id="ackid1",
+                byte_size=0,
+                time_to_ack=20,
+                ordering_key="",
+                future=None,
+            ),
             requests.AckRequest(
-            ack_id="ackid1", byte_size=0, time_to_ack=30, ordering_key="", future=None
-        ),
+                ack_id="ackid1",
+                byte_size=0,
+                time_to_ack=30,
+                ordering_key="",
+                future=None,
+            ),
         ]
     }
     st = status_pb2.Status()
@@ -2404,51 +2566,51 @@ def test_process_requests_mixed_success_and_failure_acks_with_duplicates():
     ack_reqs_dict = {
         "ackid1": [
             requests.AckRequest(
-            ack_id="ackid1",
-            byte_size=0,
-            time_to_ack=20,
-            ordering_key="",
-            future=future1,
-        ),
-        requests.AckRequest(
-            ack_id="ackid1",
-            byte_size=0,
-            time_to_ack=30,
-            ordering_key="",
-            future=future1a,
-        ),
+                ack_id="ackid1",
+                byte_size=0,
+                time_to_ack=20,
+                ordering_key="",
+                future=future1,
+            ),
+            requests.AckRequest(
+                ack_id="ackid1",
+                byte_size=0,
+                time_to_ack=30,
+                ordering_key="",
+                future=future1a,
+            ),
         ],
         "ackid2": [
             requests.AckRequest(
-            ack_id="ackid2",
-            byte_size=0,
-            time_to_ack=20,
-            ordering_key="",
-            future=future2,
-        ),
-        requests.AckRequest(
-            ack_id="ackid2",
-            byte_size=0,
-            time_to_ack=30,
-            ordering_key="",
-            future=future2a,
-        ),
+                ack_id="ackid2",
+                byte_size=0,
+                time_to_ack=20,
+                ordering_key="",
+                future=future2,
+            ),
+            requests.AckRequest(
+                ack_id="ackid2",
+                byte_size=0,
+                time_to_ack=30,
+                ordering_key="",
+                future=future2a,
+            ),
         ],
         "ackid3": [
             requests.AckRequest(
-            ack_id="ackid3",
-            byte_size=0,
-            time_to_ack=20,
-            ordering_key="",
-            future=future3,
-        ),
-        requests.AckRequest(
-            ack_id="ackid3",
-            byte_size=0,
-            time_to_ack=30,
-            ordering_key="",
-            future=future3a,
-        ),
+                ack_id="ackid3",
+                byte_size=0,
+                time_to_ack=20,
+                ordering_key="",
+                future=future3,
+            ),
+            requests.AckRequest(
+                ack_id="ackid3",
+                byte_size=0,
+                time_to_ack=30,
+                ordering_key="",
+                future=future3a,
+            ),
         ],
     }
     errors_dict = {
@@ -2494,13 +2656,16 @@ def test_process_requests_mixed_success_and_failure_modacks_with_duplicates():
     ack_reqs_dict = {
         "ackid1": [
             requests.ModAckRequest(ack_id="ackid1", seconds=60, future=future1),
-            requests.ModAckRequest(ack_id="ackid1", seconds=70, future=future1a)],
+            requests.ModAckRequest(ack_id="ackid1", seconds=70, future=future1a),
+        ],
         "ackid2": [
             requests.ModAckRequest(ack_id="ackid2", seconds=60, future=future2),
-            requests.ModAckRequest(ack_id="ackid2", seconds=70, future=future2a)],
+            requests.ModAckRequest(ack_id="ackid2", seconds=70, future=future2a),
+        ],
         "ackid3": [
             requests.ModAckRequest(ack_id="ackid3", seconds=60, future=future3),
-            requests.ModAckRequest(ack_id="ackid3", seconds=70, future=future3a)],
+            requests.ModAckRequest(ack_id="ackid3", seconds=70, future=future3a),
+        ],
     }
     errors_dict = {
         "ackid1": "PERMANENT_FAILURE_INVALID_ACK_ID",
@@ -2522,7 +2687,7 @@ def test_process_requests_mixed_success_and_failure_modacks_with_duplicates():
     assert (
         exc_info1a.value.error_code
         == subscriber_exceptions.AcknowledgeStatus.INVALID_ACK_ID
-    ) 
+    )
     # message with ack_id 'ackid2' is to be retried
     assert all(req.ack_id == "ackid2" for req in requests_to_retry)
     assert not future2.done()
