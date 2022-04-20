@@ -20,7 +20,7 @@ import itertools
 import logging
 import threading
 import typing
-from typing import Any, Dict, Callable, Iterable, List, Optional, Tuple, Union
+from typing import Any, Dict, Callable, Iterable, List, NamedTuple, Optional, Tuple, Union
 import uuid
 
 import grpc  # type: ignore
@@ -160,7 +160,7 @@ def _get_ack_errors(
 
 def _process_requests(
     error_status: Optional["status_pb2.Status"],
-    ack_reqs_dict: Dict[str, requests.AckRequest],
+    ack_reqs_dict: Dict[str, List[dispatcher.RequestItem]],
     errors_dict: Optional[Dict[str, str]],
 ):
     """Process requests when exactly-once delivery is enabled by referring to
@@ -172,28 +172,28 @@ def _process_requests(
     """
     requests_completed = []
     requests_to_retry = []
-    for ack_id in ack_reqs_dict:
+    for ack_id, req_list in ack_reqs_dict.items():
         # Handle special errors returned for ack/modack RPCs via the ErrorInfo
         # sidecar metadata when exactly-once delivery is enabled.
         if errors_dict and ack_id in errors_dict:
             exactly_once_error = errors_dict[ack_id]
             if exactly_once_error.startswith("TRANSIENT_"):
-                requests_to_retry.append(ack_reqs_dict[ack_id])
+                requests_to_retry.extend(req_list)
             else:
                 if exactly_once_error == "PERMANENT_FAILURE_INVALID_ACK_ID":
                     exc = AcknowledgeError(AcknowledgeStatus.INVALID_ACK_ID, info=None)
                 else:
                     exc = AcknowledgeError(AcknowledgeStatus.OTHER, exactly_once_error)
-                future = ack_reqs_dict[ack_id].future
-                if future is not None:
-                    future.set_exception(exc)
-                requests_completed.append(ack_reqs_dict[ack_id])
+                for req in req_list:
+                    if req.future:
+                        req.future.set_exception(exc)
+                requests_completed.extend(req_list)
         # Temporary GRPC errors are retried
         elif (
             error_status
             and error_status.code in _EXACTLY_ONCE_DELIVERY_TEMPORARY_RETRY_ERRORS
         ):
-            requests_to_retry.append(ack_reqs_dict[ack_id])
+            requests_to_retry.extend(req_list)
         # Other GRPC errors are NOT retried
         elif error_status:
             if error_status.code == code_pb2.PERMISSION_DENIED:
@@ -202,21 +202,17 @@ def _process_requests(
                 exc = AcknowledgeError(AcknowledgeStatus.FAILED_PRECONDITION, info=None)
             else:
                 exc = AcknowledgeError(AcknowledgeStatus.OTHER, str(error_status))
-            future = ack_reqs_dict[ack_id].future
-            if future is not None:
-                future.set_exception(exc)
-            requests_completed.append(ack_reqs_dict[ack_id])
-        # Since no error occurred, requests with futures are completed successfully.
-        elif ack_reqs_dict[ack_id].future:
-            future = ack_reqs_dict[ack_id].future
-            # success
-            assert future is not None
-            future.set_result(AcknowledgeStatus.SUCCESS)
-            requests_completed.append(ack_reqs_dict[ack_id])
-        # All other requests are considered completed.
+            for req in req_list:
+                if req.future:
+                    req.future.set_exception(exc)
+            requests_completed.extend(req_list)
+        # Since no error occurred, requests with futures set with success
+        # and all requests are considered completed.
         else:
-            requests_completed.append(ack_reqs_dict[ack_id])
-
+            for req in req_list:
+                if req.future:
+                    req.future.set_result(AcknowledgeStatus.SUCCESS)
+            requests_completed.extend(req_list)
     return requests_completed, requests_to_retry
 
 
@@ -577,7 +573,9 @@ class StreamingPullManager(object):
         self._scheduler.schedule(self._callback, msg)
 
     def send_unary_ack(
-        self, ack_ids, ack_reqs_dict
+        self,
+        ack_ids: List[Tuple[str, int]],
+        ack_reqs_dict: Dict[str, List[requests.AckRequest]],
     ) -> Tuple[List[requests.AckRequest], List[requests.AckRequest]]:
         """Send a request using a separate unary request instead of over the stream.
 
@@ -585,7 +583,6 @@ class StreamingPullManager(object):
         error is re-raised.
         """
         assert ack_ids
-        assert len(ack_ids) == len(ack_reqs_dict)
 
         error_status = None
         ack_errors_dict = None
@@ -602,18 +599,20 @@ class StreamingPullManager(object):
         except exceptions.RetryError as exc:
             exactly_once_delivery_enabled = self._exactly_once_delivery_enabled()
             # Makes sure to complete futures so they don't block forever.
-            for req in ack_reqs_dict.values():
-                # Futures may be present even with exactly-once delivery
-                # disabled, in transition periods after the setting is changed on
-                # the subscription.
-                if req.future:
-                    if exactly_once_delivery_enabled:
-                        e = AcknowledgeError(
-                            AcknowledgeStatus.OTHER, "RetryError while sending ack RPC."
-                        )
-                        req.future.set_exception(e)
-                    else:
-                        req.future.set_result(AcknowledgeStatus.SUCCESS)
+            for req_list in ack_reqs_dict.values():
+                for req in req_list:
+                    # Futures may be present even with exactly-once delivery
+                    # disabled, in transition periods after the setting is changed on
+                    # the subscription.
+                    if req.future:
+                        if exactly_once_delivery_enabled:
+                            e = AcknowledgeError(
+                                AcknowledgeStatus.OTHER,
+                                "RetryError while sending ack RPC.",
+                            )
+                            req.future.set_exception(e)
+                        else:
+                            req.future.set_result(AcknowledgeStatus.SUCCESS)
 
             _LOGGER.debug(
                 "RetryError while sending ack RPC. Waiting on a transient "
@@ -634,18 +633,19 @@ class StreamingPullManager(object):
             requests_to_retry = []
             # When exactly-once delivery is NOT enabled, acks/modacks are considered
             # best-effort. So, they always succeed even if the RPC fails.
-            for req in ack_reqs_dict.values():
-                # Futures may be present even with exactly-once delivery
-                # disabled, in transition periods after the setting is changed on
-                # the subscription.
-                if req.future:
-                    req.future.set_result(AcknowledgeStatus.SUCCESS)
-                requests_completed.append(req)
+            for req_list in ack_reqs_dict.values():
+                for req in req_list:
+                    # Futures may be present even with exactly-once delivery
+                    # disabled, in transition periods after the setting is changed on
+                    # the subscription.
+                    if req.future:
+                        req.future.set_result(AcknowledgeStatus.SUCCESS)
+                    requests_completed.append(req)
 
         return requests_completed, requests_to_retry
 
     def send_unary_modack(
-        self, modify_deadline_ack_ids, modify_deadline_seconds, ack_reqs_dict
+        self, modify_deadline_ack_ids, modify_deadline_seconds, ack_reqs_dict: Dict[str, List[requests.ModAckRequest]]
     ) -> Tuple[List[requests.ModAckRequest], List[requests.ModAckRequest]]:
         """Send a request using a separate unary request instead of over the stream.
 
@@ -681,19 +681,20 @@ class StreamingPullManager(object):
         except exceptions.RetryError as exc:
             exactly_once_delivery_enabled = self._exactly_once_delivery_enabled()
             # Makes sure to complete futures so they don't block forever.
-            for req in ack_reqs_dict.values():
-                # Futures may be present even with exactly-once delivery
-                # disabled, in transition periods after the setting is changed on
-                # the subscription.
-                if req.future:
-                    if exactly_once_delivery_enabled:
-                        e = AcknowledgeError(
-                            AcknowledgeStatus.OTHER,
-                            "RetryError while sending modack RPC.",
-                        )
-                        req.future.set_exception(e)
-                    else:
-                        req.future.set_result(AcknowledgeStatus.SUCCESS)
+            for req_list in ack_reqs_dict.values():
+                for req in req_list:
+                    # Futures may be present even with exactly-once delivery
+                    # disabled, in transition periods after the setting is changed on
+                    # the subscription.
+                    if req.future:
+                        if exactly_once_delivery_enabled:
+                            e = AcknowledgeError(
+                                AcknowledgeStatus.OTHER,
+                                "RetryError while sending modack RPC.",
+                            )
+                            req.future.set_exception(e)
+                        else:
+                            req.future.set_result(AcknowledgeStatus.SUCCESS)
 
             _LOGGER.debug(
                 "RetryError while sending modack RPC. Waiting on a transient "
@@ -714,13 +715,14 @@ class StreamingPullManager(object):
             requests_to_retry = []
             # When exactly-once delivery is NOT enabled, acks/modacks are considered
             # best-effort. So, they always succeed even if the RPC fails.
-            for req in ack_reqs_dict.values():
-                # Futures may be present even with exactly-once delivery
-                # disabled, in transition periods after the setting is changed on
-                # the subscription.
-                if req.future:
-                    req.future.set_result(AcknowledgeStatus.SUCCESS)
-                requests_completed.append(req)
+            for req_list in ack_reqs_dict.values():
+                for req in req_list:
+                    # Futures may be present even with exactly-once delivery
+                    # disabled, in transition periods after the setting is changed on
+                    # the subscription.
+                    if req.future:
+                        req.future.set_result(AcknowledgeStatus.SUCCESS)
+                    requests_completed.append(req)
 
         return requests_completed, requests_to_retry
 

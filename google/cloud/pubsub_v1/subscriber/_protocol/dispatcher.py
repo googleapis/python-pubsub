@@ -187,29 +187,10 @@ class Dispatcher(object):
         exactly_once_delivery_enabled = self._manager._exactly_once_delivery_enabled()
         for _ in range(total_chunks):
             ack_reqs_dict = {}
-            ack_ids = []
             for req in itertools.islice(items_gen, _ACK_IDS_BATCH_SIZE):
-                # If this is a duplicate AckRequest, we either return a ValueError
-                # or AcknowledgeStatus.Success
-                if req.ack_id in ack_reqs_dict:
-                    _LOGGER.debug(
-                        "This is a duplicate AckRequest with the same ack_id: %s. Only sending the first AckRequest.",
-                        req.ack_id,
-                    )
-                    if exactly_once_delivery_enabled and req.future:
-                        req.future.set_exception(ValueError("Sending duplicate ack."))
-                    # Futures may be present even with exactly-once delivery
-                    # disabled, in transition periods after the setting is changed on
-                    # the subscription.
-                    elif req.future:
-                        # When exactly-once delivery is NOT enabled, acks/modacks are considered
-                        # best-effort, so the future should succeed even though this is a duplicate.
-                        req.future.set_result(AcknowledgeStatus.SUCCESS)
-                    continue
-                # We only append non-duplicate ack_ids and AckRequests.
-                ack_ids.append(req.ack_id)
-                ack_reqs_dict[req.ack_id] = req
-
+                if req.ack_id not in ack_reqs_dict:
+                    ack_reqs_dict[req.ack_id] = []
+                ack_reqs_dict[req.ack_id].append(req)
             requests_completed, requests_to_retry = self._manager.send_unary_ack(
                 ack_ids=ack_ids,
                 ack_reqs_dict=ack_reqs_dict,
