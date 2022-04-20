@@ -2102,7 +2102,7 @@ def test_process_requests_no_errors_has_no_future_with_duplicate():
     requests_completed, requests_to_retry = streaming_pull_manager._process_requests(
         None, ack_reqs_dict, errors_dict
     )
-    assert any(req.ack_id == "ackid1" for req in requests_completed) # pragma: NO COVER
+    assert any(req.ack_id == "ackid1" for req in requests_completed)  # pragma: NO COVER
     assert len(requests_completed) == 2
     assert not requests_to_retry
 
@@ -2133,7 +2133,7 @@ def test_process_requests_no_errors_with_duplicate():
     requests_completed, requests_to_retry = streaming_pull_manager._process_requests(
         None, ack_reqs_dict, errors_dict
     )
-    assert any(req.ack_id == "ackid1" for req in requests_completed) # pragma: NO COVER
+    assert any(req.ack_id == "ackid1" for req in requests_completed)  # pragma: NO COVER
     assert len(requests_completed) == 2
     assert future1.result() == subscriber_exceptions.AcknowledgeStatus.SUCCESS
     assert future2.result() == subscriber_exceptions.AcknowledgeStatus.SUCCESS
@@ -2164,7 +2164,7 @@ def test_process_requests_no_errors_no_future_with_duplicate():
     requests_completed, requests_to_retry = streaming_pull_manager._process_requests(
         None, ack_reqs_dict, errors_dict
     )
-    assert any(req.ack_id == "ackid1" for req in requests_completed) # pragma: NO COVER
+    assert any(req.ack_id == "ackid1" for req in requests_completed)  # pragma: NO COVER
     assert len(requests_completed) == 2
     assert not requests_to_retry
 
@@ -2195,7 +2195,7 @@ def test_process_requests_permanent_error_raises_exception_with_duplicate():
     requests_completed, requests_to_retry = streaming_pull_manager._process_requests(
         None, ack_reqs_dict, errors_dict
     )
-    assert any(req.ack_id == "ackid1" for req in requests_completed) # pragma: NO COVER
+    assert any(req.ack_id == "ackid1" for req in requests_completed)  # pragma: NO COVER
     assert len(requests_completed) == 2
     with pytest.raises(subscriber_exceptions.AcknowledgeError) as exc_info1:
         future1.result()
@@ -2621,7 +2621,7 @@ def test_process_requests_mixed_success_and_failure_acks_with_duplicates():
         None, ack_reqs_dict, errors_dict
     )
     # message with ack_id 'ackid1' fails with an exception
-    assert any(req.ack_id == "ackid1" for req in requests_completed) # pragma: NO COVER
+    assert any(req.ack_id == "ackid1" for req in requests_completed)  # pragma: NO COVER
     with pytest.raises(subscriber_exceptions.AcknowledgeError) as exc_info1:
         future1.result()
     assert (
@@ -2636,11 +2636,11 @@ def test_process_requests_mixed_success_and_failure_acks_with_duplicates():
     )
 
     # message with ack_id 'ackid2' is to be retried
-    assert all(req.ack_id == "ackid2" for req in requests_to_retry) # pragma: NO COVER
+    assert all(req.ack_id == "ackid2" for req in requests_to_retry)  # pragma: NO COVER
     assert not future2.done()
     assert not future2a.done()
     # message with ack_id 'ackid3' succeeds
-    assert any(req.ack_id == "ackid3" for req in requests_completed) # pragma: NO COVER
+    assert any(req.ack_id == "ackid3" for req in requests_completed)  # pragma: NO COVER
     assert future3.result() == subscriber_exceptions.AcknowledgeStatus.SUCCESS
     assert future3a.result() == subscriber_exceptions.AcknowledgeStatus.SUCCESS
 
@@ -2675,7 +2675,7 @@ def test_process_requests_mixed_success_and_failure_modacks_with_duplicates():
         None, ack_reqs_dict, errors_dict
     )
     # message with ack_id 'ackid1' fails with an exception
-    assert any(req.ack_id == "ackid1" for req in requests_completed) # pragma: NO COVER
+    assert any(req.ack_id == "ackid1" for req in requests_completed)  # pragma: NO COVER
     with pytest.raises(subscriber_exceptions.AcknowledgeError) as exc_info1:
         future1.result()
     assert (
@@ -2689,9 +2689,9 @@ def test_process_requests_mixed_success_and_failure_modacks_with_duplicates():
         == subscriber_exceptions.AcknowledgeStatus.INVALID_ACK_ID
     )
     # message with ack_id 'ackid2' is to be retried
-    assert all(req.ack_id == "ackid2" for req in requests_to_retry) # pragma: NO COVER
+    assert all(req.ack_id == "ackid2" for req in requests_to_retry)  # pragma: NO COVER
     assert not future2.done()
     assert not future2a.done()
     # message with ack_id 'ackid3' succeeds
-    assert any(req.ack_id == "ackid3" for req in requests_completed) # pragma: NO COVER
+    assert any(req.ack_id == "ackid3" for req in requests_completed)  # pragma: NO COVER
     assert future3.result() == subscriber_exceptions.AcknowledgeStatus.SUCCESS
