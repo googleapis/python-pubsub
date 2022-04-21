@@ -16,15 +16,13 @@ import os
 import re
 import sys
 import time
-from typing import Any, Callable, cast, Generator, List, TypeVar
+from typing import Any, Callable, Generator, List, TypeVar, cast
 import uuid
 
 from _pytest.capture import CaptureFixture
 import backoff
 from flaky import flaky
-from google.api_core.exceptions import InternalServerError
-from google.api_core.exceptions import NotFound
-from google.api_core.exceptions import Unknown
+from google.api_core.exceptions import InternalServerError, NotFound, Unknown
 from google.cloud import pubsub_v1
 import pytest
 
@@ -159,7 +157,8 @@ def subscription_sync(
     yield subscription.name
 
     typed_backoff = cast(
-        Callable[[C], C], backoff.on_exception(backoff.expo, Unknown, max_time=300),
+        Callable[[C], C],
+        backoff.on_exception(backoff.expo, Unknown, max_time=300),
     )
 
     @typed_backoff
@@ -498,7 +497,8 @@ def test_create_push_subscription(
     capsys: CaptureFixture[str],
 ) -> None:
     typed_backoff = cast(
-        Callable[[C], C], backoff.on_exception(backoff.expo, Unknown, max_time=60),
+        Callable[[C], C],
+        backoff.on_exception(backoff.expo, Unknown, max_time=60),
     )
 
     # The scope of `subscription_path` is limited to this function.
@@ -525,11 +525,13 @@ def test_create_push_subscription(
 
 
 def test_update_push_suscription(
-    subscription_admin: str, capsys: CaptureFixture[str],
+    subscription_admin: str,
+    capsys: CaptureFixture[str],
 ) -> None:
 
     typed_backoff = cast(
-        Callable[[C], C], backoff.on_exception(backoff.expo, Unknown, max_time=60),
+        Callable[[C], C],
+        backoff.on_exception(backoff.expo, Unknown, max_time=60),
     )
 
     @typed_backoff
@@ -551,7 +553,8 @@ def test_delete_subscription(
     subscriber.delete_subscription(PROJECT_ID, SUBSCRIPTION_ADMIN)
 
     typed_backoff = cast(
-        Callable[[C], C], backoff.on_exception(backoff.expo, Unknown, max_time=60),
+        Callable[[C], C],
+        backoff.on_exception(backoff.expo, Unknown, max_time=60),
     )
 
     @typed_backoff
@@ -572,7 +575,8 @@ def test_receive(
 ) -> None:
 
     typed_backoff = cast(
-        Callable[[C], C], backoff.on_exception(backoff.expo, Unknown, max_time=60),
+        Callable[[C], C],
+        backoff.on_exception(backoff.expo, Unknown, max_time=60),
     )
 
     @typed_backoff
@@ -597,7 +601,8 @@ def test_receive_with_custom_attributes(
 ) -> None:
 
     typed_backoff = cast(
-        Callable[[C], C], backoff.on_exception(backoff.expo, Unknown, max_time=60),
+        Callable[[C], C],
+        backoff.on_exception(backoff.expo, Unknown, max_time=60),
     )
 
     @typed_backoff
@@ -625,7 +630,8 @@ def test_receive_with_flow_control(
 ) -> None:
 
     typed_backoff = cast(
-        Callable[[C], C], backoff.on_exception(backoff.expo, Unknown, max_time=300),
+        Callable[[C], C],
+        backoff.on_exception(backoff.expo, Unknown, max_time=300),
     )
 
     @typed_backoff
@@ -655,7 +661,8 @@ def test_receive_with_blocking_shutdown(
     _shut_down = re.compile(r".*done waiting.*stream shutdown.*", flags=re.IGNORECASE)
 
     typed_backoff = cast(
-        Callable[[C], C], backoff.on_exception(backoff.expo, Unknown, max_time=300),
+        Callable[[C], C],
+        backoff.on_exception(backoff.expo, Unknown, max_time=300),
     )
 
     @typed_backoff
@@ -713,26 +720,22 @@ def test_receive_messages_with_exactly_once_delivery_enabled(
     capsys: CaptureFixture[str],
 ) -> None:
 
-    typed_backoff = cast(
-        Callable[[C], C], backoff.on_exception(backoff.expo, Unknown, max_time=300),
+    subscriber.create_subscription_with_exactly_once_delivery(
+        PROJECT_ID, EOD_TOPIC, SUBSCRIPTION_EOD
     )
     
-    @typed_backoff
-    def eventually_consistent_test() -> None:
-        message_ids = _publish_messages(
-            regional_publisher_client, exactly_once_delivery_topic
-        )
+    message_ids = _publish_messages(
+        regional_publisher_client, exactly_once_delivery_topic
+    )
 
-        subscriber.receive_messages_with_exactly_once_delivery_enabled(
-            PROJECT_ID, SUBSCRIPTION_EOD, 250
-        )
+    subscriber.receive_messages_with_exactly_once_delivery_enabled(
+        PROJECT_ID, SUBSCRIPTION_EOD, 250
+    )
 
-        out, _ = capsys.readouterr()
-        assert subscription_eod in out
-        for message_id in message_ids:
-            assert message_id in out
-    
-    eventually_consistent_test()
+    out, _ = capsys.readouterr()
+    assert subscription_eod in out
+    for message_id in message_ids:
+        assert message_id in out
 
 
 def test_listen_for_errors(
@@ -743,7 +746,8 @@ def test_listen_for_errors(
 ) -> None:
 
     typed_backoff = cast(
-        Callable[[C], C], backoff.on_exception(backoff.expo, Unknown, max_time=60),
+        Callable[[C], C],
+        backoff.on_exception(backoff.expo, Unknown, max_time=60),
     )
 
     @typed_backoff
@@ -784,7 +788,8 @@ def test_receive_synchronously_with_lease(
 ) -> None:
 
     typed_backoff = cast(
-        Callable[[C], C], backoff.on_exception(backoff.expo, Unknown, max_time=300),
+        Callable[[C], C],
+        backoff.on_exception(backoff.expo, Unknown, max_time=300),
     )
 
     @typed_backoff
