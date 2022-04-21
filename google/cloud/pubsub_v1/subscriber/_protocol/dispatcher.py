@@ -28,6 +28,9 @@ from google.api_core.retry import exponential_sleep_generator
 
 from google.cloud.pubsub_v1.subscriber._protocol import helper_threads
 from google.cloud.pubsub_v1.subscriber._protocol import requests
+from google.cloud.pubsub_v1.subscriber.exceptions import (
+    AcknowledgeStatus,
+)
 
 if typing.TYPE_CHECKING:  # pragma: NO COVER
     import queue
@@ -179,17 +182,35 @@ class Dispatcher(object):
         # We must potentially split the request into multiple smaller requests
         # to avoid the server-side max request size limit.
         items_gen = iter(items)
-        ack_ids_gen = (item.ack_id for item in items)
         total_chunks = int(math.ceil(len(items) / _ACK_IDS_BATCH_SIZE))
 
+        exactly_once_delivery_enabled = self._manager._exactly_once_delivery_enabled()
         for _ in range(total_chunks):
             ack_reqs_dict = {}
+            ack_ids = []
             for req in itertools.islice(items_gen, _ACK_IDS_BATCH_SIZE):
-                if req.ack_id not in ack_reqs_dict:
-                    ack_reqs_dict[req.ack_id] = []
-                ack_reqs_dict[req.ack_id].append(req)
+                # If this is a duplicate AckRequest, we do not pass it to send_unary_ack
+                if req.ack_id in ack_reqs_dict:
+                    _LOGGER.debug(
+                        "This is a duplicate AckRequest with the same ack_id: %s. Only sending the first AckRequest.",
+                        req.ack_id,
+                    )
+                    if exactly_once_delivery_enabled and req.future:
+                        req.future.set_exception(ValueError("Sending duplicate ack."))
+                    # Futures may be present even with exactly-once delivery
+                    # disabled, in transition periods after the setting is changed on
+                    # the subscription.
+                    elif req.future:
+                        # When exactly-once delivery is NOT enabled, acks/modacks are considered
+                        # best-effort, so the future should succeed even though this is a duplicate.
+                        req.future.set_result(AcknowledgeStatus.SUCCESS)
+                    continue
+                # We only append non-duplicate ack_ids and AckRequests.
+                ack_ids.append(req.ack_id)
+                ack_reqs_dict[req.ack_id] = req
+
             requests_completed, requests_to_retry = self._manager.send_unary_ack(
-                ack_ids=list(itertools.islice(ack_ids_gen, _ACK_IDS_BATCH_SIZE)),
+                ack_ids=ack_ids,
                 ack_reqs_dict=ack_reqs_dict,
             )
 
