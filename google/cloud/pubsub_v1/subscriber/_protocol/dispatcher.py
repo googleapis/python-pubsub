@@ -196,7 +196,7 @@ class Dispatcher(object):
                         req.ack_id,
                     )
                     if exactly_once_delivery_enabled and req.future:
-                        req.future.set_exception(ValueError("Sending duplicate ack."))
+                        req.future.set_exception(ValueError("Duplicate AckRequest."))
                     # Futures may be present even with exactly-once delivery
                     # disabled, in transition periods after the setting is changed on
                     # the subscription.
