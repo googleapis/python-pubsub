@@ -713,18 +713,26 @@ def test_receive_messages_with_exactly_once_delivery_enabled(
     capsys: CaptureFixture[str],
 ) -> None:
 
-    message_ids = _publish_messages(
-        regional_publisher_client, exactly_once_delivery_topic
+    typed_backoff = cast(
+        Callable[[C], C], backoff.on_exception(backoff.expo, Unknown, max_time=300),
     )
+    
+    @typed_backoff
+    def eventually_consistent_test() -> None:
+        message_ids = _publish_messages(
+            regional_publisher_client, exactly_once_delivery_topic
+        )
 
-    subscriber.receive_messages_with_exactly_once_delivery_enabled(
-        PROJECT_ID, SUBSCRIPTION_EOD, 250
-    )
+        subscriber.receive_messages_with_exactly_once_delivery_enabled(
+            PROJECT_ID, SUBSCRIPTION_EOD, 250
+        )
 
-    out, _ = capsys.readouterr()
-    assert subscription_eod in out
-    for message_id in message_ids:
-        assert message_id in out
+        out, _ = capsys.readouterr()
+        assert subscription_eod in out
+        for message_id in message_ids:
+            assert message_id in out
+    
+    eventually_consistent_test()
 
 
 def test_listen_for_errors(
