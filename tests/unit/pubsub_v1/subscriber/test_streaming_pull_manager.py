@@ -507,24 +507,12 @@ def test_send_unary_ack():
     manager = make_manager()
 
     ack_reqs_dict = {
-        "ack_id1": [
-            requests.AckRequest(
-                ack_id="ack_id1",
-                byte_size=0,
-                time_to_ack=20,
-                ordering_key="",
-                future=None,
-            )
-        ],
-        "ack_id2": [
-            requests.AckRequest(
-                ack_id="ack_id2",
-                byte_size=0,
-                time_to_ack=20,
-                ordering_key="",
-                future=None,
-            )
-        ],
+        "ack_id1": requests.AckRequest(
+            ack_id="ack_id1", byte_size=0, time_to_ack=20, ordering_key="", future=None
+        ),
+        "ack_id2": requests.AckRequest(
+            ack_id="ack_id2", byte_size=0, time_to_ack=20, ordering_key="", future=None
+        ),
     }
     manager.send_unary_ack(ack_ids=["ack_id1", "ack_id2"], ack_reqs_dict=ack_reqs_dict)
 
@@ -540,24 +528,20 @@ def test_send_unary_ack_exactly_once_enabled_with_futures():
     future1 = futures.Future()
     future2 = futures.Future()
     ack_reqs_dict = {
-        "ack_id1": [
-            requests.AckRequest(
-                ack_id="ack_id1",
-                byte_size=0,
-                time_to_ack=20,
-                ordering_key="",
-                future=future1,
-            )
-        ],
-        "ack_id2": [
-            requests.AckRequest(
-                ack_id="ack_id2",
-                byte_size=0,
-                time_to_ack=20,
-                ordering_key="",
-                future=future2,
-            )
-        ],
+        "ack_id1": requests.AckRequest(
+            ack_id="ack_id1",
+            byte_size=0,
+            time_to_ack=20,
+            ordering_key="",
+            future=future1,
+        ),
+        "ack_id2": requests.AckRequest(
+            ack_id="ack_id2",
+            byte_size=0,
+            time_to_ack=20,
+            ordering_key="",
+            future=future2,
+        ),
     }
     manager.send_unary_ack(ack_ids=["ack_id1", "ack_id2"], ack_reqs_dict=ack_reqs_dict)
 
@@ -574,24 +558,20 @@ def test_send_unary_ack_exactly_once_disabled_with_futures():
     future1 = futures.Future()
     future2 = futures.Future()
     ack_reqs_dict = {
-        "ack_id1": [
-            requests.AckRequest(
-                ack_id="ack_id1",
-                byte_size=0,
-                time_to_ack=20,
-                ordering_key="",
-                future=future1,
-            )
-        ],
-        "ack_id2": [
-            requests.AckRequest(
-                ack_id="ack_id2",
-                byte_size=0,
-                time_to_ack=20,
-                ordering_key="",
-                future=future2,
-            )
-        ],
+        "ack_id1": requests.AckRequest(
+            ack_id="ack_id1",
+            byte_size=0,
+            time_to_ack=20,
+            ordering_key="",
+            future=future1,
+        ),
+        "ack_id2": requests.AckRequest(
+            ack_id="ack_id2",
+            byte_size=0,
+            time_to_ack=20,
+            ordering_key="",
+            future=future2,
+        ),
     }
     manager.send_unary_ack(ack_ids=["ack_id1", "ack_id2"], ack_reqs_dict=ack_reqs_dict)
 
@@ -606,9 +586,9 @@ def test_send_unary_modack():
     manager = make_manager()
 
     ack_reqs_dict = {
-        "ack_id3": [requests.ModAckRequest(ack_id="ack_id3", seconds=60, future=None)],
-        "ack_id4": [requests.ModAckRequest(ack_id="ack_id4", seconds=60, future=None)],
-        "ack_id5": [requests.ModAckRequest(ack_id="ack_id5", seconds=60, future=None)],
+        "ack_id3": requests.ModAckRequest(ack_id="ack_id3", seconds=60, future=None),
+        "ack_id4": requests.ModAckRequest(ack_id="ack_id4", seconds=60, future=None),
+        "ack_id5": requests.ModAckRequest(ack_id="ack_id5", seconds=60, future=None),
     }
     manager.send_unary_modack(
         modify_deadline_ack_ids=["ack_id3", "ack_id4", "ack_id5"],
@@ -641,15 +621,9 @@ def test_send_unary_modack_exactly_once_enabled_with_futures():
     future2 = futures.Future()
     future3 = futures.Future()
     ack_reqs_dict = {
-        "ack_id3": [
-            requests.ModAckRequest(ack_id="ack_id3", seconds=60, future=future1)
-        ],
-        "ack_id4": [
-            requests.ModAckRequest(ack_id="ack_id4", seconds=60, future=future2)
-        ],
-        "ack_id5": [
-            requests.ModAckRequest(ack_id="ack_id5", seconds=60, future=future3)
-        ],
+        "ack_id3": requests.ModAckRequest(ack_id="ack_id3", seconds=60, future=future1),
+        "ack_id4": requests.ModAckRequest(ack_id="ack_id4", seconds=60, future=future2),
+        "ack_id5": requests.ModAckRequest(ack_id="ack_id5", seconds=60, future=future3),
     }
     manager.send_unary_modack(
         modify_deadline_ack_ids=["ack_id3", "ack_id4", "ack_id5"],
@@ -684,15 +658,9 @@ def test_send_unary_modack_exactly_once_disabled_with_futures():
     future2 = futures.Future()
     future3 = futures.Future()
     ack_reqs_dict = {
-        "ack_id3": [
-            requests.ModAckRequest(ack_id="ack_id3", seconds=60, future=future1)
-        ],
-        "ack_id4": [
-            requests.ModAckRequest(ack_id="ack_id4", seconds=60, future=future2)
-        ],
-        "ack_id5": [
-            requests.ModAckRequest(ack_id="ack_id5", seconds=60, future=future3)
-        ],
+        "ack_id3": requests.ModAckRequest(ack_id="ack_id3", seconds=60, future=future1),
+        "ack_id4": requests.ModAckRequest(ack_id="ack_id4", seconds=60, future=future2),
+        "ack_id5": requests.ModAckRequest(ack_id="ack_id5", seconds=60, future=future3),
     }
     manager.send_unary_modack(
         modify_deadline_ack_ids=["ack_id3", "ack_id4", "ack_id5"],
@@ -729,24 +697,12 @@ def test_send_unary_ack_api_call_error(caplog):
     manager._client.acknowledge.side_effect = error
 
     ack_reqs_dict = {
-        "ack_id1": [
-            requests.AckRequest(
-                ack_id="ack_id1",
-                byte_size=0,
-                time_to_ack=20,
-                ordering_key="",
-                future=None,
-            )
-        ],
-        "ack_id2": [
-            requests.AckRequest(
-                ack_id="ack_id2",
-                byte_size=0,
-                time_to_ack=20,
-                ordering_key="",
-                future=None,
-            )
-        ],
+        "ack_id1": requests.AckRequest(
+            ack_id="ack_id1", byte_size=0, time_to_ack=20, ordering_key="", future=None
+        ),
+        "ack_id2": requests.AckRequest(
+            ack_id="ack_id2", byte_size=0, time_to_ack=20, ordering_key="", future=None
+        ),
     }
     manager.send_unary_ack(ack_ids=["ack_id1", "ack_id2"], ack_reqs_dict=ack_reqs_dict)
 
@@ -762,24 +718,20 @@ def test_send_unary_modack_api_call_error(caplog):
     manager._client.modify_ack_deadline.side_effect = error
 
     ack_reqs_dict = {
-        "ack_id1": [
-            requests.AckRequest(
-                ack_id="ack_id1",
-                byte_size=0,
-                time_to_ack=20,
-                ordering_key="",
-                future=futures.Future(),
-            )
-        ],
-        "ack_id2": [
-            requests.AckRequest(
-                ack_id="ack_id2",
-                byte_size=0,
-                time_to_ack=20,
-                ordering_key="",
-                future=futures.Future(),
-            )
-        ],
+        "ack_id1": requests.AckRequest(
+            ack_id="ack_id1",
+            byte_size=0,
+            time_to_ack=20,
+            ordering_key="",
+            future=futures.Future(),
+        ),
+        "ack_id2": requests.AckRequest(
+            ack_id="ack_id2",
+            byte_size=0,
+            time_to_ack=20,
+            ordering_key="",
+            future=futures.Future(),
+        ),
     }
     manager.send_unary_modack(
         modify_deadline_ack_ids=["ack_id_string"],
@@ -802,24 +754,20 @@ def test_send_unary_ack_retry_error_exactly_once_disabled_no_futures(caplog):
     manager._client.acknowledge.side_effect = error
 
     ack_reqs_dict = {
-        "ack_id1": [
-            requests.AckRequest(
-                ack_id="ack_id1",
-                byte_size=0,
-                time_to_ack=20,
-                ordering_key="",
-                future=None,
-            )
-        ],
-        "ack_id2": [
-            requests.AckRequest(
-                ack_id="ack_id2",
-                byte_size=0,
-                time_to_ack=20,
-                ordering_key="",
-                future=None,
-            )
-        ],
+        "ack_id1": requests.AckRequest(
+            ack_id="ack_id1",
+            byte_size=0,
+            time_to_ack=20,
+            ordering_key="",
+            future=None,
+        ),
+        "ack_id2": requests.AckRequest(
+            ack_id="ack_id2",
+            byte_size=0,
+            time_to_ack=20,
+            ordering_key="",
+            future=None,
+        ),
     }
     with pytest.raises(exceptions.RetryError):
         manager.send_unary_ack(
@@ -844,24 +792,20 @@ def test_send_unary_ack_retry_error_exactly_once_disabled_with_futures(caplog):
     future1 = futures.Future()
     future2 = futures.Future()
     ack_reqs_dict = {
-        "ack_id1": [
-            requests.AckRequest(
-                ack_id="ack_id1",
-                byte_size=0,
-                time_to_ack=20,
-                ordering_key="",
-                future=future1,
-            )
-        ],
-        "ack_id2": [
-            requests.AckRequest(
-                ack_id="ack_id2",
-                byte_size=0,
-                time_to_ack=20,
-                ordering_key="",
-                future=future2,
-            )
-        ],
+        "ack_id1": requests.AckRequest(
+            ack_id="ack_id1",
+            byte_size=0,
+            time_to_ack=20,
+            ordering_key="",
+            future=future1,
+        ),
+        "ack_id2": requests.AckRequest(
+            ack_id="ack_id2",
+            byte_size=0,
+            time_to_ack=20,
+            ordering_key="",
+            future=future2,
+        ),
     }
     with pytest.raises(exceptions.RetryError):
         manager.send_unary_ack(
@@ -886,24 +830,20 @@ def test_send_unary_ack_retry_error_exactly_once_enabled_no_futures(caplog):
     manager._client.acknowledge.side_effect = error
 
     ack_reqs_dict = {
-        "ack_id1": [
-            requests.AckRequest(
-                ack_id="ack_id1",
-                byte_size=0,
-                time_to_ack=20,
-                ordering_key="",
-                future=None,
-            )
-        ],
-        "ack_id2": [
-            requests.AckRequest(
-                ack_id="ack_id2",
-                byte_size=0,
-                time_to_ack=20,
-                ordering_key="",
-                future=None,
-            )
-        ],
+        "ack_id1": requests.AckRequest(
+            ack_id="ack_id1",
+            byte_size=0,
+            time_to_ack=20,
+            ordering_key="",
+            future=None,
+        ),
+        "ack_id2": requests.AckRequest(
+            ack_id="ack_id2",
+            byte_size=0,
+            time_to_ack=20,
+            ordering_key="",
+            future=None,
+        ),
     }
     with pytest.raises(exceptions.RetryError):
         manager.send_unary_ack(
@@ -928,24 +868,20 @@ def test_send_unary_ack_retry_error_exactly_once_enabled_with_futures(caplog):
     future1 = futures.Future()
     future2 = futures.Future()
     ack_reqs_dict = {
-        "ack_id1": [
-            requests.AckRequest(
-                ack_id="ack_id1",
-                byte_size=0,
-                time_to_ack=20,
-                ordering_key="",
-                future=future1,
-            )
-        ],
-        "ack_id2": [
-            requests.AckRequest(
-                ack_id="ack_id2",
-                byte_size=0,
-                time_to_ack=20,
-                ordering_key="",
-                future=future2,
-            )
-        ],
+        "ack_id1": requests.AckRequest(
+            ack_id="ack_id1",
+            byte_size=0,
+            time_to_ack=20,
+            ordering_key="",
+            future=future1,
+        ),
+        "ack_id2": requests.AckRequest(
+            ack_id="ack_id2",
+            byte_size=0,
+            time_to_ack=20,
+            ordering_key="",
+            future=future2,
+        ),
     }
     with pytest.raises(exceptions.RetryError):
         manager.send_unary_ack(
@@ -976,7 +912,7 @@ def test_send_unary_modack_retry_error_exactly_once_disabled_no_future(caplog):
     manager._client.modify_ack_deadline.side_effect = error
 
     ack_reqs_dict = {
-        "ackid1": [requests.ModAckRequest(ack_id="ackid1", seconds=60, future=None)]
+        "ackid1": requests.ModAckRequest(ack_id="ackid1", seconds=60, future=None)
     }
     with pytest.raises(exceptions.RetryError):
         manager.send_unary_modack(
@@ -1004,7 +940,7 @@ def test_send_unary_modack_retry_error_exactly_once_disabled_with_futures(
 
     future = futures.Future()
     ack_reqs_dict = {
-        "ackid1": [requests.ModAckRequest(ack_id="ackid1", seconds=60, future=future)]
+        "ackid1": requests.ModAckRequest(ack_id="ackid1", seconds=60, future=future)
     }
     with pytest.raises(exceptions.RetryError):
         manager.send_unary_modack(
@@ -1032,7 +968,7 @@ def test_send_unary_modack_retry_error_exactly_once_enabled_no_futures(
     manager._client.modify_ack_deadline.side_effect = error
 
     ack_reqs_dict = {
-        "ackid1": [requests.ModAckRequest(ack_id="ackid1", seconds=60, future=None)]
+        "ackid1": requests.ModAckRequest(ack_id="ackid1", seconds=60, future=None)
     }
     with pytest.raises(exceptions.RetryError):
         manager.send_unary_modack(
@@ -1060,7 +996,7 @@ def test_send_unary_modack_retry_error_exactly_once_enabled_with_futures(
 
     future = futures.Future()
     ack_reqs_dict = {
-        "ackid1": [requests.ModAckRequest(ack_id="ackid1", seconds=60, future=future)]
+        "ackid1": requests.ModAckRequest(ack_id="ackid1", seconds=60, future=future)
     }
     with pytest.raises(exceptions.RetryError):
         manager.send_unary_modack(
@@ -2078,279 +2014,147 @@ def test_process_requests_error_dict_is_none():
     assert not requests_to_retry
 
 
-def test_process_requests_no_errors_has_no_future_with_duplicate():
+def test_process_requests_no_errors_has_no_future():
     # no errors so request should be completed, even with no future
     ack_reqs_dict = {
-        "ackid1": [
-            requests.AckRequest(
-                ack_id="ackid1",
-                byte_size=0,
-                time_to_ack=20,
-                ordering_key="",
-                future=None,
-            ),
-            requests.AckRequest(
-                ack_id="ackid1",
-                byte_size=0,
-                time_to_ack=20,
-                ordering_key="",
-                future=None,
-            ),
-        ]
+        "ackid1": requests.AckRequest(
+            ack_id="ackid1", byte_size=0, time_to_ack=20, ordering_key="", future=None
+        )
     }
     errors_dict = {}
     requests_completed, requests_to_retry = streaming_pull_manager._process_requests(
         None, ack_reqs_dict, errors_dict
     )
-    assert any(req.ack_id == "ackid1" for req in requests_completed)  # pragma: NO COVER
-    assert len(requests_completed) == 2
+    assert requests_completed[0].ack_id == "ackid1"
     assert not requests_to_retry
 
 
-def test_process_requests_no_errors_with_duplicate():
+def test_process_requests_no_errors():
     # no errors so request and its future should be completed
-    future1 = futures.Future()
-    future2 = futures.Future()
+    future = futures.Future()
     ack_reqs_dict = {
-        "ackid1": [
-            requests.AckRequest(
-                ack_id="ackid1",
-                byte_size=0,
-                time_to_ack=20,
-                ordering_key="",
-                future=future1,
-            ),
-            requests.AckRequest(
-                ack_id="ackid1",
-                byte_size=0,
-                time_to_ack=30,
-                ordering_key="",
-                future=future2,
-            ),
-        ]
+        "ackid1": requests.AckRequest(
+            ack_id="ackid1", byte_size=0, time_to_ack=20, ordering_key="", future=future
+        )
     }
     errors_dict = {}
     requests_completed, requests_to_retry = streaming_pull_manager._process_requests(
         None, ack_reqs_dict, errors_dict
     )
-    assert any(req.ack_id == "ackid1" for req in requests_completed)  # pragma: NO COVER
-    assert len(requests_completed) == 2
-    assert future1.result() == subscriber_exceptions.AcknowledgeStatus.SUCCESS
-    assert future2.result() == subscriber_exceptions.AcknowledgeStatus.SUCCESS
+    assert requests_completed[0].ack_id == "ackid1"
+    assert future.result() == subscriber_exceptions.AcknowledgeStatus.SUCCESS
     assert not requests_to_retry
 
 
-def test_process_requests_no_errors_no_future_with_duplicate():
+def test_process_requests_no_errors_no_future():
     # no errors, request should be completed, even when future is None.
     ack_reqs_dict = {
-        "ackid1": [
-            requests.AckRequest(
-                ack_id="ackid1",
-                byte_size=0,
-                time_to_ack=20,
-                ordering_key="",
-                future=None,
-            ),
-            requests.AckRequest(
-                ack_id="ackid1",
-                byte_size=0,
-                time_to_ack=30,
-                ordering_key="",
-                future=None,
-            ),
-        ]
+        "ackid1": requests.AckRequest(
+            ack_id="ackid1", byte_size=0, time_to_ack=20, ordering_key="", future=None
+        )
     }
     errors_dict = {}
     requests_completed, requests_to_retry = streaming_pull_manager._process_requests(
         None, ack_reqs_dict, errors_dict
     )
-    assert any(req.ack_id == "ackid1" for req in requests_completed)  # pragma: NO COVER
-    assert len(requests_completed) == 2
+    assert requests_completed[0].ack_id == "ackid1"
     assert not requests_to_retry
 
 
-def test_process_requests_permanent_error_raises_exception_with_duplicate():
+def test_process_requests_permanent_error_raises_exception():
     # a permanent error raises an exception
-    future1 = futures.Future()
-    future2 = futures.Future()
+    future = futures.Future()
     ack_reqs_dict = {
-        "ackid1": [
-            requests.AckRequest(
-                ack_id="ackid1",
-                byte_size=0,
-                time_to_ack=20,
-                ordering_key="",
-                future=future1,
-            ),
-            requests.AckRequest(
-                ack_id="ackid1",
-                byte_size=0,
-                time_to_ack=30,
-                ordering_key="",
-                future=future2,
-            ),
-        ]
+        "ackid1": requests.AckRequest(
+            ack_id="ackid1", byte_size=0, time_to_ack=20, ordering_key="", future=future
+        )
     }
     errors_dict = {"ackid1": "PERMANENT_FAILURE_INVALID_ACK_ID"}
     requests_completed, requests_to_retry = streaming_pull_manager._process_requests(
         None, ack_reqs_dict, errors_dict
     )
-    assert any(req.ack_id == "ackid1" for req in requests_completed)  # pragma: NO COVER
-    assert len(requests_completed) == 2
-    with pytest.raises(subscriber_exceptions.AcknowledgeError) as exc_info1:
-        future1.result()
+    assert requests_completed[0].ack_id == "ackid1"
+    with pytest.raises(subscriber_exceptions.AcknowledgeError) as exc_info:
+        future.result()
     assert (
-        exc_info1.value.error_code
-        == subscriber_exceptions.AcknowledgeStatus.INVALID_ACK_ID
-    )
-    with pytest.raises(subscriber_exceptions.AcknowledgeError) as exc_info2:
-        future2.result()
-    assert (
-        exc_info2.value.error_code
+        exc_info.value.error_code
         == subscriber_exceptions.AcknowledgeStatus.INVALID_ACK_ID
     )
     assert not requests_to_retry
 
 
-def test_process_requests_permanent_error_other_raises_exception_with_duplicate():
+def test_process_requests_permanent_error_other_raises_exception():
     # a permanent error of other raises an exception
-    future1 = futures.Future()
-    future2 = futures.Future()
+    future = futures.Future()
     ack_reqs_dict = {
-        "ackid1": [
-            requests.AckRequest(
-                ack_id="ackid1",
-                byte_size=0,
-                time_to_ack=20,
-                ordering_key="",
-                future=future1,
-            ),
-            requests.AckRequest(
-                ack_id="ackid1",
-                byte_size=0,
-                time_to_ack=30,
-                ordering_key="",
-                future=future2,
-            ),
-        ]
+        "ackid1": requests.AckRequest(
+            ack_id="ackid1", byte_size=0, time_to_ack=20, ordering_key="", future=future
+        )
     }
     errors_dict = {"ackid1": "PERMANENT_FAILURE_OTHER"}
     requests_completed, requests_to_retry = streaming_pull_manager._process_requests(
         None, ack_reqs_dict, errors_dict
     )
-    assert all(req.ack_id == "ackid1" for req in requests_completed)
-    assert len(requests_completed) == 2
-    with pytest.raises(subscriber_exceptions.AcknowledgeError) as exc_info1:
-        future1.result()
-    assert exc_info1.value.error_code == subscriber_exceptions.AcknowledgeStatus.OTHER
-    with pytest.raises(subscriber_exceptions.AcknowledgeError) as exc_info2:
-        future2.result()
-    assert exc_info2.value.error_code == subscriber_exceptions.AcknowledgeStatus.OTHER
+    assert requests_completed[0].ack_id == "ackid1"
+    with pytest.raises(subscriber_exceptions.AcknowledgeError) as exc_info:
+        future.result()
+    assert exc_info.value.error_code == subscriber_exceptions.AcknowledgeStatus.OTHER
     assert not requests_to_retry
 
 
-def test_process_requests_permanent_error_other_raises_exception_no_future_with_duplicate():
+def test_process_requests_permanent_error_other_raises_exception_no_future():
     # with a permanent error, request is completed even when future is None.
     ack_reqs_dict = {
-        "ackid1": [
-            requests.AckRequest(
-                ack_id="ackid1",
-                byte_size=0,
-                time_to_ack=20,
-                ordering_key="",
-                future=None,
-            ),
-            requests.AckRequest(
-                ack_id="ackid1",
-                byte_size=0,
-                time_to_ack=30,
-                ordering_key="",
-                future=None,
-            ),
-        ]
+        "ackid1": requests.AckRequest(
+            ack_id="ackid1", byte_size=0, time_to_ack=20, ordering_key="", future=None
+        )
     }
     errors_dict = {"ackid1": "PERMANENT_FAILURE_OTHER"}
     requests_completed, requests_to_retry = streaming_pull_manager._process_requests(
         None, ack_reqs_dict, errors_dict
     )
-    assert all(req.ack_id == "ackid1" for req in requests_completed)
-    assert len(requests_completed) == 2
+    assert requests_completed[0].ack_id == "ackid1"
     assert not requests_to_retry
 
 
-def test_process_requests_transient_error_returns_request_for_retrying_with_duplicate():
+def test_process_requests_transient_error_returns_request_for_retrying():
     # a transient error returns the request in `requests_to_retry`
-    future1 = futures.Future()
-    future2 = futures.Future()
+    future = futures.Future()
     ack_reqs_dict = {
-        "ackid1": [
-            requests.AckRequest(
-                ack_id="ackid1",
-                byte_size=0,
-                time_to_ack=20,
-                ordering_key="",
-                future=future1,
-            ),
-            requests.AckRequest(
-                ack_id="ackid1",
-                byte_size=0,
-                time_to_ack=20,
-                ordering_key="",
-                future=future2,
-            ),
-        ]
+        "ackid1": requests.AckRequest(
+            ack_id="ackid1", byte_size=0, time_to_ack=20, ordering_key="", future=future
+        )
     }
     errors_dict = {"ackid1": "TRANSIENT_FAILURE_INVALID_ACK_ID"}
     requests_completed, requests_to_retry = streaming_pull_manager._process_requests(
         None, ack_reqs_dict, errors_dict
     )
     assert not requests_completed
-    assert all(req.ack_id == "ackid1" for req in requests_to_retry)
-    assert len(requests_to_retry) == 2
-    assert not future1.done()
-    assert not future2.done()
+    assert requests_to_retry[0].ack_id == "ackid1"
+    assert not future.done()
 
 
-def test_process_requests_unknown_error_raises_exception_with_duplicate():
+def test_process_requests_unknown_error_raises_exception():
     # an unknown error raises an exception
-    future1 = futures.Future()
-    future2 = futures.Future()
+    future = futures.Future()
     ack_reqs_dict = {
-        "ackid1": [
-            requests.AckRequest(
-                ack_id="ackid1",
-                byte_size=0,
-                time_to_ack=20,
-                ordering_key="",
-                future=future1,
-            ),
-            requests.AckRequest(
-                ack_id="ackid1",
-                byte_size=0,
-                time_to_ack=20,
-                ordering_key="",
-                future=future2,
-            ),
-        ]
+        "ackid1": requests.AckRequest(
+            ack_id="ackid1", byte_size=0, time_to_ack=20, ordering_key="", future=future
+        )
     }
     errors_dict = {"ackid1": "unknown_error"}
     requests_completed, requests_to_retry = streaming_pull_manager._process_requests(
         None, ack_reqs_dict, errors_dict
     )
-    assert all(req.ack_id == "ackid1" for req in requests_completed)
-    assert len(requests_completed) == 2
-    with pytest.raises(subscriber_exceptions.AcknowledgeError) as exc_info1:
-        future1.result()
-    with pytest.raises(subscriber_exceptions.AcknowledgeError) as exc_info2:
-        future2.result()
-    assert exc_info1.value.error_code == subscriber_exceptions.AcknowledgeStatus.OTHER
-    assert exc_info1.value.info == "unknown_error"
-    assert exc_info2.value.error_code == subscriber_exceptions.AcknowledgeStatus.OTHER
-    assert exc_info2.value.info == "unknown_error"
+    assert requests_completed[0].ack_id == "ackid1"
+    with pytest.raises(subscriber_exceptions.AcknowledgeError) as exc_info:
+        future.result()
+    assert exc_info.value.error_code == subscriber_exceptions.AcknowledgeStatus.OTHER
+    assert exc_info.value.info == "unknown_error"
     assert not requests_to_retry
 
 
-def test_process_requests_retriable_error_status_returns_request_for_retrying_with_duplicate():
+def test_process_requests_retriable_error_status_returns_request_for_retrying():
     # a retriable error status returns the request in `requests_to_retry`
     retriable_errors = [
         code_pb2.DEADLINE_EXCEEDED,
@@ -2361,25 +2165,15 @@ def test_process_requests_retriable_error_status_returns_request_for_retrying_wi
     ]
 
     for retriable_error in retriable_errors:
-        future1 = futures.Future()
-        future2 = futures.Future()
+        future = futures.Future()
         ack_reqs_dict = {
-            "ackid1": [
-                requests.AckRequest(
-                    ack_id="ackid1",
-                    byte_size=0,
-                    time_to_ack=20,
-                    ordering_key="",
-                    future=future1,
-                ),
-                requests.AckRequest(
-                    ack_id="ackid1",
-                    byte_size=0,
-                    time_to_ack=30,
-                    ordering_key="",
-                    future=future2,
-                ),
-            ]
+            "ackid1": requests.AckRequest(
+                ack_id="ackid1",
+                byte_size=0,
+                time_to_ack=20,
+                ordering_key="",
+                future=future,
+            )
         }
         st = status_pb2.Status()
         st.code = retriable_error
@@ -2388,230 +2182,122 @@ def test_process_requests_retriable_error_status_returns_request_for_retrying_wi
             requests_to_retry,
         ) = streaming_pull_manager._process_requests(st, ack_reqs_dict, None)
         assert not requests_completed
-        assert all(req.ack_id == "ackid1" for req in requests_to_retry)
-        assert len(requests_to_retry) == 2
-        assert not future1.done()
-        assert not future2.done()
+        assert requests_to_retry[0].ack_id == "ackid1"
+        assert not future.done()
 
 
-def test_process_requests_permission_denied_error_status_raises_exception_with_duplicate():
+def test_process_requests_permission_denied_error_status_raises_exception():
     # a permission-denied error status raises an exception
-    future1 = futures.Future()
-    future2 = futures.Future()
+    future = futures.Future()
     ack_reqs_dict = {
-        "ackid1": [
-            requests.AckRequest(
-                ack_id="ackid1",
-                byte_size=0,
-                time_to_ack=20,
-                ordering_key="",
-                future=future1,
-            ),
-            requests.AckRequest(
-                ack_id="ackid1",
-                byte_size=0,
-                time_to_ack=30,
-                ordering_key="",
-                future=future2,
-            ),
-        ]
+        "ackid1": requests.AckRequest(
+            ack_id="ackid1", byte_size=0, time_to_ack=20, ordering_key="", future=future
+        )
     }
     st = status_pb2.Status()
     st.code = code_pb2.Code.PERMISSION_DENIED
     requests_completed, requests_to_retry = streaming_pull_manager._process_requests(
         st, ack_reqs_dict, None
     )
-    assert all(req.ack_id == "ackid1" for req in requests_completed)
-    assert len(requests_completed) == 2
-    with pytest.raises(subscriber_exceptions.AcknowledgeError) as exc_info1:
-        future1.result()
+    assert requests_completed[0].ack_id == "ackid1"
+    with pytest.raises(subscriber_exceptions.AcknowledgeError) as exc_info:
+        future.result()
     assert (
-        exc_info1.value.error_code
+        exc_info.value.error_code
         == subscriber_exceptions.AcknowledgeStatus.PERMISSION_DENIED
     )
-    assert exc_info1.value.info is None
-    with pytest.raises(subscriber_exceptions.AcknowledgeError) as exc_info2:
-        future2.result()
-    assert (
-        exc_info2.value.error_code
-        == subscriber_exceptions.AcknowledgeStatus.PERMISSION_DENIED
-    )
-    assert exc_info2.value.info is None
+    assert exc_info.value.info is None
     assert not requests_to_retry
 
 
-def test_process_requests_failed_precondition_error_status_raises_exception_with_duplicate():
+def test_process_requests_failed_precondition_error_status_raises_exception():
     # a failed-precondition error status raises an exception
-    future1 = futures.Future()
-    future2 = futures.Future()
+    future = futures.Future()
     ack_reqs_dict = {
-        "ackid1": [
-            requests.AckRequest(
-                ack_id="ackid1",
-                byte_size=0,
-                time_to_ack=20,
-                ordering_key="",
-                future=future1,
-            ),
-            requests.AckRequest(
-                ack_id="ackid1",
-                byte_size=0,
-                time_to_ack=30,
-                ordering_key="",
-                future=future2,
-            ),
-        ]
+        "ackid1": requests.AckRequest(
+            ack_id="ackid1", byte_size=0, time_to_ack=20, ordering_key="", future=future
+        )
     }
     st = status_pb2.Status()
     st.code = code_pb2.Code.FAILED_PRECONDITION
     requests_completed, requests_to_retry = streaming_pull_manager._process_requests(
         st, ack_reqs_dict, None
     )
-    assert all(req.ack_id == "ackid1" for req in requests_completed)
-    assert len(requests_completed) == 2
-    with pytest.raises(subscriber_exceptions.AcknowledgeError) as exc_info1:
-        future1.result()
+    assert requests_completed[0].ack_id == "ackid1"
+    with pytest.raises(subscriber_exceptions.AcknowledgeError) as exc_info:
+        future.result()
     assert (
-        exc_info1.value.error_code
+        exc_info.value.error_code
         == subscriber_exceptions.AcknowledgeStatus.FAILED_PRECONDITION
     )
-    assert exc_info1.value.info is None
-    with pytest.raises(subscriber_exceptions.AcknowledgeError) as exc_info2:
-        future2.result()
-    assert (
-        exc_info2.value.error_code
-        == subscriber_exceptions.AcknowledgeStatus.FAILED_PRECONDITION
-    )
-    assert exc_info2.value.info is None
+    assert exc_info.value.info is None
     assert not requests_to_retry
 
 
-def test_process_requests_other_error_status_raises_exception_with_duplicate():
+def test_process_requests_other_error_status_raises_exception():
     # an unrecognized error status raises an exception
-    future1 = futures.Future()
-    future2 = futures.Future()
+    future = futures.Future()
     ack_reqs_dict = {
-        "ackid1": [
-            requests.AckRequest(
-                ack_id="ackid1",
-                byte_size=0,
-                time_to_ack=20,
-                ordering_key="",
-                future=future1,
-            ),
-            requests.AckRequest(
-                ack_id="ackid1",
-                byte_size=0,
-                time_to_ack=30,
-                ordering_key="",
-                future=future2,
-            ),
-        ]
+        "ackid1": requests.AckRequest(
+            ack_id="ackid1", byte_size=0, time_to_ack=20, ordering_key="", future=future
+        )
     }
     st = status_pb2.Status()
     st.code = code_pb2.Code.OUT_OF_RANGE
     requests_completed, requests_to_retry = streaming_pull_manager._process_requests(
         st, ack_reqs_dict, None
     )
-    assert all(req.ack_id == "ackid1" for req in requests_completed)
-    assert len(requests_completed) == 2
-    with pytest.raises(subscriber_exceptions.AcknowledgeError) as exc_info1:
-        future1.result()
-    assert exc_info1.value.error_code == subscriber_exceptions.AcknowledgeStatus.OTHER
-    with pytest.raises(subscriber_exceptions.AcknowledgeError) as exc_info2:
-        future2.result()
-    assert exc_info2.value.error_code == subscriber_exceptions.AcknowledgeStatus.OTHER
+    assert requests_completed[0].ack_id == "ackid1"
+    with pytest.raises(subscriber_exceptions.AcknowledgeError) as exc_info:
+        future.result()
+    assert exc_info.value.error_code == subscriber_exceptions.AcknowledgeStatus.OTHER
     assert not requests_to_retry
 
 
-def test_process_requests_other_error_status_raises_exception_no_future_with_duplicate():
+def test_process_requests_other_error_status_raises_exception_no_future():
     # with an unrecognized error status, requests are completed, even when
     # future is None.
     ack_reqs_dict = {
-        "ackid1": [
-            requests.AckRequest(
-                ack_id="ackid1",
-                byte_size=0,
-                time_to_ack=20,
-                ordering_key="",
-                future=None,
-            ),
-            requests.AckRequest(
-                ack_id="ackid1",
-                byte_size=0,
-                time_to_ack=30,
-                ordering_key="",
-                future=None,
-            ),
-        ]
+        "ackid1": requests.AckRequest(
+            ack_id="ackid1", byte_size=0, time_to_ack=20, ordering_key="", future=None
+        )
     }
     st = status_pb2.Status()
     st.code = code_pb2.Code.OUT_OF_RANGE
     requests_completed, requests_to_retry = streaming_pull_manager._process_requests(
         st, ack_reqs_dict, None
     )
-    assert all(req.ack_id == "ackid1" for req in requests_completed)
-    assert len(requests_completed) == 2
+    assert requests_completed[0].ack_id == "ackid1"
     assert not requests_to_retry
 
 
-def test_process_requests_mixed_success_and_failure_acks_with_duplicates():
+def test_process_requests_mixed_success_and_failure_acks():
     # mixed success and failure (acks)
     future1 = futures.Future()
-    future1a = futures.Future()
     future2 = futures.Future()
-    future2a = futures.Future()
     future3 = futures.Future()
-    future3a = futures.Future()
     ack_reqs_dict = {
-        "ackid1": [
-            requests.AckRequest(
-                ack_id="ackid1",
-                byte_size=0,
-                time_to_ack=20,
-                ordering_key="",
-                future=future1,
-            ),
-            requests.AckRequest(
-                ack_id="ackid1",
-                byte_size=0,
-                time_to_ack=30,
-                ordering_key="",
-                future=future1a,
-            ),
-        ],
-        "ackid2": [
-            requests.AckRequest(
-                ack_id="ackid2",
-                byte_size=0,
-                time_to_ack=20,
-                ordering_key="",
-                future=future2,
-            ),
-            requests.AckRequest(
-                ack_id="ackid2",
-                byte_size=0,
-                time_to_ack=30,
-                ordering_key="",
-                future=future2a,
-            ),
-        ],
-        "ackid3": [
-            requests.AckRequest(
-                ack_id="ackid3",
-                byte_size=0,
-                time_to_ack=20,
-                ordering_key="",
-                future=future3,
-            ),
-            requests.AckRequest(
-                ack_id="ackid3",
-                byte_size=0,
-                time_to_ack=30,
-                ordering_key="",
-                future=future3a,
-            ),
-        ],
+        "ackid1": requests.AckRequest(
+            ack_id="ackid1",
+            byte_size=0,
+            time_to_ack=20,
+            ordering_key="",
+            future=future1,
+        ),
+        "ackid2": requests.AckRequest(
+            ack_id="ackid2",
+            byte_size=0,
+            time_to_ack=20,
+            ordering_key="",
+            future=future2,
+        ),
+        "ackid3": requests.AckRequest(
+            ack_id="ackid3",
+            byte_size=0,
+            time_to_ack=20,
+            ordering_key="",
+            future=future3,
+        ),
     }
     errors_dict = {
         "ackid1": "PERMANENT_FAILURE_INVALID_ACK_ID",
@@ -2621,51 +2307,30 @@ def test_process_requests_mixed_success_and_failure_acks_with_duplicates():
         None, ack_reqs_dict, errors_dict
     )
     # message with ack_id 'ackid1' fails with an exception
-    assert any(req.ack_id == "ackid1" for req in requests_completed)  # pragma: NO COVER
-    with pytest.raises(subscriber_exceptions.AcknowledgeError) as exc_info1:
+    assert requests_completed[0].ack_id == "ackid1"
+    with pytest.raises(subscriber_exceptions.AcknowledgeError) as exc_info:
         future1.result()
     assert (
-        exc_info1.value.error_code
+        exc_info.value.error_code
         == subscriber_exceptions.AcknowledgeStatus.INVALID_ACK_ID
     )
-    with pytest.raises(subscriber_exceptions.AcknowledgeError) as exc_info1a:
-        future1a.result()
-    assert (
-        exc_info1a.value.error_code
-        == subscriber_exceptions.AcknowledgeStatus.INVALID_ACK_ID
-    )
-
     # message with ack_id 'ackid2' is to be retried
-    assert all(req.ack_id == "ackid2" for req in requests_to_retry)  # pragma: NO COVER
-    assert not future2.done()
-    assert not future2a.done()
+    assert requests_to_retry[0].ack_id == "ackid2"
+    assert not requests_to_retry[0].future.done()
     # message with ack_id 'ackid3' succeeds
-    assert any(req.ack_id == "ackid3" for req in requests_completed)  # pragma: NO COVER
+    assert requests_completed[1].ack_id == "ackid3"
     assert future3.result() == subscriber_exceptions.AcknowledgeStatus.SUCCESS
-    assert future3a.result() == subscriber_exceptions.AcknowledgeStatus.SUCCESS
 
 
-def test_process_requests_mixed_success_and_failure_modacks_with_duplicates():
+def test_process_requests_mixed_success_and_failure_modacks():
     # mixed success and failure (modacks)
     future1 = futures.Future()
-    future1a = futures.Future()
     future2 = futures.Future()
-    future2a = futures.Future()
     future3 = futures.Future()
-    future3a = futures.Future()
     ack_reqs_dict = {
-        "ackid1": [
-            requests.ModAckRequest(ack_id="ackid1", seconds=60, future=future1),
-            requests.ModAckRequest(ack_id="ackid1", seconds=70, future=future1a),
-        ],
-        "ackid2": [
-            requests.ModAckRequest(ack_id="ackid2", seconds=60, future=future2),
-            requests.ModAckRequest(ack_id="ackid2", seconds=70, future=future2a),
-        ],
-        "ackid3": [
-            requests.ModAckRequest(ack_id="ackid3", seconds=60, future=future3),
-            requests.ModAckRequest(ack_id="ackid3", seconds=70, future=future3a),
-        ],
+        "ackid1": requests.ModAckRequest(ack_id="ackid1", seconds=60, future=future1),
+        "ackid2": requests.ModAckRequest(ack_id="ackid2", seconds=60, future=future2),
+        "ackid3": requests.ModAckRequest(ack_id="ackid3", seconds=60, future=future3),
     }
     errors_dict = {
         "ackid1": "PERMANENT_FAILURE_INVALID_ACK_ID",
@@ -2675,23 +2340,16 @@ def test_process_requests_mixed_success_and_failure_modacks_with_duplicates():
         None, ack_reqs_dict, errors_dict
     )
     # message with ack_id 'ackid1' fails with an exception
-    assert any(req.ack_id == "ackid1" for req in requests_completed)  # pragma: NO COVER
-    with pytest.raises(subscriber_exceptions.AcknowledgeError) as exc_info1:
+    assert requests_completed[0].ack_id == "ackid1"
+    with pytest.raises(subscriber_exceptions.AcknowledgeError) as exc_info:
         future1.result()
     assert (
-        exc_info1.value.error_code
-        == subscriber_exceptions.AcknowledgeStatus.INVALID_ACK_ID
-    )
-    with pytest.raises(subscriber_exceptions.AcknowledgeError) as exc_info1a:
-        future1a.result()
-    assert (
-        exc_info1a.value.error_code
+        exc_info.value.error_code
         == subscriber_exceptions.AcknowledgeStatus.INVALID_ACK_ID
     )
     # message with ack_id 'ackid2' is to be retried
-    assert all(req.ack_id == "ackid2" for req in requests_to_retry)  # pragma: NO COVER
-    assert not future2.done()
-    assert not future2a.done()
+    assert requests_to_retry[0].ack_id == "ackid2"
+    assert not requests_to_retry[0].future.done()
     # message with ack_id 'ackid3' succeeds
-    assert any(req.ack_id == "ackid3" for req in requests_completed)  # pragma: NO COVER
+    assert requests_completed[1].ack_id == "ackid3"
     assert future3.result() == subscriber_exceptions.AcknowledgeStatus.SUCCESS
