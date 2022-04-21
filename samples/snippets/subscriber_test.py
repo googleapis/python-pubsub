@@ -720,10 +720,20 @@ def test_receive_messages_with_exactly_once_delivery_enabled(
     capsys: CaptureFixture[str],
 ) -> None:
 
+    subscription_path = subscriber_client.subscription_path(
+        PROJECT_ID, SUBSCRIPTION_EOD
+    )
+    try:
+        subscriber_client.delete_subscription(
+            request={"subscription": subscription_path}
+        )
+    except NotFound:
+        pass
+
     subscriber.create_subscription_with_exactly_once_delivery(
         PROJECT_ID, EOD_TOPIC, SUBSCRIPTION_EOD
     )
-    
+
     message_ids = _publish_messages(
         regional_publisher_client, exactly_once_delivery_topic
     )
