@@ -51,7 +51,7 @@ FILTER = 'attributes.author="unknown"'
 C = TypeVar("C", bound=Callable[..., Any])
 
 typed_flaky = cast(Callable[[C], C], flaky(max_runs=3, min_passes=1))
-typed_super_flaky = cast(Callable[[C], C], flaky(max_runs=10, min_passes=10))
+typed_super_flaky = cast(Callable[[C], C], flaky(max_runs=10, min_passes=9))
 
 
 @pytest.fixture(scope="module")
@@ -718,7 +718,7 @@ def test_receive_messages_with_exactly_once_delivery_enabled(
     )
 
     subscriber.receive_messages_with_exactly_once_delivery_enabled(
-        PROJECT_ID, SUBSCRIPTION_EOD, 200
+        PROJECT_ID, SUBSCRIPTION_EOD, 250
     )
 
     out, _ = capsys.readouterr()
