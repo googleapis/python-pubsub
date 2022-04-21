@@ -51,7 +51,7 @@ FILTER = 'attributes.author="unknown"'
 C = TypeVar("C", bound=Callable[..., Any])
 
 typed_flaky = cast(Callable[[C], C], flaky(max_runs=3, min_passes=1))
-typed_super_flaky = cast(Callable[[C], C], flaky(max_runs=10, min_passes=9))
+typed_super_flaky = cast(Callable[[C], C], flaky(max_runs=10, min_passes=8))
 
 
 @pytest.fixture(scope="module")
