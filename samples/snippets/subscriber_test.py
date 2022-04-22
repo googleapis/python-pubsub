@@ -757,7 +757,7 @@ def test_receive_messages_with_exactly_once_delivery_enabled(
     )
 
     subscriber.receive_messages_with_exactly_once_delivery_enabled(
-        PROJECT_ID, SUBSCRIPTION_EOD_FOR_CREATE, 200
+        PROJECT_ID, SUBSCRIPTION_EOD_FOR_RECEIVE, 30
     )
 
     out, _ = capsys.readouterr()
