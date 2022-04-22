@@ -33,7 +33,8 @@ PY_VERSION = f"{sys.version_info.major}.{sys.version_info.minor}"
 PROJECT_ID = os.environ["GOOGLE_CLOUD_PROJECT"]
 TOPIC = f"subscription-test-topic-{PY_VERSION}-{UUID}"
 DEAD_LETTER_TOPIC = f"subscription-test-dead-letter-topic-{PY_VERSION}-{UUID}"
-EOD_TOPIC = f"subscription-test-eod-topic-{PY_VERSION}-{UUID}"
+EOD_TOPIC = f"subscription-test-eod-topic-{PY_VERSION}-{UUID}" 
+SUBSCRIPTION_ADMIN = f"subscription-test-subscription-admin-{PY_VERSION}-{UUID}"
 ENDPOINT = f"https://{PROJECT_ID}.appspot.com/push"
 NEW_ENDPOINT = f"https://{PROJECT_ID}.appspot.com/push2"
 REGIONAL_ENDPOINT = "us-east1-pubsub.googleapis.com:443"
@@ -56,7 +57,25 @@ def regional_publisher_client() -> Generator[pubsub_v1.PublisherClient, None, No
     client_options = {"api_endpoint": REGIONAL_ENDPOINT}
     publisher = pubsub_v1.PublisherClient(client_options=client_options)
     yield publisher
+    
+@pytest.fixture(scope="module")
+def subscription_admin(
+    subscriber_client: pubsub_v1.SubscriberClient, topic: str
+) -> Generator[str, None, None]:
+    subscription_path = subscriber_client.subscription_path(
+        PROJECT_ID, SUBSCRIPTION_ADMIN
+    )
 
+    try:
+        subscription = subscriber_client.get_subscription(
+            request={"subscription": subscription_path}
+        )
+    except NotFound:
+        subscription = subscriber_client.create_subscription(
+            request={"name": subscription_path, "topic": topic}
+        )
+
+    yield subscription.name
 
 @pytest.fixture(scope="module")
 def topic(publisher_client: pubsub_v1.PublisherClient) -> Generator[str, None, None]:
@@ -157,6 +176,7 @@ def test_list_in_project(subscription_admin: str, capsys: CaptureFixture[str]) -
 
 def test_create_subscription(
     subscriber_client: pubsub_v1.SubscriberClient,
+    topic: str,
     capsys: CaptureFixture[str],
 ) -> None:
 
@@ -219,6 +239,7 @@ def test_create_subscription_with_dead_letter_policy(
 
 
 def test_receive_with_delivery_attempts(
+    subscriber_client: pubsub_v1.SubscriberClient,
     publisher_client: pubsub_v1.PublisherClient,
     topic: str,
     dead_letter_topic: str,
@@ -266,6 +287,8 @@ def test_receive_with_delivery_attempts(
 
 
 def test_update_dead_letter_policy(
+    subscriber_client: pubsub_v1.SubscriberClient,
+    topic: str,
     dead_letter_topic: str, capsys: CaptureFixture[str]
 ) -> None:
 
@@ -312,7 +335,10 @@ def test_update_dead_letter_policy(
     subscriber_client.delete_subscription(request={"subscription": subscription_path})
 
 
-def test_remove_dead_letter_policy(capsys: CaptureFixture[str]) -> None:
+def test_remove_dead_letter_policy(
+    subscriber_client: pubsub_v1.SubscriberClient,
+    topic: str,
+    capsys: CaptureFixture[str]) -> None:
 
     from google.cloud.pubsub_v1.types import DeadLetterPolicy
 
@@ -354,6 +380,7 @@ def test_remove_dead_letter_policy(capsys: CaptureFixture[str]) -> None:
 
 def test_create_subscription_with_ordering(
     subscriber_client: pubsub_v1.SubscriberClient,
+    topic: str,
     capsys: CaptureFixture[str],
 ) -> None:
     subscription_with_ordering_name = (
@@ -385,6 +412,7 @@ def test_create_subscription_with_ordering(
 
 def test_create_subscription_with_filtering(
     subscriber_client: pubsub_v1.SubscriberClient,
+    topic: str,
     capsys: CaptureFixture[str],
 ) -> None:
 
@@ -417,6 +445,7 @@ def test_create_subscription_with_filtering(
 
 def test_create_subscription_with_exactly_once_delivery(
     subscriber_client: pubsub_v1.SubscriberClient,
+    topic: str,
     capsys: CaptureFixture[str],
 ) -> None:
 
@@ -450,6 +479,7 @@ def test_create_subscription_with_exactly_once_delivery(
 
 def test_create_push_subscription(
     subscriber_client: pubsub_v1.SubscriberClient,
+    topic: str,
     capsys: CaptureFixture[str],
 ) -> None:
 
@@ -479,6 +509,8 @@ def test_create_push_subscription(
 
 
 def test_update_push_subscription(
+    subscriber_client: pubsub_v1.SubscriberClient,
+    topic: str,
     capsys: CaptureFixture[str],
 ) -> None:
 
@@ -510,6 +542,7 @@ def test_update_push_subscription(
 
 def test_delete_subscription(
     subscriber_client: pubsub_v1.SubscriberClient,
+    topic: str,
 ) -> None:
 
     subscription_for_delete_name = (
@@ -538,8 +571,9 @@ def test_delete_subscription(
 
 
 def test_receive(
-    publisher_client: pubsub_v1.PublisherClient,
+    subscriber_client: pubsub_v1.SubscriberClient,
     topic: str,
+    publisher_client: pubsub_v1.PublisherClient,
     capsys: CaptureFixture[str],
 ) -> None:
 
@@ -574,6 +608,7 @@ def test_receive(
 
 
 def test_receive_with_custom_attributes(
+    subscriber_client: pubsub_v1.SubscriberClient,
     publisher_client: pubsub_v1.PublisherClient,
     topic: str,
     capsys: CaptureFixture[str],
@@ -613,6 +648,7 @@ def test_receive_with_custom_attributes(
 
 
 def test_receive_with_flow_control(
+    subscriber_client: pubsub_v1.SubscriberClient,
     publisher_client: pubsub_v1.PublisherClient,
     topic: str,
     capsys: CaptureFixture[str],
@@ -647,6 +683,7 @@ def test_receive_with_flow_control(
 
 
 def test_receive_with_blocking_shutdown(
+    subscriber_client: pubsub_v1.SubscriberClient,
     publisher_client: pubsub_v1.PublisherClient,
     topic: str,
     capsys: CaptureFixture[str],
@@ -717,9 +754,9 @@ def test_receive_with_blocking_shutdown(
 
 
 def test_receive_messages_with_exactly_once_delivery_enabled(
+    subscriber_client: pubsub_v1.SubscriberClient,
     regional_publisher_client: pubsub_v1.PublisherClient,
     exactly_once_delivery_topic: str,
-    subscription_eod_for_receive: str,
     capsys: CaptureFixture[str],
 ) -> None:
 
@@ -753,7 +790,7 @@ def test_receive_messages_with_exactly_once_delivery_enabled(
     )
 
     out, _ = capsys.readouterr()
-    assert subscription_eod_for_receive in out
+    assert subscription_eod_for_receive_name in out
     for message_id in message_ids:
         assert message_id in out
 
@@ -762,6 +799,7 @@ def test_receive_messages_with_exactly_once_delivery_enabled(
 
 
 def test_listen_for_errors(
+    subscriber_client: pubsub_v1.SubscriberClient,
     publisher_client: pubsub_v1.PublisherClient,
     topic: str,
     capsys: CaptureFixture[str],
@@ -795,6 +833,7 @@ def test_listen_for_errors(
 
 
 def test_receive_synchronously(
+    subscriber_client: pubsub_v1.SubscriberClient,
     publisher_client: pubsub_v1.PublisherClient,
     topic: str,
     capsys: CaptureFixture[str],
@@ -830,6 +869,7 @@ def test_receive_synchronously(
 
 @typed_flaky
 def test_receive_synchronously_with_lease(
+    subscriber_client: pubsub_v1.SubscriberClient,
     publisher_client: pubsub_v1.PublisherClient,
     topic: str,
     capsys: CaptureFixture[str],
