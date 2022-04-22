@@ -51,7 +51,7 @@ FILTER = 'attributes.author="unknown"'
 C = TypeVar("C", bound=Callable[..., Any])
 
 typed_flaky = cast(Callable[[C], C], flaky(max_runs=3, min_passes=1))
-typed_super_flaky = cast(Callable[[C], C], flaky(max_runs=10, min_passes=8))
+typed_super_flaky = cast(Callable[[C], C], flaky(max_runs=10, min_passes=10))
 
 
 @pytest.fixture(scope="module")
@@ -713,26 +713,18 @@ def test_receive_messages_with_exactly_once_delivery_enabled(
     capsys: CaptureFixture[str],
 ) -> None:
 
-    typed_backoff = cast(
-        Callable[[C], C], backoff.on_exception(backoff.expo, Unknown, max_time=300),
+    message_ids = _publish_messages(
+        regional_publisher_client, exactly_once_delivery_topic
     )
-    
-    @typed_backoff
-    def eventually_consistent_test() -> None:
-        message_ids = _publish_messages(
-            regional_publisher_client, exactly_once_delivery_topic
-        )
 
-        subscriber.receive_messages_with_exactly_once_delivery_enabled(
-            PROJECT_ID, SUBSCRIPTION_EOD, 250
-        )
+    subscriber.receive_messages_with_exactly_once_delivery_enabled(
+        PROJECT_ID, SUBSCRIPTION_EOD, 200
+    )
 
-        out, _ = capsys.readouterr()
-        assert subscription_eod in out
-        for message_id in message_ids:
-            assert message_id in out
-    
-    eventually_consistent_test()
+    out, _ = capsys.readouterr()
+    assert subscription_eod in out
+    for message_id in message_ids:
+        assert message_id in out
 
 
 def test_listen_for_errors(
