@@ -291,7 +291,8 @@ def test_receive_with_delivery_attempts(
 def test_update_dead_letter_policy(
     subscriber_client: pubsub_v1.SubscriberClient,
     topic: str,
-    dead_letter_topic: str, capsys: CaptureFixture[str]
+    dead_letter_topic: str,
+    capsys: CaptureFixture[str],
 ) -> None:
 
     from google.cloud.pubsub_v1.types import DeadLetterPolicy
@@ -337,7 +338,11 @@ def test_update_dead_letter_policy(
     subscriber_client.delete_subscription(request={"subscription": subscription_path})
 
 
-def test_remove_dead_letter_policy(subscriber_client: pubsub_v1.SubscriberClient, topic: str, capsys: CaptureFixture[str]) -> None:
+def test_remove_dead_letter_policy(
+    subscriber_client: pubsub_v1.SubscriberClient,
+    topic: str,
+    capsys: CaptureFixture[str],
+) -> None:
 
     from google.cloud.pubsub_v1.types import DeadLetterPolicy
 
@@ -768,9 +773,7 @@ def test_receive_messages_with_exactly_once_delivery_enabled(
     )
 
     try:
-        subscriber_client.get_subscription(
-            request={"subscription": subscription_path}
-        )
+        subscriber_client.get_subscription(request={"subscription": subscription_path})
     except NotFound:
         subscriber_client.create_subscription(
             request={
