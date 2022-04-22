@@ -223,9 +223,11 @@ def publish_messages_with_flow_control_settings(project_id: str, topic_id: str) 
     from concurrent import futures
 
     from google.cloud import pubsub_v1
-    from google.cloud.pubsub_v1.types import (LimitExceededBehavior,
-                                              PublisherOptions,
-                                              PublishFlowControl)
+    from google.cloud.pubsub_v1.types import (
+        LimitExceededBehavior,
+        PublisherOptions,
+        PublishFlowControl,
+    )
 
     # TODO(developer)
     # project_id = "your-project-id"
