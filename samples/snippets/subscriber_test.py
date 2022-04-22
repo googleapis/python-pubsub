@@ -16,7 +16,7 @@ import os
 import re
 import sys
 import time
-from typing import Any, Callable, cast, Generator, List, TypeVar
+from typing import Any, Callable, Generator, List, TypeVar, cast
 import uuid
 
 from _pytest.capture import CaptureFixture

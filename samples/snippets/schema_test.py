@@ -15,7 +15,7 @@
 # limitations under the License.
 
 import os
-from typing import Any, Callable, cast, Generator, TypeVar
+from typing import Any, Callable, Generator, TypeVar, cast
 import uuid
 
 from _pytest.capture import CaptureFixture
