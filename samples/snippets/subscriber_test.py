@@ -57,6 +57,7 @@ C = TypeVar("C", bound=Callable[..., Any])
 
 typed_flaky = cast(Callable[[C], C], flaky(max_runs=3, min_passes=1))
 
+
 @pytest.fixture(scope="module")
 def publisher_client() -> Generator[pubsub_v1.PublisherClient, None, None]:
     yield pubsub_v1.PublisherClient()
