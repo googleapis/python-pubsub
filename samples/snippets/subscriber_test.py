@@ -243,6 +243,7 @@ def test_create_subscription_with_dead_letter_policy(
 def test_receive_with_delivery_attempts(
     subscriber_client: pubsub_v1.SubscriberClient,
     publisher_client: pubsub_v1.PublisherClient,
+    topic: str,
     dead_letter_topic: str,
     capsys: CaptureFixture[str],
 ) -> None:
