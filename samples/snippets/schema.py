@@ -201,10 +201,11 @@ def create_topic_with_schema(
 def publish_avro_records(project_id: str, topic_id: str, avsc_file: str) -> None:
     """Pulbish a BINARY or JSON encoded message to a topic configured with an Avro schema."""
     # [START pubsub_publish_avro_records]
-    from avro.io import BinaryEncoder, DatumWriter
-    import avro
     import io
     import json
+
+    import avro
+    from avro.io import BinaryEncoder, DatumWriter
     from google.api_core.exceptions import NotFound
     from google.cloud.pubsub import PublisherClient
     from google.pubsub_v1.types import Encoding
@@ -307,11 +308,12 @@ def subscribe_with_avro_schema(
 ) -> None:
     """Receive and decode messages sent to a topic with an Avro schema."""
     # [START pubsub_subscribe_avro_records]
-    import avro
-    from avro.io import BinaryDecoder, DatumReader
     from concurrent.futures import TimeoutError
     import io
     import json
+
+    import avro
+    from avro.io import BinaryDecoder, DatumReader
     from google.cloud.pubsub import SubscriberClient
 
     # TODO(developer)
@@ -365,6 +367,7 @@ def subscribe_with_proto_schema(
     """Receive and decode messages sent to a topic with a protobuf schema."""
     # [[START pubsub_subscribe_proto_messages]
     from concurrent.futures import TimeoutError
+
     from google.cloud.pubsub import SubscriberClient
     from google.protobuf.json_format import Parse
 
@@ -414,7 +417,8 @@ def subscribe_with_proto_schema(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter,
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument("project_id", help="Your Google Cloud project ID")
 
