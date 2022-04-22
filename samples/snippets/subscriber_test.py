@@ -36,7 +36,6 @@ PROJECT_ID = os.environ["GOOGLE_CLOUD_PROJECT"]
 TOPIC = f"subscription-test-topic-{PY_VERSION}-{UUID}"
 DEAD_LETTER_TOPIC = f"subscription-test-dead-letter-topic-{PY_VERSION}-{UUID}"
 EOD_TOPIC = f"subscription-test-eod-topic-{PY_VERSION}-{UUID}"
-SUBSCRIPTION_SYNC = f"subscription-test-subscription-sync-{PY_VERSION}-{UUID}"
 ENDPOINT = f"https://{PROJECT_ID}.appspot.com/push"
 NEW_ENDPOINT = f"https://{PROJECT_ID}.appspot.com/push2"
 REGIONAL_ENDPOINT = "us-east1-pubsub.googleapis.com:443"
@@ -114,46 +113,6 @@ def subscriber_client() -> Generator[pubsub_v1.SubscriberClient, None, None]:
     subscriber_client.close()
 
 
-@pytest.fixture(scope="module")
-def subscription_sync(
-    subscriber_client: pubsub_v1.SubscriberClient, topic: str
-) -> Generator[str, None, None]:
-    subscription_path = subscriber_client.subscription_path(
-        PROJECT_ID, SUBSCRIPTION_SYNC
-    )
-
-    try:
-        subscription = subscriber_client.get_subscription(
-            request={"subscription": subscription_path}
-        )
-    except NotFound:
-        subscription = subscriber_client.create_subscription(
-            request={"name": subscription_path, "topic": topic}
-        )
-
-    yield subscription.name
-
-    typed_backoff = cast(
-        Callable[[C], C],
-        backoff.on_exception(backoff.expo, Unknown, max_time=300),
-    )
-
-    @typed_backoff
-    def delete_subscription() -> None:
-        try:
-            subscriber_client.delete_subscription(
-                request={"subscription": subscription.name}
-            )
-        except NotFound:
-            print(
-                "When Unknown error happens, the server might have"
-                " successfully deleted the subscription under the cover, so"
-                " we ignore NotFound"
-            )
-
-    delete_subscription()
-
-
 def _publish_messages(
     publisher_client: pubsub_v1.PublisherClient,
     topic: str,
@@ -218,9 +177,7 @@ def test_create_subscription(
     except NotFound:
         pass
 
-    subscription = subscriber.create_subscription(
-        PROJECT_ID, TOPIC, subscription_for_create_name
-    )
+    subscriber.create_subscription(PROJECT_ID, TOPIC, subscription_for_create_name)
 
     out, _ = capsys.readouterr()
     assert f"{subscription_for_create_name}" in out
@@ -306,8 +263,8 @@ def test_receive_with_delivery_attempts(
     assert f"Listening for messages on {subscription_dlq}.." in out
     assert "With delivery attempts: " in out
 
-    # Clean up
-    subscriber_client.delete_subscription(request={"subscription": subscription.name})
+    # Clean up.
+    subscriber_client.delete_subscription(request={"subscription": subscription_path})
 
 
 def test_update_dead_letter_policy(
@@ -353,8 +310,8 @@ def test_update_dead_letter_policy(
     assert subscription_dlq in out
     assert f"max_delivery_attempts: {UPDATED_MAX_DELIVERY_ATTEMPTS}" in out
 
-    # Clean Up
-    subscriber_client.delete_subscription(request={"subscription": subscription.name})
+    # Clean up.
+    subscriber_client.delete_subscription(request={"subscription": subscription_path})
 
 
 def test_remove_dead_letter_policy(capsys: CaptureFixture[str]) -> None:
@@ -393,8 +350,8 @@ def test_remove_dead_letter_policy(capsys: CaptureFixture[str]) -> None:
     assert subscription_dlq in out
     assert subscription_after_update.dead_letter_policy.dead_letter_topic == ""
 
-    # Clean Up
-    subscriber_client.delete_subscription(request={"subscription": subscription.name})
+    # Clean up.
+    subscriber_client.delete_subscription(request={"subscription": subscription_path})
 
 
 def test_create_subscription_with_ordering(
@@ -489,7 +446,7 @@ def test_create_subscription_with_exactly_once_delivery(
     assert f"{subscription_eod_for_create_name}" in out
     assert "enable_exactly_once_delivery: true" in out
 
-    # Clean up
+    # Clean up.
     subscriber_client.delete_subscription(request={"subscription": subscription_path})
 
 
@@ -519,7 +476,7 @@ def test_create_push_subscription(
     out, _ = capsys.readouterr()
     assert f"{push_subscription_for_create_name}" in out
 
-    # Clean up
+    # Clean up.
     subscriber_client.delete_subscription(request={"subscription": subscription_path})
 
 
@@ -549,7 +506,7 @@ def test_update_push_subscription(
     assert "Subscription updated" in out
     assert f"{push_subscription_for_update_name}" in out
 
-    # Clean up
+    # Clean up.
     subscriber_client.delete_subscription(request={"subscription": subscription_path})
 
 
@@ -651,7 +608,7 @@ def test_receive_with_custom_attributes(
     assert "origin" in out
     assert "python-sample" in out
 
-    # Clean up
+    # Clean up.
     subscriber_client.delete_subscription(
         request={"subscription": subscription_async_receive_with_custom_name}
     )
@@ -660,7 +617,6 @@ def test_receive_with_custom_attributes(
 def test_receive_with_flow_control(
     publisher_client: pubsub_v1.PublisherClient,
     topic: str,
-    subscription_async: str,
     capsys: CaptureFixture[str],
 ) -> None:
 
@@ -688,10 +644,8 @@ def test_receive_with_flow_control(
     assert subscription_async_receive_with_flow_control_name in out
     assert "message" in out
 
-    # Clean up
-    subscriber_client.delete_subscription(
-        request={"subscription": subscription_async_receive_with_flow_control_name}
-    )
+    # Clean up.
+    subscriber_client.delete_subscription(request={"subscription": subscription_path})
 
 
 def test_receive_with_blocking_shutdown(
@@ -740,7 +694,7 @@ def test_receive_with_blocking_shutdown(
 
     try:
         assert "Listening" in out
-        assert subscription_async in out
+        assert subscription_async_receive_with_blocking_name in out
 
         assert len(stream_canceled_lines) == 1
         assert len(shutdown_done_waiting_lines) == 1
@@ -760,10 +714,8 @@ def test_receive_with_blocking_shutdown(
         pprint(out_lines)  # To make possible flakiness debugging easier.
         raise
 
-    # Clean up
-    subscriber_client.delete_subscription(
-        request={"subscription": subscription_async_receive_with_blocking_name}
-    )
+    # Clean up.
+    subscriber_client.delete_subscription(request={"subscription": subscription_path})
 
 
 def test_receive_messages_with_exactly_once_delivery_enabled(
@@ -809,9 +761,8 @@ def test_receive_messages_with_exactly_once_delivery_enabled(
     for message_id in message_ids:
         assert message_id in out
 
-    subscriber_client.delete_subscription(
-        request={"subscription": subscription_eod_for_receive_name}
-    )
+    # Clean up.
+    subscriber_client.delete_subscription(request={"subscription": subscription_path})
 
 
 def test_listen_for_errors(
@@ -844,56 +795,80 @@ def test_listen_for_errors(
     assert "threw an exception" in out
 
     # Clean up.
-    subscriber_client.delete_subscription(
-        request={"subscription": subscription_async_listen}
-    )
+    subscriber_client.delete_subscription(request={"subscription": subscription_path})
 
 
 def test_receive_synchronously(
     publisher_client: pubsub_v1.PublisherClient,
     topic: str,
-    subscription_sync: str,
     capsys: CaptureFixture[str],
 ) -> None:
+
+    subscription_sync_for_receive_name = (
+        f"subscription-test-subscription-sync-for-receive-{PY_VERSION}-{UUID}"
+    )
+
+    subscription_path = subscriber_client.subscription_path(
+        PROJECT_ID, subscription_sync_for_receive_name
+    )
+
+    try:
+        subscriber_client.get_subscription(request={"subscription": subscription_path})
+    except NotFound:
+        subscriber_client.create_subscription(
+            request={"name": subscription_path, "topic": topic}
+        )
+
     _ = _publish_messages(publisher_client, topic)
 
-    subscriber.synchronous_pull(PROJECT_ID, SUBSCRIPTION_SYNC)
+    subscriber.synchronous_pull(PROJECT_ID, subscription_sync_for_receive_name)
 
     out, _ = capsys.readouterr()
 
     assert "Received" in out
-    assert f"{subscription_sync}" in out
+    assert f"{subscription_sync_for_receive_name}" in out
+
+    # Clean up.
+    subscriber_client.delete_subscription(request={"subscription": subscription_path})
 
 
 @typed_flaky
 def test_receive_synchronously_with_lease(
     publisher_client: pubsub_v1.PublisherClient,
     topic: str,
-    subscription_sync: str,
     capsys: CaptureFixture[str],
 ) -> None:
 
-    typed_backoff = cast(
-        Callable[[C], C],
-        backoff.on_exception(backoff.expo, Unknown, max_time=300),
+    subscription_sync_for_receive_with_lease_name = f"subscription-test-subscription-sync-for-receive-with-lease-{PY_VERSION}-{UUID}"
+
+    subscription_path = subscriber_client.subscription_path(
+        PROJECT_ID, subscription_sync_for_receive_with_lease_name
     )
 
-    @typed_backoff
-    def run_sample() -> None:
-        _ = _publish_messages(publisher_client, topic, message_num=10)
-        # Pausing 10s to allow the subscriber to establish the connection
-        # because sync pull often returns fewer messages than requested.
-        # The intention is to fix flaky tests reporting errors like
-        # `google.api_core.exceptions.Unknown: None Stream removed` as
-        # in https://github.com/googleapis/python-pubsub/issues/341.
-        time.sleep(10)
-        subscriber.synchronous_pull_with_lease_management(PROJECT_ID, SUBSCRIPTION_SYNC)
+    try:
+        subscriber_client.get_subscription(request={"subscription": subscription_path})
+    except NotFound:
+        subscriber_client.create_subscription(
+            request={"name": subscription_path, "topic": topic}
+        )
 
-    run_sample()
+    _ = _publish_messages(publisher_client, topic, message_num=10)
+    # Pausing 10s to allow the subscriber to establish the connection
+    # because sync pull often returns fewer messages than requested.
+    # The intention is to fix flaky tests reporting errors like
+    # `google.api_core.exceptions.Unknown: None Stream removed` as
+    # in https://github.com/googleapis/python-pubsub/issues/341.
+    time.sleep(10)
+    subscriber.synchronous_pull_with_lease_management(
+        PROJECT_ID, subscription_sync_for_receive_with_lease_name
+    )
 
     out, _ = capsys.readouterr()
 
     # Sometimes the subscriber only gets 1 or 2 messages and test fails.
     # I think it's ok to consider those cases as passing.
     assert "Received and acknowledged" in out
-    assert f"messages from {subscription_sync}." in out
+    assert f"messages from {subscription_sync_for_receive_with_lease_name}." in out
+
+    # Clean up.
+    subscriber_client.delete_subscription(request={"subscription": subscription_path})
