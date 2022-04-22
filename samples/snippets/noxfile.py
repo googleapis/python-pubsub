@@ -200,7 +200,7 @@ def format(session: nox.sessions.Session) -> None:
 #
 
 
-PYTEST_COMMON_ARGS = ["--junitxml=sponge_log.xml, -s, -v"]
+PYTEST_COMMON_ARGS = ["--junitxml=sponge_log.xml"]
 
 
 def _session_tests(
