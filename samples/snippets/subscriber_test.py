@@ -39,7 +39,6 @@ EOD_TOPIC = f"subscription-test-eod-topic-{PY_VERSION}-{UUID}"
 SUBSCRIPTION_ADMIN = f"subscription-test-subscription-admin-{PY_VERSION}-{UUID}"
 SUBSCRIPTION_ASYNC = f"subscription-test-subscription-async-{PY_VERSION}-{UUID}"
 SUBSCRIPTION_SYNC = f"subscription-test-subscription-sync-{PY_VERSION}-{UUID}"
-SUBSCRIPTION_EOD = f"subscription-test-subscription-eod-{PY_VERSION}-{UUID}"
 ENDPOINT = f"https://{PROJECT_ID}.appspot.com/push"
 NEW_ENDPOINT = f"https://{PROJECT_ID}.appspot.com/push2"
 REGIONAL_ENDPOINT = "us-east1-pubsub.googleapis.com:443"
@@ -192,33 +191,6 @@ def subscription_async(
     except NotFound:
         subscription = subscriber_client.create_subscription(
             request={"name": subscription_path, "topic": topic}
-        )
-
-    yield subscription.name
-
-    subscriber_client.delete_subscription(request={"subscription": subscription.name})
-
-
-@pytest.fixture(scope="module")
-def subscription_eod(
-    subscriber_client: pubsub_v1.SubscriberClient, exactly_once_delivery_topic: str
-) -> Generator[str, None, None]:
-
-    subscription_path = subscriber_client.subscription_path(
-        PROJECT_ID, SUBSCRIPTION_EOD
-    )
-
-    try:
-        subscription = subscriber_client.get_subscription(
-            request={"subscription": subscription_path}
-        )
-    except NotFound:
-        subscription = subscriber_client.create_subscription(
-            request={
-                "name": subscription_path,
-                "topic": exactly_once_delivery_topic,
-                "enable_exactly_once_delivery": True,
-            }
         )
 
     yield subscription.name
@@ -510,12 +482,17 @@ def test_create_subscription_with_filtering(
 
 def test_create_subscription_with_exactly_once_delivery(
     subscriber_client: pubsub_v1.SubscriberClient,
-    subscription_eod: str,
     capsys: CaptureFixture[str],
 ) -> None:
-    subscription_path = subscriber_client.subscription_path(
-        PROJECT_ID, SUBSCRIPTION_EOD
+
+    subscription_eod_for_create_name = (
+        f"subscription-test-subscription-eod-for-create-{PY_VERSION}-{UUID}"
     )
+
+    subscription_path = subscriber_client.subscription_path(
+        PROJECT_ID, subscription_eod_for_create_name
+    )
+
     try:
         subscriber_client.delete_subscription(
             request={"subscription": subscription_path}
@@ -524,13 +501,16 @@ def test_create_subscription_with_exactly_once_delivery(
         pass
 
     subscriber.create_subscription_with_exactly_once_delivery(
-        PROJECT_ID, EOD_TOPIC, SUBSCRIPTION_EOD
+        PROJECT_ID, EOD_TOPIC, subscription_eod_for_create_name
     )
 
     out, _ = capsys.readouterr()
     assert "Created subscription with exactly once delivery enabled" in out
     assert f"{subscription_eod}" in out
     assert "enable_exactly_once_delivery: true" in out
+
+    # Clean up
+    subscriber_client.delete_subscription(request={"subscription": subscription_path})
 
 
 def test_create_push_subscription(
@@ -754,7 +734,6 @@ def test_receive_with_blocking_shutdown(
     eventually_consistent_test()
 
 
-@typed_super_flaky
 def test_receive_messages_with_exactly_once_delivery_enabled(
     regional_publisher_client: pubsub_v1.PublisherClient,
     exactly_once_delivery_topic: str,
@@ -762,18 +741,45 @@ def test_receive_messages_with_exactly_once_delivery_enabled(
     capsys: CaptureFixture[str],
 ) -> None:
 
+    subscription_eod_for_receive_name = (
+        f"subscription-test-subscription-eod-for-receive-{PY_VERSION}-{UUID}"
+    )
+
+    subscription_path = subscriber_client.subscription_path(
+        PROJECT_ID, subscription_eod_for_receive_name
+    )
+
+    try:
+        subscription = subscriber_client.get_subscription(
+            request={"subscription": subscription_path}
+        )
+    except NotFound:
+        subscription = subscriber_client.create_subscription(
+            request={
+                "name": subscription_path,
+                "topic": exactly_once_delivery_topic,
+                "enable_exactly_once_delivery": True,
+            }
+        )
+
+    subscription_eod = subscription.name
+
     message_ids = _publish_messages(
         regional_publisher_client, exactly_once_delivery_topic
     )
 
     subscriber.receive_messages_with_exactly_once_delivery_enabled(
-        PROJECT_ID, SUBSCRIPTION_EOD, 200
+        PROJECT_ID, subscription_eod_for_receive_name, 200
     )
 
     out, _ = capsys.readouterr()
     assert subscription_eod in out
     for message_id in message_ids:
         assert message_id in out
+
+    subscriber_client.delete_subscription(
+        request={"subscription": subscription_eod_for_receive_name}
+    )
 
 
 def test_listen_for_errors(
