@@ -36,7 +36,6 @@ PROJECT_ID = os.environ["GOOGLE_CLOUD_PROJECT"]
 TOPIC = f"subscription-test-topic-{PY_VERSION}-{UUID}"
 DEAD_LETTER_TOPIC = f"subscription-test-dead-letter-topic-{PY_VERSION}-{UUID}"
 EOD_TOPIC = f"subscription-test-eod-topic-{PY_VERSION}-{UUID}"
-SUBSCRIPTION_ASYNC = f"subscription-test-subscription-async-{PY_VERSION}-{UUID}"
 SUBSCRIPTION_SYNC = f"subscription-test-subscription-sync-{PY_VERSION}-{UUID}"
 ENDPOINT = f"https://{PROJECT_ID}.appspot.com/push"
 NEW_ENDPOINT = f"https://{PROJECT_ID}.appspot.com/push2"
@@ -153,28 +152,6 @@ def subscription_sync(
             )
 
     delete_subscription()
-
-
-@pytest.fixture(scope="module")
-def subscription_async(
-    subscriber_client: pubsub_v1.SubscriberClient, topic: str
-) -> Generator[str, None, None]:
-    subscription_path = subscriber_client.subscription_path(
-        PROJECT_ID, SUBSCRIPTION_ASYNC
-    )
-
-    try:
-        subscription = subscriber_client.get_subscription(
-            request={"subscription": subscription_path}
-        )
-    except NotFound:
-        subscription = subscriber_client.create_subscription(
-            request={"name": subscription_path, "topic": topic}
-        )
-
-    yield subscription.name
-
-    subscriber_client.delete_subscription(request={"subscription": subscription.name})
 
 
 def _publish_messages(
@@ -608,56 +585,76 @@ def test_delete_subscription(
 def test_receive(
     publisher_client: pubsub_v1.PublisherClient,
     topic: str,
-    subscription_async: str,
     capsys: CaptureFixture[str],
 ) -> None:
 
-    typed_backoff = cast(
-        Callable[[C], C],
-        backoff.on_exception(backoff.expo, Unknown, max_time=60),
+    subscription_async_for_receive_name = (
+        f"subscription-test-subscription-async-for-receive-{PY_VERSION}-{UUID}"
     )
 
-    @typed_backoff
-    def eventually_consistent_test() -> None:
-        _ = _publish_messages(publisher_client, topic)
+    subscription_path = subscriber_client.subscription_path(
+        PROJECT_ID, subscription_async_for_receive_name
+    )
 
-        subscriber.receive_messages(PROJECT_ID, SUBSCRIPTION_ASYNC, 5)
+    try:
+        subscriber_client.get_subscription(request={"subscription": subscription_path})
+    except NotFound:
+        subscriber_client.create_subscription(
+            request={"name": subscription_path, "topic": topic}
+        )
 
-        out, _ = capsys.readouterr()
-        assert "Listening" in out
-        assert subscription_async in out
-        assert "message" in out
+    _ = _publish_messages(publisher_client, topic)
 
-    eventually_consistent_test()
+    subscriber.receive_messages(PROJECT_ID, subscription_async_for_receive_name, 5)
+
+    out, _ = capsys.readouterr()
+    assert "Listening" in out
+    assert subscription_async_for_receive_name in out
+    assert "message" in out
+
+    # Clean up.
+    subscriber_client.delete_subscription(
+        request={"subscription": subscription_async_for_receive_name}
+    )
 
 
 def test_receive_with_custom_attributes(
     publisher_client: pubsub_v1.PublisherClient,
     topic: str,
-    subscription_async: str,
     capsys: CaptureFixture[str],
 ) -> None:
 
-    typed_backoff = cast(
-        Callable[[C], C],
-        backoff.on_exception(backoff.expo, Unknown, max_time=60),
+    subscription_async_receive_with_custom_name = (
+        f"subscription-test-subscription-async-receive-with-custom-{PY_VERSION}-{UUID}"
     )
 
-    @typed_backoff
-    def eventually_consistent_test() -> None:
-        _ = _publish_messages(publisher_client, topic, origin="python-sample")
+    subscription_path = subscriber_client.subscription_path(
+        PROJECT_ID, subscription_async_receive_with_custom_name
+    )
 
-        subscriber.receive_messages_with_custom_attributes(
-            PROJECT_ID, SUBSCRIPTION_ASYNC, 5
+    try:
+        subscriber_client.get_subscription(request={"subscription": subscription_path})
+    except NotFound:
+        subscriber_client.create_subscription(
+            request={"name": subscription_path, "topic": topic}
         )
 
-        out, _ = capsys.readouterr()
-        assert subscription_async in out
-        assert "message" in out
-        assert "origin" in out
-        assert "python-sample" in out
+    _ = _publish_messages(publisher_client, topic, origin="python-sample")
 
-    eventually_consistent_test()
+    subscriber.receive_messages_with_custom_attributes(
+        PROJECT_ID, subscription_async_receive_with_custom_name, 5
+    )
+
+    out, _ = capsys.readouterr()
+    assert subscription_async_receive_with_custom_name in out
+    assert "message" in out
+    assert "origin" in out
+    assert "python-sample" in out
+
+    # Clean up
+    subscriber_client.delete_subscription(
+        request={"subscription": subscription_async_receive_with_custom_name}
+    )
 
 
 def test_receive_with_flow_control(
@@ -667,87 +664,106 @@ def test_receive_with_flow_control(
     capsys: CaptureFixture[str],
 ) -> None:
 
-    typed_backoff = cast(
-        Callable[[C], C],
-        backoff.on_exception(backoff.expo, Unknown, max_time=300),
+    subscription_async_receive_with_flow_control_name = f"subscription-test-subscription-async-receive-with-flow-control-{PY_VERSION}-{UUID}"
+
+    subscription_path = subscriber_client.subscription_path(
+        PROJECT_ID, subscription_async_receive_with_flow_control_name
     )
 
-    @typed_backoff
-    def eventually_consistent_test() -> None:
-        _ = _publish_messages(publisher_client, topic)
+    try:
+        subscriber_client.get_subscription(request={"subscription": subscription_path})
+    except NotFound:
+        subscriber_client.create_subscription(
+            request={"name": subscription_path, "topic": topic}
+        )
 
-        subscriber.receive_messages_with_flow_control(PROJECT_ID, SUBSCRIPTION_ASYNC, 5)
+    _ = _publish_messages(publisher_client, topic)
 
-        out, _ = capsys.readouterr()
-        assert "Listening" in out
-        assert subscription_async in out
-        assert "message" in out
+    subscriber.receive_messages_with_flow_control(
+        PROJECT_ID, subscription_async_receive_with_flow_control_name, 5
+    )
 
-    eventually_consistent_test()
+    out, _ = capsys.readouterr()
+    assert "Listening" in out
+    assert subscription_async_receive_with_flow_control_name in out
+    assert "message" in out
+
+    # Clean up
+    subscriber_client.delete_subscription(
+        request={"subscription": subscription_async_receive_with_flow_control_name}
+    )
 
 
 def test_receive_with_blocking_shutdown(
     publisher_client: pubsub_v1.PublisherClient,
     topic: str,
-    subscription_async: str,
     capsys: CaptureFixture[str],
 ) -> None:
+
+    subscription_async_receive_with_blocking_name = f"subscription-test-subscription-async-receive-with-blocking-shutdown-{PY_VERSION}-{UUID}"
+
+    subscription_path = subscriber_client.subscription_path(
+        PROJECT_ID, subscription_async_receive_with_blocking_name
+    )
+
+    try:
+        subscriber_client.get_subscription(request={"subscription": subscription_path})
+    except NotFound:
+        subscriber_client.create_subscription(
+            request={"name": subscription_path, "topic": topic}
+        )
 
     _received = re.compile(r".*received.*message.*", flags=re.IGNORECASE)
     _done = re.compile(r".*done processing.*message.*", flags=re.IGNORECASE)
     _canceled = re.compile(r".*streaming pull future canceled.*", flags=re.IGNORECASE)
     _shut_down = re.compile(r".*done waiting.*stream shutdown.*", flags=re.IGNORECASE)
 
-    typed_backoff = cast(
-        Callable[[C], C],
-        backoff.on_exception(backoff.expo, Unknown, max_time=300),
+    _ = _publish_messages(publisher_client, topic, message_num=3)
+
+    subscriber.receive_messages_with_blocking_shutdown(
+        PROJECT_ID, subscription_async_receive_with_blocking_name, timeout=5.0
     )
 
-    @typed_backoff
-    def eventually_consistent_test() -> None:
-        _ = _publish_messages(publisher_client, topic, message_num=3)
+    out, _ = capsys.readouterr()
+    out_lines = out.splitlines()
 
-        subscriber.receive_messages_with_blocking_shutdown(
-            PROJECT_ID, SUBSCRIPTION_ASYNC, timeout=5.0
-        )
+    msg_received_lines = [
+        i for i, line in enumerate(out_lines) if _received.search(line)
+    ]
+    msg_done_lines = [i for i, line in enumerate(out_lines) if _done.search(line)]
+    stream_canceled_lines = [
+        i for i, line in enumerate(out_lines) if _canceled.search(line)
+    ]
+    shutdown_done_waiting_lines = [
+        i for i, line in enumerate(out_lines) if _shut_down.search(line)
+    ]
 
-        out, _ = capsys.readouterr()
-        out_lines = out.splitlines()
+    try:
+        assert "Listening" in out
+        assert subscription_async in out
 
-        msg_received_lines = [
-            i for i, line in enumerate(out_lines) if _received.search(line)
-        ]
-        msg_done_lines = [i for i, line in enumerate(out_lines) if _done.search(line)]
-        stream_canceled_lines = [
-            i for i, line in enumerate(out_lines) if _canceled.search(line)
-        ]
-        shutdown_done_waiting_lines = [
-            i for i, line in enumerate(out_lines) if _shut_down.search(line)
-        ]
+        assert len(stream_canceled_lines) == 1
+        assert len(shutdown_done_waiting_lines) == 1
+        assert len(msg_received_lines) == 3
+        assert len(msg_done_lines) == 3
 
-        try:
-            assert "Listening" in out
-            assert subscription_async in out
+        # The stream should have been canceled *after* receiving messages, but before
+        # message processing was done.
+        assert msg_received_lines[-1] < stream_canceled_lines[0] < msg_done_lines[0]
 
-            assert len(stream_canceled_lines) == 1
-            assert len(shutdown_done_waiting_lines) == 1
-            assert len(msg_received_lines) == 3
-            assert len(msg_done_lines) == 3
+        # Yet, waiting on the stream shutdown should have completed *after*
+        # the processing of received messages has ended.
+        assert msg_done_lines[-1] < shutdown_done_waiting_lines[0]
+    except AssertionError:  # pragma: NO COVER
+        from pprint import pprint
 
-            # The stream should have been canceled *after* receiving messages, but before
-            # message processing was done.
-            assert msg_received_lines[-1] < stream_canceled_lines[0] < msg_done_lines[0]
+        pprint(out_lines)  # To make possible flakiness debugging easier.
+        raise
 
-            # Yet, waiting on the stream shutdown should have completed *after*
-            # the processing of received messages has ended.
-            assert msg_done_lines[-1] < shutdown_done_waiting_lines[0]
-        except AssertionError:  # pragma: NO COVER
-            from pprint import pprint
-
-            pprint(out_lines)  # To make possible flakiness debugging easier.
-            raise
-
-    eventually_consistent_test()
+    # Clean up
+    subscriber_client.delete_subscription(
+        request={"subscription": subscription_async_receive_with_blocking_name}
+    )
 
 
 def test_receive_messages_with_exactly_once_delivery_enabled(
@@ -801,26 +817,36 @@ def test_receive_messages_with_exactly_once_delivery_enabled(
 def test_listen_for_errors(
     publisher_client: pubsub_v1.PublisherClient,
     topic: str,
-    subscription_async: str,
     capsys: CaptureFixture[str],
 ) -> None:
 
-    typed_backoff = cast(
-        Callable[[C], C],
-        backoff.on_exception(backoff.expo, Unknown, max_time=60),
+    subscription_async_listen = (
+        f"subscription-test-subscription-async-listen-{PY_VERSION}-{UUID}"
     )
 
-    @typed_backoff
-    def eventually_consistent_test() -> None:
-        _ = _publish_messages(publisher_client, topic)
+    subscription_path = subscriber_client.subscription_path(
+        PROJECT_ID, subscription_async_listen
+    )
 
-        subscriber.listen_for_errors(PROJECT_ID, SUBSCRIPTION_ASYNC, 5)
+    try:
+        subscriber_client.get_subscription(request={"subscription": subscription_path})
+    except NotFound:
+        subscriber_client.create_subscription(
+            request={"name": subscription_path, "topic": topic}
+        )
 
-        out, _ = capsys.readouterr()
-        assert subscription_async in out
-        assert "threw an exception" in out
+    _ = _publish_messages(publisher_client, topic)
 
-    eventually_consistent_test()
+    subscriber.listen_for_errors(PROJECT_ID, subscription_async_listen, 5)
+
+    out, _ = capsys.readouterr()
+    assert subscription_async_listen in out
+    assert "threw an exception" in out
+
+    # Clean up.
+    subscriber_client.delete_subscription(
+        request={"subscription": subscription_async_listen}
+    )
 
 
 def test_receive_synchronously(
