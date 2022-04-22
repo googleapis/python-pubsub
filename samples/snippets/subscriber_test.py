@@ -16,13 +16,13 @@ import os
 import re
 import sys
 import time
-from typing import Any, Callable, Generator, List, TypeVar, cast
+from typing import Any, cast, Callable, Generator, List, TypeVar
 import uuid
 
 from _pytest.capture import CaptureFixture
 import backoff
 from flaky import flaky
-from google.api_core.exceptions import InternalServerError, NotFound, Unknown
+from google.api_core.exceptions import NotFound
 from google.cloud import pubsub_v1
 import pytest
 
@@ -732,19 +732,17 @@ def test_receive_messages_with_exactly_once_delivery_enabled(
     )
 
     try:
-        subscription = subscriber_client.get_subscription(
+        subscriber_client.get_subscription(
             request={"subscription": subscription_path}
         )
     except NotFound:
-        subscription = subscriber_client.create_subscription(
+        subscriber_client.create_subscription(
             request={
                 "name": subscription_path,
                 "topic": exactly_once_delivery_topic,
                 "enable_exactly_once_delivery": True,
             }
         )
-
-    subscription_eod = subscription.name
 
     message_ids = _publish_messages(
         regional_publisher_client, exactly_once_delivery_topic
