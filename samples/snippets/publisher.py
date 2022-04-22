@@ -138,6 +138,7 @@ def publish_messages_with_error_handler(project_id: str, topic_id: str) -> None:
     # [START pubsub_publish_with_error_handler]
     """Publishes multiple messages to a Pub/Sub topic with an error handler."""
     from concurrent import futures
+
     from google.cloud import pubsub_v1
 
     # TODO(developer)
@@ -179,12 +180,12 @@ def publish_messages_with_batch_settings(project_id: str, topic_id: str) -> None
     """Publishes multiple messages to a Pub/Sub topic with batch settings."""
     # [START pubsub_publisher_batch_settings]
     from concurrent import futures
+
     from google.cloud import pubsub_v1
 
     # TODO(developer)
     # project_id = "your-project-id"
     # topic_id = "your-topic-id"
-
     # Configure the batch to publish as soon as there are 10 messages
     # or 1 KiB of data, or 1 second has passed.
     batch_settings = pubsub_v1.types.BatchSettings(
@@ -220,6 +221,7 @@ def publish_messages_with_flow_control_settings(project_id: str, topic_id: str) 
     """Publishes messages to a Pub/Sub topic with flow control settings."""
     # [START pubsub_publisher_flow_control]
     from concurrent import futures
+
     from google.cloud import pubsub_v1
     from google.cloud.pubsub_v1.types import (
         LimitExceededBehavior,
@@ -230,7 +232,6 @@ def publish_messages_with_flow_control_settings(project_id: str, topic_id: str) 
     # TODO(developer)
     # project_id = "your-project-id"
     # topic_id = "your-topic-id"
-
     # Configure how many messages the publisher client can hold in memory
     # and what to do when messages exceed the limit.
     flow_control_settings = PublishFlowControl(
@@ -275,7 +276,6 @@ def publish_messages_with_retry_settings(project_id: str, topic_id: str) -> None
     # TODO(developer)
     # project_id = "your-project-id"
     # topic_id = "your-topic-id"
-
     # Configure the retry settings. Defaults shown in comments are values applied
     # by the library by default, instead of default values in the Retry object.
     custom_retry = api_core.retry.Retry(

@@ -455,6 +455,7 @@ def receive_messages(
     # [START pubsub_subscriber_async_pull]
     # [START pubsub_quickstart_subscriber]
     from concurrent.futures import TimeoutError
+
     from google.cloud import pubsub_v1
 
     # TODO(developer)
@@ -494,6 +495,7 @@ def receive_messages_with_custom_attributes(
     """Receives messages from a pull subscription."""
     # [START pubsub_subscriber_async_pull_custom_attributes]
     from concurrent.futures import TimeoutError
+
     from google.cloud import pubsub_v1
 
     # TODO(developer)
@@ -535,6 +537,7 @@ def receive_messages_with_flow_control(
     """Receives messages from a pull subscription with flow control."""
     # [START pubsub_subscriber_flow_settings]
     from concurrent.futures import TimeoutError
+
     from google.cloud import pubsub_v1
 
     # TODO(developer)
@@ -575,8 +578,9 @@ def receive_messages_with_blocking_shutdown(
 ) -> None:
     """Shuts down a pull subscription by awaiting message callbacks to complete."""
     # [START pubsub_subscriber_blocking_shutdown]
-    import time
     from concurrent.futures import TimeoutError
+    import time
+
     from google.cloud import pubsub_v1
 
     # TODO(developer)
@@ -627,6 +631,7 @@ def receive_messages_with_exactly_once_delivery_enabled(
     """
     # [START pubsub_subscriber_exactly_once]
     from concurrent.futures import TimeoutError
+
     from google.cloud import pubsub_v1
     from google.cloud.pubsub_v1.subscriber import exceptions as sub_exceptions
 
@@ -840,6 +845,7 @@ def receive_messages_with_delivery_attempts(
 ) -> None:
     # [START pubsub_dead_letter_delivery_attempt]
     from concurrent.futures import TimeoutError
+
     from google.cloud import pubsub_v1
 
     # TODO(developer)

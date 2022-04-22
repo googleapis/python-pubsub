@@ -15,7 +15,7 @@
 import os
 import time
 import typing
-from typing import Any, Callable, cast, Iterator, TypeVar, Union
+from typing import Any, Callable, Iterator, TypeVar, Union, cast
 import uuid
 
 from _pytest.capture import CaptureFixture
@@ -26,7 +26,6 @@ import mock
 import pytest
 
 import publisher
-
 
 UUID = uuid.uuid4().hex
 PROJECT_ID = os.environ["GOOGLE_CLOUD_PROJECT"]

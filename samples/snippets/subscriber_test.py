@@ -16,15 +16,13 @@ import os
 import re
 import sys
 import time
-from typing import Any, Callable, cast, Generator, List, TypeVar
+from typing import Any, Callable, Generator, List, TypeVar, cast
 import uuid
 
 from _pytest.capture import CaptureFixture
 import backoff
 from flaky import flaky
-from google.api_core.exceptions import InternalServerError
-from google.api_core.exceptions import NotFound
-from google.api_core.exceptions import Unknown
+from google.api_core.exceptions import InternalServerError, NotFound, Unknown
 from google.cloud import pubsub_v1
 import pytest
 
@@ -36,6 +34,19 @@ PROJECT_ID = os.environ["GOOGLE_CLOUD_PROJECT"]
 TOPIC = f"subscription-test-topic-{PY_VERSION}-{UUID}"
 DEAD_LETTER_TOPIC = f"subscription-test-dead-letter-topic-{PY_VERSION}-{UUID}"
 EOD_TOPIC = f"subscription-test-eod-topic-{PY_VERSION}-{UUID}"
+<<<<<<< HEAD
+=======
+SUBSCRIPTION_ADMIN = f"subscription-test-subscription-admin-{PY_VERSION}-{UUID}"
+SUBSCRIPTION_ASYNC = f"subscription-test-subscription-async-{PY_VERSION}-{UUID}"
+SUBSCRIPTION_SYNC = f"subscription-test-subscription-sync-{PY_VERSION}-{UUID}"
+SUBSCRIPTION_DLQ = f"subscription-test-subscription-dlq-{PY_VERSION}-{UUID}"
+SUBSCRIPTION_EOD_FOR_CREATE = (
+    f"subscription-test-subscription-eod-for-create-{PY_VERSION}-{UUID}"
+)
+SUBSCRIPTION_EOD_FOR_RECEIVE = (
+    f"subscription-test-subscription-eod-for-receive-{PY_VERSION}-{UUID}"
+)
+>>>>>>> main
 ENDPOINT = f"https://{PROJECT_ID}.appspot.com/push"
 NEW_ENDPOINT = f"https://{PROJECT_ID}.appspot.com/push2"
 REGIONAL_ENDPOINT = "us-east1-pubsub.googleapis.com:443"
@@ -113,6 +124,174 @@ def subscriber_client() -> Generator[pubsub_v1.SubscriberClient, None, None]:
     subscriber_client.close()
 
 
+<<<<<<< HEAD
+=======
+@pytest.fixture(scope="module")
+def subscription_admin(
+    subscriber_client: pubsub_v1.SubscriberClient, topic: str
+) -> Generator[str, None, None]:
+    subscription_path = subscriber_client.subscription_path(
+        PROJECT_ID, SUBSCRIPTION_ADMIN
+    )
+
+    try:
+        subscription = subscriber_client.get_subscription(
+            request={"subscription": subscription_path}
+        )
+    except NotFound:
+        subscription = subscriber_client.create_subscription(
+            request={"name": subscription_path, "topic": topic}
+        )
+
+    yield subscription.name
+
+
+@pytest.fixture(scope="module")
+def subscription_sync(
+    subscriber_client: pubsub_v1.SubscriberClient, topic: str
+) -> Generator[str, None, None]:
+    subscription_path = subscriber_client.subscription_path(
+        PROJECT_ID, SUBSCRIPTION_SYNC
+    )
+
+    try:
+        subscription = subscriber_client.get_subscription(
+            request={"subscription": subscription_path}
+        )
+    except NotFound:
+        subscription = subscriber_client.create_subscription(
+            request={"name": subscription_path, "topic": topic}
+        )
+
+    yield subscription.name
+
+    typed_backoff = cast(
+        Callable[[C], C],
+        backoff.on_exception(backoff.expo, Unknown, max_time=300),
+    )
+
+    @typed_backoff
+    def delete_subscription() -> None:
+        try:
+            subscriber_client.delete_subscription(
+                request={"subscription": subscription.name}
+            )
+        except NotFound:
+            print(
+                "When Unknown error happens, the server might have"
+                " successfully deleted the subscription under the cover, so"
+                " we ignore NotFound"
+            )
+
+    delete_subscription()
+
+
+@pytest.fixture(scope="module")
+def subscription_async(
+    subscriber_client: pubsub_v1.SubscriberClient, topic: str
+) -> Generator[str, None, None]:
+    subscription_path = subscriber_client.subscription_path(
+        PROJECT_ID, SUBSCRIPTION_ASYNC
+    )
+
+    try:
+        subscription = subscriber_client.get_subscription(
+            request={"subscription": subscription_path}
+        )
+    except NotFound:
+        subscription = subscriber_client.create_subscription(
+            request={"name": subscription_path, "topic": topic}
+        )
+
+    yield subscription.name
+
+    subscriber_client.delete_subscription(request={"subscription": subscription.name})
+
+
+@pytest.fixture(scope="module")
+def subscription_dlq(
+    subscriber_client: pubsub_v1.SubscriberClient, topic: str, dead_letter_topic: str
+) -> Generator[str, None, None]:
+    from google.cloud.pubsub_v1.types import DeadLetterPolicy
+
+    subscription_path = subscriber_client.subscription_path(
+        PROJECT_ID, SUBSCRIPTION_DLQ
+    )
+
+    try:
+        subscription = subscriber_client.get_subscription(
+            request={"subscription": subscription_path}
+        )
+    except NotFound:
+        request = {
+            "name": subscription_path,
+            "topic": topic,
+            "dead_letter_policy": DeadLetterPolicy(
+                dead_letter_topic=dead_letter_topic, max_delivery_attempts=10
+            ),
+        }
+        subscription = subscriber_client.create_subscription(request)
+
+    yield subscription.name
+
+    subscriber_client.delete_subscription(request={"subscription": subscription.name})
+
+
+@pytest.fixture(scope="module")
+def subscription_eod_for_receive(
+    subscriber_client: pubsub_v1.SubscriberClient, exactly_once_delivery_topic: str
+) -> Generator[str, None, None]:
+
+    subscription_path = subscriber_client.subscription_path(
+        PROJECT_ID, SUBSCRIPTION_EOD_FOR_RECEIVE
+    )
+
+    try:
+        subscription = subscriber_client.get_subscription(
+            request={"subscription": subscription_path}
+        )
+    except NotFound:
+        subscription = subscriber_client.create_subscription(
+            request={
+                "name": subscription_path,
+                "topic": exactly_once_delivery_topic,
+                "enable_exactly_once_delivery": True,
+            }
+        )
+
+    yield subscription.name
+
+    subscriber_client.delete_subscription(request={"subscription": subscription.name})
+
+
+@pytest.fixture(scope="module")
+def subscription_eod_for_create(
+    subscriber_client: pubsub_v1.SubscriberClient, exactly_once_delivery_topic: str
+) -> Generator[str, None, None]:
+
+    subscription_path = subscriber_client.subscription_path(
+        PROJECT_ID, SUBSCRIPTION_EOD_FOR_CREATE
+    )
+
+    try:
+        subscription = subscriber_client.get_subscription(
+            request={"subscription": subscription_path}
+        )
+    except NotFound:
+        subscription = subscriber_client.create_subscription(
+            request={
+                "name": subscription_path,
+                "topic": exactly_once_delivery_topic,
+                "enable_exactly_once_delivery": True,
+            }
+        )
+
+    yield subscription.name
+
+    subscriber_client.delete_subscription(request={"subscription": subscription.name})
+
+
+>>>>>>> main
 def _publish_messages(
     publisher_client: pubsub_v1.PublisherClient,
     topic: str,
@@ -721,7 +900,7 @@ def test_receive_with_blocking_shutdown(
 def test_receive_messages_with_exactly_once_delivery_enabled(
     regional_publisher_client: pubsub_v1.PublisherClient,
     exactly_once_delivery_topic: str,
-    subscription_eod: str,
+    subscription_eod_for_receive: str,
     capsys: CaptureFixture[str],
 ) -> None:
 
@@ -757,7 +936,7 @@ def test_receive_messages_with_exactly_once_delivery_enabled(
     )
 
     out, _ = capsys.readouterr()
-    assert subscription_eod in out
+    assert subscription_eod_for_receive in out
     for message_id in message_ids:
         assert message_id in out
 
