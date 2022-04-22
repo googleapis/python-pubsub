@@ -52,8 +52,7 @@ def sub(project_id: str, subscription_id: str, timeout: Optional[float] = None) 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description=__doc__,
-        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument("project_id", help="Google Cloud project ID")
     parser.add_argument("subscription_id", help="Pub/Sub subscription ID")
