@@ -16,7 +16,7 @@ import os
 import re
 import sys
 import time
-from typing import Any, cast, Callable, Generator, List, TypeVar
+from typing import Any, Callable, cast, Generator, List, TypeVar
 import uuid
 
 from _pytest.capture import CaptureFixture
@@ -33,7 +33,7 @@ PY_VERSION = f"{sys.version_info.major}.{sys.version_info.minor}"
 PROJECT_ID = os.environ["GOOGLE_CLOUD_PROJECT"]
 TOPIC = f"subscription-test-topic-{PY_VERSION}-{UUID}"
 DEAD_LETTER_TOPIC = f"subscription-test-dead-letter-topic-{PY_VERSION}-{UUID}"
-EOD_TOPIC = f"subscription-test-eod-topic-{PY_VERSION}-{UUID}" 
+EOD_TOPIC = f"subscription-test-eod-topic-{PY_VERSION}-{UUID}"
 SUBSCRIPTION_ADMIN = f"subscription-test-subscription-admin-{PY_VERSION}-{UUID}"
 ENDPOINT = f"https://{PROJECT_ID}.appspot.com/push"
 NEW_ENDPOINT = f"https://{PROJECT_ID}.appspot.com/push2"
@@ -57,7 +57,8 @@ def regional_publisher_client() -> Generator[pubsub_v1.PublisherClient, None, No
     client_options = {"api_endpoint": REGIONAL_ENDPOINT}
     publisher = pubsub_v1.PublisherClient(client_options=client_options)
     yield publisher
-    
+
+
 @pytest.fixture(scope="module")
 def subscription_admin(
     subscriber_client: pubsub_v1.SubscriberClient, topic: str
@@ -76,6 +77,7 @@ def subscription_admin(
         )
 
     yield subscription.name
+
 
 @pytest.fixture(scope="module")
 def topic(publisher_client: pubsub_v1.PublisherClient) -> Generator[str, None, None]:
@@ -335,10 +337,7 @@ def test_update_dead_letter_policy(
     subscriber_client.delete_subscription(request={"subscription": subscription_path})
 
 
-def test_remove_dead_letter_policy(
-    subscriber_client: pubsub_v1.SubscriberClient,
-    topic: str,
-    capsys: CaptureFixture[str]) -> None:
+def test_remove_dead_letter_policy(subscriber_client: pubsub_v1.SubscriberClient, topic: str, capsys: CaptureFixture[str]) -> None:
 
     from google.cloud.pubsub_v1.types import DeadLetterPolicy
 
