@@ -39,7 +39,6 @@ EOD_TOPIC = f"subscription-test-eod-topic-{PY_VERSION}-{UUID}"
 SUBSCRIPTION_ADMIN = f"subscription-test-subscription-admin-{PY_VERSION}-{UUID}"
 SUBSCRIPTION_ASYNC = f"subscription-test-subscription-async-{PY_VERSION}-{UUID}"
 SUBSCRIPTION_SYNC = f"subscription-test-subscription-sync-{PY_VERSION}-{UUID}"
-SUBSCRIPTION_DLQ = f"subscription-test-subscription-dlq-{PY_VERSION}-{UUID}"
 SUBSCRIPTION_EOD = f"subscription-test-subscription-eod-{PY_VERSION}-{UUID}"
 ENDPOINT = f"https://{PROJECT_ID}.appspot.com/push"
 NEW_ENDPOINT = f"https://{PROJECT_ID}.appspot.com/push2"
@@ -51,7 +50,6 @@ FILTER = 'attributes.author="unknown"'
 C = TypeVar("C", bound=Callable[..., Any])
 
 typed_flaky = cast(Callable[[C], C], flaky(max_runs=3, min_passes=1))
-typed_super_flaky = cast(Callable[[C], C], flaky(max_runs=10, min_passes=10))
 
 
 @pytest.fixture(scope="module")
@@ -159,7 +157,8 @@ def subscription_sync(
     yield subscription.name
 
     typed_backoff = cast(
-        Callable[[C], C], backoff.on_exception(backoff.expo, Unknown, max_time=300),
+        Callable[[C], C],
+        backoff.on_exception(backoff.expo, Unknown, max_time=300),
     )
 
     @typed_backoff
@@ -194,35 +193,6 @@ def subscription_async(
         subscription = subscriber_client.create_subscription(
             request={"name": subscription_path, "topic": topic}
         )
-
-    yield subscription.name
-
-    subscriber_client.delete_subscription(request={"subscription": subscription.name})
-
-
-@pytest.fixture(scope="module")
-def subscription_dlq(
-    subscriber_client: pubsub_v1.SubscriberClient, topic: str, dead_letter_topic: str
-) -> Generator[str, None, None]:
-    from google.cloud.pubsub_v1.types import DeadLetterPolicy
-
-    subscription_path = subscriber_client.subscription_path(
-        PROJECT_ID, SUBSCRIPTION_DLQ
-    )
-
-    try:
-        subscription = subscriber_client.get_subscription(
-            request={"subscription": subscription_path}
-        )
-    except NotFound:
-        request = {
-            "name": subscription_path,
-            "topic": topic,
-            "dead_letter_policy": DeadLetterPolicy(
-                dead_letter_topic=dead_letter_topic, max_delivery_attempts=10
-            ),
-        }
-        subscription = subscriber_client.create_subscription(request)
 
     yield subscription.name
 
@@ -324,99 +294,170 @@ def test_create_subscription(
 
 def test_create_subscription_with_dead_letter_policy(
     subscriber_client: pubsub_v1.SubscriberClient,
-    subscription_dlq: str,
     dead_letter_topic: str,
     capsys: CaptureFixture[str],
 ) -> None:
+
+    subscription_dlq_name = (
+        f"subscription-test-subscription-dlq-for-create-{PY_VERSION}-{UUID}"
+    )
+
+    subscription_path = subscriber_client.subscription_path(
+        PROJECT_ID, subscription_dlq_name
+    )
+
     try:
         subscriber_client.delete_subscription(
-            request={"subscription": subscription_dlq}
+            request={"subscription": subscription_path}
         )
     except NotFound:
         pass
 
     subscriber.create_subscription_with_dead_letter_topic(
-        PROJECT_ID, TOPIC, SUBSCRIPTION_DLQ, DEAD_LETTER_TOPIC
+        PROJECT_ID, TOPIC, subscription_path, DEAD_LETTER_TOPIC
     )
 
     out, _ = capsys.readouterr()
-    assert f"Subscription created: {subscription_dlq}" in out
+    assert f"Subscription created: {subscription_path}" in out
     assert f"It will forward dead letter messages to: {dead_letter_topic}" in out
     assert f"After {DEFAULT_MAX_DELIVERY_ATTEMPTS} delivery attempts." in out
 
+    # Clean up.
+    subscriber_client.delete_subscription(request={"subscription": subscription_path})
 
-@typed_flaky
+
 def test_receive_with_delivery_attempts(
     publisher_client: pubsub_v1.PublisherClient,
     topic: str,
     dead_letter_topic: str,
-    subscription_dlq: str,
     capsys: CaptureFixture[str],
 ) -> None:
 
-    typed_backoff = cast(
-        Callable[[C], C],
-        backoff.on_exception(backoff.expo, (Unknown, NotFound), max_time=120),
+    from google.cloud.pubsub_v1.types import DeadLetterPolicy
+
+    subscription_dlq_for_receive_name = (
+        f"subscription-test-subscription-dlq-for-receive-{PY_VERSION}-{UUID}"
     )
 
-    # The dlq subscription raises 404 before it's ready.
-    # We keep retrying up to 10 minutes for mitigating the flakiness.
-    @typed_backoff
-    def run_sample() -> None:
-        _ = _publish_messages(publisher_client, topic)
+    subscription_path = subscriber_client.subscription_path(
+        PROJECT_ID, subscription_dlq_for_receive_name
+    )
 
-        subscriber.receive_messages_with_delivery_attempts(
-            PROJECT_ID, SUBSCRIPTION_DLQ, 90
+    try:
+        subscription = subscriber_client.get_subscription(
+            request={"subscription": subscription_path}
         )
+    except NotFound:
+        request = {
+            "name": subscription_path,
+            "topic": topic,
+            "dead_letter_policy": DeadLetterPolicy(
+                dead_letter_topic=dead_letter_topic, max_delivery_attempts=10
+            ),
+        }
+        subscription = subscriber_client.create_subscription(request)
 
-    run_sample()
+    subscription_dlq = subscription.name
+
+    _ = _publish_messages(publisher_client, topic)
+
+    subscriber.receive_messages_with_delivery_attempts(
+        PROJECT_ID, subscription_dlq_for_receive_name, 90
+    )
 
     out, _ = capsys.readouterr()
     assert f"Listening for messages on {subscription_dlq}.." in out
     assert "With delivery attempts: " in out
 
+    # Clean up
+    subscriber_client.delete_subscription(request={"subscription": subscription.name})
 
-@typed_flaky
+
 def test_update_dead_letter_policy(
-    subscription_dlq: str, dead_letter_topic: str, capsys: CaptureFixture[str]
+    dead_letter_topic: str, capsys: CaptureFixture[str]
 ) -> None:
 
-    typed_backoff = cast(
-        Callable[[C], C],
-        backoff.on_exception(backoff.expo, (Unknown, InternalServerError), max_time=60),
+    from google.cloud.pubsub_v1.types import DeadLetterPolicy
+
+    subscription_dlq_for_update_name = (
+        f"subscription-test-subscription-dlq-for-update-{PY_VERSION}-{UUID}"
     )
 
-    # We saw internal server error that suggests to retry.
+    subscription_path = subscriber_client.subscription_path(
+        PROJECT_ID, subscription_dlq_for_update_name
+    )
 
-    @typed_backoff
-    def run_sample() -> None:
-        subscriber.update_subscription_with_dead_letter_policy(
-            PROJECT_ID,
-            TOPIC,
-            SUBSCRIPTION_DLQ,
-            DEAD_LETTER_TOPIC,
-            UPDATED_MAX_DELIVERY_ATTEMPTS,
+    try:
+        subscription = subscriber_client.get_subscription(
+            request={"subscription": subscription_path}
         )
+    except NotFound:
+        request = {
+            "name": subscription_path,
+            "topic": topic,
+            "dead_letter_policy": DeadLetterPolicy(
+                dead_letter_topic=dead_letter_topic, max_delivery_attempts=10
+            ),
+        }
+        subscription = subscriber_client.create_subscription(request)
 
-    run_sample()
+    subscription_dlq = subscription.name
+
+    subscriber.update_subscription_with_dead_letter_policy(
+        PROJECT_ID,
+        TOPIC,
+        subscription_dlq_for_update_name,
+        DEAD_LETTER_TOPIC,
+        UPDATED_MAX_DELIVERY_ATTEMPTS,
+    )
 
     out, _ = capsys.readouterr()
     assert dead_letter_topic in out
     assert subscription_dlq in out
     assert f"max_delivery_attempts: {UPDATED_MAX_DELIVERY_ATTEMPTS}" in out
 
+    # Clean Up
+    subscriber_client.delete_subscription(request={"subscription": subscription.name})
 
-@typed_flaky
-def test_remove_dead_letter_policy(
-    subscription_dlq: str, capsys: CaptureFixture[str]
-) -> None:
+
+def test_remove_dead_letter_policy(capsys: CaptureFixture[str]) -> None:
+
+    from google.cloud.pubsub_v1.types import DeadLetterPolicy
+
+    subscription_dlq_for_remove_name = (
+        f"subscription-test-subscription-dlq-for-remove-{PY_VERSION}-{UUID}"
+    )
+
+    subscription_path = subscriber_client.subscription_path(
+        PROJECT_ID, subscription_dlq_for_remove_name
+    )
+
+    try:
+        subscription = subscriber_client.get_subscription(
+            request={"subscription": subscription_path}
+        )
+    except NotFound:
+        request = {
+            "name": subscription_path,
+            "topic": topic,
+            "dead_letter_policy": DeadLetterPolicy(
+                dead_letter_topic=dead_letter_topic, max_delivery_attempts=10
+            ),
+        }
+        subscription = subscriber_client.create_subscription(request)
+
+    subscription_dlq = subscription.name
+
     subscription_after_update = subscriber.remove_dead_letter_policy(
-        PROJECT_ID, TOPIC, SUBSCRIPTION_DLQ
+        PROJECT_ID, TOPIC, subscription_dlq_for_remove_name
     )
 
     out, _ = capsys.readouterr()
     assert subscription_dlq in out
     assert subscription_after_update.dead_letter_policy.dead_letter_topic == ""
+
+    # Clean Up
+    subscriber_client.delete_subscription(request={"subscription": subscription.name})
 
 
 def test_create_subscription_with_ordering(
@@ -498,7 +539,8 @@ def test_create_push_subscription(
     capsys: CaptureFixture[str],
 ) -> None:
     typed_backoff = cast(
-        Callable[[C], C], backoff.on_exception(backoff.expo, Unknown, max_time=60),
+        Callable[[C], C],
+        backoff.on_exception(backoff.expo, Unknown, max_time=60),
     )
 
     # The scope of `subscription_path` is limited to this function.
@@ -525,11 +567,13 @@ def test_create_push_subscription(
 
 
 def test_update_push_suscription(
-    subscription_admin: str, capsys: CaptureFixture[str],
+    subscription_admin: str,
+    capsys: CaptureFixture[str],
 ) -> None:
 
     typed_backoff = cast(
-        Callable[[C], C], backoff.on_exception(backoff.expo, Unknown, max_time=60),
+        Callable[[C], C],
+        backoff.on_exception(backoff.expo, Unknown, max_time=60),
     )
 
     @typed_backoff
@@ -551,7 +595,8 @@ def test_delete_subscription(
     subscriber.delete_subscription(PROJECT_ID, SUBSCRIPTION_ADMIN)
 
     typed_backoff = cast(
-        Callable[[C], C], backoff.on_exception(backoff.expo, Unknown, max_time=60),
+        Callable[[C], C],
+        backoff.on_exception(backoff.expo, Unknown, max_time=60),
     )
 
     @typed_backoff
@@ -572,7 +617,8 @@ def test_receive(
 ) -> None:
 
     typed_backoff = cast(
-        Callable[[C], C], backoff.on_exception(backoff.expo, Unknown, max_time=60),
+        Callable[[C], C],
+        backoff.on_exception(backoff.expo, Unknown, max_time=60),
     )
 
     @typed_backoff
@@ -597,7 +643,8 @@ def test_receive_with_custom_attributes(
 ) -> None:
 
     typed_backoff = cast(
-        Callable[[C], C], backoff.on_exception(backoff.expo, Unknown, max_time=60),
+        Callable[[C], C],
+        backoff.on_exception(backoff.expo, Unknown, max_time=60),
     )
 
     @typed_backoff
@@ -625,7 +672,8 @@ def test_receive_with_flow_control(
 ) -> None:
 
     typed_backoff = cast(
-        Callable[[C], C], backoff.on_exception(backoff.expo, Unknown, max_time=300),
+        Callable[[C], C],
+        backoff.on_exception(backoff.expo, Unknown, max_time=300),
     )
 
     @typed_backoff
@@ -655,7 +703,8 @@ def test_receive_with_blocking_shutdown(
     _shut_down = re.compile(r".*done waiting.*stream shutdown.*", flags=re.IGNORECASE)
 
     typed_backoff = cast(
-        Callable[[C], C], backoff.on_exception(backoff.expo, Unknown, max_time=300),
+        Callable[[C], C],
+        backoff.on_exception(backoff.expo, Unknown, max_time=300),
     )
 
     @typed_backoff
@@ -735,7 +784,8 @@ def test_listen_for_errors(
 ) -> None:
 
     typed_backoff = cast(
-        Callable[[C], C], backoff.on_exception(backoff.expo, Unknown, max_time=60),
+        Callable[[C], C],
+        backoff.on_exception(backoff.expo, Unknown, max_time=60),
     )
 
     @typed_backoff
@@ -776,7 +826,8 @@ def test_receive_synchronously_with_lease(
 ) -> None:
 
     typed_backoff = cast(
-        Callable[[C], C], backoff.on_exception(backoff.expo, Unknown, max_time=300),
+        Callable[[C], C],
+        backoff.on_exception(backoff.expo, Unknown, max_time=300),
     )
 
     @typed_backoff
