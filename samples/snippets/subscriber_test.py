@@ -232,7 +232,7 @@ def test_create_subscription_with_dead_letter_policy(
     )
 
     out, _ = capsys.readouterr()
-    assert f"Subscription created: {subscription_dlq_name}" in out
+    assert f"Subscription created: {subscription_path}" in out
     assert f"It will forward dead letter messages to: {dead_letter_topic}" in out
     assert f"After {DEFAULT_MAX_DELIVERY_ATTEMPTS} delivery attempts." in out
 
@@ -340,7 +340,7 @@ def test_update_dead_letter_policy(
 
 def test_remove_dead_letter_policy(
     subscriber_client: pubsub_v1.SubscriberClient,
-    topic: str,
+    dead_letter_topic: str,
     capsys: CaptureFixture[str],
 ) -> None:
 
