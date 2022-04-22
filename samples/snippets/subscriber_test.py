@@ -40,7 +40,8 @@ SUBSCRIPTION_ADMIN = f"subscription-test-subscription-admin-{PY_VERSION}-{UUID}"
 SUBSCRIPTION_ASYNC = f"subscription-test-subscription-async-{PY_VERSION}-{UUID}"
 SUBSCRIPTION_SYNC = f"subscription-test-subscription-sync-{PY_VERSION}-{UUID}"
 SUBSCRIPTION_DLQ = f"subscription-test-subscription-dlq-{PY_VERSION}-{UUID}"
-SUBSCRIPTION_EOD = f"subscription-test-subscription-eod-{PY_VERSION}-{UUID}"
+SUBSCRIPTION_EOD_FOR_CREATE = f"subscription-test-subscription-eod-for-create-{PY_VERSION}-{UUID}"
+SUBSCRIPTION_EOD_FOR_RECEIVE = f"subscription-test-subscription-eod-for-receive-{PY_VERSION}-{UUID}"
 ENDPOINT = f"https://{PROJECT_ID}.appspot.com/push"
 NEW_ENDPOINT = f"https://{PROJECT_ID}.appspot.com/push2"
 REGIONAL_ENDPOINT = "us-east1-pubsub.googleapis.com:443"
@@ -51,7 +52,6 @@ FILTER = 'attributes.author="unknown"'
 C = TypeVar("C", bound=Callable[..., Any])
 
 typed_flaky = cast(Callable[[C], C], flaky(max_runs=3, min_passes=1))
-typed_super_flaky = cast(Callable[[C], C], flaky(max_runs=10, min_passes=10))
 
 
 @pytest.fixture(scope="module")
@@ -230,12 +230,12 @@ def subscription_dlq(
 
 
 @pytest.fixture(scope="module")
-def subscription_eod(
+def subscription_eod_for_receive(
     subscriber_client: pubsub_v1.SubscriberClient, exactly_once_delivery_topic: str
 ) -> Generator[str, None, None]:
 
     subscription_path = subscriber_client.subscription_path(
-        PROJECT_ID, SUBSCRIPTION_EOD
+        PROJECT_ID, SUBSCRIPTION_EOD_FOR_RECEIVE
     )
 
     try:
@@ -254,6 +254,33 @@ def subscription_eod(
     yield subscription.name
 
     subscriber_client.delete_subscription(request={"subscription": subscription.name})
+
+@pytest.fixture(scope="module")
+def subscription_eod_for_create(
+    subscriber_client: pubsub_v1.SubscriberClient, exactly_once_delivery_topic: str
+) -> Generator[str, None, None]:
+
+    subscription_path = subscriber_client.subscription_path(
+        PROJECT_ID, SUBSCRIPTION_EOD_FOR_CREATE
+    )
+
+    try:
+        subscription = subscriber_client.get_subscription(
+            request={"subscription": subscription_path}
+        )
+    except NotFound:
+        subscription = subscriber_client.create_subscription(
+            request={
+                "name": subscription_path,
+                "topic": exactly_once_delivery_topic,
+                "enable_exactly_once_delivery": True,
+            }
+        )
+
+    yield subscription.name
+
+    subscriber_client.delete_subscription(request={"subscription": subscription.name})
+
 
 
 def _publish_messages(
@@ -469,11 +496,11 @@ def test_create_subscription_with_filtering(
 
 def test_create_subscription_with_exactly_once_delivery(
     subscriber_client: pubsub_v1.SubscriberClient,
-    subscription_eod: str,
+    subscription_eod_for_create: str,
     capsys: CaptureFixture[str],
 ) -> None:
     subscription_path = subscriber_client.subscription_path(
-        PROJECT_ID, SUBSCRIPTION_EOD
+        PROJECT_ID, SUBSCRIPTION_EOD_FOR_CREATE
     )
     try:
         subscriber_client.delete_subscription(
@@ -483,12 +510,12 @@ def test_create_subscription_with_exactly_once_delivery(
         pass
 
     subscriber.create_subscription_with_exactly_once_delivery(
-        PROJECT_ID, EOD_TOPIC, SUBSCRIPTION_EOD
+        PROJECT_ID, EOD_TOPIC, SUBSCRIPTION_EOD_FOR_CREATE
     )
 
     out, _ = capsys.readouterr()
     assert "Created subscription with exactly once delivery enabled" in out
-    assert f"{subscription_eod}" in out
+    assert f"{subscription_eod_for_create}" in out
     assert "enable_exactly_once_delivery: true" in out
 
 
@@ -705,11 +732,10 @@ def test_receive_with_blocking_shutdown(
     eventually_consistent_test()
 
 
-@typed_super_flaky
 def test_receive_messages_with_exactly_once_delivery_enabled(
     regional_publisher_client: pubsub_v1.PublisherClient,
     exactly_once_delivery_topic: str,
-    subscription_eod: str,
+    subscription_eod_for_receive: str,
     capsys: CaptureFixture[str],
 ) -> None:
 
@@ -718,11 +744,11 @@ def test_receive_messages_with_exactly_once_delivery_enabled(
     )
 
     subscriber.receive_messages_with_exactly_once_delivery_enabled(
-        PROJECT_ID, SUBSCRIPTION_EOD, 200
+        PROJECT_ID, SUBSCRIPTION_EOD_FOR_CREATE, 200
     )
 
     out, _ = capsys.readouterr()
-    assert subscription_eod in out
+    assert subscription_eod_for_receive in out
     for message_id in message_ids:
         assert message_id in out
 
