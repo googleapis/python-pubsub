@@ -40,8 +40,12 @@ SUBSCRIPTION_ADMIN = f"subscription-test-subscription-admin-{PY_VERSION}-{UUID}"
 SUBSCRIPTION_ASYNC = f"subscription-test-subscription-async-{PY_VERSION}-{UUID}"
 SUBSCRIPTION_SYNC = f"subscription-test-subscription-sync-{PY_VERSION}-{UUID}"
 SUBSCRIPTION_DLQ = f"subscription-test-subscription-dlq-{PY_VERSION}-{UUID}"
-SUBSCRIPTION_EOD_FOR_CREATE = f"subscription-test-subscription-eod-for-create-{PY_VERSION}-{UUID}"
-SUBSCRIPTION_EOD_FOR_RECEIVE = f"subscription-test-subscription-eod-for-receive-{PY_VERSION}-{UUID}"
+SUBSCRIPTION_EOD_FOR_CREATE = (
+    f"subscription-test-subscription-eod-for-create-{PY_VERSION}-{UUID}"
+)
+SUBSCRIPTION_EOD_FOR_RECEIVE = (
+    f"subscription-test-subscription-eod-for-receive-{PY_VERSION}-{UUID}"
+)
 ENDPOINT = f"https://{PROJECT_ID}.appspot.com/push"
 NEW_ENDPOINT = f"https://{PROJECT_ID}.appspot.com/push2"
 REGIONAL_ENDPOINT = "us-east1-pubsub.googleapis.com:443"
@@ -159,7 +163,8 @@ def subscription_sync(
     yield subscription.name
 
     typed_backoff = cast(
-        Callable[[C], C], backoff.on_exception(backoff.expo, Unknown, max_time=300),
+        Callable[[C], C],
+        backoff.on_exception(backoff.expo, Unknown, max_time=300),
     )
 
     @typed_backoff
@@ -255,6 +260,7 @@ def subscription_eod_for_receive(
 
     subscriber_client.delete_subscription(request={"subscription": subscription.name})
 
+
 @pytest.fixture(scope="module")
 def subscription_eod_for_create(
     subscriber_client: pubsub_v1.SubscriberClient, exactly_once_delivery_topic: str
@@ -280,7 +286,6 @@ def subscription_eod_for_create(
     yield subscription.name
 
     subscriber_client.delete_subscription(request={"subscription": subscription.name})
-
 
 
 def _publish_messages(
@@ -525,7 +530,8 @@ def test_create_push_subscription(
     capsys: CaptureFixture[str],
 ) -> None:
     typed_backoff = cast(
-        Callable[[C], C], backoff.on_exception(backoff.expo, Unknown, max_time=60),
+        Callable[[C], C],
+        backoff.on_exception(backoff.expo, Unknown, max_time=60),
     )
 
     # The scope of `subscription_path` is limited to this function.
@@ -552,11 +558,13 @@ def test_create_push_subscription(
 
 
 def test_update_push_suscription(
-    subscription_admin: str, capsys: CaptureFixture[str],
+    subscription_admin: str,
+    capsys: CaptureFixture[str],
 ) -> None:
 
     typed_backoff = cast(
-        Callable[[C], C], backoff.on_exception(backoff.expo, Unknown, max_time=60),
+        Callable[[C], C],
+        backoff.on_exception(backoff.expo, Unknown, max_time=60),
     )
 
     @typed_backoff
@@ -578,7 +586,8 @@ def test_delete_subscription(
     subscriber.delete_subscription(PROJECT_ID, SUBSCRIPTION_ADMIN)
 
     typed_backoff = cast(
-        Callable[[C], C], backoff.on_exception(backoff.expo, Unknown, max_time=60),
+        Callable[[C], C],
+        backoff.on_exception(backoff.expo, Unknown, max_time=60),
     )
 
     @typed_backoff
@@ -599,7 +608,8 @@ def test_receive(
 ) -> None:
 
     typed_backoff = cast(
-        Callable[[C], C], backoff.on_exception(backoff.expo, Unknown, max_time=60),
+        Callable[[C], C],
+        backoff.on_exception(backoff.expo, Unknown, max_time=60),
     )
 
     @typed_backoff
@@ -624,7 +634,8 @@ def test_receive_with_custom_attributes(
 ) -> None:
 
     typed_backoff = cast(
-        Callable[[C], C], backoff.on_exception(backoff.expo, Unknown, max_time=60),
+        Callable[[C], C],
+        backoff.on_exception(backoff.expo, Unknown, max_time=60),
     )
 
     @typed_backoff
@@ -652,7 +663,8 @@ def test_receive_with_flow_control(
 ) -> None:
 
     typed_backoff = cast(
-        Callable[[C], C], backoff.on_exception(backoff.expo, Unknown, max_time=300),
+        Callable[[C], C],
+        backoff.on_exception(backoff.expo, Unknown, max_time=300),
     )
 
     @typed_backoff
@@ -682,7 +694,8 @@ def test_receive_with_blocking_shutdown(
     _shut_down = re.compile(r".*done waiting.*stream shutdown.*", flags=re.IGNORECASE)
 
     typed_backoff = cast(
-        Callable[[C], C], backoff.on_exception(backoff.expo, Unknown, max_time=300),
+        Callable[[C], C],
+        backoff.on_exception(backoff.expo, Unknown, max_time=300),
     )
 
     @typed_backoff
@@ -761,7 +774,8 @@ def test_listen_for_errors(
 ) -> None:
 
     typed_backoff = cast(
-        Callable[[C], C], backoff.on_exception(backoff.expo, Unknown, max_time=60),
+        Callable[[C], C],
+        backoff.on_exception(backoff.expo, Unknown, max_time=60),
     )
 
     @typed_backoff
@@ -802,7 +816,8 @@ def test_receive_synchronously_with_lease(
 ) -> None:
 
     typed_backoff = cast(
-        Callable[[C], C], backoff.on_exception(backoff.expo, Unknown, max_time=300),
+        Callable[[C], C],
+        backoff.on_exception(backoff.expo, Unknown, max_time=300),
     )
 
     @typed_backoff
