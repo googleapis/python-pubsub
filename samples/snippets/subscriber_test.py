@@ -228,11 +228,11 @@ def test_create_subscription_with_dead_letter_policy(
         pass
 
     subscriber.create_subscription_with_dead_letter_topic(
-        PROJECT_ID, TOPIC, subscription_path, DEAD_LETTER_TOPIC
+        PROJECT_ID, TOPIC, subscription_dlq_name, DEAD_LETTER_TOPIC
     )
 
     out, _ = capsys.readouterr()
-    assert f"Subscription created: {subscription_path}" in out
+    assert f"Subscription created: {subscription_dlq_name}" in out
     assert f"It will forward dead letter messages to: {dead_letter_topic}" in out
     assert f"After {DEFAULT_MAX_DELIVERY_ATTEMPTS} delivery attempts." in out
 
@@ -354,19 +354,14 @@ def test_remove_dead_letter_policy(
         PROJECT_ID, subscription_dlq_for_remove_name
     )
 
-    try:
-        subscription = subscriber_client.get_subscription(
-            request={"subscription": subscription_path}
-        )
-    except NotFound:
-        request = {
-            "name": subscription_path,
-            "topic": topic,
-            "dead_letter_policy": DeadLetterPolicy(
-                dead_letter_topic=dead_letter_topic, max_delivery_attempts=10
-            ),
-        }
-        subscription = subscriber_client.create_subscription(request)
+    request = {
+        "name": subscription_path,
+        "topic": topic,
+        "dead_letter_policy": DeadLetterPolicy(
+            dead_letter_topic=dead_letter_topic, max_delivery_attempts=10
+        ),
+    }
+    subscription = subscriber_client.create_subscription(request)
 
     subscription_dlq = subscription.name
 
@@ -449,7 +444,7 @@ def test_create_subscription_with_filtering(
 
 def test_create_subscription_with_exactly_once_delivery(
     subscriber_client: pubsub_v1.SubscriberClient,
-    topic: str,
+    exactly_once_delivery_topic: str,
     capsys: CaptureFixture[str],
 ) -> None:
 
@@ -606,9 +601,7 @@ def test_receive(
     assert "message" in out
 
     # Clean up.
-    subscriber_client.delete_subscription(
-        request={"subscription": subscription_async_for_receive_name}
-    )
+    subscriber_client.delete_subscription(request={"subscription": subscription_path})
 
 
 def test_receive_with_custom_attributes(
@@ -646,9 +639,7 @@ def test_receive_with_custom_attributes(
     assert "python-sample" in out
 
     # Clean up.
-    subscriber_client.delete_subscription(
-        request={"subscription": subscription_async_receive_with_custom_name}
-    )
+    subscriber_client.delete_subscription(request={"subscription": subscription_path})
 
 
 def test_receive_with_flow_control(
@@ -827,7 +818,7 @@ def test_listen_for_errors(
     subscriber.listen_for_errors(PROJECT_ID, subscription_async_listen, 5)
 
     out, _ = capsys.readouterr()
-    assert subscription_async_listen in out
+    assert subscription_path in out
     assert "threw an exception" in out
 
     # Clean up.
@@ -906,7 +897,7 @@ def test_receive_synchronously_with_lease(
     # Sometimes the subscriber only gets 1 or 2 messages and test fails.
     # I think it's ok to consider those cases as passing.
     assert "Received and acknowledged" in out
-    assert f"messages from {subscription_sync_for_receive_with_lease_name}." in out
+    assert f"messages from {subscription_path}." in out
 
     # Clean up.
     subscriber_client.delete_subscription(request={"subscription": subscription_path})
