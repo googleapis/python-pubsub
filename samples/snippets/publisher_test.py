@@ -15,7 +15,7 @@
 import os
 import time
 import typing
-from typing import Any, cast, Callable, Iterator, TypeVar, Union
+from typing import Any, Callable, cast, Iterator, TypeVar, Union
 import uuid
 
 from _pytest.capture import CaptureFixture
