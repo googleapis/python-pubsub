@@ -170,6 +170,16 @@ for library in s.get_staging_dirs(default_version):
 
     if count != 2:
         raise Exception("Too many or too few replacements in pull() methods.")
+    # Add compression parameter to publish call in publisher client
+
+    count = s.replace(
+        library / f"google/pubsub_{library.name}/services/publisher/*client.py",
+        "messages\: Sequence\[pubsub\.PubsubMessage\] \= None\,\nretry: OptionalRetry \= gapic_v1\.method\.DEFAULT,\ntimeout\: TimeoutType = gapic\_v1\.method\.DEFAULT",
+        f"g<0>\ncompression\: grpc\.Compression \= None")
+        
+    if count != 1:
+        raise Exception("too many or too few compression parameter replacements" )
+
 
     # Silence deprecation warnings in pull() method flattened parameter tests.
     s.replace(
@@ -332,7 +342,7 @@ for library in s.get_staging_dirs(default_version):
 
     if count < 1:
         raise Exception(".coveragerc replacement failed.")
-
+   
     # fix the package name in samples/generated_samples to reflect
     # the package on pypi. https://pypi.org/project/google-cloud-pubsub/
     s.replace(
