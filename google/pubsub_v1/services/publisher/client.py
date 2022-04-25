@@ -679,6 +679,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
         messages: Sequence[pubsub.PubsubMessage] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: TimeoutType = gapic_v1.method.DEFAULT,
+        compression: grpc.Compression = None,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pubsub.PublishResponse:
         r"""Adds one or more messages to the topic. Returns ``NOT_FOUND`` if
@@ -764,7 +765,6 @@ class PublisherClient(metaclass=PublisherClientMeta):
             gapic_v1.routing_header.to_grpc_metadata((("topic", request.topic),)),
         )
 
-        self._transport.
 
         # Send the request.
         response = rpc(

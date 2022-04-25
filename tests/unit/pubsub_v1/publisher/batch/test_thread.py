@@ -143,6 +143,7 @@ def test_blocking__commit():
         ],
         retry=gapic_v1.method.DEFAULT,
         timeout=gapic_v1.method.DEFAULT,
+        compression=None
     )
 
     # Establish that all of the futures are done, and that they have the
@@ -172,6 +173,7 @@ def test_blocking__commit_custom_retry():
         messages=[gapic_types.PubsubMessage(data=b"This is my message.")],
         retry=mock.sentinel.custom_retry,
         timeout=gapic_v1.method.DEFAULT,
+        compression=None
     )
 
 
@@ -194,6 +196,7 @@ def test_blocking__commit_custom_timeout():
         messages=[gapic_types.PubsubMessage(data=b"This is my message.")],
         retry=gapic_v1.method.DEFAULT,
         timeout=mock.sentinel.custom_timeout,
+        compression=None
     )
 
 
@@ -201,7 +204,7 @@ def test_client_api_publish_not_blocking_additional_publish_calls():
     batch = create_batch(max_messages=1)
     api_publish_called = threading.Event()
 
-    def api_publish_delay(topic="", messages=(), retry=None, timeout=None):
+    def api_publish_delay(topic="", messages=(), retry=None, timeout=None, compression=None):
         api_publish_called.set()
         time.sleep(1.0)
         message_ids = [str(i) for i in range(len(messages))]

@@ -28,6 +28,7 @@ from google.cloud.pubsub_v1.publisher import exceptions
 from google.cloud.pubsub_v1.publisher import futures
 from google.cloud.pubsub_v1.publisher._batch import base
 from google.pubsub_v1 import types as gapic_types
+import grpc
 
 if typing.TYPE_CHECKING:  # pragma: NO COVER
     from google.cloud import pubsub_v1
@@ -275,8 +276,32 @@ class Batch(base.Batch):
 
         batch_transport_succeeded = True
 
-        # need to add compression here
-        
+        compression = None
+
+        if self._enable_grpc_compression and gapic_types.PublishRequest(
+                messages=self._messages
+            )._pb.ByteSize() >= self._compression_bytes_threshold:
+            compression = grpc.Compression.Gzip
+            
+        """
+        probably shouldn't set it with the channel
+        Client-side interceptor
+        class grpc.ClientCallDetails(compression=)
+        class grpc.UnaryUnaryClientInterceptor (client_call_details)
+        grpc.UnaryStreamClientInterceptor(clientcalldetails)
+        Multi-Callable Interfaces:
+        class grpc.UnaryUnaryMultiCallable[source]
+        Affords invoking a unary-unary RPC from client-side.
+        abstract __call__(request, timeout=None, metadata=None, credentials=None, wait_for_ready=None, compression=None)[source]
+        Synchronously invokes the underlying RPC.
+        abstract future(request, timeout=None, metadata=None, credentials=None, wait_for_ready=None, compression=None)[source]¶
+        abstract with_call(request, timeout=None, metadata=None, credentials=None, wait_for_ready=None, compression=None)[source]
+       abstract __call__(request, timeout=None, metadata=None, credentials=None, wait_for_ready=None, compression=None)[source]
+       abstract __call__(request_iterator, timeout=None, metadata=None, credentials=None, wait_for_ready=None, compression=None)[source]
+       abstract future(request_iterator, timeout=None, metadata=None, credentials=None, wait_for_ready=None, compression=None)[source]
+       abstract with_call(request_iterator, timeout=None, metadata=None, credentials=None, wait_for_ready=None, compression=None)[source]
+       abstract __call__(request_iterator, timeout=None, metadata=None, credentials=None, wait_for_ready=None, compression=None)[source]
+        """
         try:
             # Performs retries for errors defined by the retry configuration.
             response = self._client._gapic_publish(
@@ -284,6 +309,7 @@ class Batch(base.Batch):
                 messages=self._messages,
                 retry=self._commit_retry,
                 timeout=self._commit_timeout,
+                compression=compression
             )
         except google.api_core.exceptions.GoogleAPIError as exc:
             # We failed to publish, even after retries, so set the exception on

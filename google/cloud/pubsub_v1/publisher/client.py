@@ -272,7 +272,6 @@ class Client(publisher_client.PublisherClient):
 
     def _gapic_publish(self, *args, **kwargs) -> "pubsub_types.PublishResponse":
         """Call the GAPIC public API directly."""
-        # can we add compression here?
         return super().publish(*args, **kwargs)
 
     def publish(  # type: ignore[override]
