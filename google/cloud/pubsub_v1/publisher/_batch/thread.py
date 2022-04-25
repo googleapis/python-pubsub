@@ -13,14 +13,12 @@
 # limitations under the License.
 
 from __future__ import absolute_import
-import functools
 
 import logging
 import threading
 import time
 import typing
 from typing import Any, Callable, List, Optional, Sequence
-from xmlrpc.client import Transport
 
 import google.api_core.exceptions
 from google.api_core import gapic_v1
@@ -276,32 +274,14 @@ class Batch(base.Batch):
 
         batch_transport_succeeded = True
 
+        # Set compression if enabled.
         compression = None
 
         if self._enable_grpc_compression and gapic_types.PublishRequest(
                 messages=self._messages
             )._pb.ByteSize() >= self._compression_bytes_threshold:
             compression = grpc.Compression.Gzip
-            
-        """
-        probably shouldn't set it with the channel
-        Client-side interceptor
-        class grpc.ClientCallDetails(compression=)
-        class grpc.UnaryUnaryClientInterceptor (client_call_details)
-        grpc.UnaryStreamClientInterceptor(clientcalldetails)
-        Multi-Callable Interfaces:
-        class grpc.UnaryUnaryMultiCallable[source]
-        Affords invoking a unary-unary RPC from client-side.
-        abstract __call__(request, timeout=None, metadata=None, credentials=None, wait_for_ready=None, compression=None)[source]
-        Synchronously invokes the underlying RPC.
-        abstract future(request, timeout=None, metadata=None, credentials=None, wait_for_ready=None, compression=None)[source]¶
-        abstract with_call(request, timeout=None, metadata=None, credentials=None, wait_for_ready=None, compression=None)[source]
-       abstract __call__(request, timeout=None, metadata=None, credentials=None, wait_for_ready=None, compression=None)[source]
-       abstract __call__(request_iterator, timeout=None, metadata=None, credentials=None, wait_for_ready=None, compression=None)[source]
-       abstract future(request_iterator, timeout=None, metadata=None, credentials=None, wait_for_ready=None, compression=None)[source]
-       abstract with_call(request_iterator, timeout=None, metadata=None, credentials=None, wait_for_ready=None, compression=None)[source]
-       abstract __call__(request_iterator, timeout=None, metadata=None, credentials=None, wait_for_ready=None, compression=None)[source]
-        """
+        
         try:
             # Performs retries for errors defined by the retry configuration.
             response = self._client._gapic_publish(

@@ -93,8 +93,6 @@ class UnorderedSequencer(base.Sequencer):
         self,
         commit_retry: "OptionalRetry" = gapic_v1.method.DEFAULT,
         commit_timeout: "types.OptionalTimeout" = gapic_v1.method.DEFAULT,
-        enable_grpc_compression: bool = False,
-        compression_bytes_threshold: int = 240
     ) -> "_batch.thread.Batch":
         """Create a new batch using the client's batch class and other stored
             settings.
@@ -120,8 +118,6 @@ class UnorderedSequencer(base.Sequencer):
         message: gapic_types.PubsubMessage,
         retry: "OptionalRetry" = gapic_v1.method.DEFAULT,
         timeout: "types.OptionalTimeout" = gapic_v1.method.DEFAULT,
-        enable_grpc_compression: bool = False,
-        compression_bytes_threshold: int = 240
     ) -> "futures.Future":
         """Batch message into existing or new batch.
 
@@ -148,7 +144,7 @@ class UnorderedSequencer(base.Sequencer):
             raise RuntimeError("Unordered sequencer already stopped.")
 
         if not self._current_batch:
-            newbatch = self._create_batch(commit_retry=retry, commit_timeout=timeout, enable_grpc_compression=enable_grpc_compression, compression_bytes_threshold=compression_bytes_threshold)
+            newbatch = self._create_batch(commit_retry=retry, commit_timeout=timeout)
             self._current_batch = newbatch
 
         batch = self._current_batch
@@ -158,7 +154,7 @@ class UnorderedSequencer(base.Sequencer):
             future = batch.publish(message)
             # batch is full, triggering commit_when_full
             if future is None:
-                batch = self._create_batch(commit_retry=retry, commit_timeout=timeout, enable_grpc_compression=enable_grpc_compression, compression_bytes_threshold=compression_bytes_threshold)
+                batch = self._create_batch(commit_retry=retry, commit_timeout=timeout)
                 # At this point, we lose track of the old batch, but we don't
                 # care since it's already committed (because it was full.)
                 self._current_batch = batch
