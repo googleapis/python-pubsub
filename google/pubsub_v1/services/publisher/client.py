@@ -680,6 +680,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: TimeoutType = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
+        compression: grpc.Compression = None
     ) -> pubsub.PublishResponse:
         r"""Adds one or more messages to the topic. Returns ``NOT_FOUND`` if
         the topic does not exist.
@@ -770,6 +771,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
             retry=retry,
             timeout=timeout,
             metadata=metadata,
+            compression=compression
         )
 
         # Done; return the response.
