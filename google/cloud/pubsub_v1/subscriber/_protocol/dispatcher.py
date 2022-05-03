@@ -204,10 +204,10 @@ class Dispatcher(object):
                         # When exactly-once delivery is NOT enabled, acks/modacks are considered
                         # best-effort, so the future should succeed even though this is a duplicate.
                         req.future.set_result(AcknowledgeStatus.SUCCESS)
-                    continue
-                # We only append non-duplicate ack_ids and AckRequests.
-                ack_ids.append(req.ack_id)
-                ack_reqs_dict[req.ack_id] = req
+                else:
+                    # We only append non-duplicate ack_ids and AckRequests.
+                    ack_ids.append(req.ack_id)
+                    ack_reqs_dict[req.ack_id] = req
 
             requests_completed, requests_to_retry = self._manager.send_unary_ack(
                 ack_ids=ack_ids,
@@ -299,20 +299,37 @@ class Dispatcher(object):
         # We must potentially split the request into multiple smaller requests
         # to avoid the server-side max request size limit.
         items_gen = iter(items)
-        ack_ids_gen = (item.ack_id for item in items)
         deadline_seconds_gen = (item.seconds for item in items)
         total_chunks = int(math.ceil(len(items) / _ACK_IDS_BATCH_SIZE))
 
+        exactly_once_delivery_enabled = self._manager._exactly_once_delivery_enabled()
         for _ in range(total_chunks):
-            ack_reqs_dict = {
-                req.ack_id: req
-                for req in itertools.islice(items_gen, _ACK_IDS_BATCH_SIZE)
-            }
+            ack_reqs_dict = {}
+            ack_ids = []
+            for req in itertools.islice(items_gen, _ACK_IDS_BATCH_SIZE):
+                # If this is a duplicate ModAckRequest, we do not pass it to send_unary_modack
+                if req.ack_id in ack_reqs_dict:
+                    _LOGGER.debug(
+                        "This is a duplicate ModAckRequest with the same ack_id: %s. Only sending the first ModAckRequest.",
+                        req.ack_id,
+                    )
+                    if exactly_once_delivery_enabled and req.future:
+                        req.future.set_exception(ValueError("Duplicate ModAckRequest."))
+                    # Futures may be present even with exactly-once delivery
+                    # disabled, in transition periods after the setting is changed on
+                    # the subscription.
+                    elif req.future:
+                        # When exactly-once delivery is NOT enabled, acks/modacks are considered
+                        # best-effort, so the future should succeed even though this is a duplicate.
+                        req.future.set_result(AcknowledgeStatus.SUCCESS)
+                else:
+                    # We only append non-duplicate ack_ids and ModAckRequests.
+                    ack_ids.append(req.ack_id)
+                    ack_reqs_dict[req.ack_id] = req
+
             # no further work needs to be done for `requests_to_retry`
             requests_completed, requests_to_retry = self._manager.send_unary_modack(
-                modify_deadline_ack_ids=list(
-                    itertools.islice(ack_ids_gen, _ACK_IDS_BATCH_SIZE)
-                ),
+                modify_deadline_ack_ids=ack_ids,
                 modify_deadline_seconds=list(
                     itertools.islice(deadline_seconds_gen, _ACK_IDS_BATCH_SIZE)
                 ),
