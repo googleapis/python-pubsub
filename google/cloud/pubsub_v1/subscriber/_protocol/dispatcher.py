@@ -143,19 +143,25 @@ class Dispatcher(object):
                     lease_requests.append(item)
             elif isinstance(item, requests.ModAckRequest):
                 if item.ack_id in modack_ids:
-                    self._handle_duplicate_request_future(exactly_once_delivery_enabled, item)
+                    self._handle_duplicate_request_future(
+                        exactly_once_delivery_enabled, item
+                    )
                 else:
                     modack_ids.add(item.ack_id)
                     modack_requests.append(item)
             elif isinstance(item, requests.AckRequest):
                 if item.ack_id in ack_ids:
-                    self._handle_duplicate_request_future(exactly_once_delivery_enabled, item)
+                    self._handle_duplicate_request_future(
+                        exactly_once_delivery_enabled, item
+                    )
                 else:
                     ack_ids.add(item.ack_id)
                     ack_requests.append(item)
             elif isinstance(item, requests.NackRequest):
                 if item.ack_id in nack_ids:
-                    self._handle_duplicate_request_future(exactly_once_delivery_enabled, item)
+                    self._handle_duplicate_request_future(
+                        exactly_once_delivery_enabled, item
+                    )
                 else:
                     nack_ids.add(item.ack_id)
                     nack_requests.append(item)
