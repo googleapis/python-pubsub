@@ -299,13 +299,13 @@ class Dispatcher(object):
         # We must potentially split the request into multiple smaller requests
         # to avoid the server-side max request size limit.
         items_gen = iter(items)
-        deadline_seconds_gen = (item.seconds for item in items)
         total_chunks = int(math.ceil(len(items) / _ACK_IDS_BATCH_SIZE))
 
         exactly_once_delivery_enabled = self._manager._exactly_once_delivery_enabled()
         for _ in range(total_chunks):
             ack_reqs_dict = {}
-            ack_ids = []
+            modify_deadline_seconds = []
+            modify_deadline_ack_ids = []
             for req in itertools.islice(items_gen, _ACK_IDS_BATCH_SIZE):
                 # If this is a duplicate ModAckRequest, we do not pass it to send_unary_modack
                 if req.ack_id in ack_reqs_dict:
@@ -324,15 +324,14 @@ class Dispatcher(object):
                         req.future.set_result(AcknowledgeStatus.SUCCESS)
                 else:
                     # We only append non-duplicate ack_ids and ModAckRequests.
-                    ack_ids.append(req.ack_id)
+                    modify_deadline_ack_ids.append(req.ack_id)
+                    modify_deadline_seconds.append(req.seconds)
                     ack_reqs_dict[req.ack_id] = req
 
             # no further work needs to be done for `requests_to_retry`
             requests_completed, requests_to_retry = self._manager.send_unary_modack(
-                modify_deadline_ack_ids=ack_ids,
-                modify_deadline_seconds=list(
-                    itertools.islice(deadline_seconds_gen, _ACK_IDS_BATCH_SIZE)
-                ),
+                modify_deadline_ack_ids=modify_deadline_ack_ids,
+                modify_deadline_seconds=modify_deadline_seconds,
                 ack_reqs_dict=ack_reqs_dict,
             )
             assert (

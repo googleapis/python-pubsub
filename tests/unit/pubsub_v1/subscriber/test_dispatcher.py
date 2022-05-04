@@ -548,6 +548,136 @@ def test_modify_ack_deadline():
     )
 
 
+def test_duplicate_modack_no_eod_no_future():
+    manager = mock.create_autospec(
+        streaming_pull_manager.StreamingPullManager, instance=True
+    )
+    dispatcher_ = dispatcher.Dispatcher(manager, mock.sentinel.queue)
+
+    items = [
+        requests.ModAckRequest(
+            ack_id="ack_id_string",
+            seconds=20,
+            future=None,
+        ),
+        requests.ModAckRequest(
+            ack_id="ack_id_string",
+            seconds=30,
+            future=None,
+        ),
+    ]
+    manager.send_unary_modack.return_value = ([items[0]], [])
+    manager._exactly_once_delivery_enabled.return_value = False
+    dispatcher_.modify_ack_deadline(items)
+
+    manager.send_unary_modack.assert_called_once_with(
+        modify_deadline_ack_ids=["ack_id_string"],
+        modify_deadline_seconds=[20],
+        ack_reqs_dict={"ack_id_string": items[0]},
+    )
+    manager._exactly_once_delivery_enabled.assert_called()
+
+
+def test_duplicate_modack_eod_no_future():
+    manager = mock.create_autospec(
+        streaming_pull_manager.StreamingPullManager, instance=True
+    )
+    dispatcher_ = dispatcher.Dispatcher(manager, mock.sentinel.queue)
+
+    items = [
+        requests.ModAckRequest(
+            ack_id="ack_id_string",
+            seconds=20,
+            future=None,
+        ),
+        requests.ModAckRequest(
+            ack_id="ack_id_string",
+            seconds=30,
+            future=None,
+        ),
+    ]
+    manager.send_unary_modack.return_value = ([items[0]], [])
+    manager._exactly_once_delivery_enabled.return_value = True
+    dispatcher_.modify_ack_deadline(items)
+
+    manager.send_unary_modack.assert_called_once_with(
+        modify_deadline_ack_ids=["ack_id_string"],
+        modify_deadline_seconds=[20],
+        ack_reqs_dict={"ack_id_string": items[0]},
+    )
+
+    manager._exactly_once_delivery_enabled.assert_called()
+
+
+def test_duplicate_modack_eod_with_future():
+    manager = mock.create_autospec(
+        streaming_pull_manager.StreamingPullManager,
+        instance=True,
+    )
+    dispatcher_ = dispatcher.Dispatcher(manager, mock.sentinel.queue)
+    future = futures.Future()
+
+    items = [
+        requests.ModAckRequest(
+            ack_id="ack_id_string",
+            seconds=20,
+            future=None,
+        ),
+        requests.ModAckRequest(
+            ack_id="ack_id_string",
+            seconds=30,
+            future=future,
+        ),
+    ]
+    manager.send_unary_modack.return_value = ([items[0]], [])
+    manager._exactly_once_delivery_enabled.return_value = True
+    dispatcher_.modify_ack_deadline(items)
+
+    manager.send_unary_modack.assert_called_once_with(
+        modify_deadline_ack_ids=["ack_id_string"],
+        modify_deadline_seconds=[20],
+        ack_reqs_dict={"ack_id_string": items[0]},
+    )
+
+    manager._exactly_once_delivery_enabled.assert_called()
+    with pytest.raises(ValueError) as err:
+        future.result()
+    assert err.errisinstance(ValueError)
+
+
+def test_duplicate_modack_no_eod_with_future():
+    manager = mock.create_autospec(
+        streaming_pull_manager.StreamingPullManager, instance=True
+    )
+    dispatcher_ = dispatcher.Dispatcher(manager, mock.sentinel.queue)
+    future = futures.Future()
+
+    items = [
+        requests.ModAckRequest(
+            ack_id="ack_id_string",
+            seconds=20,
+            future=None,
+        ),
+        requests.ModAckRequest(
+            ack_id="ack_id_string",
+            seconds=30,
+            future=future,
+        ),
+    ]
+    manager.send_unary_modack.return_value = ([items[0]], [])
+    manager._exactly_once_delivery_enabled.return_value = False
+    dispatcher_.modify_ack_deadline(items)
+
+    manager.send_unary_modack.assert_called_once_with(
+        modify_deadline_ack_ids=["ack_id_string"],
+        modify_deadline_seconds=[20],
+        ack_reqs_dict={"ack_id_string": items[0]},
+    )
+
+    manager._exactly_once_delivery_enabled.assert_called()
+    assert future.result() == AcknowledgeStatus.SUCCESS
+
+
 def test_modify_ack_deadline_splitting_large_payload():
     manager = mock.create_autospec(
         streaming_pull_manager.StreamingPullManager, instance=True
