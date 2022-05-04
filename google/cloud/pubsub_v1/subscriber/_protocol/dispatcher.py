@@ -331,7 +331,6 @@ class Dispatcher(object):
         deadline_seconds_gen = (item.seconds for item in items)
         total_chunks = int(math.ceil(len(items) / _ACK_IDS_BATCH_SIZE))
 
-        exactly_once_delivery_enabled = self._manager._exactly_once_delivery_enabled()
         for _ in range(total_chunks):
             ack_reqs_dict = {
                 req.ack_id: req
