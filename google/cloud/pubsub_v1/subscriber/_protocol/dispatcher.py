@@ -131,17 +131,40 @@ class Dispatcher(object):
         nack_requests: List[requests.NackRequest] = []
         drop_requests: List[requests.DropRequest] = []
 
+        lease_ids = modack_ids = ack_ids = nack_ids = drop_ids = set()
+        exactly_once_delivery_enabled = self._manager._exactly_once_delivery_enabled()
+
         for item in items:
             if isinstance(item, requests.LeaseRequest):
-                lease_requests.append(item)
+                if (
+                    item.ack_id not in lease_ids
+                ):  # LeaseRequests have no futures to handle.
+                    lease_ids.add(item.ack_id)
+                    lease_requests.append(item)
             elif isinstance(item, requests.ModAckRequest):
-                modack_requests.append(item)
+                if item.ack_id in modack_ids:
+                    self._handle_duplicate_request_future(exactly_once_delivery_enabled, item)
+                else:
+                    modack_ids.add(item.ack_id)
+                    modack_requests.append(item)
             elif isinstance(item, requests.AckRequest):
-                ack_requests.append(item)
+                if item.ack_id in ack_ids:
+                    self._handle_duplicate_request_future(exactly_once_delivery_enabled, item)
+                else:
+                    ack_ids.add(item.ack_id)
+                    ack_requests.append(item)
             elif isinstance(item, requests.NackRequest):
-                nack_requests.append(item)
+                if item.ack_id in nack_ids:
+                    self._handle_duplicate_request_future(exactly_once_delivery_enabled, item)
+                else:
+                    nack_ids.add(item.ack_id)
+                    nack_requests.append(item)
             elif isinstance(item, requests.DropRequest):
-                drop_requests.append(item)
+                if (
+                    item.ack_id not in drop_ids
+                ):  # DropRequests have no futures to handle.
+                    drop_ids.add(item.ack_id)
+                    drop_requests.append(item)
             else:
                 warnings.warn(
                     f'Skipping unknown request item of type "{type(item)}"',
@@ -167,6 +190,24 @@ class Dispatcher(object):
         if drop_requests:
             self.drop(drop_requests)
 
+    def _handle_duplicate_request_future(
+        self, exactly_once_delivery_enabled: bool, item: RequestItem
+    ) -> None:
+        _LOGGER.debug(
+            "This is a duplicate %s with the same ack_id: %s.",
+            type(item),
+            item.ack_id,
+        )
+        if exactly_once_delivery_enabled and item.future:
+            item.future.set_exception(ValueError(f"Duplicate ack_id for {type(item)}"))
+            # Futures may be present even with exactly-once delivery
+            # disabled, in transition periods after the setting is changed on
+            # the subscription.
+        elif item.future:
+            # When exactly-once delivery is NOT enabled, acks/modacks are considered
+            # best-effort, so the future should succeed even though this is a duplicate.
+            item.future.set_result(AcknowledgeStatus.SUCCESS)
+
     def ack(self, items: Sequence[requests.AckRequest]) -> None:
         """Acknowledge the given messages.
 
@@ -182,35 +223,16 @@ class Dispatcher(object):
         # We must potentially split the request into multiple smaller requests
         # to avoid the server-side max request size limit.
         items_gen = iter(items)
+        ack_ids_gen = (item.ack_id for item in items)
         total_chunks = int(math.ceil(len(items) / _ACK_IDS_BATCH_SIZE))
 
-        exactly_once_delivery_enabled = self._manager._exactly_once_delivery_enabled()
         for _ in range(total_chunks):
-            ack_reqs_dict = {}
-            ack_ids = []
-            for req in itertools.islice(items_gen, _ACK_IDS_BATCH_SIZE):
-                # If this is a duplicate AckRequest, we do not pass it to send_unary_ack
-                if req.ack_id in ack_reqs_dict:
-                    _LOGGER.debug(
-                        "This is a duplicate AckRequest with the same ack_id: %s. Only sending the first AckRequest.",
-                        req.ack_id,
-                    )
-                    if exactly_once_delivery_enabled and req.future:
-                        req.future.set_exception(ValueError("Duplicate AckRequest."))
-                    # Futures may be present even with exactly-once delivery
-                    # disabled, in transition periods after the setting is changed on
-                    # the subscription.
-                    elif req.future:
-                        # When exactly-once delivery is NOT enabled, acks/modacks are considered
-                        # best-effort, so the future should succeed even though this is a duplicate.
-                        req.future.set_result(AcknowledgeStatus.SUCCESS)
-                else:
-                    # We only append non-duplicate ack_ids and AckRequests.
-                    ack_ids.append(req.ack_id)
-                    ack_reqs_dict[req.ack_id] = req
-
+            ack_reqs_dict = {
+                req.ack_id: req
+                for req in itertools.islice(items_gen, _ACK_IDS_BATCH_SIZE)
+            }
             requests_completed, requests_to_retry = self._manager.send_unary_ack(
-                ack_ids=ack_ids,
+                ack_ids=list(itertools.islice(ack_ids_gen, _ACK_IDS_BATCH_SIZE)),
                 ack_reqs_dict=ack_reqs_dict,
             )
 
@@ -299,39 +321,24 @@ class Dispatcher(object):
         # We must potentially split the request into multiple smaller requests
         # to avoid the server-side max request size limit.
         items_gen = iter(items)
+        ack_ids_gen = (item.ack_id for item in items)
+        deadline_seconds_gen = (item.seconds for item in items)
         total_chunks = int(math.ceil(len(items) / _ACK_IDS_BATCH_SIZE))
 
         exactly_once_delivery_enabled = self._manager._exactly_once_delivery_enabled()
         for _ in range(total_chunks):
-            ack_reqs_dict = {}
-            modify_deadline_seconds = []
-            modify_deadline_ack_ids = []
-            for req in itertools.islice(items_gen, _ACK_IDS_BATCH_SIZE):
-                # If this is a duplicate ModAckRequest, we do not pass it to send_unary_modack
-                if req.ack_id in ack_reqs_dict:
-                    _LOGGER.debug(
-                        "This is a duplicate ModAckRequest with the same ack_id: %s. Only sending the first ModAckRequest.",
-                        req.ack_id,
-                    )
-                    if exactly_once_delivery_enabled and req.future:
-                        req.future.set_exception(ValueError("Duplicate ModAckRequest."))
-                    # Futures may be present even with exactly-once delivery
-                    # disabled, in transition periods after the setting is changed on
-                    # the subscription.
-                    elif req.future:
-                        # When exactly-once delivery is NOT enabled, acks/modacks are considered
-                        # best-effort, so the future should succeed even though this is a duplicate.
-                        req.future.set_result(AcknowledgeStatus.SUCCESS)
-                else:
-                    # We only append non-duplicate ack_ids and ModAckRequests.
-                    modify_deadline_ack_ids.append(req.ack_id)
-                    modify_deadline_seconds.append(req.seconds)
-                    ack_reqs_dict[req.ack_id] = req
-
+            ack_reqs_dict = {
+                req.ack_id: req
+                for req in itertools.islice(items_gen, _ACK_IDS_BATCH_SIZE)
+            }
             # no further work needs to be done for `requests_to_retry`
             requests_completed, requests_to_retry = self._manager.send_unary_modack(
-                modify_deadline_ack_ids=modify_deadline_ack_ids,
-                modify_deadline_seconds=modify_deadline_seconds,
+                modify_deadline_ack_ids=list(
+                    itertools.islice(ack_ids_gen, _ACK_IDS_BATCH_SIZE)
+                ),
+                modify_deadline_seconds=list(
+                    itertools.islice(deadline_seconds_gen, _ACK_IDS_BATCH_SIZE)
+                ),
                 ack_reqs_dict=ack_reqs_dict,
             )
             assert (
