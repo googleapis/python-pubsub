@@ -197,7 +197,9 @@ class Dispatcher(object):
             self.drop(drop_requests)
 
     def _handle_duplicate_request_future(
-        self, exactly_once_delivery_enabled: bool, item: RequestItem
+        self,
+        exactly_once_delivery_enabled: bool,
+        item: Union[requests.AckRequest, requests.ModAckRequest, requests.NackRequest],
     ) -> None:
         _LOGGER.debug(
             "This is a duplicate %s with the same ack_id: %s.",
