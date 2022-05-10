@@ -15,7 +15,6 @@
 #
 from collections import OrderedDict
 import functools
-import grpc
 import os
 import re
 from typing import (
@@ -53,6 +52,8 @@ from google.protobuf import duration_pb2  # type: ignore
 from google.protobuf import timestamp_pb2  # type: ignore
 from google.pubsub_v1.services.subscriber import pagers
 from google.pubsub_v1.types import pubsub
+
+import grpc
 from .transports.base import SubscriberTransport, DEFAULT_CLIENT_INFO
 from .transports.grpc import SubscriberGrpcTransport
 from .transports.grpc_asyncio import SubscriberGrpcAsyncIOTransport

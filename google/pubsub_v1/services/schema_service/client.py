@@ -15,7 +15,6 @@
 #
 from collections import OrderedDict
 import functools
-import grpc
 import os
 import re
 from typing import Dict, Mapping, Optional, Sequence, Tuple, Type, Union
@@ -41,6 +40,8 @@ from google.iam.v1 import policy_pb2  # type: ignore
 from google.pubsub_v1.services.schema_service import pagers
 from google.pubsub_v1.types import schema
 from google.pubsub_v1.types import schema as gp_schema
+
+import grpc
 from .transports.base import SchemaServiceTransport, DEFAULT_CLIENT_INFO
 from .transports.grpc import SchemaServiceGrpcTransport
 from .transports.grpc_asyncio import SchemaServiceGrpcAsyncIOTransport

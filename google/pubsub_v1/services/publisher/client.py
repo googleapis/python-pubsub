@@ -15,7 +15,6 @@
 #
 from collections import OrderedDict
 import functools
-import grpc
 import os
 import re
 from typing import Dict, Mapping, Optional, Sequence, Tuple, Type, Union
@@ -43,6 +42,8 @@ from google.protobuf import duration_pb2  # type: ignore
 from google.pubsub_v1.services.publisher import pagers
 from google.pubsub_v1.types import pubsub
 from google.pubsub_v1.types import TimeoutType
+
+import grpc
 from .transports.base import PublisherTransport, DEFAULT_CLIENT_INFO
 from .transports.grpc import PublisherGrpcTransport
 from .transports.grpc_asyncio import PublisherGrpcAsyncIOTransport
