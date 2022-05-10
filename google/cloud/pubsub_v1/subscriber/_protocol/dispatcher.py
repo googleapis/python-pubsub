@@ -214,9 +214,7 @@ class Dispatcher(object):
         if item.future:
             if exactly_once_delivery_enabled:
                 item.future.set_exception(
-                    AcknowledgeError(
-                        AcknowledgeStatus.OTHER, f"Duplicate ack_id for {type(item)}"
-                    )
+                    ValueError(f"Duplicate ack_id for {type(item)}")
                 )
                 # Futures may be present even with exactly-once delivery
                 # disabled, in transition periods after the setting is changed on

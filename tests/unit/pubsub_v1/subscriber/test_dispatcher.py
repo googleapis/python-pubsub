@@ -252,9 +252,9 @@ def test_dispatch_duplicate_items_callback_active_manager_with_futures_eod(
     manager._exactly_once_delivery_enabled.assert_called()
 
     if method_name != "drop" and method_name != "lease":
-        with pytest.raises(AcknowledgeError) as err:
+        with pytest.raises(ValueError) as err:
             items[1].future.result()
-            assert err.errisinstance(AcknowledgeError)
+            assert err.errisinstance(ValueError)
 
 
 @pytest.mark.parametrize(
