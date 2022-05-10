@@ -256,6 +256,41 @@ def test_dispatch_duplicate_items_callback_active_manager_with_futures_eod(
             assert err.errisinstance(ValueError)
 
 
+def test_dispatch_duplicate_items_diff_types_callback_active_manager_with_futures_eod():
+    ack_future = futures.Future()
+    ack_request = requests.AckRequest("0", 0, 1, "", ack_future)
+    drop_request = requests.DropRequest("0", 1, "")
+    lease_request = requests.LeaseRequest("0", 1, "")
+    nack_future = futures.Future()
+    nack_request = requests.NackRequest("0", 1, "", nack_future)
+    modack_future = futures.Future()
+    modack_request = requests.ModAckRequest("0", 1, modack_future)
+
+    items = [ack_request, drop_request, lease_request, nack_request, modack_request]
+
+    manager = mock.create_autospec(
+        streaming_pull_manager.StreamingPullManager, instance=True
+    )
+    dispatcher_ = dispatcher.Dispatcher(manager, mock.sentinel.queue)
+
+    manager._exactly_once_delivery_enabled.return_value = True
+    with mock.patch.multiple(
+        dispatcher_,
+        ack=mock.DEFAULT,
+        nack=mock.DEFAULT,
+        drop=mock.DEFAULT,
+        lease=mock.DEFAULT,
+        modify_ack_deadline=mock.DEFAULT,
+    ):
+        dispatcher_.dispatch_callback(items)
+        manager._exactly_once_delivery_enabled.assert_called()
+        dispatcher_.ack.assert_called_once_with([ack_request])
+        dispatcher_.drop.assert_called_once_with([drop_request])
+        dispatcher_.lease.assert_called_once_with([lease_request])
+        dispatcher_.nack.assert_called_once_with([nack_request])
+        dispatcher_.modify_ack_deadline.assert_called_once_with([modack_request])
+
+
 @pytest.mark.parametrize(
     "items,method_name",
     [
