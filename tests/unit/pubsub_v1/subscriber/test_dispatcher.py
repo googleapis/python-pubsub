@@ -25,7 +25,6 @@ from google.cloud.pubsub_v1.subscriber import futures
 import mock
 import pytest
 from google.cloud.pubsub_v1.subscriber.exceptions import (
-    AcknowledgeError,
     AcknowledgeStatus,
 )
 
