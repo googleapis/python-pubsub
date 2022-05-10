@@ -29,6 +29,7 @@ from google.api_core.retry import exponential_sleep_generator
 from google.cloud.pubsub_v1.subscriber._protocol import helper_threads
 from google.cloud.pubsub_v1.subscriber._protocol import requests
 from google.cloud.pubsub_v1.subscriber.exceptions import (
+    AcknowledgeError,
     AcknowledgeStatus,
 )
 
@@ -131,7 +132,11 @@ class Dispatcher(object):
         nack_requests: List[requests.NackRequest] = []
         drop_requests: List[requests.DropRequest] = []
 
-        lease_ids = modack_ids = ack_ids = nack_ids = drop_ids = set()
+        lease_ids = set()
+        modack_ids = set()
+        ack_ids = set()
+        nack_ids = set()
+        drop_ids = set()
         exactly_once_delivery_enabled = self._manager._exactly_once_delivery_enabled()
 
         for item in items:
@@ -206,15 +211,20 @@ class Dispatcher(object):
             type(item),
             item.ack_id,
         )
-        if exactly_once_delivery_enabled and item.future:
-            item.future.set_exception(ValueError(f"Duplicate ack_id for {type(item)}"))
-            # Futures may be present even with exactly-once delivery
-            # disabled, in transition periods after the setting is changed on
-            # the subscription.
-        elif item.future:
-            # When exactly-once delivery is NOT enabled, acks/modacks are considered
-            # best-effort, so the future should succeed even though this is a duplicate.
-            item.future.set_result(AcknowledgeStatus.SUCCESS)
+        if item.future:
+            if exactly_once_delivery_enabled:
+                item.future.set_exception(
+                    AcknowledgeError(
+                        AcknowledgeStatus.OTHER, f"Duplicate ack_id for {type(item)}"
+                    )
+                )
+                # Futures may be present even with exactly-once delivery
+                # disabled, in transition periods after the setting is changed on
+                # the subscription.
+            else:
+                # When exactly-once delivery is NOT enabled, acks/modacks are considered
+                # best-effort, so the future should succeed even though this is a duplicate.
+                item.future.set_result(AcknowledgeStatus.SUCCESS)
 
     def ack(self, items: Sequence[requests.AckRequest]) -> None:
         """Acknowledge the given messages.
