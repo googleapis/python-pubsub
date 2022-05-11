@@ -28,6 +28,7 @@ import pytest
 
 import subscriber
 
+# This uuid is shared across tests which run in parallel.
 UUID = uuid.uuid4().hex
 PY_VERSION = f"{sys.version_info.major}.{sys.version_info.minor}"
 PROJECT_ID = os.environ["GOOGLE_CLOUD_PROJECT"]
@@ -45,6 +46,10 @@ FILTER = 'attributes.author="unknown"'
 C = TypeVar("C", bound=Callable[..., Any])
 
 typed_flaky = cast(Callable[[C], C], flaky(max_runs=3, min_passes=1))
+
+# These tests run in parallel if pytest-parallel is installed.
+# Avoid modifying resources that are shared across tests,
+# as this results in test flake.
 
 
 @pytest.fixture(scope="module")
