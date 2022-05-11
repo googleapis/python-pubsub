@@ -412,7 +412,7 @@ class Client(publisher_client.PublisherClient):
 
             # Delegate the publishing to the sequencer.
             sequencer = self._get_or_create_sequencer(topic, ordering_key)
-            future = sequencer.publish(message, retry=retry, timeout=timeout, enable_grpc_compression=self._enable_grpc_compression, compression_bytes_threshold=self._compression_bytes_threshold)
+            future = sequencer.publish(message, retry=retry, timeout=timeout)
             future.add_done_callback(on_publish_done)
 
             # Create a timer thread if necessary to enforce the batching
