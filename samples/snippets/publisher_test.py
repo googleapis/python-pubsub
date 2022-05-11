@@ -187,6 +187,24 @@ def test_publish_with_ordering_keys(
     assert f"Published messages with ordering keys to {topic_path}." in out
 
 
+def test_publish_with_default_compression(
+    topic_path: str, capsys: CaptureFixture[str]
+) -> None:
+    publisher.publish_messages_with_default_compression_threshold(PROJECT_ID, TOPIC_ID)
+
+    out, _ = capsys.readouterr()
+    assert f"Published messages with retry settings to {topic_path}." in out
+
+
+def test_publish_with_low_compression(
+    topic_path: str, capsys: CaptureFixture[str]
+) -> None:
+    publisher.publish_messages_with_default_compression_threshold(PROJECT_ID, TOPIC_ID)
+
+    out, _ = capsys.readouterr()
+    assert f"Published messages with retry settings to {topic_path}." in out
+
+
 def test_resume_publish_with_error_handler(
     topic_path: str, capsys: CaptureFixture[str]
 ) -> None:
