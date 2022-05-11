@@ -217,10 +217,7 @@ def create_subscription_with_ordering(
 
 
 def create_subscription_with_filtering(
-    project_id: str,
-    topic_id: str,
-    subscription_id: str,
-    filter: str,
+    project_id: str, topic_id: str, subscription_id: str, filter: str,
 ) -> None:
     """Create a subscription with filtering enabled."""
     # [START pubsub_create_subscription_with_filter]
@@ -388,9 +385,7 @@ def update_subscription_with_dead_letter_policy(
     # after the update. Here, values in the required fields (name, topic) help
     # identify the subscription.
     subscription = pubsub_v1.types.Subscription(
-        name=subscription_path,
-        topic=topic_path,
-        dead_letter_policy=dead_letter_policy,
+        name=subscription_path, topic=topic_path, dead_letter_policy=dead_letter_policy,
     )
 
     with subscriber:
@@ -455,7 +450,6 @@ def receive_messages(
     # [START pubsub_subscriber_async_pull]
     # [START pubsub_quickstart_subscriber]
     from concurrent.futures import TimeoutError
-
     from google.cloud import pubsub_v1
 
     # TODO(developer)
@@ -495,7 +489,6 @@ def receive_messages_with_custom_attributes(
     """Receives messages from a pull subscription."""
     # [START pubsub_subscriber_async_pull_custom_attributes]
     from concurrent.futures import TimeoutError
-
     from google.cloud import pubsub_v1
 
     # TODO(developer)
@@ -537,7 +530,6 @@ def receive_messages_with_flow_control(
     """Receives messages from a pull subscription with flow control."""
     # [START pubsub_subscriber_flow_settings]
     from concurrent.futures import TimeoutError
-
     from google.cloud import pubsub_v1
 
     # TODO(developer)
@@ -578,9 +570,8 @@ def receive_messages_with_blocking_shutdown(
 ) -> None:
     """Shuts down a pull subscription by awaiting message callbacks to complete."""
     # [START pubsub_subscriber_blocking_shutdown]
-    from concurrent.futures import TimeoutError
     import time
-
+    from concurrent.futures import TimeoutError
     from google.cloud import pubsub_v1
 
     # TODO(developer)
@@ -599,9 +590,7 @@ def receive_messages_with_blocking_shutdown(
         print(f"Done processing the message {message.data!r}.")
 
     streaming_pull_future = subscriber.subscribe(
-        subscription_path,
-        callback=callback,
-        await_callbacks_on_shutdown=True,
+        subscription_path, callback=callback, await_callbacks_on_shutdown=True,
     )
     print(f"Listening for messages on {subscription_path}..\n")
 
@@ -631,7 +620,6 @@ def receive_messages_with_exactly_once_delivery_enabled(
     """
     # [START pubsub_subscriber_exactly_once]
     from concurrent.futures import TimeoutError
-
     from google.cloud import pubsub_v1
     from google.cloud.pubsub_v1.subscriber import exceptions as sub_exceptions
 
@@ -845,7 +833,6 @@ def receive_messages_with_delivery_attempts(
 ) -> None:
     # [START pubsub_dead_letter_delivery_attempt]
     from concurrent.futures import TimeoutError
-
     from google.cloud import pubsub_v1
 
     # TODO(developer)
@@ -877,8 +864,7 @@ def receive_messages_with_delivery_attempts(
 
 if __name__ == "__main__":  # noqa
     parser = argparse.ArgumentParser(
-        description=__doc__,
-        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument("project_id", help="Your Google Cloud project ID")
 
