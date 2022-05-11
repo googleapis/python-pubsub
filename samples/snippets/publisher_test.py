@@ -193,7 +193,7 @@ def test_publish_with_default_compression(
     publisher.publish_messages_with_default_compression_threshold(PROJECT_ID, TOPIC_ID)
 
     out, _ = capsys.readouterr()
-    assert f"Published messages with retry settings to {topic_path}." in out
+    assert f"Published messages with compression settings to {topic_path}." in out
 
 
 def test_publish_with_low_compression(
@@ -202,7 +202,7 @@ def test_publish_with_low_compression(
     publisher.publish_messages_with_default_compression_threshold(PROJECT_ID, TOPIC_ID)
 
     out, _ = capsys.readouterr()
-    assert f"Published messages with retry settings to {topic_path}." in out
+    assert f"Published messages with compression settings to {topic_path}." in out
 
 
 def test_resume_publish_with_error_handler(
