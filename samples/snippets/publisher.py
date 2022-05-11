@@ -227,7 +227,7 @@ def publish_messages_with_default_compression_threshold(project_id: str, topic_i
     # topic_id = "your-topic-id"
 
     # Configure publisher with compression
-    publisher = pubsub_v1.PublisherClient(enable_grpc_compression=True)
+    publisher = pubsub_v1.PublisherClient(publisher_options=pubsub_v1.types.PublisherOptions(enable_grpc_compression=True))
     topic_path = publisher.topic_path(project_id, topic_id)
     publish_futures = []
 
@@ -261,7 +261,7 @@ def publish_messages_with_low_compression_threshold(project_id: str, topic_id: s
     # topic_id = "your-topic-id"
 
     # Configure publisher with compression
-    publisher = pubsub_v1.PublisherClient(enable_grpc_compression=True, compression_bytes_threshold=0)
+    publisher = pubsub_v1.PublisherClient(publisher_options=pubsub_v1.types.PublisherOptions(enable_grpc_compression=True, compression_bytes_threshold=0))
     topic_path = publisher.topic_path(project_id, topic_id)
     publish_futures = []
 
