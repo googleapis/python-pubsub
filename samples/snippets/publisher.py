@@ -215,6 +215,7 @@ def publish_messages_with_batch_settings(project_id: str, topic_id: str) -> None
     print(f"Published messages with batch settings to {topic_path}.")
     # [END pubsub_publisher_batch_settings]
 
+
 def publish_messages_with_default_compression_threshold(project_id: str, topic_id: str) -> None:
     """Publishes messages to a Pub/Sub topic with grpc compression enabled."""
     # [START pubsub_publisher_compression_settings]
@@ -248,6 +249,7 @@ def publish_messages_with_default_compression_threshold(project_id: str, topic_i
 
     print(f"Published messages with compression settings to {topic_path}.")
     # [END pubsub_publisher_compression_settings]
+
 
 def publish_messages_with_flow_control_settings(project_id: str, topic_id: str) -> None:
     """Publishes messages to a Pub/Sub topic with flow control settings."""
