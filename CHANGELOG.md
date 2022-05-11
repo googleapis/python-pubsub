@@ -11,7 +11,6 @@
 ### Bug Fixes
 
 * Add emulator support to schema service ([#658](https://github.com/googleapis/python-pubsub/issues/658)) ([1a07d7c](https://github.com/googleapis/python-pubsub/commit/1a07d7ce3b3580191f74b7895dd1b8afb13baccb))
-* fix eod snippets test ([#643](https://github.com/googleapis/python-pubsub/issues/643)) ([b59887f](https://github.com/googleapis/python-pubsub/commit/b59887f554d5024791c33d5cd295a89797376b25))
 * Handle duplicate acks with streaming pull ([#662](https://github.com/googleapis/python-pubsub/issues/662)) ([219491e](https://github.com/googleapis/python-pubsub/commit/219491ea1e615f33e1955e3afc204a0281c525db))
 * set min snooze on lease management to .01 sec ([#678](https://github.com/googleapis/python-pubsub/issues/678)) ([91c6e69](https://github.com/googleapis/python-pubsub/commit/91c6e69e96953919bc86004692edd3a52c7b9796))
 
