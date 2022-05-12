@@ -50,6 +50,7 @@ PROTO_FILE = "resources/us-states.proto"
 # Avoid modifying resources that are shared across tests,
 # as this results in test flake.
 
+
 @pytest.fixture(scope="module")
 def schema_client() -> Generator[pubsub_v1.SchemaServiceClient, None, None]:
     schema_client = SchemaServiceClient()
