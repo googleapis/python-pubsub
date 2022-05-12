@@ -757,7 +757,16 @@ class PublisherClient(metaclass=PublisherClientMeta):
 
         # Wrap the RPC method; this adds retry and timeout information,
         # and friendly error handling.
-        rpc = self._transport._wrapped_methods[self._transport.publish]
+
+        # PublisherTransport
+        publisher_transport = self._transport
+        # Dict of methods to _GapicCallables
+        wrapped_methods = publisher_transport._wrapped_methods
+        # publish method
+        transport_publish_method = publisher_transport.publish
+        # _GapicCallable(
+        rpc = wrapped_methods[transport_publish_method]
+        print("target:", rpc._target)
 
         # Certain fields should be provided within the metadata header;
         # add these here.
