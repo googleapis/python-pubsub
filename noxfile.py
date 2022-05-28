@@ -45,11 +45,6 @@ UNIT_TEST_LOCAL_DEPENDENCIES = []
 UNIT_TEST_DEPENDENCIES = []
 UNIT_TEST_EXTRAS = []
 UNIT_TEST_EXTRAS_BY_PYTHON = {}
-#
-#                            "3.7":"--asyncio-mode=strict",
-#                            "3.8":"--asyncio-mode=strict",
-#                            "3.9":"--asyncio-mode=strict",
-#                            "3.10":"--asyncio-mode=strict"}
 
 SYSTEM_TEST_PYTHON_VERSIONS = ["3.10"]
 SYSTEM_TEST_STANDARD_DEPENDENCIES = [
@@ -222,33 +217,33 @@ def default(session):
     # Run py.test against the unit tests.
     if session.python != "3.6":
         session.run(
-                "py.test",
-                "--quiet",
-                "--asyncio-mode=strict",
-                f"--junitxml=unit_{session.python}_sponge_log.xml",
-                "--cov=google/cloud",
-                "--cov=tests/unit",
-                "--cov-append",
-                "--cov-config=.coveragerc",
-                "--cov-report=",
-                "--cov-fail-under=0",
-                os.path.join("tests", "unit"),
-                *session.posargs,
-            )
+            "py.test",
+            "--quiet",
+            "--asyncio-mode=strict",
+            f"--junitxml=unit_{session.python}_sponge_log.xml",
+            "--cov=google/cloud",
+            "--cov=tests/unit",
+            "--cov-append",
+            "--cov-config=.coveragerc",
+            "--cov-report=",
+            "--cov-fail-under=0",
+            os.path.join("tests", "unit"),
+            *session.posargs,
+        )
     else:
         session.run(
-                "py.test",
-                "--quiet",
-                f"--junitxml=unit_{session.python}_sponge_log.xml",
-                "--cov=google/cloud",
-                "--cov=tests/unit",
-                "--cov-append",
-                "--cov-config=.coveragerc",
-                "--cov-report=",
-                "--cov-fail-under=0",
-                os.path.join("tests", "unit"),
-                *session.posargs,
-            )
+            "py.test",
+            "--quiet",
+            f"--junitxml=unit_{session.python}_sponge_log.xml",
+            "--cov=google/cloud",
+            "--cov=tests/unit",
+            "--cov-append",
+            "--cov-config=.coveragerc",
+            "--cov-report=",
+            "--cov-fail-under=0",
+            os.path.join("tests", "unit"),
+            *session.posargs,
+        )
 
 
 @nox.session(python=UNIT_TEST_PYTHON_VERSIONS)
