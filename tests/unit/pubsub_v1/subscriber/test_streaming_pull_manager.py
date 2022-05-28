@@ -1049,9 +1049,9 @@ def test_heartbeat_stream_ack_deadline_seconds(caplog):
         gapic_types.StreamingPullRequest(stream_ack_deadline_seconds=10)
     )
     assert result
+    assert "Sending new ack_deadline of 10 seconds." in caplog.text
     # Set to false after a send is initiated.
     assert not manager._send_new_ack_deadline
-    assert "Sending new ack_deadline of 10 seconds." in caplog.text
 
 
 @mock.patch("google.api_core.bidi.ResumableBidiRpc", autospec=True)
