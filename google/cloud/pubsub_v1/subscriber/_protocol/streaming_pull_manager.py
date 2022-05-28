@@ -1081,9 +1081,9 @@ class StreamingPullManager(object):
         # If this is in the list of idempotent exceptions, then we want to
         # recover.
         if isinstance(exception, _RETRYABLE_STREAM_ERRORS):
-            _LOGGER.replace("Observed recoverable stream error %s", exception)
+            _LOGGER.debug("Observed recoverable stream error %s", exception)
             return True
-        _LOGGER.replace("Observed non-recoverable stream error %s", exception)
+        _LOGGER.debug("Observed non-recoverable stream error %s", exception)
         return False
 
     def _should_terminate(self, exception: BaseException) -> bool:
@@ -1101,9 +1101,9 @@ class StreamingPullManager(object):
         """
         exception = _wrap_as_exception(exception)
         if isinstance(exception, _TERMINATING_STREAM_ERRORS):
-            _LOGGER.replace("Observed terminating stream error %s", exception)
+            _LOGGER.debug("Observed terminating stream error %s", exception)
             return True
-        _LOGGER.replace("Observed non-terminating stream error %s", exception)
+        _LOGGER.debug("Observed non-terminating stream error %s", exception)
         return False
 
     def _on_rpc_done(self, future: Any) -> None:
@@ -1117,7 +1117,7 @@ class StreamingPullManager(object):
         with shutting everything down. This is to prevent blocking in the
         background consumer and preventing it from being ``joined()``.
         """
-        _LOGGER.replace("RPC termination has signaled streaming pull manager shutdown.")
+        _LOGGER.debug("RPC termination has signaled streaming pull manager shutdown.")
         error = _wrap_as_exception(future)
         thread = threading.Thread(
             name=_RPC_ERROR_THREAD_NAME, target=self._shutdown, kwargs={"reason": error}
