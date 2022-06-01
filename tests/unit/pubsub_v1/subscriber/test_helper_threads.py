@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import mock
+from unittest import mock
 import queue
 
 from google.cloud.pubsub_v1.subscriber._protocol import helper_threads

@@ -19,7 +19,7 @@ import inspect
 
 import grpc
 
-import mock
+from unittest import mock
 import pytest
 import time
 import warnings

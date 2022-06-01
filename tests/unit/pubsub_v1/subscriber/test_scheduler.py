@@ -18,7 +18,7 @@ import threading
 import time
 import warnings
 
-import mock
+from unittest import mock
 
 from google.cloud.pubsub_v1.subscriber import scheduler
 

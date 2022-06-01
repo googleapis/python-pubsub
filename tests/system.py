@@ -23,7 +23,7 @@ import psutil
 import threading
 import time
 
-import mock
+from unittest import mock
 import pytest
 
 import google.auth

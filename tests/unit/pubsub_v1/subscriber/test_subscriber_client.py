@@ -15,7 +15,7 @@
 import warnings
 
 import grpc
-import mock
+from unittest import mock
 import pytest
 
 from google.api_core.gapic_v1.client_info import METRICS_METADATA_KEY

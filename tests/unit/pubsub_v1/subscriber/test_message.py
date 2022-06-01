@@ -16,7 +16,7 @@ import datetime
 import queue
 import time
 
-import mock
+from unittest import mock
 
 from google.api_core import datetime_helpers
 from google.cloud.pubsub_v1.subscriber import message

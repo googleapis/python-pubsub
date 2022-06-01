@@ -17,7 +17,7 @@ import sys
 import threading
 import time
 
-import mock
+from unittest import mock
 import pytest
 
 from google.cloud.pubsub_v1 import exceptions

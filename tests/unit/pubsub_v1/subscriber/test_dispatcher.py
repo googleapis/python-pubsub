@@ -22,7 +22,7 @@ from google.cloud.pubsub_v1.subscriber._protocol import requests
 from google.cloud.pubsub_v1.subscriber._protocol import streaming_pull_manager
 from google.cloud.pubsub_v1.subscriber import futures
 
-import mock
+from unittest import mock
 import pytest
 from google.cloud.pubsub_v1.subscriber.exceptions import (
     AcknowledgeStatus,

@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import google.auth.credentials
-import mock
+from unittest import mock
 import pytest
 
 

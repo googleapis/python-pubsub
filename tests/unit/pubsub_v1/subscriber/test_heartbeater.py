@@ -18,7 +18,7 @@ import threading
 from google.cloud.pubsub_v1.subscriber._protocol import heartbeater
 from google.cloud.pubsub_v1.subscriber._protocol import streaming_pull_manager
 
-import mock
+from unittest import mock
 import pytest
 
 

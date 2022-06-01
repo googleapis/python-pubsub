@@ -18,7 +18,7 @@ import threading
 import time
 import types as stdlib_types
 
-import mock
+from unittest import mock
 import pytest
 
 from google.api_core import bidi

@@ -16,7 +16,7 @@ import datetime
 import threading
 import time
 
-import mock
+from unittest import mock
 import pytest
 
 import google.api_core.exceptions
