@@ -20,14 +20,14 @@ independently written applications.
 - `Client Library Documentation`_
 
 .. |GA| image:: https://img.shields.io/badge/support-GA-gold.svg
-   :target: https://github.com/googleapis/google-cloud-python/blob/master/README.rst#general-availability
+   :target: https://github.com/googleapis/google-cloud-python/blob/main/README.rst#general-availability
 .. |pypi| image:: https://img.shields.io/pypi/v/google-cloud-pubsub.svg
    :target: https://pypi.org/project/google-cloud-pubsub/
 .. |versions| image:: https://img.shields.io/pypi/pyversions/google-cloud-pubsub.svg
    :target: https://pypi.org/project/google-cloud-pubsub/
 .. _Google Cloud Pub / Sub: https://cloud.google.com/pubsub/
 .. _Product Documentation: https://cloud.google.com/pubsub/docs
-.. _Client Library Documentation: https://googleapis.dev/python/pubsub/latest
+.. _Client Library Documentation: https://cloud.google.com/python/docs/reference/pubsub/latest
 
 Quick Start
 -----------
@@ -116,7 +116,7 @@ messages to it
 
 To learn more, consult the `publishing documentation`_.
 
-.. _publishing documentation: https://googleapis.dev/python/pubsub/latest
+.. _publishing documentation: https://cloud.google.com/python/docs/reference/pubsub/latest
 
 
 Subscribing
@@ -162,7 +162,7 @@ block the current thread until a given condition obtains:
 It is also possible to pull messages in a synchronous (blocking) fashion. To
 learn more about subscribing, consult the `subscriber documentation`_.
 
-.. _subscriber documentation: https://googleapis.dev/python/pubsub/latest
+.. _subscriber documentation: https://cloud.google.com/python/docs/reference/pubsub/latest
 
 
 Authentication
@@ -214,7 +214,7 @@ Contributions to this library are always welcome and highly encouraged.
 
 See the `CONTRIBUTING doc`_ for more information on how to get started.
 
-.. _CONTRIBUTING doc: https://github.com/googleapis/google-cloud-python/blob/master/CONTRIBUTING.rst
+.. _CONTRIBUTING doc: https://github.com/googleapis/google-cloud-python/blob/main/CONTRIBUTING.rst
 
 Community
 ---------
@@ -230,4 +230,4 @@ License
 
 Apache 2.0 - See `the LICENSE`_ for more information.
 
-.. _the LICENSE: https://github.com/googleapis/google-cloud-python/blob/master/LICENSE
+.. _the LICENSE: https://github.com/googleapis/google-cloud-python/blob/main/LICENSE

@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-
-# Copyright 2020 Google LLC
+# Copyright 2022 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,13 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 import proto  # type: ignore
 
-
-from google.protobuf import duration_pb2 as duration  # type: ignore
-from google.protobuf import field_mask_pb2 as field_mask  # type: ignore
-from google.protobuf import timestamp_pb2 as timestamp  # type: ignore
+from google.protobuf import duration_pb2  # type: ignore
+from google.protobuf import field_mask_pb2  # type: ignore
+from google.protobuf import timestamp_pb2  # type: ignore
 from google.pubsub_v1.types import schema as gp_schema
 
 
@@ -49,6 +46,7 @@ __protobuf__ = proto.module(
         "DeadLetterPolicy",
         "ExpirationPolicy",
         "PushConfig",
+        "BigQueryConfig",
         "ReceivedMessage",
         "GetSubscriptionRequest",
         "UpdateSubscriptionRequest",
@@ -91,7 +89,10 @@ class MessageStoragePolicy(proto.Message):
             not a valid configuration.
     """
 
-    allowed_persistence_regions = proto.RepeatedField(proto.STRING, number=1)
+    allowed_persistence_regions = proto.RepeatedField(
+        proto.STRING,
+        number=1,
+    )
 
 
 class SchemaSettings(proto.Message):
@@ -108,9 +109,15 @@ class SchemaSettings(proto.Message):
             The encoding of messages validated against ``schema``.
     """
 
-    schema = proto.Field(proto.STRING, number=1)
-
-    encoding = proto.Field(proto.ENUM, number=2, enum=gp_schema.Encoding,)
+    schema = proto.Field(
+        proto.STRING,
+        number=1,
+    )
+    encoding = proto.Field(
+        proto.ENUM,
+        number=2,
+        enum=gp_schema.Encoding,
+    )
 
 
 class Topic(proto.Message):
@@ -126,7 +133,7 @@ class Topic(proto.Message):
             (``+``) or percent signs (``%``). It must be between 3 and
             255 characters in length, and it must not start with
             ``"goog"``.
-        labels (Sequence[google.pubsub_v1.types.Topic.LabelsEntry]):
+        labels (Mapping[str, str]):
             See [Creating and managing labels]
             (https://cloud.google.com/pubsub/docs/labels).
         message_storage_policy (google.pubsub_v1.types.MessageStoragePolicy):
@@ -147,21 +154,52 @@ class Topic(proto.Message):
             Reserved for future use. This field is set
             only in responses from the server; it is ignored
             if it is set in any requests.
+        message_retention_duration (google.protobuf.duration_pb2.Duration):
+            Indicates the minimum duration to retain a message after it
+            is published to the topic. If this field is set, messages
+            published to the topic in the last
+            ``message_retention_duration`` are always available to
+            subscribers. For instance, it allows any attached
+            subscription to `seek to a
+            timestamp <https://cloud.google.com/pubsub/docs/replay-overview#seek_to_a_time>`__
+            that is up to ``message_retention_duration`` in the past. If
+            this field is not set, message retention is controlled by
+            settings on individual subscriptions. Cannot be more than 7
+            days or less than 10 minutes.
     """
 
-    name = proto.Field(proto.STRING, number=1)
-
-    labels = proto.MapField(proto.STRING, proto.STRING, number=2)
-
-    message_storage_policy = proto.Field(
-        proto.MESSAGE, number=3, message="MessageStoragePolicy",
+    name = proto.Field(
+        proto.STRING,
+        number=1,
     )
-
-    kms_key_name = proto.Field(proto.STRING, number=5)
-
-    schema_settings = proto.Field(proto.MESSAGE, number=6, message="SchemaSettings",)
-
-    satisfies_pzs = proto.Field(proto.BOOL, number=7)
+    labels = proto.MapField(
+        proto.STRING,
+        proto.STRING,
+        number=2,
+    )
+    message_storage_policy = proto.Field(
+        proto.MESSAGE,
+        number=3,
+        message="MessageStoragePolicy",
+    )
+    kms_key_name = proto.Field(
+        proto.STRING,
+        number=5,
+    )
+    schema_settings = proto.Field(
+        proto.MESSAGE,
+        number=6,
+        message="SchemaSettings",
+    )
+    satisfies_pzs = proto.Field(
+        proto.BOOL,
+        number=7,
+    )
+    message_retention_duration = proto.Field(
+        proto.MESSAGE,
+        number=8,
+        message=duration_pb2.Duration,
+    )
 
 
 class PubsubMessage(proto.Message):
@@ -180,7 +218,7 @@ class PubsubMessage(proto.Message):
             The message data field. If this field is
             empty, the message must contain at least one
             attribute.
-        attributes (Sequence[google.pubsub_v1.types.PubsubMessage.AttributesEntry]):
+        attributes (Mapping[str, str]):
             Attributes for this message. If this field is
             empty, the message must contain non-empty data.
             This can be used to filter messages on the
@@ -207,15 +245,28 @@ class PubsubMessage(proto.Message):
             same ``ordering_key`` value.
     """
 
-    data = proto.Field(proto.BYTES, number=1)
-
-    attributes = proto.MapField(proto.STRING, proto.STRING, number=2)
-
-    message_id = proto.Field(proto.STRING, number=3)
-
-    publish_time = proto.Field(proto.MESSAGE, number=4, message=timestamp.Timestamp,)
-
-    ordering_key = proto.Field(proto.STRING, number=5)
+    data = proto.Field(
+        proto.BYTES,
+        number=1,
+    )
+    attributes = proto.MapField(
+        proto.STRING,
+        proto.STRING,
+        number=2,
+    )
+    message_id = proto.Field(
+        proto.STRING,
+        number=3,
+    )
+    publish_time = proto.Field(
+        proto.MESSAGE,
+        number=4,
+        message=timestamp_pb2.Timestamp,
+    )
+    ordering_key = proto.Field(
+        proto.STRING,
+        number=5,
+    )
 
 
 class GetTopicRequest(proto.Message):
@@ -227,7 +278,10 @@ class GetTopicRequest(proto.Message):
             ``projects/{project}/topics/{topic}``.
     """
 
-    topic = proto.Field(proto.STRING, number=1)
+    topic = proto.Field(
+        proto.STRING,
+        number=1,
+    )
 
 
 class UpdateTopicRequest(proto.Message):
@@ -245,9 +299,16 @@ class UpdateTopicRequest(proto.Message):
             policy configured at the project or organization level.
     """
 
-    topic = proto.Field(proto.MESSAGE, number=1, message="Topic",)
-
-    update_mask = proto.Field(proto.MESSAGE, number=2, message=field_mask.FieldMask,)
+    topic = proto.Field(
+        proto.MESSAGE,
+        number=1,
+        message="Topic",
+    )
+    update_mask = proto.Field(
+        proto.MESSAGE,
+        number=2,
+        message=field_mask_pb2.FieldMask,
+    )
 
 
 class PublishRequest(proto.Message):
@@ -261,9 +322,15 @@ class PublishRequest(proto.Message):
             Required. The messages to publish.
     """
 
-    topic = proto.Field(proto.STRING, number=1)
-
-    messages = proto.RepeatedField(proto.MESSAGE, number=2, message="PubsubMessage",)
+    topic = proto.Field(
+        proto.STRING,
+        number=1,
+    )
+    messages = proto.RepeatedField(
+        proto.MESSAGE,
+        number=2,
+        message="PubsubMessage",
+    )
 
 
 class PublishResponse(proto.Message):
@@ -277,7 +344,10 @@ class PublishResponse(proto.Message):
             within the topic.
     """
 
-    message_ids = proto.RepeatedField(proto.STRING, number=1)
+    message_ids = proto.RepeatedField(
+        proto.STRING,
+        number=1,
+    )
 
 
 class ListTopicsRequest(proto.Message):
@@ -296,11 +366,18 @@ class ListTopicsRequest(proto.Message):
             next page of data.
     """
 
-    project = proto.Field(proto.STRING, number=1)
-
-    page_size = proto.Field(proto.INT32, number=2)
-
-    page_token = proto.Field(proto.STRING, number=3)
+    project = proto.Field(
+        proto.STRING,
+        number=1,
+    )
+    page_size = proto.Field(
+        proto.INT32,
+        number=2,
+    )
+    page_token = proto.Field(
+        proto.STRING,
+        number=3,
+    )
 
 
 class ListTopicsResponse(proto.Message):
@@ -319,9 +396,15 @@ class ListTopicsResponse(proto.Message):
     def raw_page(self):
         return self
 
-    topics = proto.RepeatedField(proto.MESSAGE, number=1, message="Topic",)
-
-    next_page_token = proto.Field(proto.STRING, number=2)
+    topics = proto.RepeatedField(
+        proto.MESSAGE,
+        number=1,
+        message="Topic",
+    )
+    next_page_token = proto.Field(
+        proto.STRING,
+        number=2,
+    )
 
 
 class ListTopicSubscriptionsRequest(proto.Message):
@@ -342,11 +425,18 @@ class ListTopicSubscriptionsRequest(proto.Message):
             that the system should return the next page of data.
     """
 
-    topic = proto.Field(proto.STRING, number=1)
-
-    page_size = proto.Field(proto.INT32, number=2)
-
-    page_token = proto.Field(proto.STRING, number=3)
+    topic = proto.Field(
+        proto.STRING,
+        number=1,
+    )
+    page_size = proto.Field(
+        proto.INT32,
+        number=2,
+    )
+    page_token = proto.Field(
+        proto.STRING,
+        number=3,
+    )
 
 
 class ListTopicSubscriptionsResponse(proto.Message):
@@ -366,9 +456,14 @@ class ListTopicSubscriptionsResponse(proto.Message):
     def raw_page(self):
         return self
 
-    subscriptions = proto.RepeatedField(proto.STRING, number=1)
-
-    next_page_token = proto.Field(proto.STRING, number=2)
+    subscriptions = proto.RepeatedField(
+        proto.STRING,
+        number=1,
+    )
+    next_page_token = proto.Field(
+        proto.STRING,
+        number=2,
+    )
 
 
 class ListTopicSnapshotsRequest(proto.Message):
@@ -387,11 +482,18 @@ class ListTopicSnapshotsRequest(proto.Message):
             that the system should return the next page of data.
     """
 
-    topic = proto.Field(proto.STRING, number=1)
-
-    page_size = proto.Field(proto.INT32, number=2)
-
-    page_token = proto.Field(proto.STRING, number=3)
+    topic = proto.Field(
+        proto.STRING,
+        number=1,
+    )
+    page_size = proto.Field(
+        proto.INT32,
+        number=2,
+    )
+    page_token = proto.Field(
+        proto.STRING,
+        number=3,
+    )
 
 
 class ListTopicSnapshotsResponse(proto.Message):
@@ -411,9 +513,14 @@ class ListTopicSnapshotsResponse(proto.Message):
     def raw_page(self):
         return self
 
-    snapshots = proto.RepeatedField(proto.STRING, number=1)
-
-    next_page_token = proto.Field(proto.STRING, number=2)
+    snapshots = proto.RepeatedField(
+        proto.STRING,
+        number=1,
+    )
+    next_page_token = proto.Field(
+        proto.STRING,
+        number=2,
+    )
 
 
 class DeleteTopicRequest(proto.Message):
@@ -425,7 +532,10 @@ class DeleteTopicRequest(proto.Message):
             ``projects/{project}/topics/{topic}``.
     """
 
-    topic = proto.Field(proto.STRING, number=1)
+    topic = proto.Field(
+        proto.STRING,
+        number=1,
+    )
 
 
 class DetachSubscriptionRequest(proto.Message):
@@ -437,12 +547,16 @@ class DetachSubscriptionRequest(proto.Message):
             ``projects/{project}/subscriptions/{subscription}``.
     """
 
-    subscription = proto.Field(proto.STRING, number=1)
+    subscription = proto.Field(
+        proto.STRING,
+        number=1,
+    )
 
 
 class DetachSubscriptionResponse(proto.Message):
     r"""Response for the DetachSubscription method.
     Reserved for future use.
+
     """
 
 
@@ -468,9 +582,16 @@ class Subscription(proto.Message):
             deleted.
         push_config (google.pubsub_v1.types.PushConfig):
             If push delivery is used with this subscription, this field
-            is used to configure it. An empty ``pushConfig`` signifies
-            that the subscriber will pull and ack messages using API
-            methods.
+            is used to configure it. Either ``pushConfig`` or
+            ``bigQueryConfig`` can be set, but not both. If both are
+            empty, then the subscriber will pull and ack messages using
+            API methods.
+        bigquery_config (google.pubsub_v1.types.BigQueryConfig):
+            If delivery to BigQuery is used with this subscription, this
+            field is used to configure it. Either ``pushConfig`` or
+            ``bigQueryConfig`` can be set, but not both. If both are
+            empty, then the subscriber will pull and ack messages using
+            API methods.
         ack_deadline_seconds (int):
             The approximate amount of time (on a best-effort basis)
             Pub/Sub waits for the subscriber to acknowledge receipt
@@ -499,8 +620,9 @@ class Subscription(proto.Message):
             then messages are not expunged from the subscription's
             backlog, even if they are acknowledged, until they fall out
             of the ``message_retention_duration`` window. This must be
-            true if you would like to [Seek to a timestamp]
-            (https://cloud.google.com/pubsub/docs/replay-overview#seek_to_a_time).
+            true if you would like to [``Seek`` to a timestamp]
+            (https://cloud.google.com/pubsub/docs/replay-overview#seek_to_a_time)
+            in the past to replay previously-acknowledged messages.
         message_retention_duration (google.protobuf.duration_pb2.Duration):
             How long to retain unacknowledged messages in the
             subscription's backlog, from the moment a message is
@@ -509,7 +631,7 @@ class Subscription(proto.Message):
             thus configures how far back in time a ``Seek`` can be done.
             Defaults to 7 days. Cannot be more than 7 days or less than
             10 minutes.
-        labels (Sequence[google.pubsub_v1.types.Subscription.LabelsEntry]):
+        labels (Mapping[str, str]):
             See <a
             href="https://cloud.google.com/pubsub/docs/labels">
             Creating and managing labels</a>.
@@ -561,39 +683,120 @@ class Subscription(proto.Message):
             ``StreamingPull`` requests will return FAILED_PRECONDITION.
             If the subscription is a push subscription, pushes to the
             endpoint will not be made.
+        enable_exactly_once_delivery (bool):
+            If true, Pub/Sub provides the following guarantees for the
+            delivery of a message with a given value of ``message_id``
+            on this subscription:
+
+            -  The message sent to a subscriber is guaranteed not to be
+               resent before the message's acknowledgement deadline
+               expires.
+            -  An acknowledged message will not be resent to a
+               subscriber.
+
+            Note that subscribers may still receive multiple copies of a
+            message when ``enable_exactly_once_delivery`` is true if the
+            message was published multiple times by a publisher client.
+            These copies are considered distinct by Pub/Sub and have
+            distinct ``message_id`` values.
+        topic_message_retention_duration (google.protobuf.duration_pb2.Duration):
+            Output only. Indicates the minimum duration for which a
+            message is retained after it is published to the
+            subscription's topic. If this field is set, messages
+            published to the subscription's topic in the last
+            ``topic_message_retention_duration`` are always available to
+            subscribers. See the ``message_retention_duration`` field in
+            ``Topic``. This field is set only in responses from the
+            server; it is ignored if it is set in any requests.
+        state (google.pubsub_v1.types.Subscription.State):
+            Output only. An output-only field indicating
+            whether or not the subscription can receive
+            messages.
     """
 
-    name = proto.Field(proto.STRING, number=1)
+    class State(proto.Enum):
+        r"""Possible states for a subscription."""
+        STATE_UNSPECIFIED = 0
+        ACTIVE = 1
+        RESOURCE_ERROR = 2
 
-    topic = proto.Field(proto.STRING, number=2)
-
-    push_config = proto.Field(proto.MESSAGE, number=4, message="PushConfig",)
-
-    ack_deadline_seconds = proto.Field(proto.INT32, number=5)
-
-    retain_acked_messages = proto.Field(proto.BOOL, number=7)
-
+    name = proto.Field(
+        proto.STRING,
+        number=1,
+    )
+    topic = proto.Field(
+        proto.STRING,
+        number=2,
+    )
+    push_config = proto.Field(
+        proto.MESSAGE,
+        number=4,
+        message="PushConfig",
+    )
+    bigquery_config = proto.Field(
+        proto.MESSAGE,
+        number=18,
+        message="BigQueryConfig",
+    )
+    ack_deadline_seconds = proto.Field(
+        proto.INT32,
+        number=5,
+    )
+    retain_acked_messages = proto.Field(
+        proto.BOOL,
+        number=7,
+    )
     message_retention_duration = proto.Field(
-        proto.MESSAGE, number=8, message=duration.Duration,
+        proto.MESSAGE,
+        number=8,
+        message=duration_pb2.Duration,
     )
-
-    labels = proto.MapField(proto.STRING, proto.STRING, number=9)
-
-    enable_message_ordering = proto.Field(proto.BOOL, number=10)
-
+    labels = proto.MapField(
+        proto.STRING,
+        proto.STRING,
+        number=9,
+    )
+    enable_message_ordering = proto.Field(
+        proto.BOOL,
+        number=10,
+    )
     expiration_policy = proto.Field(
-        proto.MESSAGE, number=11, message="ExpirationPolicy",
+        proto.MESSAGE,
+        number=11,
+        message="ExpirationPolicy",
     )
-
-    filter = proto.Field(proto.STRING, number=12)
-
+    filter = proto.Field(
+        proto.STRING,
+        number=12,
+    )
     dead_letter_policy = proto.Field(
-        proto.MESSAGE, number=13, message="DeadLetterPolicy",
+        proto.MESSAGE,
+        number=13,
+        message="DeadLetterPolicy",
     )
-
-    retry_policy = proto.Field(proto.MESSAGE, number=14, message="RetryPolicy",)
-
-    detached = proto.Field(proto.BOOL, number=15)
+    retry_policy = proto.Field(
+        proto.MESSAGE,
+        number=14,
+        message="RetryPolicy",
+    )
+    detached = proto.Field(
+        proto.BOOL,
+        number=15,
+    )
+    enable_exactly_once_delivery = proto.Field(
+        proto.BOOL,
+        number=16,
+    )
+    topic_message_retention_duration = proto.Field(
+        proto.MESSAGE,
+        number=17,
+        message=duration_pb2.Duration,
+    )
+    state = proto.Field(
+        proto.ENUM,
+        number=19,
+        enum=State,
+    )
 
 
 class RetryPolicy(proto.Message):
@@ -623,9 +826,16 @@ class RetryPolicy(proto.Message):
             seconds.
     """
 
-    minimum_backoff = proto.Field(proto.MESSAGE, number=1, message=duration.Duration,)
-
-    maximum_backoff = proto.Field(proto.MESSAGE, number=2, message=duration.Duration,)
+    minimum_backoff = proto.Field(
+        proto.MESSAGE,
+        number=1,
+        message=duration_pb2.Duration,
+    )
+    maximum_backoff = proto.Field(
+        proto.MESSAGE,
+        number=2,
+        message=duration_pb2.Duration,
+    )
 
 
 class DeadLetterPolicy(proto.Message):
@@ -667,9 +877,14 @@ class DeadLetterPolicy(proto.Message):
             If this parameter is 0, a default value of 5 is used.
     """
 
-    dead_letter_topic = proto.Field(proto.STRING, number=1)
-
-    max_delivery_attempts = proto.Field(proto.INT32, number=2)
+    dead_letter_topic = proto.Field(
+        proto.STRING,
+        number=1,
+    )
+    max_delivery_attempts = proto.Field(
+        proto.INT32,
+        number=2,
+    )
 
 
 class ExpirationPolicy(proto.Message):
@@ -687,18 +902,24 @@ class ExpirationPolicy(proto.Message):
             associated resource never expires.
     """
 
-    ttl = proto.Field(proto.MESSAGE, number=1, message=duration.Duration,)
+    ttl = proto.Field(
+        proto.MESSAGE,
+        number=1,
+        message=duration_pb2.Duration,
+    )
 
 
 class PushConfig(proto.Message):
     r"""Configuration for a push delivery endpoint.
+
+    .. _oneof: https://proto-plus-python.readthedocs.io/en/stable/fields.html#oneofs-mutually-exclusive-fields
 
     Attributes:
         push_endpoint (str):
             A URL locating the endpoint to which messages should be
             pushed. For example, a Webhook endpoint might use
             ``https://example.com/push``.
-        attributes (Sequence[google.pubsub_v1.types.PushConfig.AttributesEntry]):
+        attributes (Mapping[str, str]):
             Endpoint configuration attributes that can be used to
             control different aspects of the message delivery.
 
@@ -732,6 +953,8 @@ class PushConfig(proto.Message):
             If specified, Pub/Sub will generate and attach an OIDC JWT
             token as an ``Authorization`` header in the HTTP request for
             every pushed message.
+
+            This field is a member of `oneof`_ ``authentication_method``.
     """
 
     class OidcToken(proto.Message):
@@ -759,16 +982,90 @@ class PushConfig(proto.Message):
                 will be used.
         """
 
-        service_account_email = proto.Field(proto.STRING, number=1)
+        service_account_email = proto.Field(
+            proto.STRING,
+            number=1,
+        )
+        audience = proto.Field(
+            proto.STRING,
+            number=2,
+        )
 
-        audience = proto.Field(proto.STRING, number=2)
-
-    push_endpoint = proto.Field(proto.STRING, number=1)
-
-    attributes = proto.MapField(proto.STRING, proto.STRING, number=2)
-
+    push_endpoint = proto.Field(
+        proto.STRING,
+        number=1,
+    )
+    attributes = proto.MapField(
+        proto.STRING,
+        proto.STRING,
+        number=2,
+    )
     oidc_token = proto.Field(
-        proto.MESSAGE, number=3, oneof="authentication_method", message=OidcToken,
+        proto.MESSAGE,
+        number=3,
+        oneof="authentication_method",
+        message=OidcToken,
+    )
+
+
+class BigQueryConfig(proto.Message):
+    r"""Configuration for a BigQuery subscription.
+
+    Attributes:
+        table (str):
+            The name of the table to which to write data,
+            of the form {projectId}:{datasetId}.{tableId}
+        use_topic_schema (bool):
+            When true, use the topic's schema as the
+            columns to write to in BigQuery, if it exists.
+        write_metadata (bool):
+            When true, write the subscription name, message_id,
+            publish_time, attributes, and ordering_key to additional
+            columns in the table. The subscription name, message_id, and
+            publish_time fields are put in their own columns while all
+            other message properties (other than data) are written to a
+            JSON object in the attributes column.
+        drop_unknown_fields (bool):
+            When true and use_topic_schema is true, any fields that are
+            a part of the topic schema that are not part of the BigQuery
+            table schema are dropped when writing to BigQuery.
+            Otherwise, the schemas must be kept in sync and any messages
+            with extra fields are not written and remain in the
+            subscription's backlog.
+        state (google.pubsub_v1.types.BigQueryConfig.State):
+            Output only. An output-only field that
+            indicates whether or not the subscription can
+            receive messages.
+    """
+
+    class State(proto.Enum):
+        r"""Possible states for a BigQuery subscription."""
+        STATE_UNSPECIFIED = 0
+        ACTIVE = 1
+        PERMISSION_DENIED = 2
+        NOT_FOUND = 3
+        SCHEMA_MISMATCH = 4
+
+    table = proto.Field(
+        proto.STRING,
+        number=1,
+    )
+    use_topic_schema = proto.Field(
+        proto.BOOL,
+        number=2,
+    )
+    write_metadata = proto.Field(
+        proto.BOOL,
+        number=3,
+    )
+    drop_unknown_fields = proto.Field(
+        proto.BOOL,
+        number=4,
+    )
+    state = proto.Field(
+        proto.ENUM,
+        number=5,
+        enum=State,
     )
 
 
@@ -802,11 +1099,19 @@ class ReceivedMessage(proto.Message):
             will be 0.
     """
 
-    ack_id = proto.Field(proto.STRING, number=1)
-
-    message = proto.Field(proto.MESSAGE, number=2, message="PubsubMessage",)
-
-    delivery_attempt = proto.Field(proto.INT32, number=3)
+    ack_id = proto.Field(
+        proto.STRING,
+        number=1,
+    )
+    message = proto.Field(
+        proto.MESSAGE,
+        number=2,
+        message="PubsubMessage",
+    )
+    delivery_attempt = proto.Field(
+        proto.INT32,
+        number=3,
+    )
 
 
 class GetSubscriptionRequest(proto.Message):
@@ -818,7 +1123,10 @@ class GetSubscriptionRequest(proto.Message):
             ``projects/{project}/subscriptions/{sub}``.
     """
 
-    subscription = proto.Field(proto.STRING, number=1)
+    subscription = proto.Field(
+        proto.STRING,
+        number=1,
+    )
 
 
 class UpdateSubscriptionRequest(proto.Message):
@@ -833,9 +1141,16 @@ class UpdateSubscriptionRequest(proto.Message):
             specified and non-empty.
     """
 
-    subscription = proto.Field(proto.MESSAGE, number=1, message="Subscription",)
-
-    update_mask = proto.Field(proto.MESSAGE, number=2, message=field_mask.FieldMask,)
+    subscription = proto.Field(
+        proto.MESSAGE,
+        number=1,
+        message="Subscription",
+    )
+    update_mask = proto.Field(
+        proto.MESSAGE,
+        number=2,
+        message=field_mask_pb2.FieldMask,
+    )
 
 
 class ListSubscriptionsRequest(proto.Message):
@@ -854,11 +1169,18 @@ class ListSubscriptionsRequest(proto.Message):
             the system should return the next page of data.
     """
 
-    project = proto.Field(proto.STRING, number=1)
-
-    page_size = proto.Field(proto.INT32, number=2)
-
-    page_token = proto.Field(proto.STRING, number=3)
+    project = proto.Field(
+        proto.STRING,
+        number=1,
+    )
+    page_size = proto.Field(
+        proto.INT32,
+        number=2,
+    )
+    page_token = proto.Field(
+        proto.STRING,
+        number=3,
+    )
 
 
 class ListSubscriptionsResponse(proto.Message):
@@ -878,10 +1200,14 @@ class ListSubscriptionsResponse(proto.Message):
         return self
 
     subscriptions = proto.RepeatedField(
-        proto.MESSAGE, number=1, message="Subscription",
+        proto.MESSAGE,
+        number=1,
+        message="Subscription",
     )
-
-    next_page_token = proto.Field(proto.STRING, number=2)
+    next_page_token = proto.Field(
+        proto.STRING,
+        number=2,
+    )
 
 
 class DeleteSubscriptionRequest(proto.Message):
@@ -893,7 +1219,10 @@ class DeleteSubscriptionRequest(proto.Message):
             ``projects/{project}/subscriptions/{sub}``.
     """
 
-    subscription = proto.Field(proto.STRING, number=1)
+    subscription = proto.Field(
+        proto.STRING,
+        number=1,
+    )
 
 
 class ModifyPushConfigRequest(proto.Message):
@@ -913,9 +1242,15 @@ class ModifyPushConfigRequest(proto.Message):
             not called.
     """
 
-    subscription = proto.Field(proto.STRING, number=1)
-
-    push_config = proto.Field(proto.MESSAGE, number=2, message="PushConfig",)
+    subscription = proto.Field(
+        proto.STRING,
+        number=1,
+    )
+    push_config = proto.Field(
+        proto.MESSAGE,
+        number=2,
+        message="PushConfig",
+    )
 
 
 class PullRequest(proto.Message):
@@ -942,11 +1277,18 @@ class PullRequest(proto.Message):
             than the number specified.
     """
 
-    subscription = proto.Field(proto.STRING, number=1)
-
-    return_immediately = proto.Field(proto.BOOL, number=2)
-
-    max_messages = proto.Field(proto.INT32, number=3)
+    subscription = proto.Field(
+        proto.STRING,
+        number=1,
+    )
+    return_immediately = proto.Field(
+        proto.BOOL,
+        number=2,
+    )
+    max_messages = proto.Field(
+        proto.INT32,
+        number=3,
+    )
 
 
 class PullResponse(proto.Message):
@@ -962,7 +1304,9 @@ class PullResponse(proto.Message):
     """
 
     received_messages = proto.RepeatedField(
-        proto.MESSAGE, number=1, message="ReceivedMessage",
+        proto.MESSAGE,
+        number=1,
+        message="ReceivedMessage",
     )
 
 
@@ -988,11 +1332,18 @@ class ModifyAckDeadlineRequest(proto.Message):
             seconds (10 minutes).
     """
 
-    subscription = proto.Field(proto.STRING, number=1)
-
-    ack_ids = proto.RepeatedField(proto.STRING, number=4)
-
-    ack_deadline_seconds = proto.Field(proto.INT32, number=3)
+    subscription = proto.Field(
+        proto.STRING,
+        number=1,
+    )
+    ack_ids = proto.RepeatedField(
+        proto.STRING,
+        number=4,
+    )
+    ack_deadline_seconds = proto.Field(
+        proto.INT32,
+        number=3,
+    )
 
 
 class AcknowledgeRequest(proto.Message):
@@ -1009,9 +1360,14 @@ class AcknowledgeRequest(proto.Message):
             ``Pull`` response. Must not be empty.
     """
 
-    subscription = proto.Field(proto.STRING, number=1)
-
-    ack_ids = proto.RepeatedField(proto.STRING, number=2)
+    subscription = proto.Field(
+        proto.STRING,
+        number=1,
+    )
+    ack_ids = proto.RepeatedField(
+        proto.STRING,
+        number=2,
+    )
 
 
 class StreamingPullRequest(proto.Message):
@@ -1098,21 +1454,38 @@ class StreamingPullRequest(proto.Message):
             ``INVALID_ARGUMENT``.
     """
 
-    subscription = proto.Field(proto.STRING, number=1)
-
-    ack_ids = proto.RepeatedField(proto.STRING, number=2)
-
-    modify_deadline_seconds = proto.RepeatedField(proto.INT32, number=3)
-
-    modify_deadline_ack_ids = proto.RepeatedField(proto.STRING, number=4)
-
-    stream_ack_deadline_seconds = proto.Field(proto.INT32, number=5)
-
-    client_id = proto.Field(proto.STRING, number=6)
-
-    max_outstanding_messages = proto.Field(proto.INT64, number=7)
-
-    max_outstanding_bytes = proto.Field(proto.INT64, number=8)
+    subscription = proto.Field(
+        proto.STRING,
+        number=1,
+    )
+    ack_ids = proto.RepeatedField(
+        proto.STRING,
+        number=2,
+    )
+    modify_deadline_seconds = proto.RepeatedField(
+        proto.INT32,
+        number=3,
+    )
+    modify_deadline_ack_ids = proto.RepeatedField(
+        proto.STRING,
+        number=4,
+    )
+    stream_ack_deadline_seconds = proto.Field(
+        proto.INT32,
+        number=5,
+    )
+    client_id = proto.Field(
+        proto.STRING,
+        number=6,
+    )
+    max_outstanding_messages = proto.Field(
+        proto.INT64,
+        number=7,
+    )
+    max_outstanding_bytes = proto.Field(
+        proto.INT64,
+        number=8,
+    )
 
 
 class StreamingPullResponse(proto.Message):
@@ -1123,10 +1496,107 @@ class StreamingPullResponse(proto.Message):
         received_messages (Sequence[google.pubsub_v1.types.ReceivedMessage]):
             Received Pub/Sub messages. This will not be
             empty.
+        acknowledge_confirmation (google.pubsub_v1.types.StreamingPullResponse.AcknowledgeConfirmation):
+            This field will only be set if
+            ``enable_exactly_once_delivery`` is set to ``true``.
+        modify_ack_deadline_confirmation (google.pubsub_v1.types.StreamingPullResponse.ModifyAckDeadlineConfirmation):
+            This field will only be set if
+            ``enable_exactly_once_delivery`` is set to ``true``.
+        subscription_properties (google.pubsub_v1.types.StreamingPullResponse.SubscriptionProperties):
+            Properties associated with this subscription.
     """
 
+    class AcknowledgeConfirmation(proto.Message):
+        r"""Acknowledgement IDs sent in one or more previous requests to
+        acknowledge a previously received message.
+
+        Attributes:
+            ack_ids (Sequence[str]):
+                Successfully processed acknowledgement IDs.
+            invalid_ack_ids (Sequence[str]):
+                List of acknowledgement IDs that were
+                malformed or whose acknowledgement deadline has
+                expired.
+            unordered_ack_ids (Sequence[str]):
+                List of acknowledgement IDs that were out of
+                order.
+        """
+
+        ack_ids = proto.RepeatedField(
+            proto.STRING,
+            number=1,
+        )
+        invalid_ack_ids = proto.RepeatedField(
+            proto.STRING,
+            number=2,
+        )
+        unordered_ack_ids = proto.RepeatedField(
+            proto.STRING,
+            number=3,
+        )
+
+    class ModifyAckDeadlineConfirmation(proto.Message):
+        r"""Acknowledgement IDs sent in one or more previous requests to
+        modify the deadline for a specific message.
+
+        Attributes:
+            ack_ids (Sequence[str]):
+                Successfully processed acknowledgement IDs.
+            invalid_ack_ids (Sequence[str]):
+                List of acknowledgement IDs that were
+                malformed or whose acknowledgement deadline has
+                expired.
+        """
+
+        ack_ids = proto.RepeatedField(
+            proto.STRING,
+            number=1,
+        )
+        invalid_ack_ids = proto.RepeatedField(
+            proto.STRING,
+            number=2,
+        )
+
+    class SubscriptionProperties(proto.Message):
+        r"""Subscription properties sent as part of the response.
+
+        Attributes:
+            exactly_once_delivery_enabled (bool):
+                True iff exactly once delivery is enabled for
+                this subscription.
+            message_ordering_enabled (bool):
+                True iff message ordering is enabled for this
+                subscription.
+        """
+
+        exactly_once_delivery_enabled = proto.Field(
+            proto.BOOL,
+            number=1,
+        )
+        message_ordering_enabled = proto.Field(
+            proto.BOOL,
+            number=2,
+        )
+
     received_messages = proto.RepeatedField(
-        proto.MESSAGE, number=1, message="ReceivedMessage",
+        proto.MESSAGE,
+        number=1,
+        message="ReceivedMessage",
+    )
+    acknowledge_confirmation = proto.Field(
+        proto.MESSAGE,
+        number=5,
+        message=AcknowledgeConfirmation,
+    )
+    modify_ack_deadline_confirmation = proto.Field(
+        proto.MESSAGE,
+        number=3,
+        message=ModifyAckDeadlineConfirmation,
+    )
+    subscription_properties = proto.Field(
+        proto.MESSAGE,
+        number=4,
+        message=SubscriptionProperties,
     )
 
 
@@ -1152,17 +1622,25 @@ class CreateSnapshotRequest(proto.Message):
             topic following the successful completion of the
             CreateSnapshot request. Format is
             ``projects/{project}/subscriptions/{sub}``.
-        labels (Sequence[google.pubsub_v1.types.CreateSnapshotRequest.LabelsEntry]):
+        labels (Mapping[str, str]):
             See <a
             href="https://cloud.google.com/pubsub/docs/labels">
             Creating and managing labels</a>.
     """
 
-    name = proto.Field(proto.STRING, number=1)
-
-    subscription = proto.Field(proto.STRING, number=2)
-
-    labels = proto.MapField(proto.STRING, proto.STRING, number=3)
+    name = proto.Field(
+        proto.STRING,
+        number=1,
+    )
+    subscription = proto.Field(
+        proto.STRING,
+        number=2,
+    )
+    labels = proto.MapField(
+        proto.STRING,
+        proto.STRING,
+        number=3,
+    )
 
 
 class UpdateSnapshotRequest(proto.Message):
@@ -1177,9 +1655,16 @@ class UpdateSnapshotRequest(proto.Message):
             and non-empty.
     """
 
-    snapshot = proto.Field(proto.MESSAGE, number=1, message="Snapshot",)
-
-    update_mask = proto.Field(proto.MESSAGE, number=2, message=field_mask.FieldMask,)
+    snapshot = proto.Field(
+        proto.MESSAGE,
+        number=1,
+        message="Snapshot",
+    )
+    update_mask = proto.Field(
+        proto.MESSAGE,
+        number=2,
+        message=field_mask_pb2.FieldMask,
+    )
 
 
 class Snapshot(proto.Message):
@@ -1209,18 +1694,29 @@ class Snapshot(proto.Message):
             expire in 4 days. The service will refuse to create a
             snapshot that would expire in less than 1 hour after
             creation.
-        labels (Sequence[google.pubsub_v1.types.Snapshot.LabelsEntry]):
+        labels (Mapping[str, str]):
             See [Creating and managing labels]
             (https://cloud.google.com/pubsub/docs/labels).
     """
 
-    name = proto.Field(proto.STRING, number=1)
-
-    topic = proto.Field(proto.STRING, number=2)
-
-    expire_time = proto.Field(proto.MESSAGE, number=3, message=timestamp.Timestamp,)
-
-    labels = proto.MapField(proto.STRING, proto.STRING, number=4)
+    name = proto.Field(
+        proto.STRING,
+        number=1,
+    )
+    topic = proto.Field(
+        proto.STRING,
+        number=2,
+    )
+    expire_time = proto.Field(
+        proto.MESSAGE,
+        number=3,
+        message=timestamp_pb2.Timestamp,
+    )
+    labels = proto.MapField(
+        proto.STRING,
+        proto.STRING,
+        number=4,
+    )
 
 
 class GetSnapshotRequest(proto.Message):
@@ -1232,7 +1728,10 @@ class GetSnapshotRequest(proto.Message):
             ``projects/{project}/snapshots/{snap}``.
     """
 
-    snapshot = proto.Field(proto.STRING, number=1)
+    snapshot = proto.Field(
+        proto.STRING,
+        number=1,
+    )
 
 
 class ListSnapshotsRequest(proto.Message):
@@ -1251,11 +1750,18 @@ class ListSnapshotsRequest(proto.Message):
             the next page of data.
     """
 
-    project = proto.Field(proto.STRING, number=1)
-
-    page_size = proto.Field(proto.INT32, number=2)
-
-    page_token = proto.Field(proto.STRING, number=3)
+    project = proto.Field(
+        proto.STRING,
+        number=1,
+    )
+    page_size = proto.Field(
+        proto.INT32,
+        number=2,
+    )
+    page_token = proto.Field(
+        proto.STRING,
+        number=3,
+    )
 
 
 class ListSnapshotsResponse(proto.Message):
@@ -1274,9 +1780,15 @@ class ListSnapshotsResponse(proto.Message):
     def raw_page(self):
         return self
 
-    snapshots = proto.RepeatedField(proto.MESSAGE, number=1, message="Snapshot",)
-
-    next_page_token = proto.Field(proto.STRING, number=2)
+    snapshots = proto.RepeatedField(
+        proto.MESSAGE,
+        number=1,
+        message="Snapshot",
+    )
+    next_page_token = proto.Field(
+        proto.STRING,
+        number=2,
+    )
 
 
 class DeleteSnapshotRequest(proto.Message):
@@ -1288,11 +1800,21 @@ class DeleteSnapshotRequest(proto.Message):
             ``projects/{project}/snapshots/{snap}``.
     """
 
-    snapshot = proto.Field(proto.STRING, number=1)
+    snapshot = proto.Field(
+        proto.STRING,
+        number=1,
+    )
 
 
 class SeekRequest(proto.Message):
     r"""Request for the ``Seek`` method.
+
+    This message has `oneof`_ fields (mutually exclusive fields).
+    For each oneof, at most one member field can be set at the same time.
+    Setting any member of the oneof automatically clears all other
+    members.
+
+    .. _oneof: https://proto-plus-python.readthedocs.io/en/stable/fields.html#oneofs-mutually-exclusive-fields
 
     Attributes:
         subscription (str):
@@ -1311,19 +1833,31 @@ class SeekRequest(proto.Message):
             subscription creation time), only retained messages will be
             marked as unacknowledged, and already-expunged messages will
             not be restored.
+
+            This field is a member of `oneof`_ ``target``.
         snapshot (str):
             The snapshot to seek to. The snapshot's topic must be the
             same as that of the provided subscription. Format is
             ``projects/{project}/snapshots/{snap}``.
+
+            This field is a member of `oneof`_ ``target``.
     """
 
-    subscription = proto.Field(proto.STRING, number=1)
-
-    time = proto.Field(
-        proto.MESSAGE, number=2, oneof="target", message=timestamp.Timestamp,
+    subscription = proto.Field(
+        proto.STRING,
+        number=1,
     )
-
-    snapshot = proto.Field(proto.STRING, number=3, oneof="target")
+    time = proto.Field(
+        proto.MESSAGE,
+        number=2,
+        oneof="target",
+        message=timestamp_pb2.Timestamp,
+    )
+    snapshot = proto.Field(
+        proto.STRING,
+        number=3,
+        oneof="target",
+    )
 
 
 class SeekResponse(proto.Message):

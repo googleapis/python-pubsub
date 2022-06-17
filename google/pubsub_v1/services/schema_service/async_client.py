@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-
-# Copyright 2020 Google LLC
+# Copyright 2022 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,26 +13,29 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 from collections import OrderedDict
 import functools
 import re
-from typing import Dict, Sequence, Tuple, Type, Union
+from typing import Dict, Mapping, Optional, Sequence, Tuple, Type, Union
 import pkg_resources
 
-import google.api_core.client_options as ClientOptions  # type: ignore
-from google.api_core import exceptions  # type: ignore
-from google.api_core import gapic_v1  # type: ignore
-from google.api_core import retry as retries  # type: ignore
-from google.auth import credentials  # type: ignore
+from google.api_core.client_options import ClientOptions
+from google.api_core import exceptions as core_exceptions
+from google.api_core import gapic_v1
+from google.api_core import retry as retries
+from google.auth import credentials as ga_credentials  # type: ignore
 from google.oauth2 import service_account  # type: ignore
 
-from google.iam.v1 import iam_policy_pb2 as iam_policy  # type: ignore
-from google.iam.v1 import policy_pb2 as policy  # type: ignore
+try:
+    OptionalRetry = Union[retries.Retry, gapic_v1.method._MethodDefault]
+except AttributeError:  # pragma: NO COVER
+    OptionalRetry = Union[retries.Retry, object]  # type: ignore
+
+from google.iam.v1 import iam_policy_pb2  # type: ignore
+from google.iam.v1 import policy_pb2  # type: ignore
 from google.pubsub_v1.services.schema_service import pagers
 from google.pubsub_v1.types import schema
 from google.pubsub_v1.types import schema as gp_schema
-
 from .transports.base import SchemaServiceTransport, DEFAULT_CLIENT_INFO
 from .transports.grpc_asyncio import SchemaServiceGrpcAsyncIOTransport
 from .client import SchemaServiceClient
@@ -49,31 +51,26 @@ class SchemaServiceAsyncClient:
 
     schema_path = staticmethod(SchemaServiceClient.schema_path)
     parse_schema_path = staticmethod(SchemaServiceClient.parse_schema_path)
-
     common_billing_account_path = staticmethod(
         SchemaServiceClient.common_billing_account_path
     )
     parse_common_billing_account_path = staticmethod(
         SchemaServiceClient.parse_common_billing_account_path
     )
-
     common_folder_path = staticmethod(SchemaServiceClient.common_folder_path)
     parse_common_folder_path = staticmethod(
         SchemaServiceClient.parse_common_folder_path
     )
-
     common_organization_path = staticmethod(
         SchemaServiceClient.common_organization_path
     )
     parse_common_organization_path = staticmethod(
         SchemaServiceClient.parse_common_organization_path
     )
-
     common_project_path = staticmethod(SchemaServiceClient.common_project_path)
     parse_common_project_path = staticmethod(
         SchemaServiceClient.parse_common_project_path
     )
-
     common_location_path = staticmethod(SchemaServiceClient.common_location_path)
     parse_common_location_path = staticmethod(
         SchemaServiceClient.parse_common_location_path
@@ -81,7 +78,8 @@ class SchemaServiceAsyncClient:
 
     @classmethod
     def from_service_account_info(cls, info: dict, *args, **kwargs):
-        """Creates an instance of this client using the provided credentials info.
+        """Creates an instance of this client using the provided credentials
+            info.
 
         Args:
             info (dict): The service account private key info.
@@ -96,7 +94,7 @@ class SchemaServiceAsyncClient:
     @classmethod
     def from_service_account_file(cls, filename: str, *args, **kwargs):
         """Creates an instance of this client using the provided credentials
-        file.
+            file.
 
         Args:
             filename (str): The path to the service account private key json
@@ -111,9 +109,45 @@ class SchemaServiceAsyncClient:
 
     from_service_account_json = from_service_account_file
 
+    @classmethod
+    def get_mtls_endpoint_and_cert_source(
+        cls, client_options: Optional[ClientOptions] = None
+    ):
+        """Return the API endpoint and client cert source for mutual TLS.
+
+        The client cert source is determined in the following order:
+        (1) if `GOOGLE_API_USE_CLIENT_CERTIFICATE` environment variable is not "true", the
+        client cert source is None.
+        (2) if `client_options.client_cert_source` is provided, use the provided one; if the
+        default client cert source exists, use the default one; otherwise the client cert
+        source is None.
+
+        The API endpoint is determined in the following order:
+        (1) if `client_options.api_endpoint` if provided, use the provided one.
+        (2) if `GOOGLE_API_USE_CLIENT_CERTIFICATE` environment variable is "always", use the
+        default mTLS endpoint; if the environment variabel is "never", use the default API
+        endpoint; otherwise if client cert source exists, use the default mTLS endpoint, otherwise
+        use the default API endpoint.
+
+        More details can be found at https://google.aip.dev/auth/4114.
+
+        Args:
+            client_options (google.api_core.client_options.ClientOptions): Custom options for the
+                client. Only the `api_endpoint` and `client_cert_source` properties may be used
+                in this method.
+
+        Returns:
+            Tuple[str, Callable[[], Tuple[bytes, bytes]]]: returns the API endpoint and the
+                client cert source to use.
+
+        Raises:
+            google.auth.exceptions.MutualTLSChannelError: If any errors happen.
+        """
+        return SchemaServiceClient.get_mtls_endpoint_and_cert_source(client_options)  # type: ignore
+
     @property
     def transport(self) -> SchemaServiceTransport:
-        """Return the transport used by the client instance.
+        """Returns the transport used by the client instance.
 
         Returns:
             SchemaServiceTransport: The transport used by the client instance.
@@ -127,12 +161,12 @@ class SchemaServiceAsyncClient:
     def __init__(
         self,
         *,
-        credentials: credentials.Credentials = None,
+        credentials: ga_credentials.Credentials = None,
         transport: Union[str, SchemaServiceTransport] = "grpc_asyncio",
         client_options: ClientOptions = None,
         client_info: gapic_v1.client_info.ClientInfo = DEFAULT_CLIENT_INFO,
     ) -> None:
-        """Instantiate the schema service client.
+        """Instantiates the schema service client.
 
         Args:
             credentials (Optional[google.auth.credentials.Credentials]): The
@@ -164,7 +198,6 @@ class SchemaServiceAsyncClient:
             google.auth.exceptions.MutualTlsChannelError: If mutual TLS transport
                 creation failed for any reason.
         """
-
         self._client = SchemaServiceClient(
             credentials=credentials,
             transport=transport,
@@ -174,19 +207,42 @@ class SchemaServiceAsyncClient:
 
     async def create_schema(
         self,
-        request: gp_schema.CreateSchemaRequest = None,
+        request: Union[gp_schema.CreateSchemaRequest, dict] = None,
         *,
         parent: str = None,
         schema: gp_schema.Schema = None,
         schema_id: str = None,
-        retry: retries.Retry = gapic_v1.method.DEFAULT,
+        retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: float = None,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> gp_schema.Schema:
         r"""Creates a schema.
 
+        .. code-block:: python
+
+            from google import pubsub_v1
+
+            async def sample_create_schema():
+                # Create a client
+                client = pubsub_v1.SchemaServiceAsyncClient()
+
+                # Initialize request argument(s)
+                schema = pubsub_v1.Schema()
+                schema.name = "name_value"
+
+                request = pubsub_v1.CreateSchemaRequest(
+                    parent="parent_value",
+                    schema=schema,
+                )
+
+                # Make the request
+                response = await client.create_schema(request=request)
+
+                # Handle the response
+                print(response)
+
         Args:
-            request (:class:`google.pubsub_v1.types.CreateSchemaRequest`):
+            request (Union[google.pubsub_v1.types.CreateSchemaRequest, dict]):
                 The request object. Request for the CreateSchema method.
             parent (:class:`str`):
                 Required. The name of the project in which to create the
@@ -216,7 +272,6 @@ class SchemaServiceAsyncClient:
                 This corresponds to the ``schema_id`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
@@ -228,7 +283,7 @@ class SchemaServiceAsyncClient:
                 A schema resource.
         """
         # Create or coerce a protobuf request object.
-        # Sanity check: If we got a request object, we should *not* have
+        # Quick check: If we got a request object, we should *not* have
         # gotten any keyword arguments that map to the request.
         has_flattened_params = any([parent, schema, schema_id])
         if request is not None and has_flattened_params:
@@ -241,7 +296,6 @@ class SchemaServiceAsyncClient:
 
         # If we have keyword arguments corresponding to fields on the
         # request, apply these.
-
         if parent is not None:
             request.parent = parent
         if schema is not None:
@@ -264,24 +318,48 @@ class SchemaServiceAsyncClient:
         )
 
         # Send the request.
-        response = await rpc(request, retry=retry, timeout=timeout, metadata=metadata,)
+        response = await rpc(
+            request,
+            retry=retry,
+            timeout=timeout,
+            metadata=metadata,
+        )
 
         # Done; return the response.
         return response
 
     async def get_schema(
         self,
-        request: schema.GetSchemaRequest = None,
+        request: Union[schema.GetSchemaRequest, dict] = None,
         *,
         name: str = None,
-        retry: retries.Retry = gapic_v1.method.DEFAULT,
+        retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: float = None,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> schema.Schema:
         r"""Gets a schema.
 
+        .. code-block:: python
+
+            from google import pubsub_v1
+
+            async def sample_get_schema():
+                # Create a client
+                client = pubsub_v1.SchemaServiceAsyncClient()
+
+                # Initialize request argument(s)
+                request = pubsub_v1.GetSchemaRequest(
+                    name="name_value",
+                )
+
+                # Make the request
+                response = await client.get_schema(request=request)
+
+                # Handle the response
+                print(response)
+
         Args:
-            request (:class:`google.pubsub_v1.types.GetSchemaRequest`):
+            request (Union[google.pubsub_v1.types.GetSchemaRequest, dict]):
                 The request object. Request for the GetSchema method.
             name (:class:`str`):
                 Required. The name of the schema to get. Format is
@@ -290,7 +368,6 @@ class SchemaServiceAsyncClient:
                 This corresponds to the ``name`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
@@ -302,7 +379,7 @@ class SchemaServiceAsyncClient:
                 A schema resource.
         """
         # Create or coerce a protobuf request object.
-        # Sanity check: If we got a request object, we should *not* have
+        # Quick check: If we got a request object, we should *not* have
         # gotten any keyword arguments that map to the request.
         has_flattened_params = any([name])
         if request is not None and has_flattened_params:
@@ -315,7 +392,6 @@ class SchemaServiceAsyncClient:
 
         # If we have keyword arguments corresponding to fields on the
         # request, apply these.
-
         if name is not None:
             request.name = name
 
@@ -334,24 +410,49 @@ class SchemaServiceAsyncClient:
         )
 
         # Send the request.
-        response = await rpc(request, retry=retry, timeout=timeout, metadata=metadata,)
+        response = await rpc(
+            request,
+            retry=retry,
+            timeout=timeout,
+            metadata=metadata,
+        )
 
         # Done; return the response.
         return response
 
     async def list_schemas(
         self,
-        request: schema.ListSchemasRequest = None,
+        request: Union[schema.ListSchemasRequest, dict] = None,
         *,
         parent: str = None,
-        retry: retries.Retry = gapic_v1.method.DEFAULT,
+        retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: float = None,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pagers.ListSchemasAsyncPager:
         r"""Lists schemas in a project.
 
+        .. code-block:: python
+
+            from google import pubsub_v1
+
+            async def sample_list_schemas():
+                # Create a client
+                client = pubsub_v1.SchemaServiceAsyncClient()
+
+                # Initialize request argument(s)
+                request = pubsub_v1.ListSchemasRequest(
+                    parent="parent_value",
+                )
+
+                # Make the request
+                page_result = client.list_schemas(request=request)
+
+                # Handle the response
+                async for response in page_result:
+                    print(response)
+
         Args:
-            request (:class:`google.pubsub_v1.types.ListSchemasRequest`):
+            request (Union[google.pubsub_v1.types.ListSchemasRequest, dict]):
                 The request object. Request for the `ListSchemas`
                 method.
             parent (:class:`str`):
@@ -361,7 +462,6 @@ class SchemaServiceAsyncClient:
                 This corresponds to the ``parent`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
@@ -377,7 +477,7 @@ class SchemaServiceAsyncClient:
 
         """
         # Create or coerce a protobuf request object.
-        # Sanity check: If we got a request object, we should *not* have
+        # Quick check: If we got a request object, we should *not* have
         # gotten any keyword arguments that map to the request.
         has_flattened_params = any([parent])
         if request is not None and has_flattened_params:
@@ -390,7 +490,6 @@ class SchemaServiceAsyncClient:
 
         # If we have keyword arguments corresponding to fields on the
         # request, apply these.
-
         if parent is not None:
             request.parent = parent
 
@@ -409,12 +508,20 @@ class SchemaServiceAsyncClient:
         )
 
         # Send the request.
-        response = await rpc(request, retry=retry, timeout=timeout, metadata=metadata,)
+        response = await rpc(
+            request,
+            retry=retry,
+            timeout=timeout,
+            metadata=metadata,
+        )
 
         # This method is paged; wrap the response in a pager, which provides
         # an `__aiter__` convenience method.
         response = pagers.ListSchemasAsyncPager(
-            method=rpc, request=request, response=response, metadata=metadata,
+            method=rpc,
+            request=request,
+            response=response,
+            metadata=metadata,
         )
 
         # Done; return the response.
@@ -422,17 +529,33 @@ class SchemaServiceAsyncClient:
 
     async def delete_schema(
         self,
-        request: schema.DeleteSchemaRequest = None,
+        request: Union[schema.DeleteSchemaRequest, dict] = None,
         *,
         name: str = None,
-        retry: retries.Retry = gapic_v1.method.DEFAULT,
+        retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: float = None,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> None:
         r"""Deletes a schema.
 
+        .. code-block:: python
+
+            from google import pubsub_v1
+
+            async def sample_delete_schema():
+                # Create a client
+                client = pubsub_v1.SchemaServiceAsyncClient()
+
+                # Initialize request argument(s)
+                request = pubsub_v1.DeleteSchemaRequest(
+                    name="name_value",
+                )
+
+                # Make the request
+                await client.delete_schema(request=request)
+
         Args:
-            request (:class:`google.pubsub_v1.types.DeleteSchemaRequest`):
+            request (Union[google.pubsub_v1.types.DeleteSchemaRequest, dict]):
                 The request object. Request for the `DeleteSchema`
                 method.
             name (:class:`str`):
@@ -442,7 +565,6 @@ class SchemaServiceAsyncClient:
                 This corresponds to the ``name`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
@@ -450,7 +572,7 @@ class SchemaServiceAsyncClient:
                 sent along with the request as metadata.
         """
         # Create or coerce a protobuf request object.
-        # Sanity check: If we got a request object, we should *not* have
+        # Quick check: If we got a request object, we should *not* have
         # gotten any keyword arguments that map to the request.
         has_flattened_params = any([name])
         if request is not None and has_flattened_params:
@@ -463,7 +585,6 @@ class SchemaServiceAsyncClient:
 
         # If we have keyword arguments corresponding to fields on the
         # request, apply these.
-
         if name is not None:
             request.name = name
 
@@ -483,23 +604,49 @@ class SchemaServiceAsyncClient:
 
         # Send the request.
         await rpc(
-            request, retry=retry, timeout=timeout, metadata=metadata,
+            request,
+            retry=retry,
+            timeout=timeout,
+            metadata=metadata,
         )
 
     async def validate_schema(
         self,
-        request: gp_schema.ValidateSchemaRequest = None,
+        request: Union[gp_schema.ValidateSchemaRequest, dict] = None,
         *,
         parent: str = None,
         schema: gp_schema.Schema = None,
-        retry: retries.Retry = gapic_v1.method.DEFAULT,
+        retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: float = None,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> gp_schema.ValidateSchemaResponse:
         r"""Validates a schema.
 
+        .. code-block:: python
+
+            from google import pubsub_v1
+
+            async def sample_validate_schema():
+                # Create a client
+                client = pubsub_v1.SchemaServiceAsyncClient()
+
+                # Initialize request argument(s)
+                schema = pubsub_v1.Schema()
+                schema.name = "name_value"
+
+                request = pubsub_v1.ValidateSchemaRequest(
+                    parent="parent_value",
+                    schema=schema,
+                )
+
+                # Make the request
+                response = await client.validate_schema(request=request)
+
+                # Handle the response
+                print(response)
+
         Args:
-            request (:class:`google.pubsub_v1.types.ValidateSchemaRequest`):
+            request (Union[google.pubsub_v1.types.ValidateSchemaRequest, dict]):
                 The request object. Request for the `ValidateSchema`
                 method.
             parent (:class:`str`):
@@ -516,7 +663,6 @@ class SchemaServiceAsyncClient:
                 This corresponds to the ``schema`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
@@ -526,9 +672,11 @@ class SchemaServiceAsyncClient:
         Returns:
             google.pubsub_v1.types.ValidateSchemaResponse:
                 Response for the ValidateSchema method.
+                   Empty for now.
+
         """
         # Create or coerce a protobuf request object.
-        # Sanity check: If we got a request object, we should *not* have
+        # Quick check: If we got a request object, we should *not* have
         # gotten any keyword arguments that map to the request.
         has_flattened_params = any([parent, schema])
         if request is not None and has_flattened_params:
@@ -541,7 +689,6 @@ class SchemaServiceAsyncClient:
 
         # If we have keyword arguments corresponding to fields on the
         # request, apply these.
-
         if parent is not None:
             request.parent = parent
         if schema is not None:
@@ -562,26 +709,50 @@ class SchemaServiceAsyncClient:
         )
 
         # Send the request.
-        response = await rpc(request, retry=retry, timeout=timeout, metadata=metadata,)
+        response = await rpc(
+            request,
+            retry=retry,
+            timeout=timeout,
+            metadata=metadata,
+        )
 
         # Done; return the response.
         return response
 
     async def validate_message(
         self,
-        request: schema.ValidateMessageRequest = None,
+        request: Union[schema.ValidateMessageRequest, dict] = None,
         *,
-        retry: retries.Retry = gapic_v1.method.DEFAULT,
+        retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: float = None,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> schema.ValidateMessageResponse:
         r"""Validates a message against a schema.
 
+        .. code-block:: python
+
+            from google import pubsub_v1
+
+            async def sample_validate_message():
+                # Create a client
+                client = pubsub_v1.SchemaServiceAsyncClient()
+
+                # Initialize request argument(s)
+                request = pubsub_v1.ValidateMessageRequest(
+                    name="name_value",
+                    parent="parent_value",
+                )
+
+                # Make the request
+                response = await client.validate_message(request=request)
+
+                # Handle the response
+                print(response)
+
         Args:
-            request (:class:`google.pubsub_v1.types.ValidateMessageRequest`):
+            request (Union[google.pubsub_v1.types.ValidateMessageRequest, dict]):
                 The request object. Request for the `ValidateMessage`
                 method.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
@@ -591,9 +762,10 @@ class SchemaServiceAsyncClient:
         Returns:
             google.pubsub_v1.types.ValidateMessageResponse:
                 Response for the ValidateMessage method.
+                   Empty for now.
+
         """
         # Create or coerce a protobuf request object.
-
         request = schema.ValidateMessageRequest(request)
 
         # Wrap the RPC method; this adds retry and timeout information,
@@ -611,23 +783,30 @@ class SchemaServiceAsyncClient:
         )
 
         # Send the request.
-        response = await rpc(request, retry=retry, timeout=timeout, metadata=metadata,)
+        response = await rpc(
+            request,
+            retry=retry,
+            timeout=timeout,
+            metadata=metadata,
+        )
 
         # Done; return the response.
         return response
 
     async def set_iam_policy(
         self,
-        request: iam_policy.SetIamPolicyRequest = None,
+        request: iam_policy_pb2.SetIamPolicyRequest = None,
         *,
-        retry: retries.Retry = gapic_v1.method.DEFAULT,
+        retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: float = None,
         metadata: Sequence[Tuple[str, str]] = (),
-    ) -> policy.Policy:
-        r"""Sets the IAM access control policy on the specified
-        function. Replaces any existing policy.
+    ) -> policy_pb2.Policy:
+        r"""Sets the IAM access control policy on the specified function.
+
+        Replaces any existing policy.
+
         Args:
-            request (:class:`~.iam_policy.SetIamPolicyRequest`):
+            request (:class:`~.policy_pb2.SetIamPolicyRequest`):
                 The request object. Request message for `SetIamPolicy`
                 method.
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
@@ -636,7 +815,7 @@ class SchemaServiceAsyncClient:
             metadata (Sequence[Tuple[str, str]]): Strings which should be
                 sent along with the request as metadata.
         Returns:
-            ~.policy.Policy:
+            ~.policy_pb2.Policy:
                 Defines an Identity and Access Management (IAM) policy.
                 It is used to specify access control policies for Cloud
                 Platform resources.
@@ -700,7 +879,7 @@ class SchemaServiceAsyncClient:
         # The request isn't a proto-plus wrapped type,
         # so it must be constructed via keyword expansion.
         if isinstance(request, dict):
-            request = iam_policy.SetIamPolicyRequest(**request)
+            request = iam_policy_pb2.SetIamPolicyRequest(**request)
 
         # Wrap the RPC method; this adds retry and timeout information,
         # and friendly error handling.
@@ -717,24 +896,31 @@ class SchemaServiceAsyncClient:
         )
 
         # Send the request.
-        response = await rpc(request, retry=retry, timeout=timeout, metadata=metadata,)
+        response = await rpc(
+            request,
+            retry=retry,
+            timeout=timeout,
+            metadata=metadata,
+        )
 
         # Done; return the response.
         return response
 
     async def get_iam_policy(
         self,
-        request: iam_policy.GetIamPolicyRequest = None,
+        request: iam_policy_pb2.GetIamPolicyRequest = None,
         *,
-        retry: retries.Retry = gapic_v1.method.DEFAULT,
+        retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: float = None,
         metadata: Sequence[Tuple[str, str]] = (),
-    ) -> policy.Policy:
+    ) -> policy_pb2.Policy:
         r"""Gets the IAM access control policy for a function.
+
         Returns an empty policy if the function exists and does
         not have a policy set.
+
         Args:
-            request (:class:`~.iam_policy.GetIamPolicyRequest`):
+            request (:class:`~.iam_policy_pb2.GetIamPolicyRequest`):
                 The request object. Request message for `GetIamPolicy`
                 method.
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
@@ -743,7 +929,7 @@ class SchemaServiceAsyncClient:
             metadata (Sequence[Tuple[str, str]]): Strings which should be
                 sent along with the request as metadata.
         Returns:
-            ~.policy.Policy:
+            ~.policy_pb2.Policy:
                 Defines an Identity and Access Management (IAM) policy.
                 It is used to specify access control policies for Cloud
                 Platform resources.
@@ -807,7 +993,7 @@ class SchemaServiceAsyncClient:
         # The request isn't a proto-plus wrapped type,
         # so it must be constructed via keyword expansion.
         if isinstance(request, dict):
-            request = iam_policy.GetIamPolicyRequest(**request)
+            request = iam_policy_pb2.GetIamPolicyRequest(**request)
 
         # Wrap the RPC method; this adds retry and timeout information,
         # and friendly error handling.
@@ -824,24 +1010,32 @@ class SchemaServiceAsyncClient:
         )
 
         # Send the request.
-        response = await rpc(request, retry=retry, timeout=timeout, metadata=metadata,)
+        response = await rpc(
+            request,
+            retry=retry,
+            timeout=timeout,
+            metadata=metadata,
+        )
 
         # Done; return the response.
         return response
 
     async def test_iam_permissions(
         self,
-        request: iam_policy.TestIamPermissionsRequest = None,
+        request: iam_policy_pb2.TestIamPermissionsRequest = None,
         *,
-        retry: retries.Retry = gapic_v1.method.DEFAULT,
+        retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: float = None,
         metadata: Sequence[Tuple[str, str]] = (),
-    ) -> iam_policy.TestIamPermissionsResponse:
+    ) -> iam_policy_pb2.TestIamPermissionsResponse:
         r"""Tests the specified permissions against the IAM access control
-        policy for a function. If the function does not exist, this will
+            policy for a function.
+
+        If the function does not exist, this will
         return an empty set of permissions, not a NOT_FOUND error.
+
         Args:
-            request (:class:`~.iam_policy.TestIamPermissionsRequest`):
+            request (:class:`~.iam_policy_pb2.TestIamPermissionsRequest`):
                 The request object. Request message for
                 `TestIamPermissions` method.
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
@@ -850,7 +1044,7 @@ class SchemaServiceAsyncClient:
             metadata (Sequence[Tuple[str, str]]): Strings which should be
                 sent along with the request as metadata.
         Returns:
-            ~.iam_policy.TestIamPermissionsResponse:
+            ~iam_policy_pb2.PolicyTestIamPermissionsResponse:
                 Response message for ``TestIamPermissions`` method.
         """
         # Create or coerce a protobuf request object.
@@ -858,7 +1052,7 @@ class SchemaServiceAsyncClient:
         # The request isn't a proto-plus wrapped type,
         # so it must be constructed via keyword expansion.
         if isinstance(request, dict):
-            request = iam_policy.TestIamPermissionsRequest(**request)
+            request = iam_policy_pb2.TestIamPermissionsRequest(**request)
 
         # Wrap the RPC method; this adds retry and timeout information,
         # and friendly error handling.
@@ -875,10 +1069,21 @@ class SchemaServiceAsyncClient:
         )
 
         # Send the request.
-        response = await rpc(request, retry=retry, timeout=timeout, metadata=metadata,)
+        response = await rpc(
+            request,
+            retry=retry,
+            timeout=timeout,
+            metadata=metadata,
+        )
 
         # Done; return the response.
         return response
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc, tb):
+        await self.transport.close()
 
 
 try:

@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-
-# Copyright 2020 Google LLC
+# Copyright 2022 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,16 +13,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 from typing import (
     Any,
-    AsyncIterable,
+    AsyncIterator,
     Awaitable,
     Callable,
-    Iterable,
     Sequence,
     Tuple,
     Optional,
+    Iterator,
 )
 
 from google.pubsub_v1.types import pubsub
@@ -76,14 +74,14 @@ class ListSubscriptionsPager:
         return getattr(self._response, name)
 
     @property
-    def pages(self) -> Iterable[pubsub.ListSubscriptionsResponse]:
+    def pages(self) -> Iterator[pubsub.ListSubscriptionsResponse]:
         yield self._response
         while self._response.next_page_token:
             self._request.page_token = self._response.next_page_token
             self._response = self._method(self._request, metadata=self._metadata)
             yield self._response
 
-    def __iter__(self) -> Iterable[pubsub.Subscription]:
+    def __iter__(self) -> Iterator[pubsub.Subscription]:
         for page in self.pages:
             yield from page.subscriptions
 
@@ -117,7 +115,7 @@ class ListSubscriptionsAsyncPager:
         *,
         metadata: Sequence[Tuple[str, str]] = ()
     ):
-        """Instantiate the pager.
+        """Instantiates the pager.
 
         Args:
             method (Callable): The method that was originally called, and
@@ -138,14 +136,14 @@ class ListSubscriptionsAsyncPager:
         return getattr(self._response, name)
 
     @property
-    async def pages(self) -> AsyncIterable[pubsub.ListSubscriptionsResponse]:
+    async def pages(self) -> AsyncIterator[pubsub.ListSubscriptionsResponse]:
         yield self._response
         while self._response.next_page_token:
             self._request.page_token = self._response.next_page_token
             self._response = await self._method(self._request, metadata=self._metadata)
             yield self._response
 
-    def __aiter__(self) -> AsyncIterable[pubsub.Subscription]:
+    def __aiter__(self) -> AsyncIterator[pubsub.Subscription]:
         async def async_generator():
             async for page in self.pages:
                 for response in page.subscriptions:
@@ -204,14 +202,14 @@ class ListSnapshotsPager:
         return getattr(self._response, name)
 
     @property
-    def pages(self) -> Iterable[pubsub.ListSnapshotsResponse]:
+    def pages(self) -> Iterator[pubsub.ListSnapshotsResponse]:
         yield self._response
         while self._response.next_page_token:
             self._request.page_token = self._response.next_page_token
             self._response = self._method(self._request, metadata=self._metadata)
             yield self._response
 
-    def __iter__(self) -> Iterable[pubsub.Snapshot]:
+    def __iter__(self) -> Iterator[pubsub.Snapshot]:
         for page in self.pages:
             yield from page.snapshots
 
@@ -245,7 +243,7 @@ class ListSnapshotsAsyncPager:
         *,
         metadata: Sequence[Tuple[str, str]] = ()
     ):
-        """Instantiate the pager.
+        """Instantiates the pager.
 
         Args:
             method (Callable): The method that was originally called, and
@@ -266,14 +264,14 @@ class ListSnapshotsAsyncPager:
         return getattr(self._response, name)
 
     @property
-    async def pages(self) -> AsyncIterable[pubsub.ListSnapshotsResponse]:
+    async def pages(self) -> AsyncIterator[pubsub.ListSnapshotsResponse]:
         yield self._response
         while self._response.next_page_token:
             self._request.page_token = self._response.next_page_token
             self._response = await self._method(self._request, metadata=self._metadata)
             yield self._response
 
-    def __aiter__(self) -> AsyncIterable[pubsub.Snapshot]:
+    def __aiter__(self) -> AsyncIterator[pubsub.Snapshot]:
         async def async_generator():
             async for page in self.pages:
                 for response in page.snapshots:

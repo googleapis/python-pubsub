@@ -22,9 +22,12 @@ at https://cloud.google.com/pubsub/docs/schemas.
 """
 
 import argparse
+from typing import Optional
+
+from google.cloud import pubsub_v1
 
 
-def create_avro_schema(project_id, schema_id, avsc_file):
+def create_avro_schema(project_id: str, schema_id: str, avsc_file: str) -> None:
     """Create a schema resource from a JSON-formatted Avro schema file."""
     # [START pubsub_create_avro_schema]
     from google.api_core.exceptions import AlreadyExists
@@ -56,7 +59,7 @@ def create_avro_schema(project_id, schema_id, avsc_file):
     # [END pubsub_create_avro_schema]
 
 
-def create_proto_schema(project_id, schema_id, proto_file):
+def create_proto_schema(project_id: str, schema_id: str, proto_file: str) -> None:
     """Create a schema resource from a protobuf schema file."""
     # [START pubsub_create_proto_schema]
     from google.api_core.exceptions import AlreadyExists
@@ -90,7 +93,7 @@ def create_proto_schema(project_id, schema_id, proto_file):
     # [END pubsub_create_proto_schema]
 
 
-def get_schema(project_id, schema_id):
+def get_schema(project_id: str, schema_id: str) -> None:
     """Get a schema resource."""
     # [START pubsub_get_schema]
     from google.api_core.exceptions import NotFound
@@ -111,7 +114,7 @@ def get_schema(project_id, schema_id):
     # [END pubsub_get_schema]
 
 
-def list_schemas(project_id):
+def list_schemas(project_id: str) -> None:
     """List schema resources."""
     # [START pubsub_list_schemas]
     from google.cloud.pubsub import SchemaServiceClient
@@ -129,7 +132,7 @@ def list_schemas(project_id):
     # [END pubsub_list_schemas]
 
 
-def delete_schema(project_id, schema_id):
+def delete_schema(project_id: str, schema_id: str) -> None:
     """Delete a schema resource."""
     # [START pubsub_delete_schema]
     from google.api_core.exceptions import NotFound
@@ -150,7 +153,9 @@ def delete_schema(project_id, schema_id):
     # [END pubsub_delete_schema]
 
 
-def create_topic_with_schema(project_id, topic_id, schema_id, message_encoding):
+def create_topic_with_schema(
+    project_id: str, topic_id: str, schema_id: str, message_encoding: str
+) -> None:
     """Create a topic resource with a schema."""
     # [START pubsub_create_topic_with_schema]
     from google.api_core.exceptions import AlreadyExists, InvalidArgument
@@ -193,7 +198,7 @@ def create_topic_with_schema(project_id, topic_id, schema_id, message_encoding):
     # [END pubsub_create_topic_with_schema]
 
 
-def publish_avro_records(project_id, topic_id, avsc_file):
+def publish_avro_records(project_id: str, topic_id: str, avsc_file: str) -> None:
     """Pulbish a BINARY or JSON encoded message to a topic configured with an Avro schema."""
     # [START pubsub_publish_avro_records]
     from avro.io import BinaryEncoder, DatumWriter
@@ -230,10 +235,11 @@ def publish_avro_records(project_id, topic_id, avsc_file):
             encoder = BinaryEncoder(bout)
             writer.write(record, encoder)
             data = bout.getvalue()
-            print(f"Preparing a binary-encoded message:\n{data}")
+            print(f"Preparing a binary-encoded message:\n{data.decode()}")
         elif encoding == Encoding.JSON:
-            data = json.dumps(record).encode("utf-8")
-            print(f"Preparing a JSON-encoded message:\n{data}")
+            data_str = json.dumps(record)
+            print(f"Preparing a JSON-encoded message:\n{data_str}")
+            data = data_str.encode("utf-8")
         else:
             print(f"No encoding specified in {topic_path}. Abort.")
             exit(0)
@@ -246,7 +252,7 @@ def publish_avro_records(project_id, topic_id, avsc_file):
     # [END pubsub_publish_avro_records]
 
 
-def publish_proto_messages(project_id, topic_id):
+def publish_proto_messages(project_id: str, topic_id: str) -> None:
     """Publish a BINARY or JSON encoded message to a topic configured with a protobuf schema."""
     # [START pubsub_publish_proto_messages]
     from google.api_core.exceptions import NotFound
@@ -254,7 +260,7 @@ def publish_proto_messages(project_id, topic_id):
     from google.protobuf.json_format import MessageToJson
     from google.pubsub_v1.types import Encoding
 
-    from utilities import us_states_pb2
+    from utilities import us_states_pb2  # type: ignore
 
     # TODO(developer): Replace these variables before running the sample.
     # project_id = "your-project-id"
@@ -293,7 +299,12 @@ def publish_proto_messages(project_id, topic_id):
     # [END pubsub_publish_proto_messages]
 
 
-def subscribe_with_avro_schema(project_id, subscription_id, avsc_file, timeout=None):
+def subscribe_with_avro_schema(
+    project_id: str,
+    subscription_id: str,
+    avsc_file: str,
+    timeout: Optional[float] = None,
+) -> None:
     """Receive and decode messages sent to a topic with an Avro schema."""
     # [START pubsub_subscribe_avro_records]
     import avro
@@ -315,7 +326,7 @@ def subscribe_with_avro_schema(project_id, subscription_id, avsc_file, timeout=N
 
     avro_schema = avro.schema.parse(open(avsc_file, "rb").read())
 
-    def callback(message):
+    def callback(message: pubsub_v1.subscriber.message.Message) -> None:
         # Get the message serialization type.
         encoding = message.attributes.get("googclient_schemaencoding")
         # Deserialize the message data accordingly.
@@ -343,11 +354,14 @@ def subscribe_with_avro_schema(project_id, subscription_id, avsc_file, timeout=N
             # unless an exception occurs first.
             streaming_pull_future.result(timeout=timeout)
         except TimeoutError:
-            streaming_pull_future.cancel()
+            streaming_pull_future.cancel()  # Trigger the shutdown.
+            streaming_pull_future.result()  # Block until the shutdown is complete.
     # [END pubsub_subscribe_avro_records]
 
 
-def subscribe_with_proto_schema(project_id, subscription_id, timeout):
+def subscribe_with_proto_schema(
+    project_id: str, subscription_id: str, timeout: float
+) -> None:
     """Receive and decode messages sent to a topic with a protobuf schema."""
     # [[START pubsub_subscribe_proto_messages]
     from concurrent.futures import TimeoutError
@@ -368,7 +382,7 @@ def subscribe_with_proto_schema(project_id, subscription_id, timeout):
     # Instantiate a protoc-generated class defined in `us-states.proto`.
     state = us_states_pb2.StateProto()
 
-    def callback(message):
+    def callback(message: pubsub_v1.subscriber.message.Message) -> None:
         # Get the message serialization type.
         encoding = message.attributes.get("googclient_schemaencoding")
         # Deserialize the message data accordingly.
@@ -393,7 +407,8 @@ def subscribe_with_proto_schema(project_id, subscription_id, timeout):
             # unless an exception occurs first.
             streaming_pull_future.result(timeout=timeout)
         except TimeoutError:
-            streaming_pull_future.cancel()
+            streaming_pull_future.cancel()  # Trigger the shutdown.
+            streaming_pull_future.result()  # Block until the shutdown is complete.
     # [END pubsub_subscribe_proto_messages]
 
 

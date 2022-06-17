@@ -15,15 +15,23 @@
 # limitations under the License.
 
 import os
+from typing import Any, Callable, cast, Generator, TypeVar
 import uuid
 
+from _pytest.capture import CaptureFixture
+from flaky import flaky
+from google.api_core.exceptions import InternalServerError
 from google.api_core.exceptions import NotFound
-from google.cloud.pubsub import PublisherClient, SchemaServiceClient, SubscriberClient
+from google.cloud import pubsub_v1
+from google.cloud.pubsub import PublisherClient
+from google.cloud.pubsub import SchemaServiceClient
+from google.cloud.pubsub import SubscriberClient
 from google.pubsub_v1.types import Encoding
 import pytest
 
 import schema
 
+# This uuid is shared across tests which run in parallel.
 UUID = uuid.uuid4().hex
 try:
     PROJECT_ID = os.environ["GOOGLE_CLOUD_PROJECT"]
@@ -38,44 +46,54 @@ PROTO_SCHEMA_ID = f"schema-test-proto-schema-{UUID}"
 AVSC_FILE = "resources/us-states.avsc"
 PROTO_FILE = "resources/us-states.proto"
 
+# These tests run in parallel if pytest-parallel is installed.
+# Avoid modifying resources that are shared across tests,
+# as this results in test flake.
+
 
 @pytest.fixture(scope="module")
-def schema_client():
+def schema_client() -> Generator[pubsub_v1.SchemaServiceClient, None, None]:
     schema_client = SchemaServiceClient()
     yield schema_client
 
 
 @pytest.fixture(scope="module")
-def avro_schema(schema_client):
+def avro_schema(
+    schema_client: pubsub_v1.SchemaServiceClient,
+) -> Generator[str, None, None]:
     avro_schema_path = schema_client.schema_path(PROJECT_ID, AVRO_SCHEMA_ID)
 
     yield avro_schema_path
 
     try:
         schema_client.delete_schema(request={"name": avro_schema_path})
-    except NotFound:
+    except (NotFound, InternalServerError):
         pass
 
 
 @pytest.fixture(scope="module")
-def proto_schema(schema_client):
+def proto_schema(
+    schema_client: pubsub_v1.SchemaServiceClient,
+) -> Generator[str, None, None]:
     proto_schema_path = schema_client.schema_path(PROJECT_ID, PROTO_SCHEMA_ID)
 
     yield proto_schema_path
 
     try:
         schema_client.delete_schema(request={"name": proto_schema_path})
-    except NotFound:
+    except (NotFound, InternalServerError):
         pass
 
 
 @pytest.fixture(scope="module")
-def publisher_client():
+def publisher_client() -> Generator[pubsub_v1.PublisherClient, None, None]:
     yield PublisherClient()
 
 
 @pytest.fixture(scope="module")
-def avro_topic(publisher_client, avro_schema):
+def avro_topic(
+    publisher_client: pubsub_v1.PublisherClient, avro_schema: str
+) -> Generator[str, None, None]:
     from google.pubsub_v1.types import Encoding
 
     avro_topic_path = publisher_client.topic_path(PROJECT_ID, AVRO_TOPIC_ID)
@@ -99,7 +117,9 @@ def avro_topic(publisher_client, avro_schema):
 
 
 @pytest.fixture(scope="module")
-def proto_topic(publisher_client, proto_schema):
+def proto_topic(
+    publisher_client: pubsub_v1.PublisherClient, proto_schema: str
+) -> Generator[str, None, None]:
     proto_topic_path = publisher_client.topic_path(PROJECT_ID, PROTO_TOPIC_ID)
 
     try:
@@ -121,14 +141,16 @@ def proto_topic(publisher_client, proto_schema):
 
 
 @pytest.fixture(scope="module")
-def subscriber_client():
+def subscriber_client() -> Generator[pubsub_v1.SubscriberClient, None, None]:
     subscriber_client = SubscriberClient()
     yield subscriber_client
     subscriber_client.close()
 
 
 @pytest.fixture(scope="module")
-def avro_subscription(subscriber_client, avro_topic):
+def avro_subscription(
+    subscriber_client: pubsub_v1.SubscriberClient, avro_topic: str
+) -> Generator[str, None, None]:
     avro_subscription_path = subscriber_client.subscription_path(
         PROJECT_ID, AVRO_SUBSCRIPTION_ID
     )
@@ -150,7 +172,9 @@ def avro_subscription(subscriber_client, avro_topic):
 
 
 @pytest.fixture(scope="module")
-def proto_subscription(subscriber_client, proto_topic):
+def proto_subscription(
+    subscriber_client: pubsub_v1.SubscriberClient, proto_topic: str
+) -> Generator[str, None, None]:
     proto_subscription_path = subscriber_client.subscription_path(
         PROJECT_ID, PROTO_SUBSCRIPTION_ID
     )
@@ -171,7 +195,11 @@ def proto_subscription(subscriber_client, proto_topic):
     )
 
 
-def test_create_avro_schema(schema_client, avro_schema, capsys):
+def test_create_avro_schema(
+    schema_client: pubsub_v1.SchemaServiceClient,
+    avro_schema: str,
+    capsys: CaptureFixture[str],
+) -> None:
     try:
         schema_client.delete_schema(request={"name": avro_schema})
     except NotFound:
@@ -184,7 +212,11 @@ def test_create_avro_schema(schema_client, avro_schema, capsys):
     assert f"{avro_schema}" in out
 
 
-def test_create_proto_schema(schema_client, proto_schema, capsys):
+def test_create_proto_schema(
+    schema_client: pubsub_v1.SchemaServiceClient,
+    proto_schema: str,
+    capsys: CaptureFixture[str],
+) -> None:
     try:
         schema_client.delete_schema(request={"name": proto_schema})
     except NotFound:
@@ -197,20 +229,22 @@ def test_create_proto_schema(schema_client, proto_schema, capsys):
     assert f"{proto_schema}" in out
 
 
-def test_get_schema(avro_schema, capsys):
+def test_get_schema(avro_schema: str, capsys: CaptureFixture[str]) -> None:
     schema.get_schema(PROJECT_ID, AVRO_SCHEMA_ID)
     out, _ = capsys.readouterr()
     assert "Got a schema" in out
     assert f"{avro_schema}" in out
 
 
-def test_list_schemas(capsys):
+def test_list_schemas(capsys: CaptureFixture[str]) -> None:
     schema.list_schemas(PROJECT_ID)
     out, _ = capsys.readouterr()
     assert "Listed schemas." in out
 
 
-def test_create_topic_with_schema(avro_schema, capsys):
+def test_create_topic_with_schema(
+    avro_schema: str, capsys: CaptureFixture[str]
+) -> None:
     schema.create_topic_with_schema(PROJECT_ID, AVRO_TOPIC_ID, AVRO_SCHEMA_ID, "BINARY")
     out, _ = capsys.readouterr()
     assert "Created a topic" in out
@@ -219,14 +253,21 @@ def test_create_topic_with_schema(avro_schema, capsys):
     assert "BINARY" in out or "2" in out
 
 
-def test_publish_avro_records(avro_schema, avro_topic, capsys):
+def test_publish_avro_records(
+    avro_schema: str, avro_topic: str, capsys: CaptureFixture[str]
+) -> None:
     schema.publish_avro_records(PROJECT_ID, AVRO_TOPIC_ID, AVSC_FILE)
     out, _ = capsys.readouterr()
     assert "Preparing a binary-encoded message" in out
     assert "Published message ID" in out
 
 
-def test_subscribe_with_avro_schema(avro_schema, avro_topic, avro_subscription, capsys):
+def test_subscribe_with_avro_schema(
+    avro_schema: str,
+    avro_topic: str,
+    avro_subscription: str,
+    capsys: CaptureFixture[str],
+) -> None:
     schema.publish_avro_records(PROJECT_ID, AVRO_TOPIC_ID, AVSC_FILE)
 
     schema.subscribe_with_avro_schema(PROJECT_ID, AVRO_SUBSCRIPTION_ID, AVSC_FILE, 9)
@@ -234,7 +275,7 @@ def test_subscribe_with_avro_schema(avro_schema, avro_topic, avro_subscription, 
     assert "Received a binary-encoded message:" in out
 
 
-def test_publish_proto_records(proto_topic, capsys):
+def test_publish_proto_records(proto_topic: str, capsys: CaptureFixture[str]) -> None:
     schema.publish_proto_messages(PROJECT_ID, PROTO_TOPIC_ID)
     out, _ = capsys.readouterr()
     assert "Preparing a binary-encoded message" in out
@@ -242,8 +283,11 @@ def test_publish_proto_records(proto_topic, capsys):
 
 
 def test_subscribe_with_proto_schema(
-    proto_schema, proto_topic, proto_subscription, capsys
-):
+    proto_schema: str,
+    proto_topic: str,
+    proto_subscription: str,
+    capsys: CaptureFixture[str],
+) -> None:
     schema.publish_proto_messages(PROJECT_ID, PROTO_TOPIC_ID)
 
     schema.subscribe_with_proto_schema(PROJECT_ID, PROTO_SUBSCRIPTION_ID, 9)
@@ -251,7 +295,12 @@ def test_subscribe_with_proto_schema(
     assert "Received a binary-encoded message" in out
 
 
-def test_delete_schema(proto_schema, capsys):
+C = TypeVar("C", bound=Callable[..., Any])
+typed_flaky = cast(Callable[[C], C], flaky(max_runs=3, min_passes=1))
+
+
+@typed_flaky
+def test_delete_schema(proto_schema: str, capsys: CaptureFixture[str]) -> None:
     schema.delete_schema(PROJECT_ID, PROTO_SCHEMA_ID)
     out, _ = capsys.readouterr()
     assert "Deleted a schema" in out

@@ -104,7 +104,7 @@ def test_publish_large_messages(publisher, topic_path, cleanup):
     # cases well.
     # Mind that the total PublishRequest size must still be smaller than
     # 10 * 1024 * 1024 bytes in order to not exceed the max request body size limit.
-    msg_data = b"x" * (2 * 10 ** 6)
+    msg_data = b"x" * (2 * 10**6)
 
     publisher.batch_settings = types.BatchSettings(
         max_bytes=11 * 1000 * 1000,  # more than the server limit of 10 ** 7
@@ -446,7 +446,11 @@ def test_subscriber_not_leaking_open_sockets(
         assert len(response.received_messages) == 3
 
     conn_count_end = len(current_process.connections())
-    assert conn_count_end == conn_count_start
+
+    # To avoid flakiness, use <= in the assertion, since on rare occasions additional
+    # sockets are closed, causing the == assertion to fail.
+    # https://github.com/googleapis/python-pubsub/issues/483#issuecomment-910122086
+    assert conn_count_end <= conn_count_start
 
 
 def test_synchronous_pull_no_deadline_error_if_no_messages(

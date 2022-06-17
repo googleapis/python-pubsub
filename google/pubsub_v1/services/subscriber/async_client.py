@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-
-# Copyright 2020 Google LLC
+# Copyright 2022 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,12 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 from collections import OrderedDict
 import functools
 import re
 from typing import (
     Dict,
+    Mapping,
+    Optional,
     AsyncIterable,
     Awaitable,
     AsyncIterator,
@@ -31,20 +31,24 @@ from typing import (
 import warnings
 import pkg_resources
 
-import google.api_core.client_options as ClientOptions  # type: ignore
-from google.api_core import exceptions  # type: ignore
-from google.api_core import gapic_v1  # type: ignore
-from google.api_core import retry as retries  # type: ignore
-from google.auth import credentials  # type: ignore
+from google.api_core.client_options import ClientOptions
+from google.api_core import exceptions as core_exceptions
+from google.api_core import gapic_v1
+from google.api_core import retry as retries
+from google.auth import credentials as ga_credentials  # type: ignore
 from google.oauth2 import service_account  # type: ignore
 
-from google.iam.v1 import iam_policy_pb2 as iam_policy  # type: ignore
-from google.iam.v1 import policy_pb2 as policy  # type: ignore
-from google.protobuf import duration_pb2 as duration  # type: ignore
-from google.protobuf import timestamp_pb2 as timestamp  # type: ignore
+try:
+    OptionalRetry = Union[retries.Retry, gapic_v1.method._MethodDefault]
+except AttributeError:  # pragma: NO COVER
+    OptionalRetry = Union[retries.Retry, object]  # type: ignore
+
+from google.iam.v1 import iam_policy_pb2  # type: ignore
+from google.iam.v1 import policy_pb2  # type: ignore
+from google.protobuf import duration_pb2  # type: ignore
+from google.protobuf import timestamp_pb2  # type: ignore
 from google.pubsub_v1.services.subscriber import pagers
 from google.pubsub_v1.types import pubsub
-
 from .transports.base import SubscriberTransport, DEFAULT_CLIENT_INFO
 from .transports.grpc_asyncio import SubscriberGrpcAsyncIOTransport
 from .client import SubscriberClient
@@ -68,25 +72,20 @@ class SubscriberAsyncClient:
     parse_subscription_path = staticmethod(SubscriberClient.parse_subscription_path)
     topic_path = staticmethod(SubscriberClient.topic_path)
     parse_topic_path = staticmethod(SubscriberClient.parse_topic_path)
-
     common_billing_account_path = staticmethod(
         SubscriberClient.common_billing_account_path
     )
     parse_common_billing_account_path = staticmethod(
         SubscriberClient.parse_common_billing_account_path
     )
-
     common_folder_path = staticmethod(SubscriberClient.common_folder_path)
     parse_common_folder_path = staticmethod(SubscriberClient.parse_common_folder_path)
-
     common_organization_path = staticmethod(SubscriberClient.common_organization_path)
     parse_common_organization_path = staticmethod(
         SubscriberClient.parse_common_organization_path
     )
-
     common_project_path = staticmethod(SubscriberClient.common_project_path)
     parse_common_project_path = staticmethod(SubscriberClient.parse_common_project_path)
-
     common_location_path = staticmethod(SubscriberClient.common_location_path)
     parse_common_location_path = staticmethod(
         SubscriberClient.parse_common_location_path
@@ -94,7 +93,8 @@ class SubscriberAsyncClient:
 
     @classmethod
     def from_service_account_info(cls, info: dict, *args, **kwargs):
-        """Creates an instance of this client using the provided credentials info.
+        """Creates an instance of this client using the provided credentials
+            info.
 
         Args:
             info (dict): The service account private key info.
@@ -109,7 +109,7 @@ class SubscriberAsyncClient:
     @classmethod
     def from_service_account_file(cls, filename: str, *args, **kwargs):
         """Creates an instance of this client using the provided credentials
-        file.
+            file.
 
         Args:
             filename (str): The path to the service account private key json
@@ -124,9 +124,45 @@ class SubscriberAsyncClient:
 
     from_service_account_json = from_service_account_file
 
+    @classmethod
+    def get_mtls_endpoint_and_cert_source(
+        cls, client_options: Optional[ClientOptions] = None
+    ):
+        """Return the API endpoint and client cert source for mutual TLS.
+
+        The client cert source is determined in the following order:
+        (1) if `GOOGLE_API_USE_CLIENT_CERTIFICATE` environment variable is not "true", the
+        client cert source is None.
+        (2) if `client_options.client_cert_source` is provided, use the provided one; if the
+        default client cert source exists, use the default one; otherwise the client cert
+        source is None.
+
+        The API endpoint is determined in the following order:
+        (1) if `client_options.api_endpoint` if provided, use the provided one.
+        (2) if `GOOGLE_API_USE_CLIENT_CERTIFICATE` environment variable is "always", use the
+        default mTLS endpoint; if the environment variabel is "never", use the default API
+        endpoint; otherwise if client cert source exists, use the default mTLS endpoint, otherwise
+        use the default API endpoint.
+
+        More details can be found at https://google.aip.dev/auth/4114.
+
+        Args:
+            client_options (google.api_core.client_options.ClientOptions): Custom options for the
+                client. Only the `api_endpoint` and `client_cert_source` properties may be used
+                in this method.
+
+        Returns:
+            Tuple[str, Callable[[], Tuple[bytes, bytes]]]: returns the API endpoint and the
+                client cert source to use.
+
+        Raises:
+            google.auth.exceptions.MutualTLSChannelError: If any errors happen.
+        """
+        return SubscriberClient.get_mtls_endpoint_and_cert_source(client_options)  # type: ignore
+
     @property
     def transport(self) -> SubscriberTransport:
-        """Return the transport used by the client instance.
+        """Returns the transport used by the client instance.
 
         Returns:
             SubscriberTransport: The transport used by the client instance.
@@ -140,12 +176,12 @@ class SubscriberAsyncClient:
     def __init__(
         self,
         *,
-        credentials: credentials.Credentials = None,
+        credentials: ga_credentials.Credentials = None,
         transport: Union[str, SubscriberTransport] = "grpc_asyncio",
         client_options: ClientOptions = None,
         client_info: gapic_v1.client_info.ClientInfo = DEFAULT_CLIENT_INFO,
     ) -> None:
-        """Instantiate the subscriber client.
+        """Instantiates the subscriber client.
 
         Args:
             credentials (Optional[google.auth.credentials.Credentials]): The
@@ -177,7 +213,6 @@ class SubscriberAsyncClient:
             google.auth.exceptions.MutualTlsChannelError: If mutual TLS transport
                 creation failed for any reason.
         """
-
         self._client = SubscriberClient(
             credentials=credentials,
             transport=transport,
@@ -187,13 +222,13 @@ class SubscriberAsyncClient:
 
     async def create_subscription(
         self,
-        request: pubsub.Subscription = None,
+        request: Union[pubsub.Subscription, dict] = None,
         *,
         name: str = None,
         topic: str = None,
         push_config: pubsub.PushConfig = None,
         ack_deadline_seconds: int = None,
-        retry: retries.Retry = gapic_v1.method.DEFAULT,
+        retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: float = None,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pubsub.Subscription:
@@ -211,8 +246,28 @@ class SubscriberAsyncClient:
         Note that for REST API requests, you must specify a name in the
         request.
 
+        .. code-block:: python
+
+            from google import pubsub_v1
+
+            async def sample_create_subscription():
+                # Create a client
+                client = pubsub_v1.SubscriberAsyncClient()
+
+                # Initialize request argument(s)
+                request = pubsub_v1.Subscription(
+                    name="name_value",
+                    topic="topic_value",
+                )
+
+                # Make the request
+                response = await client.create_subscription(request=request)
+
+                # Handle the response
+                print(response)
+
         Args:
-            request (:class:`google.pubsub_v1.types.Subscription`):
+            request (Union[google.pubsub_v1.types.Subscription, dict]):
                 The request object. A subscription resource.
             name (:class:`str`):
                 Required. The name of the subscription. It must have the
@@ -240,8 +295,9 @@ class SubscriberAsyncClient:
                 should not be set.
             push_config (:class:`google.pubsub_v1.types.PushConfig`):
                 If push delivery is used with this subscription, this
-                field is used to configure it. An empty ``pushConfig``
-                signifies that the subscriber will pull and ack messages
+                field is used to configure it. Either ``pushConfig`` or
+                ``bigQueryConfig`` can be set, but not both. If both are
+                empty, then the subscriber will pull and ack messages
                 using API methods.
 
                 This corresponds to the ``push_config`` field
@@ -276,7 +332,6 @@ class SubscriberAsyncClient:
                 This corresponds to the ``ack_deadline_seconds`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
@@ -288,7 +343,7 @@ class SubscriberAsyncClient:
                 A subscription resource.
         """
         # Create or coerce a protobuf request object.
-        # Sanity check: If we got a request object, we should *not* have
+        # Quick check: If we got a request object, we should *not* have
         # gotten any keyword arguments that map to the request.
         has_flattened_params = any([name, topic, push_config, ack_deadline_seconds])
         if request is not None and has_flattened_params:
@@ -301,7 +356,6 @@ class SubscriberAsyncClient:
 
         # If we have keyword arguments corresponding to fields on the
         # request, apply these.
-
         if name is not None:
             request.name = name
         if topic is not None:
@@ -320,9 +374,9 @@ class SubscriberAsyncClient:
                 maximum=60.0,
                 multiplier=1.3,
                 predicate=retries.if_exception_type(
-                    exceptions.Aborted,
-                    exceptions.ServiceUnavailable,
-                    exceptions.Unknown,
+                    core_exceptions.Aborted,
+                    core_exceptions.ServiceUnavailable,
+                    core_exceptions.Unknown,
                 ),
                 deadline=60.0,
             ),
@@ -337,24 +391,48 @@ class SubscriberAsyncClient:
         )
 
         # Send the request.
-        response = await rpc(request, retry=retry, timeout=timeout, metadata=metadata,)
+        response = await rpc(
+            request,
+            retry=retry,
+            timeout=timeout,
+            metadata=metadata,
+        )
 
         # Done; return the response.
         return response
 
     async def get_subscription(
         self,
-        request: pubsub.GetSubscriptionRequest = None,
+        request: Union[pubsub.GetSubscriptionRequest, dict] = None,
         *,
         subscription: str = None,
-        retry: retries.Retry = gapic_v1.method.DEFAULT,
+        retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: float = None,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pubsub.Subscription:
         r"""Gets the configuration details of a subscription.
 
+        .. code-block:: python
+
+            from google import pubsub_v1
+
+            async def sample_get_subscription():
+                # Create a client
+                client = pubsub_v1.SubscriberAsyncClient()
+
+                # Initialize request argument(s)
+                request = pubsub_v1.GetSubscriptionRequest(
+                    subscription="subscription_value",
+                )
+
+                # Make the request
+                response = await client.get_subscription(request=request)
+
+                # Handle the response
+                print(response)
+
         Args:
-            request (:class:`google.pubsub_v1.types.GetSubscriptionRequest`):
+            request (Union[google.pubsub_v1.types.GetSubscriptionRequest, dict]):
                 The request object. Request for the GetSubscription
                 method.
             subscription (:class:`str`):
@@ -364,7 +442,6 @@ class SubscriberAsyncClient:
                 This corresponds to the ``subscription`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
@@ -376,7 +453,7 @@ class SubscriberAsyncClient:
                 A subscription resource.
         """
         # Create or coerce a protobuf request object.
-        # Sanity check: If we got a request object, we should *not* have
+        # Quick check: If we got a request object, we should *not* have
         # gotten any keyword arguments that map to the request.
         has_flattened_params = any([subscription])
         if request is not None and has_flattened_params:
@@ -389,7 +466,6 @@ class SubscriberAsyncClient:
 
         # If we have keyword arguments corresponding to fields on the
         # request, apply these.
-
         if subscription is not None:
             request.subscription = subscription
 
@@ -402,9 +478,9 @@ class SubscriberAsyncClient:
                 maximum=60.0,
                 multiplier=1.3,
                 predicate=retries.if_exception_type(
-                    exceptions.Aborted,
-                    exceptions.ServiceUnavailable,
-                    exceptions.Unknown,
+                    core_exceptions.Aborted,
+                    core_exceptions.ServiceUnavailable,
+                    core_exceptions.Unknown,
                 ),
                 deadline=60.0,
             ),
@@ -421,16 +497,21 @@ class SubscriberAsyncClient:
         )
 
         # Send the request.
-        response = await rpc(request, retry=retry, timeout=timeout, metadata=metadata,)
+        response = await rpc(
+            request,
+            retry=retry,
+            timeout=timeout,
+            metadata=metadata,
+        )
 
         # Done; return the response.
         return response
 
     async def update_subscription(
         self,
-        request: pubsub.UpdateSubscriptionRequest = None,
+        request: Union[pubsub.UpdateSubscriptionRequest, dict] = None,
         *,
-        retry: retries.Retry = gapic_v1.method.DEFAULT,
+        retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: float = None,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pubsub.Subscription:
@@ -438,11 +519,33 @@ class SubscriberAsyncClient:
         properties of a subscription, such as its topic, are not
         modifiable.
 
+        .. code-block:: python
+
+            from google import pubsub_v1
+
+            async def sample_update_subscription():
+                # Create a client
+                client = pubsub_v1.SubscriberAsyncClient()
+
+                # Initialize request argument(s)
+                subscription = pubsub_v1.Subscription()
+                subscription.name = "name_value"
+                subscription.topic = "topic_value"
+
+                request = pubsub_v1.UpdateSubscriptionRequest(
+                    subscription=subscription,
+                )
+
+                # Make the request
+                response = await client.update_subscription(request=request)
+
+                # Handle the response
+                print(response)
+
         Args:
-            request (:class:`google.pubsub_v1.types.UpdateSubscriptionRequest`):
+            request (Union[google.pubsub_v1.types.UpdateSubscriptionRequest, dict]):
                 The request object. Request for the UpdateSubscription
                 method.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
@@ -454,7 +557,6 @@ class SubscriberAsyncClient:
                 A subscription resource.
         """
         # Create or coerce a protobuf request object.
-
         request = pubsub.UpdateSubscriptionRequest(request)
 
         # Wrap the RPC method; this adds retry and timeout information,
@@ -465,7 +567,9 @@ class SubscriberAsyncClient:
                 initial=0.1,
                 maximum=60.0,
                 multiplier=1.3,
-                predicate=retries.if_exception_type(exceptions.ServiceUnavailable,),
+                predicate=retries.if_exception_type(
+                    core_exceptions.ServiceUnavailable,
+                ),
                 deadline=60.0,
             ),
             default_timeout=60.0,
@@ -481,24 +585,49 @@ class SubscriberAsyncClient:
         )
 
         # Send the request.
-        response = await rpc(request, retry=retry, timeout=timeout, metadata=metadata,)
+        response = await rpc(
+            request,
+            retry=retry,
+            timeout=timeout,
+            metadata=metadata,
+        )
 
         # Done; return the response.
         return response
 
     async def list_subscriptions(
         self,
-        request: pubsub.ListSubscriptionsRequest = None,
+        request: Union[pubsub.ListSubscriptionsRequest, dict] = None,
         *,
         project: str = None,
-        retry: retries.Retry = gapic_v1.method.DEFAULT,
+        retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: float = None,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pagers.ListSubscriptionsAsyncPager:
         r"""Lists matching subscriptions.
 
+        .. code-block:: python
+
+            from google import pubsub_v1
+
+            async def sample_list_subscriptions():
+                # Create a client
+                client = pubsub_v1.SubscriberAsyncClient()
+
+                # Initialize request argument(s)
+                request = pubsub_v1.ListSubscriptionsRequest(
+                    project="project_value",
+                )
+
+                # Make the request
+                page_result = client.list_subscriptions(request=request)
+
+                # Handle the response
+                async for response in page_result:
+                    print(response)
+
         Args:
-            request (:class:`google.pubsub_v1.types.ListSubscriptionsRequest`):
+            request (Union[google.pubsub_v1.types.ListSubscriptionsRequest, dict]):
                 The request object. Request for the `ListSubscriptions`
                 method.
             project (:class:`str`):
@@ -508,7 +637,6 @@ class SubscriberAsyncClient:
                 This corresponds to the ``project`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
@@ -524,7 +652,7 @@ class SubscriberAsyncClient:
 
         """
         # Create or coerce a protobuf request object.
-        # Sanity check: If we got a request object, we should *not* have
+        # Quick check: If we got a request object, we should *not* have
         # gotten any keyword arguments that map to the request.
         has_flattened_params = any([project])
         if request is not None and has_flattened_params:
@@ -537,7 +665,6 @@ class SubscriberAsyncClient:
 
         # If we have keyword arguments corresponding to fields on the
         # request, apply these.
-
         if project is not None:
             request.project = project
 
@@ -550,9 +677,9 @@ class SubscriberAsyncClient:
                 maximum=60.0,
                 multiplier=1.3,
                 predicate=retries.if_exception_type(
-                    exceptions.Aborted,
-                    exceptions.ServiceUnavailable,
-                    exceptions.Unknown,
+                    core_exceptions.Aborted,
+                    core_exceptions.ServiceUnavailable,
+                    core_exceptions.Unknown,
                 ),
                 deadline=60.0,
             ),
@@ -567,12 +694,20 @@ class SubscriberAsyncClient:
         )
 
         # Send the request.
-        response = await rpc(request, retry=retry, timeout=timeout, metadata=metadata,)
+        response = await rpc(
+            request,
+            retry=retry,
+            timeout=timeout,
+            metadata=metadata,
+        )
 
         # This method is paged; wrap the response in a pager, which provides
         # an `__aiter__` convenience method.
         response = pagers.ListSubscriptionsAsyncPager(
-            method=rpc, request=request, response=response, metadata=metadata,
+            method=rpc,
+            request=request,
+            response=response,
+            metadata=metadata,
         )
 
         # Done; return the response.
@@ -580,10 +715,10 @@ class SubscriberAsyncClient:
 
     async def delete_subscription(
         self,
-        request: pubsub.DeleteSubscriptionRequest = None,
+        request: Union[pubsub.DeleteSubscriptionRequest, dict] = None,
         *,
         subscription: str = None,
-        retry: retries.Retry = gapic_v1.method.DEFAULT,
+        retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: float = None,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> None:
@@ -594,8 +729,24 @@ class SubscriberAsyncClient:
         new one has no association with the old subscription or its
         topic unless the same topic is specified.
 
+        .. code-block:: python
+
+            from google import pubsub_v1
+
+            async def sample_delete_subscription():
+                # Create a client
+                client = pubsub_v1.SubscriberAsyncClient()
+
+                # Initialize request argument(s)
+                request = pubsub_v1.DeleteSubscriptionRequest(
+                    subscription="subscription_value",
+                )
+
+                # Make the request
+                await client.delete_subscription(request=request)
+
         Args:
-            request (:class:`google.pubsub_v1.types.DeleteSubscriptionRequest`):
+            request (Union[google.pubsub_v1.types.DeleteSubscriptionRequest, dict]):
                 The request object. Request for the DeleteSubscription
                 method.
             subscription (:class:`str`):
@@ -605,7 +756,6 @@ class SubscriberAsyncClient:
                 This corresponds to the ``subscription`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
@@ -613,7 +763,7 @@ class SubscriberAsyncClient:
                 sent along with the request as metadata.
         """
         # Create or coerce a protobuf request object.
-        # Sanity check: If we got a request object, we should *not* have
+        # Quick check: If we got a request object, we should *not* have
         # gotten any keyword arguments that map to the request.
         has_flattened_params = any([subscription])
         if request is not None and has_flattened_params:
@@ -626,7 +776,6 @@ class SubscriberAsyncClient:
 
         # If we have keyword arguments corresponding to fields on the
         # request, apply these.
-
         if subscription is not None:
             request.subscription = subscription
 
@@ -638,7 +787,9 @@ class SubscriberAsyncClient:
                 initial=0.1,
                 maximum=60.0,
                 multiplier=1.3,
-                predicate=retries.if_exception_type(exceptions.ServiceUnavailable,),
+                predicate=retries.if_exception_type(
+                    core_exceptions.ServiceUnavailable,
+                ),
                 deadline=60.0,
             ),
             default_timeout=60.0,
@@ -655,17 +806,20 @@ class SubscriberAsyncClient:
 
         # Send the request.
         await rpc(
-            request, retry=retry, timeout=timeout, metadata=metadata,
+            request,
+            retry=retry,
+            timeout=timeout,
+            metadata=metadata,
         )
 
     async def modify_ack_deadline(
         self,
-        request: pubsub.ModifyAckDeadlineRequest = None,
+        request: Union[pubsub.ModifyAckDeadlineRequest, dict] = None,
         *,
         subscription: str = None,
         ack_ids: Sequence[str] = None,
         ack_deadline_seconds: int = None,
-        retry: retries.Retry = gapic_v1.method.DEFAULT,
+        retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: float = None,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> None:
@@ -676,8 +830,26 @@ class SubscriberAsyncClient:
         does not modify the subscription-level ``ackDeadlineSeconds``
         used for subsequent messages.
 
+        .. code-block:: python
+
+            from google import pubsub_v1
+
+            async def sample_modify_ack_deadline():
+                # Create a client
+                client = pubsub_v1.SubscriberAsyncClient()
+
+                # Initialize request argument(s)
+                request = pubsub_v1.ModifyAckDeadlineRequest(
+                    subscription="subscription_value",
+                    ack_ids=['ack_ids_value_1', 'ack_ids_value_2'],
+                    ack_deadline_seconds=2066,
+                )
+
+                # Make the request
+                await client.modify_ack_deadline(request=request)
+
         Args:
-            request (:class:`google.pubsub_v1.types.ModifyAckDeadlineRequest`):
+            request (Union[google.pubsub_v1.types.ModifyAckDeadlineRequest, dict]):
                 The request object. Request for the ModifyAckDeadline
                 method.
             subscription (:class:`str`):
@@ -708,7 +880,6 @@ class SubscriberAsyncClient:
                 This corresponds to the ``ack_deadline_seconds`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
@@ -716,7 +887,7 @@ class SubscriberAsyncClient:
                 sent along with the request as metadata.
         """
         # Create or coerce a protobuf request object.
-        # Sanity check: If we got a request object, we should *not* have
+        # Quick check: If we got a request object, we should *not* have
         # gotten any keyword arguments that map to the request.
         has_flattened_params = any([subscription, ack_ids, ack_deadline_seconds])
         if request is not None and has_flattened_params:
@@ -729,12 +900,10 @@ class SubscriberAsyncClient:
 
         # If we have keyword arguments corresponding to fields on the
         # request, apply these.
-
         if subscription is not None:
             request.subscription = subscription
         if ack_deadline_seconds is not None:
             request.ack_deadline_seconds = ack_deadline_seconds
-
         if ack_ids:
             request.ack_ids.extend(ack_ids)
 
@@ -746,7 +915,9 @@ class SubscriberAsyncClient:
                 initial=0.1,
                 maximum=60.0,
                 multiplier=1.3,
-                predicate=retries.if_exception_type(exceptions.ServiceUnavailable,),
+                predicate=retries.if_exception_type(
+                    core_exceptions.ServiceUnavailable,
+                ),
                 deadline=60.0,
             ),
             default_timeout=60.0,
@@ -763,16 +934,19 @@ class SubscriberAsyncClient:
 
         # Send the request.
         await rpc(
-            request, retry=retry, timeout=timeout, metadata=metadata,
+            request,
+            retry=retry,
+            timeout=timeout,
+            metadata=metadata,
         )
 
     async def acknowledge(
         self,
-        request: pubsub.AcknowledgeRequest = None,
+        request: Union[pubsub.AcknowledgeRequest, dict] = None,
         *,
         subscription: str = None,
         ack_ids: Sequence[str] = None,
-        retry: retries.Retry = gapic_v1.method.DEFAULT,
+        retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: float = None,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> None:
@@ -785,8 +959,25 @@ class SubscriberAsyncClient:
         Acknowledging a message more than once will not result in an
         error.
 
+        .. code-block:: python
+
+            from google import pubsub_v1
+
+            async def sample_acknowledge():
+                # Create a client
+                client = pubsub_v1.SubscriberAsyncClient()
+
+                # Initialize request argument(s)
+                request = pubsub_v1.AcknowledgeRequest(
+                    subscription="subscription_value",
+                    ack_ids=['ack_ids_value_1', 'ack_ids_value_2'],
+                )
+
+                # Make the request
+                await client.acknowledge(request=request)
+
         Args:
-            request (:class:`google.pubsub_v1.types.AcknowledgeRequest`):
+            request (Union[google.pubsub_v1.types.AcknowledgeRequest, dict]):
                 The request object. Request for the Acknowledge method.
             subscription (:class:`str`):
                 Required. The subscription whose message is being
@@ -804,7 +995,6 @@ class SubscriberAsyncClient:
                 This corresponds to the ``ack_ids`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
@@ -812,7 +1002,7 @@ class SubscriberAsyncClient:
                 sent along with the request as metadata.
         """
         # Create or coerce a protobuf request object.
-        # Sanity check: If we got a request object, we should *not* have
+        # Quick check: If we got a request object, we should *not* have
         # gotten any keyword arguments that map to the request.
         has_flattened_params = any([subscription, ack_ids])
         if request is not None and has_flattened_params:
@@ -825,10 +1015,8 @@ class SubscriberAsyncClient:
 
         # If we have keyword arguments corresponding to fields on the
         # request, apply these.
-
         if subscription is not None:
             request.subscription = subscription
-
         if ack_ids:
             request.ack_ids.extend(ack_ids)
 
@@ -840,7 +1028,9 @@ class SubscriberAsyncClient:
                 initial=0.1,
                 maximum=60.0,
                 multiplier=1.3,
-                predicate=retries.if_exception_type(exceptions.ServiceUnavailable,),
+                predicate=retries.if_exception_type(
+                    core_exceptions.ServiceUnavailable,
+                ),
                 deadline=60.0,
             ),
             default_timeout=60.0,
@@ -857,17 +1047,20 @@ class SubscriberAsyncClient:
 
         # Send the request.
         await rpc(
-            request, retry=retry, timeout=timeout, metadata=metadata,
+            request,
+            retry=retry,
+            timeout=timeout,
+            metadata=metadata,
         )
 
     async def pull(
         self,
-        request: pubsub.PullRequest = None,
+        request: Union[pubsub.PullRequest, dict] = None,
         *,
         subscription: str = None,
         return_immediately: bool = None,
         max_messages: int = None,
-        retry: retries.Retry = gapic_v1.method.DEFAULT,
+        retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: float = None,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pubsub.PullResponse:
@@ -875,8 +1068,28 @@ class SubscriberAsyncClient:
         ``UNAVAILABLE`` if there are too many concurrent pull requests
         pending for the given subscription.
 
+        .. code-block:: python
+
+            from google import pubsub_v1
+
+            async def sample_pull():
+                # Create a client
+                client = pubsub_v1.SubscriberAsyncClient()
+
+                # Initialize request argument(s)
+                request = pubsub_v1.PullRequest(
+                    subscription="subscription_value",
+                    max_messages=1277,
+                )
+
+                # Make the request
+                response = await client.pull(request=request)
+
+                # Handle the response
+                print(response)
+
         Args:
-            request (:class:`google.pubsub_v1.types.PullRequest`):
+            request (Union[google.pubsub_v1.types.PullRequest, dict]):
                 The request object. Request for the `Pull` method.
             subscription (:class:`str`):
                 Required. The subscription from which messages should be
@@ -910,7 +1123,6 @@ class SubscriberAsyncClient:
                 This corresponds to the ``max_messages`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
@@ -922,7 +1134,7 @@ class SubscriberAsyncClient:
                 Response for the Pull method.
         """
         # Create or coerce a protobuf request object.
-        # Sanity check: If we got a request object, we should *not* have
+        # Quick check: If we got a request object, we should *not* have
         # gotten any keyword arguments that map to the request.
         has_flattened_params = any([subscription, return_immediately, max_messages])
         if request is not None and has_flattened_params:
@@ -935,7 +1147,6 @@ class SubscriberAsyncClient:
 
         # If we have keyword arguments corresponding to fields on the
         # request, apply these.
-
         if subscription is not None:
             request.subscription = subscription
         if return_immediately is not None:
@@ -958,9 +1169,9 @@ class SubscriberAsyncClient:
                 maximum=60.0,
                 multiplier=1.3,
                 predicate=retries.if_exception_type(
-                    exceptions.Aborted,
-                    exceptions.ServiceUnavailable,
-                    exceptions.Unknown,
+                    core_exceptions.Aborted,
+                    core_exceptions.ServiceUnavailable,
+                    core_exceptions.Unknown,
                 ),
                 deadline=60.0,
             ),
@@ -977,7 +1188,12 @@ class SubscriberAsyncClient:
         )
 
         # Send the request.
-        response = await rpc(request, retry=retry, timeout=timeout, metadata=metadata,)
+        response = await rpc(
+            request,
+            retry=retry,
+            timeout=timeout,
+            metadata=metadata,
+        )
 
         # Done; return the response.
         return response
@@ -986,7 +1202,7 @@ class SubscriberAsyncClient:
         self,
         requests: AsyncIterator[pubsub.StreamingPullRequest] = None,
         *,
-        retry: retries.Retry = gapic_v1.method.DEFAULT,
+        retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: float = None,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> Awaitable[AsyncIterable[pubsub.StreamingPullResponse]]:
@@ -998,6 +1214,37 @@ class SubscriberAsyncClient:
         server-side resources, in which case, the client should
         re-establish the stream. Flow control can be achieved by
         configuring the underlying RPC channel.
+
+        .. code-block:: python
+
+            from google import pubsub_v1
+
+            async def sample_streaming_pull():
+                # Create a client
+                client = pubsub_v1.SubscriberAsyncClient()
+
+                # Initialize request argument(s)
+                request = pubsub_v1.StreamingPullRequest(
+                    subscription="subscription_value",
+                    stream_ack_deadline_seconds=2813,
+                )
+
+                # This method expects an iterator which contains
+                # 'pubsub_v1.StreamingPullRequest' objects
+                # Here we create a generator that yields a single `request` for
+                # demonstrative purposes.
+                requests = [request]
+
+                def request_generator():
+                    for request in requests:
+                        yield request
+
+                # Make the request
+                stream = await client.streaming_pull(requests=request_generator())
+
+                # Handle the response
+                async for response in stream:
+                    print(response)
 
         Args:
             requests (AsyncIterator[`google.pubsub_v1.types.StreamingPullRequest`]):
@@ -1028,11 +1275,11 @@ class SubscriberAsyncClient:
                 maximum=60.0,
                 multiplier=1.3,
                 predicate=retries.if_exception_type(
-                    exceptions.Aborted,
-                    exceptions.DeadlineExceeded,
-                    exceptions.InternalServerError,
-                    exceptions.ResourceExhausted,
-                    exceptions.ServiceUnavailable,
+                    core_exceptions.Aborted,
+                    core_exceptions.DeadlineExceeded,
+                    core_exceptions.InternalServerError,
+                    core_exceptions.ResourceExhausted,
+                    core_exceptions.ServiceUnavailable,
                 ),
                 deadline=900.0,
             ),
@@ -1041,18 +1288,23 @@ class SubscriberAsyncClient:
         )
 
         # Send the request.
-        response = rpc(requests, retry=retry, timeout=timeout, metadata=metadata,)
+        response = rpc(
+            requests,
+            retry=retry,
+            timeout=timeout,
+            metadata=metadata,
+        )
 
         # Done; return the response.
         return response
 
     async def modify_push_config(
         self,
-        request: pubsub.ModifyPushConfigRequest = None,
+        request: Union[pubsub.ModifyPushConfigRequest, dict] = None,
         *,
         subscription: str = None,
         push_config: pubsub.PushConfig = None,
-        retry: retries.Retry = gapic_v1.method.DEFAULT,
+        retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: float = None,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> None:
@@ -1064,8 +1316,24 @@ class SubscriberAsyncClient:
         Messages will accumulate for delivery continuously through the
         call regardless of changes to the ``PushConfig``.
 
+        .. code-block:: python
+
+            from google import pubsub_v1
+
+            async def sample_modify_push_config():
+                # Create a client
+                client = pubsub_v1.SubscriberAsyncClient()
+
+                # Initialize request argument(s)
+                request = pubsub_v1.ModifyPushConfigRequest(
+                    subscription="subscription_value",
+                )
+
+                # Make the request
+                await client.modify_push_config(request=request)
+
         Args:
-            request (:class:`google.pubsub_v1.types.ModifyPushConfigRequest`):
+            request (Union[google.pubsub_v1.types.ModifyPushConfigRequest, dict]):
                 The request object. Request for the ModifyPushConfig
                 method.
             subscription (:class:`str`):
@@ -1087,7 +1355,6 @@ class SubscriberAsyncClient:
                 This corresponds to the ``push_config`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
@@ -1095,7 +1362,7 @@ class SubscriberAsyncClient:
                 sent along with the request as metadata.
         """
         # Create or coerce a protobuf request object.
-        # Sanity check: If we got a request object, we should *not* have
+        # Quick check: If we got a request object, we should *not* have
         # gotten any keyword arguments that map to the request.
         has_flattened_params = any([subscription, push_config])
         if request is not None and has_flattened_params:
@@ -1108,7 +1375,6 @@ class SubscriberAsyncClient:
 
         # If we have keyword arguments corresponding to fields on the
         # request, apply these.
-
         if subscription is not None:
             request.subscription = subscription
         if push_config is not None:
@@ -1122,7 +1388,9 @@ class SubscriberAsyncClient:
                 initial=0.1,
                 maximum=60.0,
                 multiplier=1.3,
-                predicate=retries.if_exception_type(exceptions.ServiceUnavailable,),
+                predicate=retries.if_exception_type(
+                    core_exceptions.ServiceUnavailable,
+                ),
                 deadline=60.0,
             ),
             default_timeout=60.0,
@@ -1139,28 +1407,50 @@ class SubscriberAsyncClient:
 
         # Send the request.
         await rpc(
-            request, retry=retry, timeout=timeout, metadata=metadata,
+            request,
+            retry=retry,
+            timeout=timeout,
+            metadata=metadata,
         )
 
     async def get_snapshot(
         self,
-        request: pubsub.GetSnapshotRequest = None,
+        request: Union[pubsub.GetSnapshotRequest, dict] = None,
         *,
         snapshot: str = None,
-        retry: retries.Retry = gapic_v1.method.DEFAULT,
+        retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: float = None,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pubsub.Snapshot:
         r"""Gets the configuration details of a snapshot.
         Snapshots are used in <a
-        href="https://cloud.google.com/pubsub/docs/replay-
-        overview">Seek</a> operations, which allow you to manage
-        message acknowledgments in bulk. That is, you can set
-        the acknowledgment state of messages in an existing
+        href="https://cloud.google.com/pubsub/docs/replay-overview">Seek</a>
+        operations, which allow you to manage message
+        acknowledgments in bulk. That is, you can set the
+        acknowledgment state of messages in an existing
         subscription to the state captured by a snapshot.
 
+        .. code-block:: python
+
+            from google import pubsub_v1
+
+            async def sample_get_snapshot():
+                # Create a client
+                client = pubsub_v1.SubscriberAsyncClient()
+
+                # Initialize request argument(s)
+                request = pubsub_v1.GetSnapshotRequest(
+                    snapshot="snapshot_value",
+                )
+
+                # Make the request
+                response = await client.get_snapshot(request=request)
+
+                # Handle the response
+                print(response)
+
         Args:
-            request (:class:`google.pubsub_v1.types.GetSnapshotRequest`):
+            request (Union[google.pubsub_v1.types.GetSnapshotRequest, dict]):
                 The request object. Request for the GetSnapshot method.
             snapshot (:class:`str`):
                 Required. The name of the snapshot to get. Format is
@@ -1169,7 +1459,6 @@ class SubscriberAsyncClient:
                 This corresponds to the ``snapshot`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
@@ -1187,7 +1476,7 @@ class SubscriberAsyncClient:
 
         """
         # Create or coerce a protobuf request object.
-        # Sanity check: If we got a request object, we should *not* have
+        # Quick check: If we got a request object, we should *not* have
         # gotten any keyword arguments that map to the request.
         has_flattened_params = any([snapshot])
         if request is not None and has_flattened_params:
@@ -1200,7 +1489,6 @@ class SubscriberAsyncClient:
 
         # If we have keyword arguments corresponding to fields on the
         # request, apply these.
-
         if snapshot is not None:
             request.snapshot = snapshot
 
@@ -1213,9 +1501,9 @@ class SubscriberAsyncClient:
                 maximum=60.0,
                 multiplier=1.3,
                 predicate=retries.if_exception_type(
-                    exceptions.Aborted,
-                    exceptions.ServiceUnavailable,
-                    exceptions.Unknown,
+                    core_exceptions.Aborted,
+                    core_exceptions.ServiceUnavailable,
+                    core_exceptions.Unknown,
                 ),
                 deadline=60.0,
             ),
@@ -1230,17 +1518,22 @@ class SubscriberAsyncClient:
         )
 
         # Send the request.
-        response = await rpc(request, retry=retry, timeout=timeout, metadata=metadata,)
+        response = await rpc(
+            request,
+            retry=retry,
+            timeout=timeout,
+            metadata=metadata,
+        )
 
         # Done; return the response.
         return response
 
     async def list_snapshots(
         self,
-        request: pubsub.ListSnapshotsRequest = None,
+        request: Union[pubsub.ListSnapshotsRequest, dict] = None,
         *,
         project: str = None,
-        retry: retries.Retry = gapic_v1.method.DEFAULT,
+        retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: float = None,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pagers.ListSnapshotsAsyncPager:
@@ -1250,8 +1543,28 @@ class SubscriberAsyncClient:
         bulk. That is, you can set the acknowledgment state of messages
         in an existing subscription to the state captured by a snapshot.
 
+        .. code-block:: python
+
+            from google import pubsub_v1
+
+            async def sample_list_snapshots():
+                # Create a client
+                client = pubsub_v1.SubscriberAsyncClient()
+
+                # Initialize request argument(s)
+                request = pubsub_v1.ListSnapshotsRequest(
+                    project="project_value",
+                )
+
+                # Make the request
+                page_result = client.list_snapshots(request=request)
+
+                # Handle the response
+                async for response in page_result:
+                    print(response)
+
         Args:
-            request (:class:`google.pubsub_v1.types.ListSnapshotsRequest`):
+            request (Union[google.pubsub_v1.types.ListSnapshotsRequest, dict]):
                 The request object. Request for the `ListSnapshots`
                 method.
             project (:class:`str`):
@@ -1261,7 +1574,6 @@ class SubscriberAsyncClient:
                 This corresponds to the ``project`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
@@ -1277,7 +1589,7 @@ class SubscriberAsyncClient:
 
         """
         # Create or coerce a protobuf request object.
-        # Sanity check: If we got a request object, we should *not* have
+        # Quick check: If we got a request object, we should *not* have
         # gotten any keyword arguments that map to the request.
         has_flattened_params = any([project])
         if request is not None and has_flattened_params:
@@ -1290,7 +1602,6 @@ class SubscriberAsyncClient:
 
         # If we have keyword arguments corresponding to fields on the
         # request, apply these.
-
         if project is not None:
             request.project = project
 
@@ -1303,9 +1614,9 @@ class SubscriberAsyncClient:
                 maximum=60.0,
                 multiplier=1.3,
                 predicate=retries.if_exception_type(
-                    exceptions.Aborted,
-                    exceptions.ServiceUnavailable,
-                    exceptions.Unknown,
+                    core_exceptions.Aborted,
+                    core_exceptions.ServiceUnavailable,
+                    core_exceptions.Unknown,
                 ),
                 deadline=60.0,
             ),
@@ -1320,12 +1631,20 @@ class SubscriberAsyncClient:
         )
 
         # Send the request.
-        response = await rpc(request, retry=retry, timeout=timeout, metadata=metadata,)
+        response = await rpc(
+            request,
+            retry=retry,
+            timeout=timeout,
+            metadata=metadata,
+        )
 
         # This method is paged; wrap the response in a pager, which provides
         # an `__aiter__` convenience method.
         response = pagers.ListSnapshotsAsyncPager(
-            method=rpc, request=request, response=response, metadata=metadata,
+            method=rpc,
+            request=request,
+            response=response,
+            metadata=metadata,
         )
 
         # Done; return the response.
@@ -1333,11 +1652,11 @@ class SubscriberAsyncClient:
 
     async def create_snapshot(
         self,
-        request: pubsub.CreateSnapshotRequest = None,
+        request: Union[pubsub.CreateSnapshotRequest, dict] = None,
         *,
         name: str = None,
         subscription: str = None,
-        retry: retries.Retry = gapic_v1.method.DEFAULT,
+        retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: float = None,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pubsub.Snapshot:
@@ -1361,8 +1680,28 @@ class SubscriberAsyncClient:
         Note that for REST API requests, you must specify a name in the
         request.
 
+        .. code-block:: python
+
+            from google import pubsub_v1
+
+            async def sample_create_snapshot():
+                # Create a client
+                client = pubsub_v1.SubscriberAsyncClient()
+
+                # Initialize request argument(s)
+                request = pubsub_v1.CreateSnapshotRequest(
+                    name="name_value",
+                    subscription="subscription_value",
+                )
+
+                # Make the request
+                response = await client.create_snapshot(request=request)
+
+                # Handle the response
+                print(response)
+
         Args:
-            request (:class:`google.pubsub_v1.types.CreateSnapshotRequest`):
+            request (Union[google.pubsub_v1.types.CreateSnapshotRequest, dict]):
                 The request object. Request for the `CreateSnapshot`
                 method.
             name (:class:`str`):
@@ -1392,7 +1731,6 @@ class SubscriberAsyncClient:
                 This corresponds to the ``subscription`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
@@ -1410,7 +1748,7 @@ class SubscriberAsyncClient:
 
         """
         # Create or coerce a protobuf request object.
-        # Sanity check: If we got a request object, we should *not* have
+        # Quick check: If we got a request object, we should *not* have
         # gotten any keyword arguments that map to the request.
         has_flattened_params = any([name, subscription])
         if request is not None and has_flattened_params:
@@ -1423,7 +1761,6 @@ class SubscriberAsyncClient:
 
         # If we have keyword arguments corresponding to fields on the
         # request, apply these.
-
         if name is not None:
             request.name = name
         if subscription is not None:
@@ -1437,7 +1774,9 @@ class SubscriberAsyncClient:
                 initial=0.1,
                 maximum=60.0,
                 multiplier=1.3,
-                predicate=retries.if_exception_type(exceptions.ServiceUnavailable,),
+                predicate=retries.if_exception_type(
+                    core_exceptions.ServiceUnavailable,
+                ),
                 deadline=60.0,
             ),
             default_timeout=60.0,
@@ -1451,32 +1790,55 @@ class SubscriberAsyncClient:
         )
 
         # Send the request.
-        response = await rpc(request, retry=retry, timeout=timeout, metadata=metadata,)
+        response = await rpc(
+            request,
+            retry=retry,
+            timeout=timeout,
+            metadata=metadata,
+        )
 
         # Done; return the response.
         return response
 
     async def update_snapshot(
         self,
-        request: pubsub.UpdateSnapshotRequest = None,
+        request: Union[pubsub.UpdateSnapshotRequest, dict] = None,
         *,
-        retry: retries.Retry = gapic_v1.method.DEFAULT,
+        retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: float = None,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pubsub.Snapshot:
         r"""Updates an existing snapshot. Snapshots are used in
-        <a href="https://cloud.google.com/pubsub/docs/replay-
-        overview">Seek</a> operations, which allow
+        <a
+        href="https://cloud.google.com/pubsub/docs/replay-overview">Seek</a>
+        operations, which allow
         you to manage message acknowledgments in bulk. That is,
         you can set the acknowledgment state of messages in an
         existing subscription to the state captured by a
         snapshot.
 
+        .. code-block:: python
+
+            from google import pubsub_v1
+
+            async def sample_update_snapshot():
+                # Create a client
+                client = pubsub_v1.SubscriberAsyncClient()
+
+                # Initialize request argument(s)
+                request = pubsub_v1.UpdateSnapshotRequest(
+                )
+
+                # Make the request
+                response = await client.update_snapshot(request=request)
+
+                # Handle the response
+                print(response)
+
         Args:
-            request (:class:`google.pubsub_v1.types.UpdateSnapshotRequest`):
+            request (Union[google.pubsub_v1.types.UpdateSnapshotRequest, dict]):
                 The request object. Request for the UpdateSnapshot
                 method.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
@@ -1494,7 +1856,6 @@ class SubscriberAsyncClient:
 
         """
         # Create or coerce a protobuf request object.
-
         request = pubsub.UpdateSnapshotRequest(request)
 
         # Wrap the RPC method; this adds retry and timeout information,
@@ -1505,7 +1866,9 @@ class SubscriberAsyncClient:
                 initial=0.1,
                 maximum=60.0,
                 multiplier=1.3,
-                predicate=retries.if_exception_type(exceptions.ServiceUnavailable,),
+                predicate=retries.if_exception_type(
+                    core_exceptions.ServiceUnavailable,
+                ),
                 deadline=60.0,
             ),
             default_timeout=60.0,
@@ -1521,17 +1884,22 @@ class SubscriberAsyncClient:
         )
 
         # Send the request.
-        response = await rpc(request, retry=retry, timeout=timeout, metadata=metadata,)
+        response = await rpc(
+            request,
+            retry=retry,
+            timeout=timeout,
+            metadata=metadata,
+        )
 
         # Done; return the response.
         return response
 
     async def delete_snapshot(
         self,
-        request: pubsub.DeleteSnapshotRequest = None,
+        request: Union[pubsub.DeleteSnapshotRequest, dict] = None,
         *,
         snapshot: str = None,
-        retry: retries.Retry = gapic_v1.method.DEFAULT,
+        retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: float = None,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> None:
@@ -1546,8 +1914,24 @@ class SubscriberAsyncClient:
         no association with the old snapshot or its subscription, unless
         the same subscription is specified.
 
+        .. code-block:: python
+
+            from google import pubsub_v1
+
+            async def sample_delete_snapshot():
+                # Create a client
+                client = pubsub_v1.SubscriberAsyncClient()
+
+                # Initialize request argument(s)
+                request = pubsub_v1.DeleteSnapshotRequest(
+                    snapshot="snapshot_value",
+                )
+
+                # Make the request
+                await client.delete_snapshot(request=request)
+
         Args:
-            request (:class:`google.pubsub_v1.types.DeleteSnapshotRequest`):
+            request (Union[google.pubsub_v1.types.DeleteSnapshotRequest, dict]):
                 The request object. Request for the `DeleteSnapshot`
                 method.
             snapshot (:class:`str`):
@@ -1557,7 +1941,6 @@ class SubscriberAsyncClient:
                 This corresponds to the ``snapshot`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
@@ -1565,7 +1948,7 @@ class SubscriberAsyncClient:
                 sent along with the request as metadata.
         """
         # Create or coerce a protobuf request object.
-        # Sanity check: If we got a request object, we should *not* have
+        # Quick check: If we got a request object, we should *not* have
         # gotten any keyword arguments that map to the request.
         has_flattened_params = any([snapshot])
         if request is not None and has_flattened_params:
@@ -1578,7 +1961,6 @@ class SubscriberAsyncClient:
 
         # If we have keyword arguments corresponding to fields on the
         # request, apply these.
-
         if snapshot is not None:
             request.snapshot = snapshot
 
@@ -1590,7 +1972,9 @@ class SubscriberAsyncClient:
                 initial=0.1,
                 maximum=60.0,
                 multiplier=1.3,
-                predicate=retries.if_exception_type(exceptions.ServiceUnavailable,),
+                predicate=retries.if_exception_type(
+                    core_exceptions.ServiceUnavailable,
+                ),
                 deadline=60.0,
             ),
             default_timeout=60.0,
@@ -1605,14 +1989,17 @@ class SubscriberAsyncClient:
 
         # Send the request.
         await rpc(
-            request, retry=retry, timeout=timeout, metadata=metadata,
+            request,
+            retry=retry,
+            timeout=timeout,
+            metadata=metadata,
         )
 
     async def seek(
         self,
-        request: pubsub.SeekRequest = None,
+        request: Union[pubsub.SeekRequest, dict] = None,
         *,
-        retry: retries.Retry = gapic_v1.method.DEFAULT,
+        retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: float = None,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pubsub.SeekResponse:
@@ -1626,10 +2013,28 @@ class SubscriberAsyncClient:
         Note that both the subscription and the snapshot must be on the
         same topic.
 
-        Args:
-            request (:class:`google.pubsub_v1.types.SeekRequest`):
-                The request object. Request for the `Seek` method.
+        .. code-block:: python
 
+            from google import pubsub_v1
+
+            async def sample_seek():
+                # Create a client
+                client = pubsub_v1.SubscriberAsyncClient()
+
+                # Initialize request argument(s)
+                request = pubsub_v1.SeekRequest(
+                    subscription="subscription_value",
+                )
+
+                # Make the request
+                response = await client.seek(request=request)
+
+                # Handle the response
+                print(response)
+
+        Args:
+            request (Union[google.pubsub_v1.types.SeekRequest, dict]):
+                The request object. Request for the `Seek` method.
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
@@ -1641,7 +2046,6 @@ class SubscriberAsyncClient:
                 Response for the Seek method (this response is empty).
         """
         # Create or coerce a protobuf request object.
-
         request = pubsub.SeekRequest(request)
 
         # Wrap the RPC method; this adds retry and timeout information,
@@ -1653,9 +2057,9 @@ class SubscriberAsyncClient:
                 maximum=60.0,
                 multiplier=1.3,
                 predicate=retries.if_exception_type(
-                    exceptions.Aborted,
-                    exceptions.ServiceUnavailable,
-                    exceptions.Unknown,
+                    core_exceptions.Aborted,
+                    core_exceptions.ServiceUnavailable,
+                    core_exceptions.Unknown,
                 ),
                 deadline=60.0,
             ),
@@ -1672,23 +2076,30 @@ class SubscriberAsyncClient:
         )
 
         # Send the request.
-        response = await rpc(request, retry=retry, timeout=timeout, metadata=metadata,)
+        response = await rpc(
+            request,
+            retry=retry,
+            timeout=timeout,
+            metadata=metadata,
+        )
 
         # Done; return the response.
         return response
 
     async def set_iam_policy(
         self,
-        request: iam_policy.SetIamPolicyRequest = None,
+        request: iam_policy_pb2.SetIamPolicyRequest = None,
         *,
-        retry: retries.Retry = gapic_v1.method.DEFAULT,
+        retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: float = None,
         metadata: Sequence[Tuple[str, str]] = (),
-    ) -> policy.Policy:
-        r"""Sets the IAM access control policy on the specified
-        function. Replaces any existing policy.
+    ) -> policy_pb2.Policy:
+        r"""Sets the IAM access control policy on the specified function.
+
+        Replaces any existing policy.
+
         Args:
-            request (:class:`~.iam_policy.SetIamPolicyRequest`):
+            request (:class:`~.policy_pb2.SetIamPolicyRequest`):
                 The request object. Request message for `SetIamPolicy`
                 method.
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
@@ -1697,7 +2108,7 @@ class SubscriberAsyncClient:
             metadata (Sequence[Tuple[str, str]]): Strings which should be
                 sent along with the request as metadata.
         Returns:
-            ~.policy.Policy:
+            ~.policy_pb2.Policy:
                 Defines an Identity and Access Management (IAM) policy.
                 It is used to specify access control policies for Cloud
                 Platform resources.
@@ -1761,7 +2172,7 @@ class SubscriberAsyncClient:
         # The request isn't a proto-plus wrapped type,
         # so it must be constructed via keyword expansion.
         if isinstance(request, dict):
-            request = iam_policy.SetIamPolicyRequest(**request)
+            request = iam_policy_pb2.SetIamPolicyRequest(**request)
 
         # Wrap the RPC method; this adds retry and timeout information,
         # and friendly error handling.
@@ -1778,24 +2189,31 @@ class SubscriberAsyncClient:
         )
 
         # Send the request.
-        response = await rpc(request, retry=retry, timeout=timeout, metadata=metadata,)
+        response = await rpc(
+            request,
+            retry=retry,
+            timeout=timeout,
+            metadata=metadata,
+        )
 
         # Done; return the response.
         return response
 
     async def get_iam_policy(
         self,
-        request: iam_policy.GetIamPolicyRequest = None,
+        request: iam_policy_pb2.GetIamPolicyRequest = None,
         *,
-        retry: retries.Retry = gapic_v1.method.DEFAULT,
+        retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: float = None,
         metadata: Sequence[Tuple[str, str]] = (),
-    ) -> policy.Policy:
+    ) -> policy_pb2.Policy:
         r"""Gets the IAM access control policy for a function.
+
         Returns an empty policy if the function exists and does
         not have a policy set.
+
         Args:
-            request (:class:`~.iam_policy.GetIamPolicyRequest`):
+            request (:class:`~.iam_policy_pb2.GetIamPolicyRequest`):
                 The request object. Request message for `GetIamPolicy`
                 method.
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
@@ -1804,7 +2222,7 @@ class SubscriberAsyncClient:
             metadata (Sequence[Tuple[str, str]]): Strings which should be
                 sent along with the request as metadata.
         Returns:
-            ~.policy.Policy:
+            ~.policy_pb2.Policy:
                 Defines an Identity and Access Management (IAM) policy.
                 It is used to specify access control policies for Cloud
                 Platform resources.
@@ -1868,7 +2286,7 @@ class SubscriberAsyncClient:
         # The request isn't a proto-plus wrapped type,
         # so it must be constructed via keyword expansion.
         if isinstance(request, dict):
-            request = iam_policy.GetIamPolicyRequest(**request)
+            request = iam_policy_pb2.GetIamPolicyRequest(**request)
 
         # Wrap the RPC method; this adds retry and timeout information,
         # and friendly error handling.
@@ -1885,24 +2303,32 @@ class SubscriberAsyncClient:
         )
 
         # Send the request.
-        response = await rpc(request, retry=retry, timeout=timeout, metadata=metadata,)
+        response = await rpc(
+            request,
+            retry=retry,
+            timeout=timeout,
+            metadata=metadata,
+        )
 
         # Done; return the response.
         return response
 
     async def test_iam_permissions(
         self,
-        request: iam_policy.TestIamPermissionsRequest = None,
+        request: iam_policy_pb2.TestIamPermissionsRequest = None,
         *,
-        retry: retries.Retry = gapic_v1.method.DEFAULT,
+        retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: float = None,
         metadata: Sequence[Tuple[str, str]] = (),
-    ) -> iam_policy.TestIamPermissionsResponse:
+    ) -> iam_policy_pb2.TestIamPermissionsResponse:
         r"""Tests the specified permissions against the IAM access control
-        policy for a function. If the function does not exist, this will
+            policy for a function.
+
+        If the function does not exist, this will
         return an empty set of permissions, not a NOT_FOUND error.
+
         Args:
-            request (:class:`~.iam_policy.TestIamPermissionsRequest`):
+            request (:class:`~.iam_policy_pb2.TestIamPermissionsRequest`):
                 The request object. Request message for
                 `TestIamPermissions` method.
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
@@ -1911,7 +2337,7 @@ class SubscriberAsyncClient:
             metadata (Sequence[Tuple[str, str]]): Strings which should be
                 sent along with the request as metadata.
         Returns:
-            ~.iam_policy.TestIamPermissionsResponse:
+            ~iam_policy_pb2.PolicyTestIamPermissionsResponse:
                 Response message for ``TestIamPermissions`` method.
         """
         # Create or coerce a protobuf request object.
@@ -1919,7 +2345,7 @@ class SubscriberAsyncClient:
         # The request isn't a proto-plus wrapped type,
         # so it must be constructed via keyword expansion.
         if isinstance(request, dict):
-            request = iam_policy.TestIamPermissionsRequest(**request)
+            request = iam_policy_pb2.TestIamPermissionsRequest(**request)
 
         # Wrap the RPC method; this adds retry and timeout information,
         # and friendly error handling.
@@ -1936,10 +2362,21 @@ class SubscriberAsyncClient:
         )
 
         # Send the request.
-        response = await rpc(request, retry=retry, timeout=timeout, metadata=metadata,)
+        response = await rpc(
+            request,
+            retry=retry,
+            timeout=timeout,
+            metadata=metadata,
+        )
 
         # Done; return the response.
         return response
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc, tb):
+        await self.transport.close()
 
 
 try:

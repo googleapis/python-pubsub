@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-
-# Copyright 2020 Google LLC
+# Copyright 2022 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,25 +13,31 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 from collections import OrderedDict
 import functools
 import re
-from typing import Dict, Sequence, Tuple, Type, Union
+from typing import Dict, Mapping, Optional, Sequence, Tuple, Type, Union
 import pkg_resources
 
-import google.api_core.client_options as ClientOptions  # type: ignore
-from google.api_core import exceptions  # type: ignore
-from google.api_core import gapic_v1  # type: ignore
-from google.api_core import retry as retries  # type: ignore
-from google.auth import credentials  # type: ignore
+from google.api_core.client_options import ClientOptions
+from google.api_core import exceptions as core_exceptions
+from google.api_core import gapic_v1
+from google.api_core import retry as retries
+from google.api_core import timeout as timeouts  # type: ignore
+from google.auth import credentials as ga_credentials  # type: ignore
 from google.oauth2 import service_account  # type: ignore
 
-from google.iam.v1 import iam_policy_pb2 as iam_policy  # type: ignore
-from google.iam.v1 import policy_pb2 as policy  # type: ignore
+try:
+    OptionalRetry = Union[retries.Retry, gapic_v1.method._MethodDefault]
+except AttributeError:  # pragma: NO COVER
+    OptionalRetry = Union[retries.Retry, object]  # type: ignore
+
+from google.iam.v1 import iam_policy_pb2  # type: ignore
+from google.iam.v1 import policy_pb2  # type: ignore
+from google.protobuf import duration_pb2  # type: ignore
 from google.pubsub_v1.services.publisher import pagers
 from google.pubsub_v1.types import pubsub
-
+from google.pubsub_v1.types import TimeoutType
 from .transports.base import PublisherTransport, DEFAULT_CLIENT_INFO
 from .transports.grpc_asyncio import PublisherGrpcAsyncIOTransport
 from .client import PublisherClient
@@ -54,25 +59,20 @@ class PublisherAsyncClient:
     parse_subscription_path = staticmethod(PublisherClient.parse_subscription_path)
     topic_path = staticmethod(PublisherClient.topic_path)
     parse_topic_path = staticmethod(PublisherClient.parse_topic_path)
-
     common_billing_account_path = staticmethod(
         PublisherClient.common_billing_account_path
     )
     parse_common_billing_account_path = staticmethod(
         PublisherClient.parse_common_billing_account_path
     )
-
     common_folder_path = staticmethod(PublisherClient.common_folder_path)
     parse_common_folder_path = staticmethod(PublisherClient.parse_common_folder_path)
-
     common_organization_path = staticmethod(PublisherClient.common_organization_path)
     parse_common_organization_path = staticmethod(
         PublisherClient.parse_common_organization_path
     )
-
     common_project_path = staticmethod(PublisherClient.common_project_path)
     parse_common_project_path = staticmethod(PublisherClient.parse_common_project_path)
-
     common_location_path = staticmethod(PublisherClient.common_location_path)
     parse_common_location_path = staticmethod(
         PublisherClient.parse_common_location_path
@@ -80,7 +80,8 @@ class PublisherAsyncClient:
 
     @classmethod
     def from_service_account_info(cls, info: dict, *args, **kwargs):
-        """Creates an instance of this client using the provided credentials info.
+        """Creates an instance of this client using the provided credentials
+            info.
 
         Args:
             info (dict): The service account private key info.
@@ -95,7 +96,7 @@ class PublisherAsyncClient:
     @classmethod
     def from_service_account_file(cls, filename: str, *args, **kwargs):
         """Creates an instance of this client using the provided credentials
-        file.
+            file.
 
         Args:
             filename (str): The path to the service account private key json
@@ -110,9 +111,45 @@ class PublisherAsyncClient:
 
     from_service_account_json = from_service_account_file
 
+    @classmethod
+    def get_mtls_endpoint_and_cert_source(
+        cls, client_options: Optional[ClientOptions] = None
+    ):
+        """Return the API endpoint and client cert source for mutual TLS.
+
+        The client cert source is determined in the following order:
+        (1) if `GOOGLE_API_USE_CLIENT_CERTIFICATE` environment variable is not "true", the
+        client cert source is None.
+        (2) if `client_options.client_cert_source` is provided, use the provided one; if the
+        default client cert source exists, use the default one; otherwise the client cert
+        source is None.
+
+        The API endpoint is determined in the following order:
+        (1) if `client_options.api_endpoint` if provided, use the provided one.
+        (2) if `GOOGLE_API_USE_CLIENT_CERTIFICATE` environment variable is "always", use the
+        default mTLS endpoint; if the environment variabel is "never", use the default API
+        endpoint; otherwise if client cert source exists, use the default mTLS endpoint, otherwise
+        use the default API endpoint.
+
+        More details can be found at https://google.aip.dev/auth/4114.
+
+        Args:
+            client_options (google.api_core.client_options.ClientOptions): Custom options for the
+                client. Only the `api_endpoint` and `client_cert_source` properties may be used
+                in this method.
+
+        Returns:
+            Tuple[str, Callable[[], Tuple[bytes, bytes]]]: returns the API endpoint and the
+                client cert source to use.
+
+        Raises:
+            google.auth.exceptions.MutualTLSChannelError: If any errors happen.
+        """
+        return PublisherClient.get_mtls_endpoint_and_cert_source(client_options)  # type: ignore
+
     @property
     def transport(self) -> PublisherTransport:
-        """Return the transport used by the client instance.
+        """Returns the transport used by the client instance.
 
         Returns:
             PublisherTransport: The transport used by the client instance.
@@ -126,12 +163,12 @@ class PublisherAsyncClient:
     def __init__(
         self,
         *,
-        credentials: credentials.Credentials = None,
+        credentials: ga_credentials.Credentials = None,
         transport: Union[str, PublisherTransport] = "grpc_asyncio",
         client_options: ClientOptions = None,
         client_info: gapic_v1.client_info.ClientInfo = DEFAULT_CLIENT_INFO,
     ) -> None:
-        """Instantiate the publisher client.
+        """Instantiates the publisher client.
 
         Args:
             credentials (Optional[google.auth.credentials.Credentials]): The
@@ -163,7 +200,6 @@ class PublisherAsyncClient:
             google.auth.exceptions.MutualTlsChannelError: If mutual TLS transport
                 creation failed for any reason.
         """
-
         self._client = PublisherClient(
             credentials=credentials,
             transport=transport,
@@ -173,19 +209,38 @@ class PublisherAsyncClient:
 
     async def create_topic(
         self,
-        request: pubsub.Topic = None,
+        request: Union[pubsub.Topic, dict] = None,
         *,
         name: str = None,
-        retry: retries.Retry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        retry: OptionalRetry = gapic_v1.method.DEFAULT,
+        timeout: TimeoutType = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pubsub.Topic:
         r"""Creates the given topic with the given name. See the [resource
         name rules]
         (https://cloud.google.com/pubsub/docs/admin#resource_names).
 
+        .. code-block:: python
+
+            from google import pubsub_v1
+
+            async def sample_create_topic():
+                # Create a client
+                client = pubsub_v1.PublisherAsyncClient()
+
+                # Initialize request argument(s)
+                request = pubsub_v1.Topic(
+                    name="name_value",
+                )
+
+                # Make the request
+                response = await client.create_topic(request=request)
+
+                # Handle the response
+                print(response)
+
         Args:
-            request (:class:`google.pubsub_v1.types.Topic`):
+            request (Union[google.pubsub_v1.types.Topic, dict]):
                 The request object. A topic resource.
             name (:class:`str`):
                 Required. The name of the topic. It must have the format
@@ -200,10 +255,10 @@ class PublisherAsyncClient:
                 This corresponds to the ``name`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
-            timeout (float): The timeout for this request.
+            timeout (TimeoutType):
+                The timeout for this request.
             metadata (Sequence[Tuple[str, str]]): Strings which should be
                 sent along with the request as metadata.
 
@@ -212,7 +267,7 @@ class PublisherAsyncClient:
                 A topic resource.
         """
         # Create or coerce a protobuf request object.
-        # Sanity check: If we got a request object, we should *not* have
+        # Quick check: If we got a request object, we should *not* have
         # gotten any keyword arguments that map to the request.
         has_flattened_params = any([name])
         if request is not None and has_flattened_params:
@@ -225,7 +280,6 @@ class PublisherAsyncClient:
 
         # If we have keyword arguments corresponding to fields on the
         # request, apply these.
-
         if name is not None:
             request.name = name
 
@@ -237,7 +291,9 @@ class PublisherAsyncClient:
                 initial=0.1,
                 maximum=60.0,
                 multiplier=1.3,
-                predicate=retries.if_exception_type(exceptions.ServiceUnavailable,),
+                predicate=retries.if_exception_type(
+                    core_exceptions.ServiceUnavailable,
+                ),
                 deadline=60.0,
             ),
             default_timeout=60.0,
@@ -251,29 +307,56 @@ class PublisherAsyncClient:
         )
 
         # Send the request.
-        response = await rpc(request, retry=retry, timeout=timeout, metadata=metadata,)
+        response = await rpc(
+            request,
+            retry=retry,
+            timeout=timeout,
+            metadata=metadata,
+        )
 
         # Done; return the response.
         return response
 
     async def update_topic(
         self,
-        request: pubsub.UpdateTopicRequest = None,
+        request: Union[pubsub.UpdateTopicRequest, dict] = None,
         *,
-        retry: retries.Retry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        retry: OptionalRetry = gapic_v1.method.DEFAULT,
+        timeout: TimeoutType = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pubsub.Topic:
         r"""Updates an existing topic. Note that certain
         properties of a topic are not modifiable.
 
-        Args:
-            request (:class:`google.pubsub_v1.types.UpdateTopicRequest`):
-                The request object. Request for the UpdateTopic method.
+        .. code-block:: python
 
+            from google import pubsub_v1
+
+            async def sample_update_topic():
+                # Create a client
+                client = pubsub_v1.PublisherAsyncClient()
+
+                # Initialize request argument(s)
+                topic = pubsub_v1.Topic()
+                topic.name = "name_value"
+
+                request = pubsub_v1.UpdateTopicRequest(
+                    topic=topic,
+                )
+
+                # Make the request
+                response = await client.update_topic(request=request)
+
+                # Handle the response
+                print(response)
+
+        Args:
+            request (Union[google.pubsub_v1.types.UpdateTopicRequest, dict]):
+                The request object. Request for the UpdateTopic method.
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
-            timeout (float): The timeout for this request.
+            timeout (TimeoutType):
+                The timeout for this request.
             metadata (Sequence[Tuple[str, str]]): Strings which should be
                 sent along with the request as metadata.
 
@@ -282,7 +365,6 @@ class PublisherAsyncClient:
                 A topic resource.
         """
         # Create or coerce a protobuf request object.
-
         request = pubsub.UpdateTopicRequest(request)
 
         # Wrap the RPC method; this adds retry and timeout information,
@@ -293,7 +375,9 @@ class PublisherAsyncClient:
                 initial=0.1,
                 maximum=60.0,
                 multiplier=1.3,
-                predicate=retries.if_exception_type(exceptions.ServiceUnavailable,),
+                predicate=retries.if_exception_type(
+                    core_exceptions.ServiceUnavailable,
+                ),
                 deadline=60.0,
             ),
             default_timeout=60.0,
@@ -309,26 +393,50 @@ class PublisherAsyncClient:
         )
 
         # Send the request.
-        response = await rpc(request, retry=retry, timeout=timeout, metadata=metadata,)
+        response = await rpc(
+            request,
+            retry=retry,
+            timeout=timeout,
+            metadata=metadata,
+        )
 
         # Done; return the response.
         return response
 
     async def publish(
         self,
-        request: pubsub.PublishRequest = None,
+        request: Union[pubsub.PublishRequest, dict] = None,
         *,
         topic: str = None,
         messages: Sequence[pubsub.PubsubMessage] = None,
-        retry: retries.Retry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        retry: OptionalRetry = gapic_v1.method.DEFAULT,
+        timeout: TimeoutType = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pubsub.PublishResponse:
         r"""Adds one or more messages to the topic. Returns ``NOT_FOUND`` if
         the topic does not exist.
 
+        .. code-block:: python
+
+            from google import pubsub_v1
+
+            async def sample_publish():
+                # Create a client
+                client = pubsub_v1.PublisherAsyncClient()
+
+                # Initialize request argument(s)
+                request = pubsub_v1.PublishRequest(
+                    topic="topic_value",
+                )
+
+                # Make the request
+                response = await client.publish(request=request)
+
+                # Handle the response
+                print(response)
+
         Args:
-            request (:class:`google.pubsub_v1.types.PublishRequest`):
+            request (Union[google.pubsub_v1.types.PublishRequest, dict]):
                 The request object. Request for the Publish method.
             topic (:class:`str`):
                 Required. The messages in the request will be published
@@ -343,10 +451,10 @@ class PublisherAsyncClient:
                 This corresponds to the ``messages`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
-            timeout (float): The timeout for this request.
+            timeout (TimeoutType):
+                The timeout for this request.
             metadata (Sequence[Tuple[str, str]]): Strings which should be
                 sent along with the request as metadata.
 
@@ -355,7 +463,7 @@ class PublisherAsyncClient:
                 Response for the Publish method.
         """
         # Create or coerce a protobuf request object.
-        # Sanity check: If we got a request object, we should *not* have
+        # Quick check: If we got a request object, we should *not* have
         # gotten any keyword arguments that map to the request.
         has_flattened_params = any([topic, messages])
         if request is not None and has_flattened_params:
@@ -368,10 +476,8 @@ class PublisherAsyncClient:
 
         # If we have keyword arguments corresponding to fields on the
         # request, apply these.
-
         if topic is not None:
             request.topic = topic
-
         if messages:
             request.messages.extend(messages)
 
@@ -384,13 +490,13 @@ class PublisherAsyncClient:
                 maximum=60.0,
                 multiplier=1.3,
                 predicate=retries.if_exception_type(
-                    exceptions.Aborted,
-                    exceptions.Cancelled,
-                    exceptions.DeadlineExceeded,
-                    exceptions.InternalServerError,
-                    exceptions.ResourceExhausted,
-                    exceptions.ServiceUnavailable,
-                    exceptions.Unknown,
+                    core_exceptions.Aborted,
+                    core_exceptions.Cancelled,
+                    core_exceptions.DeadlineExceeded,
+                    core_exceptions.InternalServerError,
+                    core_exceptions.ResourceExhausted,
+                    core_exceptions.ServiceUnavailable,
+                    core_exceptions.Unknown,
                 ),
                 deadline=60.0,
             ),
@@ -405,24 +511,48 @@ class PublisherAsyncClient:
         )
 
         # Send the request.
-        response = await rpc(request, retry=retry, timeout=timeout, metadata=metadata,)
+        response = await rpc(
+            request,
+            retry=retry,
+            timeout=timeout,
+            metadata=metadata,
+        )
 
         # Done; return the response.
         return response
 
     async def get_topic(
         self,
-        request: pubsub.GetTopicRequest = None,
+        request: Union[pubsub.GetTopicRequest, dict] = None,
         *,
         topic: str = None,
-        retry: retries.Retry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        retry: OptionalRetry = gapic_v1.method.DEFAULT,
+        timeout: TimeoutType = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pubsub.Topic:
         r"""Gets the configuration of a topic.
 
+        .. code-block:: python
+
+            from google import pubsub_v1
+
+            async def sample_get_topic():
+                # Create a client
+                client = pubsub_v1.PublisherAsyncClient()
+
+                # Initialize request argument(s)
+                request = pubsub_v1.GetTopicRequest(
+                    topic="topic_value",
+                )
+
+                # Make the request
+                response = await client.get_topic(request=request)
+
+                # Handle the response
+                print(response)
+
         Args:
-            request (:class:`google.pubsub_v1.types.GetTopicRequest`):
+            request (Union[google.pubsub_v1.types.GetTopicRequest, dict]):
                 The request object. Request for the GetTopic method.
             topic (:class:`str`):
                 Required. The name of the topic to get. Format is
@@ -431,10 +561,10 @@ class PublisherAsyncClient:
                 This corresponds to the ``topic`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
-            timeout (float): The timeout for this request.
+            timeout (TimeoutType):
+                The timeout for this request.
             metadata (Sequence[Tuple[str, str]]): Strings which should be
                 sent along with the request as metadata.
 
@@ -443,7 +573,7 @@ class PublisherAsyncClient:
                 A topic resource.
         """
         # Create or coerce a protobuf request object.
-        # Sanity check: If we got a request object, we should *not* have
+        # Quick check: If we got a request object, we should *not* have
         # gotten any keyword arguments that map to the request.
         has_flattened_params = any([topic])
         if request is not None and has_flattened_params:
@@ -456,7 +586,6 @@ class PublisherAsyncClient:
 
         # If we have keyword arguments corresponding to fields on the
         # request, apply these.
-
         if topic is not None:
             request.topic = topic
 
@@ -469,9 +598,9 @@ class PublisherAsyncClient:
                 maximum=60.0,
                 multiplier=1.3,
                 predicate=retries.if_exception_type(
-                    exceptions.Aborted,
-                    exceptions.ServiceUnavailable,
-                    exceptions.Unknown,
+                    core_exceptions.Aborted,
+                    core_exceptions.ServiceUnavailable,
+                    core_exceptions.Unknown,
                 ),
                 deadline=60.0,
             ),
@@ -486,24 +615,49 @@ class PublisherAsyncClient:
         )
 
         # Send the request.
-        response = await rpc(request, retry=retry, timeout=timeout, metadata=metadata,)
+        response = await rpc(
+            request,
+            retry=retry,
+            timeout=timeout,
+            metadata=metadata,
+        )
 
         # Done; return the response.
         return response
 
     async def list_topics(
         self,
-        request: pubsub.ListTopicsRequest = None,
+        request: Union[pubsub.ListTopicsRequest, dict] = None,
         *,
         project: str = None,
-        retry: retries.Retry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        retry: OptionalRetry = gapic_v1.method.DEFAULT,
+        timeout: TimeoutType = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pagers.ListTopicsAsyncPager:
         r"""Lists matching topics.
 
+        .. code-block:: python
+
+            from google import pubsub_v1
+
+            async def sample_list_topics():
+                # Create a client
+                client = pubsub_v1.PublisherAsyncClient()
+
+                # Initialize request argument(s)
+                request = pubsub_v1.ListTopicsRequest(
+                    project="project_value",
+                )
+
+                # Make the request
+                page_result = client.list_topics(request=request)
+
+                # Handle the response
+                async for response in page_result:
+                    print(response)
+
         Args:
-            request (:class:`google.pubsub_v1.types.ListTopicsRequest`):
+            request (Union[google.pubsub_v1.types.ListTopicsRequest, dict]):
                 The request object. Request for the `ListTopics` method.
             project (:class:`str`):
                 Required. The name of the project in which to list
@@ -512,10 +666,10 @@ class PublisherAsyncClient:
                 This corresponds to the ``project`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
-            timeout (float): The timeout for this request.
+            timeout (TimeoutType):
+                The timeout for this request.
             metadata (Sequence[Tuple[str, str]]): Strings which should be
                 sent along with the request as metadata.
 
@@ -528,7 +682,7 @@ class PublisherAsyncClient:
 
         """
         # Create or coerce a protobuf request object.
-        # Sanity check: If we got a request object, we should *not* have
+        # Quick check: If we got a request object, we should *not* have
         # gotten any keyword arguments that map to the request.
         has_flattened_params = any([project])
         if request is not None and has_flattened_params:
@@ -541,7 +695,6 @@ class PublisherAsyncClient:
 
         # If we have keyword arguments corresponding to fields on the
         # request, apply these.
-
         if project is not None:
             request.project = project
 
@@ -554,9 +707,9 @@ class PublisherAsyncClient:
                 maximum=60.0,
                 multiplier=1.3,
                 predicate=retries.if_exception_type(
-                    exceptions.Aborted,
-                    exceptions.ServiceUnavailable,
-                    exceptions.Unknown,
+                    core_exceptions.Aborted,
+                    core_exceptions.ServiceUnavailable,
+                    core_exceptions.Unknown,
                 ),
                 deadline=60.0,
             ),
@@ -571,12 +724,20 @@ class PublisherAsyncClient:
         )
 
         # Send the request.
-        response = await rpc(request, retry=retry, timeout=timeout, metadata=metadata,)
+        response = await rpc(
+            request,
+            retry=retry,
+            timeout=timeout,
+            metadata=metadata,
+        )
 
         # This method is paged; wrap the response in a pager, which provides
         # an `__aiter__` convenience method.
         response = pagers.ListTopicsAsyncPager(
-            method=rpc, request=request, response=response, metadata=metadata,
+            method=rpc,
+            request=request,
+            response=response,
+            metadata=metadata,
         )
 
         # Done; return the response.
@@ -584,18 +745,38 @@ class PublisherAsyncClient:
 
     async def list_topic_subscriptions(
         self,
-        request: pubsub.ListTopicSubscriptionsRequest = None,
+        request: Union[pubsub.ListTopicSubscriptionsRequest, dict] = None,
         *,
         topic: str = None,
-        retry: retries.Retry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        retry: OptionalRetry = gapic_v1.method.DEFAULT,
+        timeout: TimeoutType = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pagers.ListTopicSubscriptionsAsyncPager:
         r"""Lists the names of the attached subscriptions on this
         topic.
 
+        .. code-block:: python
+
+            from google import pubsub_v1
+
+            async def sample_list_topic_subscriptions():
+                # Create a client
+                client = pubsub_v1.PublisherAsyncClient()
+
+                # Initialize request argument(s)
+                request = pubsub_v1.ListTopicSubscriptionsRequest(
+                    topic="topic_value",
+                )
+
+                # Make the request
+                page_result = client.list_topic_subscriptions(request=request)
+
+                # Handle the response
+                async for response in page_result:
+                    print(response)
+
         Args:
-            request (:class:`google.pubsub_v1.types.ListTopicSubscriptionsRequest`):
+            request (Union[google.pubsub_v1.types.ListTopicSubscriptionsRequest, dict]):
                 The request object. Request for the
                 `ListTopicSubscriptions` method.
             topic (:class:`str`):
@@ -606,10 +787,10 @@ class PublisherAsyncClient:
                 This corresponds to the ``topic`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
-            timeout (float): The timeout for this request.
+            timeout (TimeoutType):
+                The timeout for this request.
             metadata (Sequence[Tuple[str, str]]): Strings which should be
                 sent along with the request as metadata.
 
@@ -622,7 +803,7 @@ class PublisherAsyncClient:
 
         """
         # Create or coerce a protobuf request object.
-        # Sanity check: If we got a request object, we should *not* have
+        # Quick check: If we got a request object, we should *not* have
         # gotten any keyword arguments that map to the request.
         has_flattened_params = any([topic])
         if request is not None and has_flattened_params:
@@ -635,7 +816,6 @@ class PublisherAsyncClient:
 
         # If we have keyword arguments corresponding to fields on the
         # request, apply these.
-
         if topic is not None:
             request.topic = topic
 
@@ -648,9 +828,9 @@ class PublisherAsyncClient:
                 maximum=60.0,
                 multiplier=1.3,
                 predicate=retries.if_exception_type(
-                    exceptions.Aborted,
-                    exceptions.ServiceUnavailable,
-                    exceptions.Unknown,
+                    core_exceptions.Aborted,
+                    core_exceptions.ServiceUnavailable,
+                    core_exceptions.Unknown,
                 ),
                 deadline=60.0,
             ),
@@ -665,12 +845,20 @@ class PublisherAsyncClient:
         )
 
         # Send the request.
-        response = await rpc(request, retry=retry, timeout=timeout, metadata=metadata,)
+        response = await rpc(
+            request,
+            retry=retry,
+            timeout=timeout,
+            metadata=metadata,
+        )
 
         # This method is paged; wrap the response in a pager, which provides
         # an `__aiter__` convenience method.
         response = pagers.ListTopicSubscriptionsAsyncPager(
-            method=rpc, request=request, response=response, metadata=metadata,
+            method=rpc,
+            request=request,
+            response=response,
+            metadata=metadata,
         )
 
         # Done; return the response.
@@ -678,11 +866,11 @@ class PublisherAsyncClient:
 
     async def list_topic_snapshots(
         self,
-        request: pubsub.ListTopicSnapshotsRequest = None,
+        request: Union[pubsub.ListTopicSnapshotsRequest, dict] = None,
         *,
         topic: str = None,
-        retry: retries.Retry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        retry: OptionalRetry = gapic_v1.method.DEFAULT,
+        timeout: TimeoutType = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pagers.ListTopicSnapshotsAsyncPager:
         r"""Lists the names of the snapshots on this topic. Snapshots are
@@ -692,8 +880,28 @@ class PublisherAsyncClient:
         bulk. That is, you can set the acknowledgment state of messages
         in an existing subscription to the state captured by a snapshot.
 
+        .. code-block:: python
+
+            from google import pubsub_v1
+
+            async def sample_list_topic_snapshots():
+                # Create a client
+                client = pubsub_v1.PublisherAsyncClient()
+
+                # Initialize request argument(s)
+                request = pubsub_v1.ListTopicSnapshotsRequest(
+                    topic="topic_value",
+                )
+
+                # Make the request
+                page_result = client.list_topic_snapshots(request=request)
+
+                # Handle the response
+                async for response in page_result:
+                    print(response)
+
         Args:
-            request (:class:`google.pubsub_v1.types.ListTopicSnapshotsRequest`):
+            request (Union[google.pubsub_v1.types.ListTopicSnapshotsRequest, dict]):
                 The request object. Request for the `ListTopicSnapshots`
                 method.
             topic (:class:`str`):
@@ -704,10 +912,10 @@ class PublisherAsyncClient:
                 This corresponds to the ``topic`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
-            timeout (float): The timeout for this request.
+            timeout (TimeoutType):
+                The timeout for this request.
             metadata (Sequence[Tuple[str, str]]): Strings which should be
                 sent along with the request as metadata.
 
@@ -720,7 +928,7 @@ class PublisherAsyncClient:
 
         """
         # Create or coerce a protobuf request object.
-        # Sanity check: If we got a request object, we should *not* have
+        # Quick check: If we got a request object, we should *not* have
         # gotten any keyword arguments that map to the request.
         has_flattened_params = any([topic])
         if request is not None and has_flattened_params:
@@ -733,7 +941,6 @@ class PublisherAsyncClient:
 
         # If we have keyword arguments corresponding to fields on the
         # request, apply these.
-
         if topic is not None:
             request.topic = topic
 
@@ -746,9 +953,9 @@ class PublisherAsyncClient:
                 maximum=60.0,
                 multiplier=1.3,
                 predicate=retries.if_exception_type(
-                    exceptions.Aborted,
-                    exceptions.ServiceUnavailable,
-                    exceptions.Unknown,
+                    core_exceptions.Aborted,
+                    core_exceptions.ServiceUnavailable,
+                    core_exceptions.Unknown,
                 ),
                 deadline=60.0,
             ),
@@ -763,12 +970,20 @@ class PublisherAsyncClient:
         )
 
         # Send the request.
-        response = await rpc(request, retry=retry, timeout=timeout, metadata=metadata,)
+        response = await rpc(
+            request,
+            retry=retry,
+            timeout=timeout,
+            metadata=metadata,
+        )
 
         # This method is paged; wrap the response in a pager, which provides
         # an `__aiter__` convenience method.
         response = pagers.ListTopicSnapshotsAsyncPager(
-            method=rpc, request=request, response=response, metadata=metadata,
+            method=rpc,
+            request=request,
+            response=response,
+            metadata=metadata,
         )
 
         # Done; return the response.
@@ -776,11 +991,11 @@ class PublisherAsyncClient:
 
     async def delete_topic(
         self,
-        request: pubsub.DeleteTopicRequest = None,
+        request: Union[pubsub.DeleteTopicRequest, dict] = None,
         *,
         topic: str = None,
-        retry: retries.Retry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        retry: OptionalRetry = gapic_v1.method.DEFAULT,
+        timeout: TimeoutType = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> None:
         r"""Deletes the topic with the given name. Returns ``NOT_FOUND`` if
@@ -790,8 +1005,24 @@ class PublisherAsyncClient:
         subscriptions to this topic are not deleted, but their ``topic``
         field is set to ``_deleted-topic_``.
 
+        .. code-block:: python
+
+            from google import pubsub_v1
+
+            async def sample_delete_topic():
+                # Create a client
+                client = pubsub_v1.PublisherAsyncClient()
+
+                # Initialize request argument(s)
+                request = pubsub_v1.DeleteTopicRequest(
+                    topic="topic_value",
+                )
+
+                # Make the request
+                await client.delete_topic(request=request)
+
         Args:
-            request (:class:`google.pubsub_v1.types.DeleteTopicRequest`):
+            request (Union[google.pubsub_v1.types.DeleteTopicRequest, dict]):
                 The request object. Request for the `DeleteTopic`
                 method.
             topic (:class:`str`):
@@ -801,15 +1032,15 @@ class PublisherAsyncClient:
                 This corresponds to the ``topic`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
-            timeout (float): The timeout for this request.
+            timeout (TimeoutType):
+                The timeout for this request.
             metadata (Sequence[Tuple[str, str]]): Strings which should be
                 sent along with the request as metadata.
         """
         # Create or coerce a protobuf request object.
-        # Sanity check: If we got a request object, we should *not* have
+        # Quick check: If we got a request object, we should *not* have
         # gotten any keyword arguments that map to the request.
         has_flattened_params = any([topic])
         if request is not None and has_flattened_params:
@@ -822,7 +1053,6 @@ class PublisherAsyncClient:
 
         # If we have keyword arguments corresponding to fields on the
         # request, apply these.
-
         if topic is not None:
             request.topic = topic
 
@@ -834,7 +1064,9 @@ class PublisherAsyncClient:
                 initial=0.1,
                 maximum=60.0,
                 multiplier=1.3,
-                predicate=retries.if_exception_type(exceptions.ServiceUnavailable,),
+                predicate=retries.if_exception_type(
+                    core_exceptions.ServiceUnavailable,
+                ),
                 deadline=60.0,
             ),
             default_timeout=60.0,
@@ -849,15 +1081,18 @@ class PublisherAsyncClient:
 
         # Send the request.
         await rpc(
-            request, retry=retry, timeout=timeout, metadata=metadata,
+            request,
+            retry=retry,
+            timeout=timeout,
+            metadata=metadata,
         )
 
     async def detach_subscription(
         self,
-        request: pubsub.DetachSubscriptionRequest = None,
+        request: Union[pubsub.DetachSubscriptionRequest, dict] = None,
         *,
-        retry: retries.Retry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        retry: OptionalRetry = gapic_v1.method.DEFAULT,
+        timeout: TimeoutType = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pubsub.DetachSubscriptionResponse:
         r"""Detaches a subscription from this topic. All messages retained
@@ -866,14 +1101,33 @@ class PublisherAsyncClient:
         the subscription is a push subscription, pushes to the endpoint
         will stop.
 
+        .. code-block:: python
+
+            from google import pubsub_v1
+
+            async def sample_detach_subscription():
+                # Create a client
+                client = pubsub_v1.PublisherAsyncClient()
+
+                # Initialize request argument(s)
+                request = pubsub_v1.DetachSubscriptionRequest(
+                    subscription="subscription_value",
+                )
+
+                # Make the request
+                response = await client.detach_subscription(request=request)
+
+                # Handle the response
+                print(response)
+
         Args:
-            request (:class:`google.pubsub_v1.types.DetachSubscriptionRequest`):
+            request (Union[google.pubsub_v1.types.DetachSubscriptionRequest, dict]):
                 The request object. Request for the DetachSubscription
                 method.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
-            timeout (float): The timeout for this request.
+            timeout (TimeoutType):
+                The timeout for this request.
             metadata (Sequence[Tuple[str, str]]): Strings which should be
                 sent along with the request as metadata.
 
@@ -884,7 +1138,6 @@ class PublisherAsyncClient:
 
         """
         # Create or coerce a protobuf request object.
-
         request = pubsub.DetachSubscriptionRequest(request)
 
         # Wrap the RPC method; this adds retry and timeout information,
@@ -895,7 +1148,9 @@ class PublisherAsyncClient:
                 initial=0.1,
                 maximum=60.0,
                 multiplier=1.3,
-                predicate=retries.if_exception_type(exceptions.ServiceUnavailable,),
+                predicate=retries.if_exception_type(
+                    core_exceptions.ServiceUnavailable,
+                ),
                 deadline=60.0,
             ),
             default_timeout=60.0,
@@ -911,32 +1166,40 @@ class PublisherAsyncClient:
         )
 
         # Send the request.
-        response = await rpc(request, retry=retry, timeout=timeout, metadata=metadata,)
+        response = await rpc(
+            request,
+            retry=retry,
+            timeout=timeout,
+            metadata=metadata,
+        )
 
         # Done; return the response.
         return response
 
     async def set_iam_policy(
         self,
-        request: iam_policy.SetIamPolicyRequest = None,
+        request: iam_policy_pb2.SetIamPolicyRequest = None,
         *,
-        retry: retries.Retry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        retry: OptionalRetry = gapic_v1.method.DEFAULT,
+        timeout: TimeoutType = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
-    ) -> policy.Policy:
-        r"""Sets the IAM access control policy on the specified
-        function. Replaces any existing policy.
+    ) -> policy_pb2.Policy:
+        r"""Sets the IAM access control policy on the specified function.
+
+        Replaces any existing policy.
+
         Args:
-            request (:class:`~.iam_policy.SetIamPolicyRequest`):
+            request (:class:`~.policy_pb2.SetIamPolicyRequest`):
                 The request object. Request message for `SetIamPolicy`
                 method.
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
-            timeout (float): The timeout for this request.
+            timeout (TimeoutType):
+                The timeout for this request.
             metadata (Sequence[Tuple[str, str]]): Strings which should be
                 sent along with the request as metadata.
         Returns:
-            ~.policy.Policy:
+            ~.policy_pb2.Policy:
                 Defines an Identity and Access Management (IAM) policy.
                 It is used to specify access control policies for Cloud
                 Platform resources.
@@ -1000,7 +1263,7 @@ class PublisherAsyncClient:
         # The request isn't a proto-plus wrapped type,
         # so it must be constructed via keyword expansion.
         if isinstance(request, dict):
-            request = iam_policy.SetIamPolicyRequest(**request)
+            request = iam_policy_pb2.SetIamPolicyRequest(**request)
 
         # Wrap the RPC method; this adds retry and timeout information,
         # and friendly error handling.
@@ -1017,33 +1280,41 @@ class PublisherAsyncClient:
         )
 
         # Send the request.
-        response = await rpc(request, retry=retry, timeout=timeout, metadata=metadata,)
+        response = await rpc(
+            request,
+            retry=retry,
+            timeout=timeout,
+            metadata=metadata,
+        )
 
         # Done; return the response.
         return response
 
     async def get_iam_policy(
         self,
-        request: iam_policy.GetIamPolicyRequest = None,
+        request: iam_policy_pb2.GetIamPolicyRequest = None,
         *,
-        retry: retries.Retry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        retry: OptionalRetry = gapic_v1.method.DEFAULT,
+        timeout: TimeoutType = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
-    ) -> policy.Policy:
+    ) -> policy_pb2.Policy:
         r"""Gets the IAM access control policy for a function.
+
         Returns an empty policy if the function exists and does
         not have a policy set.
+
         Args:
-            request (:class:`~.iam_policy.GetIamPolicyRequest`):
+            request (:class:`~.iam_policy_pb2.GetIamPolicyRequest`):
                 The request object. Request message for `GetIamPolicy`
                 method.
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
-            timeout (float): The timeout for this request.
+            timeout (TimeoutType):
+                The timeout for this request.
             metadata (Sequence[Tuple[str, str]]): Strings which should be
                 sent along with the request as metadata.
         Returns:
-            ~.policy.Policy:
+            ~.policy_pb2.Policy:
                 Defines an Identity and Access Management (IAM) policy.
                 It is used to specify access control policies for Cloud
                 Platform resources.
@@ -1107,7 +1378,7 @@ class PublisherAsyncClient:
         # The request isn't a proto-plus wrapped type,
         # so it must be constructed via keyword expansion.
         if isinstance(request, dict):
-            request = iam_policy.GetIamPolicyRequest(**request)
+            request = iam_policy_pb2.GetIamPolicyRequest(**request)
 
         # Wrap the RPC method; this adds retry and timeout information,
         # and friendly error handling.
@@ -1124,33 +1395,42 @@ class PublisherAsyncClient:
         )
 
         # Send the request.
-        response = await rpc(request, retry=retry, timeout=timeout, metadata=metadata,)
+        response = await rpc(
+            request,
+            retry=retry,
+            timeout=timeout,
+            metadata=metadata,
+        )
 
         # Done; return the response.
         return response
 
     async def test_iam_permissions(
         self,
-        request: iam_policy.TestIamPermissionsRequest = None,
+        request: iam_policy_pb2.TestIamPermissionsRequest = None,
         *,
-        retry: retries.Retry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        retry: OptionalRetry = gapic_v1.method.DEFAULT,
+        timeout: TimeoutType = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
-    ) -> iam_policy.TestIamPermissionsResponse:
+    ) -> iam_policy_pb2.TestIamPermissionsResponse:
         r"""Tests the specified permissions against the IAM access control
-        policy for a function. If the function does not exist, this will
+            policy for a function.
+
+        If the function does not exist, this will
         return an empty set of permissions, not a NOT_FOUND error.
+
         Args:
-            request (:class:`~.iam_policy.TestIamPermissionsRequest`):
+            request (:class:`~.iam_policy_pb2.TestIamPermissionsRequest`):
                 The request object. Request message for
                 `TestIamPermissions` method.
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
-            timeout (float): The timeout for this request.
+            timeout (TimeoutType):
+                The timeout for this request.
             metadata (Sequence[Tuple[str, str]]): Strings which should be
                 sent along with the request as metadata.
         Returns:
-            ~.iam_policy.TestIamPermissionsResponse:
+            ~iam_policy_pb2.PolicyTestIamPermissionsResponse:
                 Response message for ``TestIamPermissions`` method.
         """
         # Create or coerce a protobuf request object.
@@ -1158,7 +1438,7 @@ class PublisherAsyncClient:
         # The request isn't a proto-plus wrapped type,
         # so it must be constructed via keyword expansion.
         if isinstance(request, dict):
-            request = iam_policy.TestIamPermissionsRequest(**request)
+            request = iam_policy_pb2.TestIamPermissionsRequest(**request)
 
         # Wrap the RPC method; this adds retry and timeout information,
         # and friendly error handling.
@@ -1175,10 +1455,21 @@ class PublisherAsyncClient:
         )
 
         # Send the request.
-        response = await rpc(request, retry=retry, timeout=timeout, metadata=metadata,)
+        response = await rpc(
+            request,
+            retry=retry,
+            timeout=timeout,
+            metadata=metadata,
+        )
 
         # Done; return the response.
         return response
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc, tb):
+        await self.transport.close()
 
 
 try:

@@ -15,27 +15,33 @@
 from __future__ import absolute_import
 
 import abc
+import typing
+
+from google.api_core import gapic_v1
+from google.pubsub_v1 import types as gapic_types
+
+if typing.TYPE_CHECKING:  # pragma: NO COVER
+    from concurrent import futures
+    from google.pubsub_v1.services.publisher.client import OptionalRetry
 
 
 class Sequencer(metaclass=abc.ABCMeta):
     """The base class for sequencers for Pub/Sub publishing. A sequencer
-       sequences messages to be published.
+    sequences messages to be published.
     """
 
-    @staticmethod
     @abc.abstractmethod
-    def is_finished(self):  # pragma: NO COVER
-        """ Whether the sequencer is finished and should be cleaned up.
+    def is_finished(self) -> bool:  # pragma: NO COVER
+        """Whether the sequencer is finished and should be cleaned up.
 
-            Returns:
-                bool: Whether the sequencer is finished and should be cleaned up.
+        Returns:
+            bool: Whether the sequencer is finished and should be cleaned up.
         """
         raise NotImplementedError
 
-    @staticmethod
     @abc.abstractmethod
-    def unpause(self, message):  # pragma: NO COVER
-        """ Unpauses this sequencer.
+    def unpause(self) -> None:  # pragma: NO COVER
+        """Unpauses this sequencer.
 
         Raises:
             RuntimeError:
@@ -43,21 +49,27 @@ class Sequencer(metaclass=abc.ABCMeta):
         """
         raise NotImplementedError
 
-    @staticmethod
     @abc.abstractmethod
-    def publish(self, message, retry=None):  # pragma: NO COVER
-        """ Publish message for this ordering key.
+    def publish(
+        self,
+        message: gapic_types.PubsubMessage,
+        retry: "OptionalRetry" = gapic_v1.method.DEFAULT,
+        timeout: gapic_types.TimeoutType = gapic_v1.method.DEFAULT,
+    ) -> "futures.Future":  # pragma: NO COVER
+        """Publish message for this ordering key.
 
         Args:
-            message (~.pubsub_v1.types.PubsubMessage):
+            message:
                 The Pub/Sub message.
-            retry (Optional[google.api_core.retry.Retry]):
+            retry:
                 The retry settings to apply when publishing the message.
+            timeout:
+                The timeout to apply when publishing the message.
 
         Returns:
             A class instance that conforms to Python Standard library's
-            :class:`~concurrent.futures.Future` interface (but not an
-            instance of that class). The future might return immediately with a
+            :class:`~concurrent.futures.Future` interface. The future might return
+            immediately with a
             `pubsub_v1.publisher.exceptions.PublishToPausedOrderingKeyException`
             if the ordering key is paused.  Otherwise, the future tracks the
             lifetime of the message publish.

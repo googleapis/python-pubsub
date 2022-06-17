@@ -15,15 +15,37 @@
 from __future__ import absolute_import
 from __future__ import division
 
-import collections
+import functools
 import itertools
 import logging
 import math
+import time
 import threading
+import typing
+from typing import List, Optional, Sequence, Union
+import warnings
+from google.api_core.retry import exponential_sleep_generator
 
 from google.cloud.pubsub_v1.subscriber._protocol import helper_threads
 from google.cloud.pubsub_v1.subscriber._protocol import requests
-from google.pubsub_v1 import types as gapic_types
+from google.cloud.pubsub_v1.subscriber.exceptions import (
+    AcknowledgeStatus,
+)
+
+if typing.TYPE_CHECKING:  # pragma: NO COVER
+    import queue
+    from google.cloud.pubsub_v1.subscriber._protocol.streaming_pull_manager import (
+        StreamingPullManager,
+    )
+
+
+RequestItem = Union[
+    requests.AckRequest,
+    requests.DropRequest,
+    requests.LeaseRequest,
+    requests.ModAckRequest,
+    requests.NackRequest,
+]
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -49,16 +71,25 @@ Accounting for some overhead, we should thus only send a maximum of 2500 ACK
 IDs at a time.
 """
 
+_MIN_EXACTLY_ONCE_DELIVERY_ACK_MODACK_RETRY_DURATION_SECS = 1
+"""The time to wait for the first retry of failed acks and modacks when exactly-once
+delivery is enabled."""
+
+_MAX_EXACTLY_ONCE_DELIVERY_ACK_MODACK_RETRY_DURATION_SECS = 10 * 60
+"""The maximum amount of time in seconds to retry failed acks and modacks when
+exactly-once delivery is enabled."""
+
 
 class Dispatcher(object):
-    def __init__(self, manager, queue):
+    def __init__(self, manager: "StreamingPullManager", queue: "queue.Queue"):
         self._manager = manager
         self._queue = queue
-        self._thread = None
+        self._thread: Optional[threading.Thread] = None
         self._operational_lock = threading.Lock()
 
-    def start(self):
+    def start(self) -> None:
         """Start a thread to dispatch requests queued up by callbacks.
+
         Spawns a thread to run :meth:`dispatch_callback`.
         """
         with self._operational_lock:
@@ -78,7 +109,7 @@ class Dispatcher(object):
             _LOGGER.debug("Started helper thread %s", thread.name)
             self._thread = thread
 
-    def stop(self):
+    def stop(self) -> None:
         with self._operational_lock:
             if self._thread is not None:
                 # Signal the worker to stop by queueing a "poison pill"
@@ -87,43 +118,116 @@ class Dispatcher(object):
 
             self._thread = None
 
-    def dispatch_callback(self, items):
+    def dispatch_callback(self, items: Sequence[RequestItem]) -> None:
         """Map the callback request to the appropriate gRPC request.
 
         Args:
-            action (str): The method to be invoked.
-            kwargs (Dict[str, Any]): The keyword arguments for the method
-                specified by ``action``.
-
-        Raises:
-            ValueError: If ``action`` isn't one of the expected actions
-                "ack", "drop", "lease", "modify_ack_deadline" or "nack".
+            items:
+                Queued requests to dispatch.
         """
-        batched_commands = collections.defaultdict(list)
+        lease_requests: List[requests.LeaseRequest] = []
+        modack_requests: List[requests.ModAckRequest] = []
+        ack_requests: List[requests.AckRequest] = []
+        nack_requests: List[requests.NackRequest] = []
+        drop_requests: List[requests.DropRequest] = []
+
+        lease_ids = set()
+        modack_ids = set()
+        ack_ids = set()
+        nack_ids = set()
+        drop_ids = set()
+        exactly_once_delivery_enabled = self._manager._exactly_once_delivery_enabled()
 
         for item in items:
-            batched_commands[item.__class__].append(item)
+            if isinstance(item, requests.LeaseRequest):
+                if (
+                    item.ack_id not in lease_ids
+                ):  # LeaseRequests have no futures to handle.
+                    lease_ids.add(item.ack_id)
+                    lease_requests.append(item)
+            elif isinstance(item, requests.ModAckRequest):
+                if item.ack_id in modack_ids:
+                    self._handle_duplicate_request_future(
+                        exactly_once_delivery_enabled, item
+                    )
+                else:
+                    modack_ids.add(item.ack_id)
+                    modack_requests.append(item)
+            elif isinstance(item, requests.AckRequest):
+                if item.ack_id in ack_ids:
+                    self._handle_duplicate_request_future(
+                        exactly_once_delivery_enabled, item
+                    )
+                else:
+                    ack_ids.add(item.ack_id)
+                    ack_requests.append(item)
+            elif isinstance(item, requests.NackRequest):
+                if item.ack_id in nack_ids:
+                    self._handle_duplicate_request_future(
+                        exactly_once_delivery_enabled, item
+                    )
+                else:
+                    nack_ids.add(item.ack_id)
+                    nack_requests.append(item)
+            elif isinstance(item, requests.DropRequest):
+                if (
+                    item.ack_id not in drop_ids
+                ):  # DropRequests have no futures to handle.
+                    drop_ids.add(item.ack_id)
+                    drop_requests.append(item)
+            else:
+                warnings.warn(
+                    f'Skipping unknown request item of type "{type(item)}"',
+                    category=RuntimeWarning,
+                )
 
         _LOGGER.debug("Handling %d batched requests", len(items))
 
-        if batched_commands[requests.LeaseRequest]:
-            self.lease(batched_commands.pop(requests.LeaseRequest))
-        if batched_commands[requests.ModAckRequest]:
-            self.modify_ack_deadline(batched_commands.pop(requests.ModAckRequest))
+        if lease_requests:
+            self.lease(lease_requests)
+
+        if modack_requests:
+            self.modify_ack_deadline(modack_requests)
+
         # Note: Drop and ack *must* be after lease. It's possible to get both
         # the lease and the ack/drop request in the same batch.
-        if batched_commands[requests.AckRequest]:
-            self.ack(batched_commands.pop(requests.AckRequest))
-        if batched_commands[requests.NackRequest]:
-            self.nack(batched_commands.pop(requests.NackRequest))
-        if batched_commands[requests.DropRequest]:
-            self.drop(batched_commands.pop(requests.DropRequest))
+        if ack_requests:
+            self.ack(ack_requests)
 
-    def ack(self, items):
+        if nack_requests:
+            self.nack(nack_requests)
+
+        if drop_requests:
+            self.drop(drop_requests)
+
+    def _handle_duplicate_request_future(
+        self,
+        exactly_once_delivery_enabled: bool,
+        item: Union[requests.AckRequest, requests.ModAckRequest, requests.NackRequest],
+    ) -> None:
+        _LOGGER.debug(
+            "This is a duplicate %s with the same ack_id: %s.",
+            type(item),
+            item.ack_id,
+        )
+        if item.future:
+            if exactly_once_delivery_enabled:
+                item.future.set_exception(
+                    ValueError(f"Duplicate ack_id for {type(item)}")
+                )
+                # Futures may be present even with exactly-once delivery
+                # disabled, in transition periods after the setting is changed on
+                # the subscription.
+            else:
+                # When exactly-once delivery is NOT enabled, acks/modacks are considered
+                # best-effort, so the future should succeed even though this is a duplicate.
+                item.future.set_result(AcknowledgeStatus.SUCCESS)
+
+    def ack(self, items: Sequence[requests.AckRequest]) -> None:
         """Acknowledge the given messages.
 
         Args:
-            items(Sequence[AckRequest]): The items to acknowledge.
+            items: The items to acknowledge.
         """
         # If we got timing information, add it to the histogram.
         for item in items:
@@ -133,64 +237,178 @@ class Dispatcher(object):
 
         # We must potentially split the request into multiple smaller requests
         # to avoid the server-side max request size limit.
-        ack_ids = (item.ack_id for item in items)
+        items_gen = iter(items)
+        ack_ids_gen = (item.ack_id for item in items)
         total_chunks = int(math.ceil(len(items) / _ACK_IDS_BATCH_SIZE))
 
         for _ in range(total_chunks):
-            request = gapic_types.StreamingPullRequest(
-                ack_ids=itertools.islice(ack_ids, _ACK_IDS_BATCH_SIZE)
+            ack_reqs_dict = {
+                req.ack_id: req
+                for req in itertools.islice(items_gen, _ACK_IDS_BATCH_SIZE)
+            }
+            requests_completed, requests_to_retry = self._manager.send_unary_ack(
+                ack_ids=list(itertools.islice(ack_ids_gen, _ACK_IDS_BATCH_SIZE)),
+                ack_reqs_dict=ack_reqs_dict,
             )
-            self._manager.send(request)
 
-        # Remove the message from lease management.
-        self.drop(items)
+            # Remove the completed messages from lease management.
+            self.drop(requests_completed)
 
-    def drop(self, items):
+            # Retry on a separate thread so the dispatcher thread isn't blocked
+            # by sleeps.
+            if requests_to_retry:
+                self._start_retry_thread(
+                    "Thread-RetryAcks",
+                    functools.partial(self._retry_acks, requests_to_retry),
+                )
+
+    def _start_retry_thread(self, thread_name, thread_target):
+        # note: if the thread is *not* a daemon, a memory leak exists due to a cpython issue.
+        # https://github.com/googleapis/python-pubsub/issues/395#issuecomment-829910303
+        # https://github.com/googleapis/python-pubsub/issues/395#issuecomment-830092418
+        retry_thread = threading.Thread(
+            name=thread_name,
+            target=thread_target,
+            daemon=True,
+        )
+        # The thread finishes when the requests succeed or eventually fail with
+        # a back-end timeout error or other permanent failure.
+        retry_thread.start()
+
+    def _retry_acks(self, requests_to_retry):
+        retry_delay_gen = exponential_sleep_generator(
+            initial=_MIN_EXACTLY_ONCE_DELIVERY_ACK_MODACK_RETRY_DURATION_SECS,
+            maximum=_MAX_EXACTLY_ONCE_DELIVERY_ACK_MODACK_RETRY_DURATION_SECS,
+        )
+        while requests_to_retry:
+            time_to_wait = next(retry_delay_gen)
+            _LOGGER.debug(
+                "Retrying {len(requests_to_retry)} ack(s) after delay of "
+                + str(time_to_wait)
+                + " seconds"
+            )
+            time.sleep(time_to_wait)
+
+            ack_reqs_dict = {req.ack_id: req for req in requests_to_retry}
+            requests_completed, requests_to_retry = self._manager.send_unary_ack(
+                ack_ids=[req.ack_id for req in requests_to_retry],
+                ack_reqs_dict=ack_reqs_dict,
+            )
+            assert (
+                len(requests_to_retry) <= _ACK_IDS_BATCH_SIZE
+            ), "Too many requests to be retried."
+            # Remove the completed messages from lease management.
+            self.drop(requests_completed)
+
+    def drop(
+        self,
+        items: Sequence[
+            Union[requests.AckRequest, requests.DropRequest, requests.NackRequest]
+        ],
+    ) -> None:
         """Remove the given messages from lease management.
 
         Args:
-            items(Sequence[DropRequest]): The items to drop.
+            items: The items to drop.
         """
+        assert self._manager.leaser is not None
         self._manager.leaser.remove(items)
         ordering_keys = (k.ordering_key for k in items if k.ordering_key)
         self._manager.activate_ordering_keys(ordering_keys)
         self._manager.maybe_resume_consumer()
 
-    def lease(self, items):
+    def lease(self, items: Sequence[requests.LeaseRequest]) -> None:
         """Add the given messages to lease management.
 
         Args:
-            items(Sequence[LeaseRequest]): The items to lease.
+            items: The items to lease.
         """
+        assert self._manager.leaser is not None
         self._manager.leaser.add(items)
         self._manager.maybe_pause_consumer()
 
-    def modify_ack_deadline(self, items):
+    def modify_ack_deadline(self, items: Sequence[requests.ModAckRequest]) -> None:
         """Modify the ack deadline for the given messages.
 
         Args:
-            items(Sequence[ModAckRequest]): The items to modify.
+            items: The items to modify.
         """
         # We must potentially split the request into multiple smaller requests
         # to avoid the server-side max request size limit.
-        ack_ids = (item.ack_id for item in items)
-        seconds = (item.seconds for item in items)
+        items_gen = iter(items)
+        ack_ids_gen = (item.ack_id for item in items)
+        deadline_seconds_gen = (item.seconds for item in items)
         total_chunks = int(math.ceil(len(items) / _ACK_IDS_BATCH_SIZE))
 
         for _ in range(total_chunks):
-            request = gapic_types.StreamingPullRequest(
-                modify_deadline_ack_ids=itertools.islice(ack_ids, _ACK_IDS_BATCH_SIZE),
-                modify_deadline_seconds=itertools.islice(seconds, _ACK_IDS_BATCH_SIZE),
+            ack_reqs_dict = {
+                req.ack_id: req
+                for req in itertools.islice(items_gen, _ACK_IDS_BATCH_SIZE)
+            }
+            # no further work needs to be done for `requests_to_retry`
+            requests_completed, requests_to_retry = self._manager.send_unary_modack(
+                modify_deadline_ack_ids=list(
+                    itertools.islice(ack_ids_gen, _ACK_IDS_BATCH_SIZE)
+                ),
+                modify_deadline_seconds=list(
+                    itertools.islice(deadline_seconds_gen, _ACK_IDS_BATCH_SIZE)
+                ),
+                ack_reqs_dict=ack_reqs_dict,
             )
-            self._manager.send(request)
+            assert (
+                len(requests_to_retry) <= _ACK_IDS_BATCH_SIZE
+            ), "Too many requests to be retried."
 
-    def nack(self, items):
+            # Retry on a separate thread so the dispatcher thread isn't blocked
+            # by sleeps.
+            if requests_to_retry:
+                self._start_retry_thread(
+                    "Thread-RetryModAcks",
+                    functools.partial(self._retry_modacks, requests_to_retry),
+                )
+
+    def _retry_modacks(self, requests_to_retry):
+        retry_delay_gen = exponential_sleep_generator(
+            initial=_MIN_EXACTLY_ONCE_DELIVERY_ACK_MODACK_RETRY_DURATION_SECS,
+            maximum=_MAX_EXACTLY_ONCE_DELIVERY_ACK_MODACK_RETRY_DURATION_SECS,
+        )
+        while requests_to_retry:
+            time_to_wait = next(retry_delay_gen)
+            _LOGGER.debug(
+                "Retrying {len(requests_to_retry)} modack(s) after delay of "
+                + str(time_to_wait)
+                + " seconds"
+            )
+            time.sleep(time_to_wait)
+
+            ack_reqs_dict = {req.ack_id: req for req in requests_to_retry}
+            requests_completed, requests_to_retry = self._manager.send_unary_modack(
+                modify_deadline_ack_ids=[req.ack_id for req in requests_to_retry],
+                modify_deadline_seconds=[req.seconds for req in requests_to_retry],
+                ack_reqs_dict=ack_reqs_dict,
+            )
+
+    def nack(self, items: Sequence[requests.NackRequest]) -> None:
         """Explicitly deny receipt of messages.
 
         Args:
-            items(Sequence[NackRequest]): The items to deny.
+            items: The items to deny.
         """
         self.modify_ack_deadline(
-            [requests.ModAckRequest(ack_id=item.ack_id, seconds=0) for item in items]
+            [
+                requests.ModAckRequest(
+                    ack_id=item.ack_id, seconds=0, future=item.future
+                )
+                for item in items
+            ]
         )
-        self.drop([requests.DropRequest(*item) for item in items])
+        self.drop(
+            [
+                requests.DropRequest(
+                    ack_id=item.ack_id,
+                    byte_size=item.byte_size,
+                    ordering_key=item.ordering_key,
+                )
+                for item in items
+            ]
+        )

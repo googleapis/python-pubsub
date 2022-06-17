@@ -22,19 +22,24 @@ import setuptools
 
 name = "google-cloud-pubsub"
 description = "Google Cloud Pub/Sub API client library"
-version = "2.5.0"
+version = "2.13.0"
 # Should be one of:
 # 'Development Status :: 3 - Alpha'
 # 'Development Status :: 4 - Beta'
 # 'Development Status :: 5 - Production/Stable'
 release_status = "Development Status :: 5 - Production/Stable"
 dependencies = [
-    "google-api-core[grpc] >= 1.22.2, < 2.0.0dev",
-    "libcst >= 0.3.10",
-    "proto-plus >= 1.7.1",
-    "grpc-google-iam-v1 >= 0.12.3, < 0.13dev",
+    "grpcio >= 1.38.1, < 2.0dev",  # https://github.com/googleapis/python-pubsub/issues/414
+    # NOTE: Maintainers, please do not require google-api-core>=2.x.x
+    # Until this issue is closed
+    # https://github.com/googleapis/google-cloud-python/issues/10566
+    "google-api-core[grpc] >= 1.31.5, <3.0.0dev,!=2.0.*,!=2.1.*,!=2.2.*,!=2.3.0",
+    "proto-plus >= 1.15.0, <2.0.0dev",
+    "protobuf >= 3.19.0, <4.0.0dev",
+    "grpc-google-iam-v1 >=0.12.4, <1.0.0dev",
+    "grpcio-status >= 1.16.0",
 ]
-extras = {}
+extras = {"libcst": "libcst >= 0.3.10"}
 
 
 # Setup boilerplate below this line.
@@ -77,6 +82,8 @@ setuptools.setup(
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
         "Operating System :: OS Independent",
         "Topic :: Internet",
     ],

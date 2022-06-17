@@ -14,13 +14,22 @@
 
 import enum
 import collections
-import concurrent.futures as futures
 import threading
+import typing
+from typing import Deque, Iterable, Sequence
 
 from google.api_core import gapic_v1
+from google.cloud.pubsub_v1.publisher import futures
 from google.cloud.pubsub_v1.publisher import exceptions
 from google.cloud.pubsub_v1.publisher._sequencer import base as sequencer_base
 from google.cloud.pubsub_v1.publisher._batch import base as batch_base
+from google.pubsub_v1 import types as gapic_types
+
+if typing.TYPE_CHECKING:  # pragma: NO COVER
+    from google.cloud.pubsub_v1 import types
+    from google.cloud.pubsub_v1.publisher import _batch
+    from google.cloud.pubsub_v1.publisher.client import Client as PublisherClient
+    from google.pubsub_v1.services.publisher.client import OptionalRetry
 
 
 class _OrderedSequencerStatus(str, enum.Enum):
@@ -67,23 +76,24 @@ class _OrderedSequencerStatus(str, enum.Enum):
 
 
 class OrderedSequencer(sequencer_base.Sequencer):
-    """ Sequences messages into batches ordered by an ordering key for one topic.
+    """Sequences messages into batches ordered by an ordering key for one topic.
 
-        A sequencer always has at least one batch in it, unless paused or stopped.
-        When no batches remain, the |publishes_done_callback| is called so the
-        client can perform cleanup.
+    A sequencer always has at least one batch in it, unless paused or stopped.
+    When no batches remain, the |publishes_done_callback| is called so the
+    client can perform cleanup.
 
-        Public methods are thread-safe.
+    Public methods are thread-safe.
 
-        Args:
-            client (~.pubsub_v1.PublisherClient): The publisher client used to
-                create this sequencer.
-            topic (str): The topic. The format for this is
-                ``projects/{project}/topics/{topic}``.
-            ordering_key (str): The ordering key for this sequencer.
+    Args:
+        client:
+            The publisher client used to create this sequencer.
+        topic:
+            The topic. The format for this is ``projects/{project}/topics/{topic}``.
+        ordering_key:
+            The ordering key for this sequencer.
     """
 
-    def __init__(self, client, topic, ordering_key):
+    def __init__(self, client: "PublisherClient", topic: str, ordering_key: str):
         self._client = client
         self._topic = topic
         self._ordering_key = ordering_key
@@ -92,28 +102,28 @@ class OrderedSequencer(sequencer_base.Sequencer):
         # Batches ordered from first (head/left) to last (right/tail).
         # Invariant: always has at least one batch after the first publish,
         # unless paused or stopped.
-        self._ordered_batches = collections.deque()
+        self._ordered_batches: Deque["_batch.thread.Batch"] = collections.deque()
         # See _OrderedSequencerStatus for valid state transitions.
         self._state = _OrderedSequencerStatus.ACCEPTING_MESSAGES
 
-    def is_finished(self):
-        """ Whether the sequencer is finished and should be cleaned up.
+    def is_finished(self) -> bool:
+        """Whether the sequencer is finished and should be cleaned up.
 
-            Returns:
-                bool: Whether the sequencer is finished and should be cleaned up.
+        Returns:
+            Whether the sequencer is finished and should be cleaned up.
         """
         with self._state_lock:
             return self._state == _OrderedSequencerStatus.FINISHED
 
-    def stop(self):
-        """ Permanently stop this sequencer.
+    def stop(self) -> None:
+        """Permanently stop this sequencer.
 
-            This differs from pausing, which may be resumed. Immediately commits
-            the first batch and cancels the rest.
+        This differs from pausing, which may be resumed. Immediately commits
+        the first batch and cancels the rest.
 
-            Raises:
-                RuntimeError:
-                    If called after stop() has already been called.
+        Raises:
+            RuntimeError:
+                If called after stop() has already been called.
         """
         with self._state_lock:
             if self._state == _OrderedSequencerStatus.STOPPED:
@@ -132,14 +142,14 @@ class OrderedSequencer(sequencer_base.Sequencer):
                     batch = self._ordered_batches.pop()
                     batch.cancel(batch_base.BatchCancellationReason.CLIENT_STOPPED)
 
-    def commit(self):
-        """ Commit the first batch, if unpaused.
+    def commit(self) -> None:
+        """Commit the first batch, if unpaused.
 
-            If paused or no batches exist, this method does nothing.
+        If paused or no batches exist, this method does nothing.
 
-            Raises:
-                RuntimeError:
-                    If called after stop() has already been called.
+        Raises:
+            RuntimeError:
+                If called after stop() has already been called.
         """
         with self._state_lock:
             if self._state == _OrderedSequencerStatus.STOPPED:
@@ -150,12 +160,12 @@ class OrderedSequencer(sequencer_base.Sequencer):
                 # operation is idempotent.
                 self._ordered_batches[0].commit()
 
-    def _batch_done_callback(self, success):
-        """ Deal with completion of a batch.
+    def _batch_done_callback(self, success: bool) -> None:
+        """Deal with completion of a batch.
 
-            Called when a batch has finished publishing, with either a success
-            or a failure. (Temporary failures are retried infinitely when
-            ordering keys are enabled.)
+        Called when a batch has finished publishing, with either a success
+        or a failure. (Temporary failures are retried infinitely when
+        ordering keys are enabled.)
         """
         ensure_cleanup_and_commit_timer_runs = False
         with self._state_lock:
@@ -198,11 +208,11 @@ class OrderedSequencer(sequencer_base.Sequencer):
         if ensure_cleanup_and_commit_timer_runs:
             self._client.ensure_cleanup_and_commit_timer_runs()
 
-    def _pause(self):
-        """ Pause this sequencer: set state to paused, cancel all batches, and
-            clear the list of ordered batches.
+    def _pause(self) -> None:
+        """Pause this sequencer: set state to paused, cancel all batches, and
+        clear the list of ordered batches.
 
-            _state_lock must be taken before calling this method.
+        _state_lock must be taken before calling this method.
         """
         assert (
             self._state != _OrderedSequencerStatus.FINISHED
@@ -214,8 +224,8 @@ class OrderedSequencer(sequencer_base.Sequencer):
             )
         self._ordered_batches.clear()
 
-    def unpause(self):
-        """ Unpause this sequencer.
+    def unpause(self) -> None:
+        """Unpause this sequencer.
 
         Raises:
             RuntimeError:
@@ -226,13 +236,19 @@ class OrderedSequencer(sequencer_base.Sequencer):
                 raise RuntimeError("Ordering key is not paused.")
             self._state = _OrderedSequencerStatus.ACCEPTING_MESSAGES
 
-    def _create_batch(self, commit_retry=gapic_v1.method.DEFAULT):
-        """ Create a new batch using the client's batch class and other stored
+    def _create_batch(
+        self,
+        commit_retry: "OptionalRetry" = gapic_v1.method.DEFAULT,
+        commit_timeout: "types.OptionalTimeout" = gapic_v1.method.DEFAULT,
+    ) -> "_batch.thread.Batch":
+        """Create a new batch using the client's batch class and other stored
             settings.
 
         Args:
-            commit_retry (Optional[google.api_core.retry.Retry]):
+            commit_retry:
                 The retry settings to apply when publishing the batch.
+            commit_timeout:
+                The timeout to apply when publishing the batch.
         """
         return self._client._batch_class(
             client=self._client,
@@ -241,16 +257,24 @@ class OrderedSequencer(sequencer_base.Sequencer):
             batch_done_callback=self._batch_done_callback,
             commit_when_full=False,
             commit_retry=commit_retry,
+            commit_timeout=commit_timeout,
         )
 
-    def publish(self, message, retry=gapic_v1.method.DEFAULT):
-        """ Publish message for this ordering key.
+    def publish(
+        self,
+        message: gapic_types.PubsubMessage,
+        retry: "OptionalRetry" = gapic_v1.method.DEFAULT,
+        timeout: "types.OptionalTimeout" = gapic_v1.method.DEFAULT,
+    ) -> futures.Future:
+        """Publish message for this ordering key.
 
         Args:
-            message (~.pubsub_v1.types.PubsubMessage):
+            message:
                 The Pub/Sub message.
-            retry (Optional[google.api_core.retry.Retry]):
+            retry:
                 The retry settings to apply when publishing the message.
+            timeout:
+                The timeout to apply when publishing the message.
 
         Returns:
             A class instance that conforms to Python Standard library's
@@ -266,12 +290,12 @@ class OrderedSequencer(sequencer_base.Sequencer):
         """
         with self._state_lock:
             if self._state == _OrderedSequencerStatus.PAUSED:
-                future = futures.Future()
+                errored_future = futures.Future()
                 exception = exceptions.PublishToPausedOrderingKeyException(
                     self._ordering_key
                 )
-                future.set_exception(exception)
-                return future
+                errored_future.set_exception(exception)
+                return errored_future
 
             # If waiting to be cleaned-up, convert to accepting messages to
             # prevent this sequencer from being cleaned-up only to have another
@@ -287,26 +311,28 @@ class OrderedSequencer(sequencer_base.Sequencer):
             ), "Publish is only allowed in accepting-messages state."
 
             if not self._ordered_batches:
-                new_batch = self._create_batch(commit_retry=retry)
+                new_batch = self._create_batch(
+                    commit_retry=retry, commit_timeout=timeout
+                )
                 self._ordered_batches.append(new_batch)
 
             batch = self._ordered_batches[-1]
             future = batch.publish(message)
             while future is None:
-                batch = self._create_batch(commit_retry=retry)
+                batch = self._create_batch(commit_retry=retry, commit_timeout=timeout)
                 self._ordered_batches.append(batch)
                 future = batch.publish(message)
 
             return future
 
     # Used only for testing.
-    def _set_batch(self, batch):
+    def _set_batch(self, batch: "_batch.thread.Batch") -> None:
         self._ordered_batches = collections.deque([batch])
 
     # Used only for testing.
-    def _set_batches(self, batches):
+    def _set_batches(self, batches: Iterable["_batch.thread.Batch"]) -> None:
         self._ordered_batches = collections.deque(batches)
 
     # Used only for testing.
-    def _get_batches(self):
+    def _get_batches(self) -> Sequence["_batch.thread.Batch"]:
         return self._ordered_batches

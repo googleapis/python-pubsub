@@ -24,7 +24,7 @@ from google.pubsub_v1 import types as gapic_types
 
 
 def create_message():
-    return gapic_types.PubsubMessage(data=b"foo", attributes={"bar": u"baz"})
+    return gapic_types.PubsubMessage(data=b"foo", attributes={"bar": "baz"})
 
 
 def create_client():
@@ -99,6 +99,17 @@ def test_publish_custom_retry():
 
     assert sequencer._current_batch is not None
     assert sequencer._current_batch._commit_retry is mock.sentinel.custom_retry
+
+
+def test_publish_custom_timeout():
+    client = create_client()
+    message = create_message()
+    sequencer = unordered_sequencer.UnorderedSequencer(client, "topic_name")
+
+    sequencer.publish(message, timeout=mock.sentinel.custom_timeout)
+
+    assert sequencer._current_batch is not None
+    assert sequencer._current_batch._commit_timeout is mock.sentinel.custom_timeout
 
 
 def test_publish_batch_full():

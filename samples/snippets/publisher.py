@@ -22,9 +22,10 @@ at https://cloud.google.com/pubsub/docs.
 """
 
 import argparse
+from typing import Callable
 
 
-def list_topics(project_id):
+def list_topics(project_id: str) -> None:
     """Lists all Pub/Sub topics in the given project."""
     # [START pubsub_list_topics]
     from google.cloud import pubsub_v1
@@ -40,7 +41,7 @@ def list_topics(project_id):
     # [END pubsub_list_topics]
 
 
-def create_topic(project_id, topic_id):
+def create_topic(project_id: str, topic_id: str) -> None:
     """Create a new Pub/Sub topic."""
     # [START pubsub_quickstart_create_topic]
     # [START pubsub_create_topic]
@@ -55,12 +56,12 @@ def create_topic(project_id, topic_id):
 
     topic = publisher.create_topic(request={"name": topic_path})
 
-    print("Created topic: {}".format(topic.name))
+    print(f"Created topic: {topic.name}")
     # [END pubsub_quickstart_create_topic]
     # [END pubsub_create_topic]
 
 
-def delete_topic(project_id, topic_id):
+def delete_topic(project_id: str, topic_id: str) -> None:
     """Deletes an existing Pub/Sub topic."""
     # [START pubsub_delete_topic]
     from google.cloud import pubsub_v1
@@ -74,11 +75,11 @@ def delete_topic(project_id, topic_id):
 
     publisher.delete_topic(request={"topic": topic_path})
 
-    print("Topic deleted: {}".format(topic_path))
+    print(f"Topic deleted: {topic_path}")
     # [END pubsub_delete_topic]
 
 
-def publish_messages(project_id, topic_id):
+def publish_messages(project_id: str, topic_id: str) -> None:
     """Publishes multiple messages to a Pub/Sub topic."""
     # [START pubsub_quickstart_publisher]
     # [START pubsub_publish]
@@ -94,9 +95,9 @@ def publish_messages(project_id, topic_id):
     topic_path = publisher.topic_path(project_id, topic_id)
 
     for n in range(1, 10):
-        data = "Message number {}".format(n)
+        data_str = f"Message number {n}"
         # Data must be a bytestring
-        data = data.encode("utf-8")
+        data = data_str.encode("utf-8")
         # When you publish a message, the client returns a future.
         future = publisher.publish(topic_path, data)
         print(future.result())
@@ -106,7 +107,7 @@ def publish_messages(project_id, topic_id):
     # [END pubsub_publish]
 
 
-def publish_messages_with_custom_attributes(project_id, topic_id):
+def publish_messages_with_custom_attributes(project_id: str, topic_id: str) -> None:
     """Publishes multiple messages with custom attributes
     to a Pub/Sub topic."""
     # [START pubsub_publish_custom_attributes]
@@ -120,9 +121,9 @@ def publish_messages_with_custom_attributes(project_id, topic_id):
     topic_path = publisher.topic_path(project_id, topic_id)
 
     for n in range(1, 10):
-        data = "Message number {}".format(n)
+        data_str = f"Message number {n}"
         # Data must be a bytestring
-        data = data.encode("utf-8")
+        data = data_str.encode("utf-8")
         # Add two attributes, origin and username, to the message
         future = publisher.publish(
             topic_path, data, origin="python-sample", username="gcp"
@@ -133,11 +134,10 @@ def publish_messages_with_custom_attributes(project_id, topic_id):
     # [END pubsub_publish_custom_attributes]
 
 
-def publish_messages_with_error_handler(project_id, topic_id):
+def publish_messages_with_error_handler(project_id: str, topic_id: str) -> None:
     # [START pubsub_publish_with_error_handler]
     """Publishes multiple messages to a Pub/Sub topic with an error handler."""
-    import time
-
+    from concurrent import futures
     from google.cloud import pubsub_v1
 
     # TODO(developer)
@@ -146,47 +146,47 @@ def publish_messages_with_error_handler(project_id, topic_id):
 
     publisher = pubsub_v1.PublisherClient()
     topic_path = publisher.topic_path(project_id, topic_id)
+    publish_futures = []
 
-    futures = dict()
-
-    def get_callback(f, data):
-        def callback(f):
+    def get_callback(
+        publish_future: pubsub_v1.publisher.futures.Future, data: str
+    ) -> Callable[[pubsub_v1.publisher.futures.Future], None]:
+        def callback(publish_future: pubsub_v1.publisher.futures.Future) -> None:
             try:
-                print(f.result())
-                futures.pop(data)
-            except:  # noqa
-                print("Please handle {} for {}.".format(f.exception(), data))
+                # Wait 60 seconds for the publish call to succeed.
+                print(publish_future.result(timeout=60))
+            except futures.TimeoutError:
+                print(f"Publishing {data} timed out.")
 
         return callback
 
     for i in range(10):
         data = str(i)
-        futures.update({data: None})
         # When you publish a message, the client returns a future.
-        future = publisher.publish(topic_path, data.encode("utf-8"))
-        futures[data] = future
-        # Publish failures shall be handled in the callback function.
-        future.add_done_callback(get_callback(future, data))
+        publish_future = publisher.publish(topic_path, data.encode("utf-8"))
+        # Non-blocking. Publish failures are handled in the callback function.
+        publish_future.add_done_callback(get_callback(publish_future, data))
+        publish_futures.append(publish_future)
 
     # Wait for all the publish futures to resolve before exiting.
-    while futures:
-        time.sleep(5)
+    futures.wait(publish_futures, return_when=futures.ALL_COMPLETED)
 
     print(f"Published messages with error handler to {topic_path}.")
     # [END pubsub_publish_with_error_handler]
 
 
-def publish_messages_with_batch_settings(project_id, topic_id):
+def publish_messages_with_batch_settings(project_id: str, topic_id: str) -> None:
     """Publishes multiple messages to a Pub/Sub topic with batch settings."""
     # [START pubsub_publisher_batch_settings]
+    from concurrent import futures
     from google.cloud import pubsub_v1
 
     # TODO(developer)
     # project_id = "your-project-id"
     # topic_id = "your-topic-id"
 
-    # Configure the batch to publish as soon as there is ten messages,
-    # one kilobyte of data, or one second has passed.
+    # Configure the batch to publish as soon as there are 10 messages
+    # or 1 KiB of data, or 1 second has passed.
     batch_settings = pubsub_v1.types.BatchSettings(
         max_messages=10,  # default 100
         max_bytes=1024,  # default 1 MB
@@ -194,25 +194,79 @@ def publish_messages_with_batch_settings(project_id, topic_id):
     )
     publisher = pubsub_v1.PublisherClient(batch_settings)
     topic_path = publisher.topic_path(project_id, topic_id)
+    publish_futures = []
 
     # Resolve the publish future in a separate thread.
-    def callback(future):
+    def callback(future: pubsub_v1.publisher.futures.Future) -> None:
         message_id = future.result()
         print(message_id)
 
     for n in range(1, 10):
-        data = "Message number {}".format(n)
+        data_str = f"Message number {n}"
         # Data must be a bytestring
-        data = data.encode("utf-8")
-        future = publisher.publish(topic_path, data)
+        data = data_str.encode("utf-8")
+        publish_future = publisher.publish(topic_path, data)
         # Non-blocking. Allow the publisher client to batch multiple messages.
-        future.add_done_callback(callback)
+        publish_future.add_done_callback(callback)
+        publish_futures.append(publish_future)
+
+    futures.wait(publish_futures, return_when=futures.ALL_COMPLETED)
 
     print(f"Published messages with batch settings to {topic_path}.")
     # [END pubsub_publisher_batch_settings]
 
 
-def publish_messages_with_retry_settings(project_id, topic_id):
+def publish_messages_with_flow_control_settings(project_id: str, topic_id: str) -> None:
+    """Publishes messages to a Pub/Sub topic with flow control settings."""
+    # [START pubsub_publisher_flow_control]
+    from concurrent import futures
+    from google.cloud import pubsub_v1
+    from google.cloud.pubsub_v1.types import (
+        LimitExceededBehavior,
+        PublisherOptions,
+        PublishFlowControl,
+    )
+
+    # TODO(developer)
+    # project_id = "your-project-id"
+    # topic_id = "your-topic-id"
+
+    # Configure how many messages the publisher client can hold in memory
+    # and what to do when messages exceed the limit.
+    flow_control_settings = PublishFlowControl(
+        message_limit=100,  # 100 messages
+        byte_limit=10 * 1024 * 1024,  # 10 MiB
+        limit_exceeded_behavior=LimitExceededBehavior.BLOCK,
+    )
+    publisher = pubsub_v1.PublisherClient(
+        publisher_options=PublisherOptions(flow_control=flow_control_settings)
+    )
+    topic_path = publisher.topic_path(project_id, topic_id)
+    publish_futures = []
+
+    # Resolve the publish future in a separate thread.
+    def callback(publish_future: pubsub_v1.publisher.futures.Future) -> None:
+        message_id = publish_future.result()
+        print(message_id)
+
+    # Publish 1000 messages in quick succession may be constrained by
+    # publisher flow control.
+    for n in range(1, 1000):
+        data_str = f"Message number {n}"
+        # Data must be a bytestring
+        data = data_str.encode("utf-8")
+        publish_future = publisher.publish(topic_path, data)
+        # Non-blocking. Allow the publisher client to batch messages.
+        publish_future.add_done_callback(callback)
+        publish_futures.append(publish_future)
+
+    futures.wait(publish_futures, return_when=futures.ALL_COMPLETED)
+
+    print(f"Published messages with flow control settings to {topic_path}.")
+    # [END pubsub_publisher_flow_control]
+
+
+def publish_messages_with_retry_settings(project_id: str, topic_id: str) -> None:
     """Publishes messages with custom retry settings."""
     # [START pubsub_publisher_retry_settings]
     from google import api_core
@@ -244,9 +298,9 @@ def publish_messages_with_retry_settings(project_id, topic_id):
     topic_path = publisher.topic_path(project_id, topic_id)
 
     for n in range(1, 10):
-        data = "Message number {}".format(n)
+        data_str = f"Message number {n}"
         # Data must be a bytestring
-        data = data.encode("utf-8")
+        data = data_str.encode("utf-8")
         future = publisher.publish(topic=topic_path, data=data, retry=custom_retry)
         print(future.result())
 
@@ -254,7 +308,7 @@ def publish_messages_with_retry_settings(project_id, topic_id):
     # [END pubsub_publisher_retry_settings]
 
 
-def publish_with_ordering_keys(project_id, topic_id):
+def publish_with_ordering_keys(project_id: str, topic_id: str) -> None:
     """Publishes messages with ordering keys."""
     # [START pubsub_publish_with_ordering_keys]
     from google.cloud import pubsub_v1
@@ -291,7 +345,7 @@ def publish_with_ordering_keys(project_id, topic_id):
     # [END pubsub_publish_with_ordering_keys]
 
 
-def resume_publish_with_ordering_keys(project_id, topic_id):
+def resume_publish_with_ordering_keys(project_id: str, topic_id: str) -> None:
     """Resume publishing messages with ordering keys when unrecoverable errors occur."""
     # [START pubsub_resume_publish_with_ordering_keys]
     from google.cloud import pubsub_v1
@@ -332,7 +386,7 @@ def resume_publish_with_ordering_keys(project_id, topic_id):
     # [END pubsub_resume_publish_with_ordering_keys]
 
 
-def detach_subscription(project_id, subscription_id):
+def detach_subscription(project_id: str, subscription_id: str) -> None:
     """Detaches a subscription from a topic and drops all messages retained in it."""
     # [START pubsub_detach_subscription]
     from google.api_core.exceptions import GoogleAPICallError, RetryError
@@ -398,6 +452,12 @@ if __name__ == "__main__":
     )
     publish_with_batch_settings_parser.add_argument("topic_id")
 
+    publish_with_flow_control_settings_parser = subparsers.add_parser(
+        "publish-with-flow-control",
+        help=publish_messages_with_flow_control_settings.__doc__,
+    )
+    publish_with_flow_control_settings_parser.add_argument("topic_id")
+
     publish_with_retry_settings_parser = subparsers.add_parser(
         "publish-with-retry-settings",
         help=publish_messages_with_retry_settings.__doc__,
@@ -436,6 +496,8 @@ if __name__ == "__main__":
         publish_messages_with_error_handler(args.project_id, args.topic_id)
     elif args.command == "publish-with-batch-settings":
         publish_messages_with_batch_settings(args.project_id, args.topic_id)
+    elif args.command == "publish-with-flow-control":
+        publish_messages_with_flow_control_settings(args.project_id, args.topic_id)
     elif args.command == "publish-with-retry-settings":
         publish_messages_with_retry_settings(args.project_id, args.topic_id)
     elif args.command == "publish-with-ordering-keys":

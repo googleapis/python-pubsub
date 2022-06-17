@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-
-# Copyright 2020 Google LLC
+# Copyright 2022 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,30 +13,35 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 from collections import OrderedDict
-from distutils import util
+import functools
 import os
 import re
-from typing import Callable, Dict, Optional, Sequence, Tuple, Type, Union
+from typing import Dict, Mapping, Optional, Sequence, Tuple, Type, Union
 import pkg_resources
 
-from google.api_core import client_options as client_options_lib  # type: ignore
-from google.api_core import exceptions  # type: ignore
-from google.api_core import gapic_v1  # type: ignore
-from google.api_core import retry as retries  # type: ignore
-from google.auth import credentials  # type: ignore
+from google.api_core import client_options as client_options_lib
+from google.api_core import exceptions as core_exceptions
+from google.api_core import gapic_v1
+from google.api_core import retry as retries
+from google.auth import credentials as ga_credentials  # type: ignore
 from google.auth.transport import mtls  # type: ignore
 from google.auth.transport.grpc import SslCredentials  # type: ignore
 from google.auth.exceptions import MutualTLSChannelError  # type: ignore
 from google.oauth2 import service_account  # type: ignore
 
-from google.iam.v1 import iam_policy_pb2 as iam_policy  # type: ignore
-from google.iam.v1 import policy_pb2 as policy  # type: ignore
+try:
+    OptionalRetry = Union[retries.Retry, gapic_v1.method._MethodDefault]
+except AttributeError:  # pragma: NO COVER
+    OptionalRetry = Union[retries.Retry, object]  # type: ignore
+
+from google.iam.v1 import iam_policy_pb2  # type: ignore
+from google.iam.v1 import policy_pb2  # type: ignore
 from google.pubsub_v1.services.schema_service import pagers
 from google.pubsub_v1.types import schema
 from google.pubsub_v1.types import schema as gp_schema
 
+import grpc
 from .transports.base import SchemaServiceTransport, DEFAULT_CLIENT_INFO
 from .transports.grpc import SchemaServiceGrpcTransport
 from .transports.grpc_asyncio import SchemaServiceGrpcAsyncIOTransport
@@ -55,8 +59,11 @@ class SchemaServiceClientMeta(type):
     _transport_registry["grpc"] = SchemaServiceGrpcTransport
     _transport_registry["grpc_asyncio"] = SchemaServiceGrpcAsyncIOTransport
 
-    def get_transport_class(cls, label: str = None,) -> Type[SchemaServiceTransport]:
-        """Return an appropriate transport class.
+    def get_transport_class(
+        cls,
+        label: str = None,
+    ) -> Type[SchemaServiceTransport]:
+        """Returns an appropriate transport class.
 
         Args:
             label: The name of the desired transport. If none is
@@ -79,7 +86,8 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
 
     @staticmethod
     def _get_default_mtls_endpoint(api_endpoint):
-        """Convert api endpoint to mTLS endpoint.
+        """Converts api endpoint to mTLS endpoint.
+
         Convert "*.sandbox.googleapis.com" and "*.googleapis.com" to
         "*.mtls.sandbox.googleapis.com" and "*.mtls.googleapis.com" respectively.
         Args:
@@ -113,7 +121,8 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
 
     @classmethod
     def from_service_account_info(cls, info: dict, *args, **kwargs):
-        """Creates an instance of this client using the provided credentials info.
+        """Creates an instance of this client using the provided credentials
+            info.
 
         Args:
             info (dict): The service account private key info.
@@ -130,7 +139,7 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
     @classmethod
     def from_service_account_file(cls, filename: str, *args, **kwargs):
         """Creates an instance of this client using the provided credentials
-        file.
+            file.
 
         Args:
             filename (str): The path to the service account private key json
@@ -149,29 +158,36 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
 
     @property
     def transport(self) -> SchemaServiceTransport:
-        """Return the transport used by the client instance.
+        """Returns the transport used by the client instance.
 
         Returns:
-            SchemaServiceTransport: The transport used by the client instance.
+            SchemaServiceTransport: The transport used by the client
+                instance.
         """
         return self._transport
 
     @staticmethod
-    def schema_path(project: str, schema: str,) -> str:
-        """Return a fully-qualified schema string."""
+    def schema_path(
+        project: str,
+        schema: str,
+    ) -> str:
+        """Returns a fully-qualified schema string."""
         return "projects/{project}/schemas/{schema}".format(
-            project=project, schema=schema,
+            project=project,
+            schema=schema,
         )
 
     @staticmethod
     def parse_schema_path(path: str) -> Dict[str, str]:
-        """Parse a schema path into its component segments."""
+        """Parses a schema path into its component segments."""
         m = re.match(r"^projects/(?P<project>.+?)/schemas/(?P<schema>.+?)$", path)
         return m.groupdict() if m else {}
 
     @staticmethod
-    def common_billing_account_path(billing_account: str,) -> str:
-        """Return a fully-qualified billing_account string."""
+    def common_billing_account_path(
+        billing_account: str,
+    ) -> str:
+        """Returns a fully-qualified billing_account string."""
         return "billingAccounts/{billing_account}".format(
             billing_account=billing_account,
         )
@@ -183,9 +199,13 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
         return m.groupdict() if m else {}
 
     @staticmethod
-    def common_folder_path(folder: str,) -> str:
-        """Return a fully-qualified folder string."""
-        return "folders/{folder}".format(folder=folder,)
+    def common_folder_path(
+        folder: str,
+    ) -> str:
+        """Returns a fully-qualified folder string."""
+        return "folders/{folder}".format(
+            folder=folder,
+        )
 
     @staticmethod
     def parse_common_folder_path(path: str) -> Dict[str, str]:
@@ -194,9 +214,13 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
         return m.groupdict() if m else {}
 
     @staticmethod
-    def common_organization_path(organization: str,) -> str:
-        """Return a fully-qualified organization string."""
-        return "organizations/{organization}".format(organization=organization,)
+    def common_organization_path(
+        organization: str,
+    ) -> str:
+        """Returns a fully-qualified organization string."""
+        return "organizations/{organization}".format(
+            organization=organization,
+        )
 
     @staticmethod
     def parse_common_organization_path(path: str) -> Dict[str, str]:
@@ -205,9 +229,13 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
         return m.groupdict() if m else {}
 
     @staticmethod
-    def common_project_path(project: str,) -> str:
-        """Return a fully-qualified project string."""
-        return "projects/{project}".format(project=project,)
+    def common_project_path(
+        project: str,
+    ) -> str:
+        """Returns a fully-qualified project string."""
+        return "projects/{project}".format(
+            project=project,
+        )
 
     @staticmethod
     def parse_common_project_path(path: str) -> Dict[str, str]:
@@ -216,10 +244,14 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
         return m.groupdict() if m else {}
 
     @staticmethod
-    def common_location_path(project: str, location: str,) -> str:
-        """Return a fully-qualified location string."""
+    def common_location_path(
+        project: str,
+        location: str,
+    ) -> str:
+        """Returns a fully-qualified location string."""
         return "projects/{project}/locations/{location}".format(
-            project=project, location=location,
+            project=project,
+            location=location,
         )
 
     @staticmethod
@@ -228,15 +260,82 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
         m = re.match(r"^projects/(?P<project>.+?)/locations/(?P<location>.+?)$", path)
         return m.groupdict() if m else {}
 
+    @classmethod
+    def get_mtls_endpoint_and_cert_source(
+        cls, client_options: Optional[client_options_lib.ClientOptions] = None
+    ):
+        """Return the API endpoint and client cert source for mutual TLS.
+
+        The client cert source is determined in the following order:
+        (1) if `GOOGLE_API_USE_CLIENT_CERTIFICATE` environment variable is not "true", the
+        client cert source is None.
+        (2) if `client_options.client_cert_source` is provided, use the provided one; if the
+        default client cert source exists, use the default one; otherwise the client cert
+        source is None.
+
+        The API endpoint is determined in the following order:
+        (1) if `client_options.api_endpoint` if provided, use the provided one.
+        (2) if `GOOGLE_API_USE_CLIENT_CERTIFICATE` environment variable is "always", use the
+        default mTLS endpoint; if the environment variabel is "never", use the default API
+        endpoint; otherwise if client cert source exists, use the default mTLS endpoint, otherwise
+        use the default API endpoint.
+
+        More details can be found at https://google.aip.dev/auth/4114.
+
+        Args:
+            client_options (google.api_core.client_options.ClientOptions): Custom options for the
+                client. Only the `api_endpoint` and `client_cert_source` properties may be used
+                in this method.
+
+        Returns:
+            Tuple[str, Callable[[], Tuple[bytes, bytes]]]: returns the API endpoint and the
+                client cert source to use.
+
+        Raises:
+            google.auth.exceptions.MutualTLSChannelError: If any errors happen.
+        """
+        if client_options is None:
+            client_options = client_options_lib.ClientOptions()
+        use_client_cert = os.getenv("GOOGLE_API_USE_CLIENT_CERTIFICATE", "false")
+        use_mtls_endpoint = os.getenv("GOOGLE_API_USE_MTLS_ENDPOINT", "auto")
+        if use_client_cert not in ("true", "false"):
+            raise ValueError(
+                "Environment variable `GOOGLE_API_USE_CLIENT_CERTIFICATE` must be either `true` or `false`"
+            )
+        if use_mtls_endpoint not in ("auto", "never", "always"):
+            raise MutualTLSChannelError(
+                "Environment variable `GOOGLE_API_USE_MTLS_ENDPOINT` must be `never`, `auto` or `always`"
+            )
+
+        # Figure out the client cert source to use.
+        client_cert_source = None
+        if use_client_cert == "true":
+            if client_options.client_cert_source:
+                client_cert_source = client_options.client_cert_source
+            elif mtls.has_default_client_cert_source():
+                client_cert_source = mtls.default_client_cert_source()
+
+        # Figure out which api endpoint to use.
+        if client_options.api_endpoint is not None:
+            api_endpoint = client_options.api_endpoint
+        elif use_mtls_endpoint == "always" or (
+            use_mtls_endpoint == "auto" and client_cert_source
+        ):
+            api_endpoint = cls.DEFAULT_MTLS_ENDPOINT
+        else:
+            api_endpoint = cls.DEFAULT_ENDPOINT
+
+        return api_endpoint, client_cert_source
+
     def __init__(
         self,
         *,
-        credentials: Optional[credentials.Credentials] = None,
+        credentials: Optional[ga_credentials.Credentials] = None,
         transport: Union[str, SchemaServiceTransport, None] = None,
         client_options: Optional[client_options_lib.ClientOptions] = None,
         client_info: gapic_v1.client_info.ClientInfo = DEFAULT_CLIENT_INFO,
     ) -> None:
-        """Instantiate the schema service client.
+        """Instantiates the schema service client.
 
         Args:
             credentials (Optional[google.auth.credentials.Credentials]): The
@@ -278,59 +377,52 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
         if client_options is None:
             client_options = client_options_lib.ClientOptions()
 
-        # Create SSL credentials for mutual TLS if needed.
-        use_client_cert = bool(
-            util.strtobool(os.getenv("GOOGLE_API_USE_CLIENT_CERTIFICATE", "false"))
+        api_endpoint, client_cert_source_func = self.get_mtls_endpoint_and_cert_source(
+            client_options
         )
 
-        client_cert_source_func = None
-        is_mtls = False
-        if use_client_cert:
-            if client_options.client_cert_source:
-                is_mtls = True
-                client_cert_source_func = client_options.client_cert_source
-            else:
-                is_mtls = mtls.has_default_client_cert_source()
-                client_cert_source_func = (
-                    mtls.default_client_cert_source() if is_mtls else None
-                )
-
-        # Figure out which api endpoint to use.
-        if client_options.api_endpoint is not None:
-            api_endpoint = client_options.api_endpoint
-        else:
-            use_mtls_env = os.getenv("GOOGLE_API_USE_MTLS_ENDPOINT", "auto")
-            if use_mtls_env == "never":
-                api_endpoint = self.DEFAULT_ENDPOINT
-            elif use_mtls_env == "always":
-                api_endpoint = self.DEFAULT_MTLS_ENDPOINT
-            elif use_mtls_env == "auto":
-                api_endpoint = (
-                    self.DEFAULT_MTLS_ENDPOINT if is_mtls else self.DEFAULT_ENDPOINT
-                )
-            else:
-                raise MutualTLSChannelError(
-                    "Unsupported GOOGLE_API_USE_MTLS_ENDPOINT value. Accepted values: never, auto, always"
-                )
+        api_key_value = getattr(client_options, "api_key", None)
+        if api_key_value and credentials:
+            raise ValueError(
+                "client_options.api_key and credentials are mutually exclusive"
+            )
 
         # Save or instantiate the transport.
         # Ordinarily, we provide the transport, but allowing a custom transport
         # instance provides an extensibility point for unusual situations.
         if isinstance(transport, SchemaServiceTransport):
             # transport is a SchemaServiceTransport instance.
-            if credentials or client_options.credentials_file:
+            if credentials or client_options.credentials_file or api_key_value:
                 raise ValueError(
                     "When providing a transport instance, "
                     "provide its credentials directly."
                 )
             if client_options.scopes:
                 raise ValueError(
-                    "When providing a transport instance, "
-                    "provide its scopes directly."
+                    "When providing a transport instance, provide its scopes "
+                    "directly."
                 )
             self._transport = transport
         else:
+            import google.auth._default  # type: ignore
+
+            if api_key_value and hasattr(
+                google.auth._default, "get_api_key_credentials"
+            ):
+                credentials = google.auth._default.get_api_key_credentials(
+                    api_key_value
+                )
+
             Transport = type(self).get_transport_class(transport)
+
+            emulator_host = os.environ.get("PUBSUB_EMULATOR_HOST")
+            if emulator_host:
+                if issubclass(Transport, type(self)._transport_registry["grpc"]):
+                    channel = grpc.insecure_channel(target=emulator_host)
+                else:
+                    channel = grpc.aio.insecure_channel(target=emulator_host)
+                Transport = functools.partial(Transport, channel=channel)
+
             self._transport = Transport(
                 credentials=credentials,
                 credentials_file=client_options.credentials_file,
@@ -339,23 +431,47 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
                 client_cert_source_for_mtls=client_cert_source_func,
                 quota_project_id=client_options.quota_project_id,
                 client_info=client_info,
+                always_use_jwt_access=True,
             )
 
     def create_schema(
         self,
-        request: gp_schema.CreateSchemaRequest = None,
+        request: Union[gp_schema.CreateSchemaRequest, dict] = None,
         *,
         parent: str = None,
         schema: gp_schema.Schema = None,
         schema_id: str = None,
-        retry: retries.Retry = gapic_v1.method.DEFAULT,
+        retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: float = None,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> gp_schema.Schema:
         r"""Creates a schema.
 
+        .. code-block:: python
+
+            from google import pubsub_v1
+
+            def sample_create_schema():
+                # Create a client
+                client = pubsub_v1.SchemaServiceClient()
+
+                # Initialize request argument(s)
+                schema = pubsub_v1.Schema()
+                schema.name = "name_value"
+
+                request = pubsub_v1.CreateSchemaRequest(
+                    parent="parent_value",
+                    schema=schema,
+                )
+
+                # Make the request
+                response = client.create_schema(request=request)
+
+                # Handle the response
+                print(response)
+
         Args:
-            request (google.pubsub_v1.types.CreateSchemaRequest):
+            request (Union[google.pubsub_v1.types.CreateSchemaRequest, dict]):
                 The request object. Request for the CreateSchema method.
             parent (str):
                 Required. The name of the project in which to create the
@@ -385,7 +501,6 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
                 This corresponds to the ``schema_id`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
@@ -397,7 +512,7 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
                 A schema resource.
         """
         # Create or coerce a protobuf request object.
-        # Sanity check: If we got a request object, we should *not* have
+        # Quick check: If we got a request object, we should *not* have
         # gotten any keyword arguments that map to the request.
         has_flattened_params = any([parent, schema, schema_id])
         if request is not None and has_flattened_params:
@@ -412,10 +527,8 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
         # there are no flattened fields.
         if not isinstance(request, gp_schema.CreateSchemaRequest):
             request = gp_schema.CreateSchemaRequest(request)
-
             # If we have keyword arguments corresponding to fields on the
             # request, apply these.
-
             if parent is not None:
                 request.parent = parent
             if schema is not None:
@@ -434,24 +547,48 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
         )
 
         # Send the request.
-        response = rpc(request, retry=retry, timeout=timeout, metadata=metadata,)
+        response = rpc(
+            request,
+            retry=retry,
+            timeout=timeout,
+            metadata=metadata,
+        )
 
         # Done; return the response.
         return response
 
     def get_schema(
         self,
-        request: schema.GetSchemaRequest = None,
+        request: Union[schema.GetSchemaRequest, dict] = None,
         *,
         name: str = None,
-        retry: retries.Retry = gapic_v1.method.DEFAULT,
+        retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: float = None,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> schema.Schema:
         r"""Gets a schema.
 
+        .. code-block:: python
+
+            from google import pubsub_v1
+
+            def sample_get_schema():
+                # Create a client
+                client = pubsub_v1.SchemaServiceClient()
+
+                # Initialize request argument(s)
+                request = pubsub_v1.GetSchemaRequest(
+                    name="name_value",
+                )
+
+                # Make the request
+                response = client.get_schema(request=request)
+
+                # Handle the response
+                print(response)
+
         Args:
-            request (google.pubsub_v1.types.GetSchemaRequest):
+            request (Union[google.pubsub_v1.types.GetSchemaRequest, dict]):
                 The request object. Request for the GetSchema method.
             name (str):
                 Required. The name of the schema to get. Format is
@@ -460,7 +597,6 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
                 This corresponds to the ``name`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
@@ -472,7 +608,7 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
                 A schema resource.
         """
         # Create or coerce a protobuf request object.
-        # Sanity check: If we got a request object, we should *not* have
+        # Quick check: If we got a request object, we should *not* have
         # gotten any keyword arguments that map to the request.
         has_flattened_params = any([name])
         if request is not None and has_flattened_params:
@@ -487,10 +623,8 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
         # there are no flattened fields.
         if not isinstance(request, schema.GetSchemaRequest):
             request = schema.GetSchemaRequest(request)
-
             # If we have keyword arguments corresponding to fields on the
             # request, apply these.
-
             if name is not None:
                 request.name = name
 
@@ -505,24 +639,49 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
         )
 
         # Send the request.
-        response = rpc(request, retry=retry, timeout=timeout, metadata=metadata,)
+        response = rpc(
+            request,
+            retry=retry,
+            timeout=timeout,
+            metadata=metadata,
+        )
 
         # Done; return the response.
         return response
 
     def list_schemas(
         self,
-        request: schema.ListSchemasRequest = None,
+        request: Union[schema.ListSchemasRequest, dict] = None,
         *,
         parent: str = None,
-        retry: retries.Retry = gapic_v1.method.DEFAULT,
+        retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: float = None,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pagers.ListSchemasPager:
         r"""Lists schemas in a project.
 
+        .. code-block:: python
+
+            from google import pubsub_v1
+
+            def sample_list_schemas():
+                # Create a client
+                client = pubsub_v1.SchemaServiceClient()
+
+                # Initialize request argument(s)
+                request = pubsub_v1.ListSchemasRequest(
+                    parent="parent_value",
+                )
+
+                # Make the request
+                page_result = client.list_schemas(request=request)
+
+                # Handle the response
+                for response in page_result:
+                    print(response)
+
         Args:
-            request (google.pubsub_v1.types.ListSchemasRequest):
+            request (Union[google.pubsub_v1.types.ListSchemasRequest, dict]):
                 The request object. Request for the `ListSchemas`
                 method.
             parent (str):
@@ -532,7 +691,6 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
                 This corresponds to the ``parent`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
@@ -548,7 +706,7 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
 
         """
         # Create or coerce a protobuf request object.
-        # Sanity check: If we got a request object, we should *not* have
+        # Quick check: If we got a request object, we should *not* have
         # gotten any keyword arguments that map to the request.
         has_flattened_params = any([parent])
         if request is not None and has_flattened_params:
@@ -563,10 +721,8 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
         # there are no flattened fields.
         if not isinstance(request, schema.ListSchemasRequest):
             request = schema.ListSchemasRequest(request)
-
             # If we have keyword arguments corresponding to fields on the
             # request, apply these.
-
             if parent is not None:
                 request.parent = parent
 
@@ -581,12 +737,20 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
         )
 
         # Send the request.
-        response = rpc(request, retry=retry, timeout=timeout, metadata=metadata,)
+        response = rpc(
+            request,
+            retry=retry,
+            timeout=timeout,
+            metadata=metadata,
+        )
 
         # This method is paged; wrap the response in a pager, which provides
         # an `__iter__` convenience method.
         response = pagers.ListSchemasPager(
-            method=rpc, request=request, response=response, metadata=metadata,
+            method=rpc,
+            request=request,
+            response=response,
+            metadata=metadata,
         )
 
         # Done; return the response.
@@ -594,17 +758,33 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
 
     def delete_schema(
         self,
-        request: schema.DeleteSchemaRequest = None,
+        request: Union[schema.DeleteSchemaRequest, dict] = None,
         *,
         name: str = None,
-        retry: retries.Retry = gapic_v1.method.DEFAULT,
+        retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: float = None,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> None:
         r"""Deletes a schema.
 
+        .. code-block:: python
+
+            from google import pubsub_v1
+
+            def sample_delete_schema():
+                # Create a client
+                client = pubsub_v1.SchemaServiceClient()
+
+                # Initialize request argument(s)
+                request = pubsub_v1.DeleteSchemaRequest(
+                    name="name_value",
+                )
+
+                # Make the request
+                client.delete_schema(request=request)
+
         Args:
-            request (google.pubsub_v1.types.DeleteSchemaRequest):
+            request (Union[google.pubsub_v1.types.DeleteSchemaRequest, dict]):
                 The request object. Request for the `DeleteSchema`
                 method.
             name (str):
@@ -614,7 +794,6 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
                 This corresponds to the ``name`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
@@ -622,7 +801,7 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
                 sent along with the request as metadata.
         """
         # Create or coerce a protobuf request object.
-        # Sanity check: If we got a request object, we should *not* have
+        # Quick check: If we got a request object, we should *not* have
         # gotten any keyword arguments that map to the request.
         has_flattened_params = any([name])
         if request is not None and has_flattened_params:
@@ -637,10 +816,8 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
         # there are no flattened fields.
         if not isinstance(request, schema.DeleteSchemaRequest):
             request = schema.DeleteSchemaRequest(request)
-
             # If we have keyword arguments corresponding to fields on the
             # request, apply these.
-
             if name is not None:
                 request.name = name
 
@@ -656,23 +833,49 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
 
         # Send the request.
         rpc(
-            request, retry=retry, timeout=timeout, metadata=metadata,
+            request,
+            retry=retry,
+            timeout=timeout,
+            metadata=metadata,
         )
 
     def validate_schema(
         self,
-        request: gp_schema.ValidateSchemaRequest = None,
+        request: Union[gp_schema.ValidateSchemaRequest, dict] = None,
         *,
         parent: str = None,
         schema: gp_schema.Schema = None,
-        retry: retries.Retry = gapic_v1.method.DEFAULT,
+        retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: float = None,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> gp_schema.ValidateSchemaResponse:
         r"""Validates a schema.
 
+        .. code-block:: python
+
+            from google import pubsub_v1
+
+            def sample_validate_schema():
+                # Create a client
+                client = pubsub_v1.SchemaServiceClient()
+
+                # Initialize request argument(s)
+                schema = pubsub_v1.Schema()
+                schema.name = "name_value"
+
+                request = pubsub_v1.ValidateSchemaRequest(
+                    parent="parent_value",
+                    schema=schema,
+                )
+
+                # Make the request
+                response = client.validate_schema(request=request)
+
+                # Handle the response
+                print(response)
+
         Args:
-            request (google.pubsub_v1.types.ValidateSchemaRequest):
+            request (Union[google.pubsub_v1.types.ValidateSchemaRequest, dict]):
                 The request object. Request for the `ValidateSchema`
                 method.
             parent (str):
@@ -689,7 +892,6 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
                 This corresponds to the ``schema`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
@@ -699,9 +901,11 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
         Returns:
             google.pubsub_v1.types.ValidateSchemaResponse:
                 Response for the ValidateSchema method.
+                   Empty for now.
+
         """
         # Create or coerce a protobuf request object.
-        # Sanity check: If we got a request object, we should *not* have
+        # Quick check: If we got a request object, we should *not* have
         # gotten any keyword arguments that map to the request.
         has_flattened_params = any([parent, schema])
         if request is not None and has_flattened_params:
@@ -716,10 +920,8 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
         # there are no flattened fields.
         if not isinstance(request, gp_schema.ValidateSchemaRequest):
             request = gp_schema.ValidateSchemaRequest(request)
-
             # If we have keyword arguments corresponding to fields on the
             # request, apply these.
-
             if parent is not None:
                 request.parent = parent
             if schema is not None:
@@ -736,26 +938,50 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
         )
 
         # Send the request.
-        response = rpc(request, retry=retry, timeout=timeout, metadata=metadata,)
+        response = rpc(
+            request,
+            retry=retry,
+            timeout=timeout,
+            metadata=metadata,
+        )
 
         # Done; return the response.
         return response
 
     def validate_message(
         self,
-        request: schema.ValidateMessageRequest = None,
+        request: Union[schema.ValidateMessageRequest, dict] = None,
         *,
-        retry: retries.Retry = gapic_v1.method.DEFAULT,
+        retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: float = None,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> schema.ValidateMessageResponse:
         r"""Validates a message against a schema.
 
+        .. code-block:: python
+
+            from google import pubsub_v1
+
+            def sample_validate_message():
+                # Create a client
+                client = pubsub_v1.SchemaServiceClient()
+
+                # Initialize request argument(s)
+                request = pubsub_v1.ValidateMessageRequest(
+                    name="name_value",
+                    parent="parent_value",
+                )
+
+                # Make the request
+                response = client.validate_message(request=request)
+
+                # Handle the response
+                print(response)
+
         Args:
-            request (google.pubsub_v1.types.ValidateMessageRequest):
+            request (Union[google.pubsub_v1.types.ValidateMessageRequest, dict]):
                 The request object. Request for the `ValidateMessage`
                 method.
-
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
@@ -765,9 +991,10 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
         Returns:
             google.pubsub_v1.types.ValidateMessageResponse:
                 Response for the ValidateMessage method.
+                   Empty for now.
+
         """
         # Create or coerce a protobuf request object.
-
         # Minor optimization to avoid making a copy if the user passes
         # in a schema.ValidateMessageRequest.
         # There's no risk of modifying the input as we've already verified
@@ -786,23 +1013,43 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
         )
 
         # Send the request.
-        response = rpc(request, retry=retry, timeout=timeout, metadata=metadata,)
+        response = rpc(
+            request,
+            retry=retry,
+            timeout=timeout,
+            metadata=metadata,
+        )
 
         # Done; return the response.
         return response
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        """Releases underlying transport's resources.
+
+        .. warning::
+            ONLY use as a context manager if the transport is NOT shared
+            with other clients! Exiting the with block will CLOSE the transport
+            and may cause errors in other clients!
+        """
+        self.transport.close()
+
     def set_iam_policy(
         self,
-        request: iam_policy.SetIamPolicyRequest = None,
+        request: iam_policy_pb2.SetIamPolicyRequest = None,
         *,
-        retry: retries.Retry = gapic_v1.method.DEFAULT,
+        retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: float = None,
         metadata: Sequence[Tuple[str, str]] = (),
-    ) -> policy.Policy:
-        r"""Sets the IAM access control policy on the specified
-        function. Replaces any existing policy.
+    ) -> policy_pb2.Policy:
+        r"""Sets the IAM access control policy on the specified function.
+
+        Replaces any existing policy.
+
         Args:
-            request (:class:`~.iam_policy.SetIamPolicyRequest`):
+            request (:class:`~.iam_policy_pb2.SetIamPolicyRequest`):
                 The request object. Request message for `SetIamPolicy`
                 method.
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
@@ -811,7 +1058,7 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
             metadata (Sequence[Tuple[str, str]]): Strings which should be
                 sent along with the request as metadata.
         Returns:
-            ~.policy.Policy:
+            ~.policy_pb2.Policy:
                 Defines an Identity and Access Management (IAM) policy.
                 It is used to specify access control policies for Cloud
                 Platform resources.
@@ -875,7 +1122,7 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
         # The request isn't a proto-plus wrapped type,
         # so it must be constructed via keyword expansion.
         if isinstance(request, dict):
-            request = iam_policy.SetIamPolicyRequest(**request)
+            request = iam_policy_pb2.SetIamPolicyRequest(**request)
 
         # Wrap the RPC method; this adds retry and timeout information,
         # and friendly error handling.
@@ -892,33 +1139,40 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
         )
 
         # Send the request.
-        response = rpc(request, retry=retry, timeout=timeout, metadata=metadata,)
+        response = rpc(
+            request,
+            retry=retry,
+            timeout=timeout,
+            metadata=metadata,
+        )
 
         # Done; return the response.
         return response
 
     def get_iam_policy(
         self,
-        request: iam_policy.GetIamPolicyRequest = None,
+        request: iam_policy_pb2.GetIamPolicyRequest = None,
         *,
-        retry: retries.Retry = gapic_v1.method.DEFAULT,
+        retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: float = None,
         metadata: Sequence[Tuple[str, str]] = (),
-    ) -> policy.Policy:
+    ) -> policy_pb2.Policy:
         r"""Gets the IAM access control policy for a function.
-        Returns an empty policy if the function exists and does
-        not have a policy set.
+
+        Returns an empty policy if the function exists and does not have a
+        policy set.
+
         Args:
-            request (:class:`~.iam_policy.GetIamPolicyRequest`):
+            request (:class:`~.iam_policy_pb2.GetIamPolicyRequest`):
                 The request object. Request message for `GetIamPolicy`
                 method.
-            retry (google.api_core.retry.Retry): Designation of what errors, if any,
-                should be retried.
+            retry (google.api_core.retry.Retry): Designation of what errors, if
+                any, should be retried.
             timeout (float): The timeout for this request.
             metadata (Sequence[Tuple[str, str]]): Strings which should be
                 sent along with the request as metadata.
         Returns:
-            ~.policy.Policy:
+            ~.policy_pb2.Policy:
                 Defines an Identity and Access Management (IAM) policy.
                 It is used to specify access control policies for Cloud
                 Platform resources.
@@ -982,7 +1236,7 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
         # The request isn't a proto-plus wrapped type,
         # so it must be constructed via keyword expansion.
         if isinstance(request, dict):
-            request = iam_policy.GetIamPolicyRequest(**request)
+            request = iam_policy_pb2.GetIamPolicyRequest(**request)
 
         # Wrap the RPC method; this adds retry and timeout information,
         # and friendly error handling.
@@ -999,33 +1253,41 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
         )
 
         # Send the request.
-        response = rpc(request, retry=retry, timeout=timeout, metadata=metadata,)
+        response = rpc(
+            request,
+            retry=retry,
+            timeout=timeout,
+            metadata=metadata,
+        )
 
         # Done; return the response.
         return response
 
     def test_iam_permissions(
         self,
-        request: iam_policy.TestIamPermissionsRequest = None,
+        request: iam_policy_pb2.TestIamPermissionsRequest = None,
         *,
-        retry: retries.Retry = gapic_v1.method.DEFAULT,
+        retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: float = None,
         metadata: Sequence[Tuple[str, str]] = (),
-    ) -> iam_policy.TestIamPermissionsResponse:
-        r"""Tests the specified permissions against the IAM access control
-        policy for a function. If the function does not exist, this will
-        return an empty set of permissions, not a NOT_FOUND error.
+    ) -> iam_policy_pb2.TestIamPermissionsResponse:
+        r"""Tests the specified IAM permissions against the IAM access control
+            policy for a function.
+
+        If the function does not exist, this will return an empty set
+        of permissions, not a NOT_FOUND error.
+
         Args:
-            request (:class:`~.iam_policy.TestIamPermissionsRequest`):
+            request (:class:`~.iam_policy_pb2.TestIamPermissionsRequest`):
                 The request object. Request message for
                 `TestIamPermissions` method.
-            retry (google.api_core.retry.Retry): Designation of what errors, if any,
-                should be retried.
+            retry (google.api_core.retry.Retry): Designation of what errors,
+                 if any, should be retried.
             timeout (float): The timeout for this request.
             metadata (Sequence[Tuple[str, str]]): Strings which should be
                 sent along with the request as metadata.
         Returns:
-            ~.iam_policy.TestIamPermissionsResponse:
+            ~.iam_policy_pb2.TestIamPermissionsResponse:
                 Response message for ``TestIamPermissions`` method.
         """
         # Create or coerce a protobuf request object.
@@ -1033,7 +1295,7 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
         # The request isn't a proto-plus wrapped type,
         # so it must be constructed via keyword expansion.
         if isinstance(request, dict):
-            request = iam_policy.TestIamPermissionsRequest(**request)
+            request = iam_policy_pb2.TestIamPermissionsRequest(**request)
 
         # Wrap the RPC method; this adds retry and timeout information,
         # and friendly error handling.
@@ -1050,7 +1312,12 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
         )
 
         # Send the request.
-        response = rpc(request, retry=retry, timeout=timeout, metadata=metadata,)
+        response = rpc(
+            request,
+            retry=retry,
+            timeout=timeout,
+            metadata=metadata,
+        )
 
         # Done; return the response.
         return response

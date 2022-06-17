@@ -19,9 +19,11 @@ import functools
 import itertools
 import logging
 import threading
+import typing
+from typing import Any, Dict, Callable, Iterable, List, Optional, Tuple, Union
 import uuid
 
-import grpc
+import grpc  # type: ignore
 
 from google.api_core import bidi
 from google.api_core import exceptions
@@ -32,9 +34,22 @@ from google.cloud.pubsub_v1.subscriber._protocol import histogram
 from google.cloud.pubsub_v1.subscriber._protocol import leaser
 from google.cloud.pubsub_v1.subscriber._protocol import messages_on_hold
 from google.cloud.pubsub_v1.subscriber._protocol import requests
+from google.cloud.pubsub_v1.subscriber.exceptions import (
+    AcknowledgeError,
+    AcknowledgeStatus,
+)
 import google.cloud.pubsub_v1.subscriber.message
-import google.cloud.pubsub_v1.subscriber.scheduler
+from google.cloud.pubsub_v1.subscriber import futures
+from google.cloud.pubsub_v1.subscriber.scheduler import ThreadScheduler
 from google.pubsub_v1 import types as gapic_types
+from grpc_status import rpc_status  # type: ignore
+from google.rpc.error_details_pb2 import ErrorInfo  # type: ignore
+from google.rpc import code_pb2  # type: ignore
+from google.rpc import status_pb2
+
+if typing.TYPE_CHECKING:  # pragma: NO COVER
+    from google.cloud.pubsub_v1 import subscriber
+
 
 _LOGGER = logging.getLogger(__name__)
 _REGULAR_SHUTDOWN_THREAD_NAME = "Thread-RegularStreamShutdown"
@@ -54,12 +69,25 @@ _MAX_LOAD = 1.0
 _RESUME_THRESHOLD = 0.8
 """The load threshold below which to resume the incoming message stream."""
 
+_MIN_ACK_DEADLINE_SECS_WHEN_EXACTLY_ONCE_ENABLED = 60
+"""The minimum ack_deadline, in seconds, for when exactly_once is enabled for
+a subscription. We do this to reduce premature ack expiration.
+"""
 
-def _wrap_as_exception(maybe_exception):
+_EXACTLY_ONCE_DELIVERY_TEMPORARY_RETRY_ERRORS = {
+    code_pb2.DEADLINE_EXCEEDED,
+    code_pb2.RESOURCE_EXHAUSTED,
+    code_pb2.ABORTED,
+    code_pb2.INTERNAL,
+    code_pb2.UNAVAILABLE,
+}
+
+
+def _wrap_as_exception(maybe_exception: Any) -> BaseException:
     """Wrap an object as a Python exception, if needed.
 
     Args:
-        maybe_exception (Any): The object to wrap, usually a gRPC exception class.
+        maybe_exception: The object to wrap, usually a gRPC exception class.
 
     Returns:
          The argument itself if an instance of ``BaseException``, otherwise
@@ -73,13 +101,17 @@ def _wrap_as_exception(maybe_exception):
     return Exception(maybe_exception)
 
 
-def _wrap_callback_errors(callback, on_callback_error, message):
+def _wrap_callback_errors(
+    callback: Callable[["google.cloud.pubsub_v1.subscriber.message.Message"], Any],
+    on_callback_error: Callable[[Exception], Any],
+    message: "google.cloud.pubsub_v1.subscriber.message.Message",
+):
     """Wraps a user callback so that if an exception occurs the message is
     nacked.
 
     Args:
-        callback (Callable[None, Message]): The user callback.
-        message (~Message): The Pub/Sub message.
+        callback: The user callback.
+        message: The Pub/Sub message.
     """
     try:
         callback(message)
@@ -94,26 +126,120 @@ def _wrap_callback_errors(callback, on_callback_error, message):
         on_callback_error(exc)
 
 
+def _get_status(
+    exc: exceptions.GoogleAPICallError,
+) -> Optional["status_pb2.Status"]:
+    if not exc.response:
+        _LOGGER.debug("No response obj in errored RPC call.")
+        return None
+    try:
+        return rpc_status.from_call(exc.response)
+    # Possible "If the gRPC call’s code or details are inconsistent
+    # with the status code and message inside of the
+    # google.rpc.status.Status"
+    except ValueError:
+        _LOGGER.debug("ValueError when parsing ErrorInfo.", exc_info=True)
+        return None
+
+
+def _get_ack_errors(
+    exc: exceptions.GoogleAPICallError,
+) -> Optional[Dict[str, str]]:
+    status = _get_status(exc)
+    if not status:
+        _LOGGER.debug("Unable to get status of errored RPC.")
+        return None
+    for detail in status.details:
+        info = ErrorInfo()
+        if not (detail.Is(ErrorInfo.DESCRIPTOR) and detail.Unpack(info)):
+            _LOGGER.debug("Unable to unpack ErrorInfo.")
+            return None
+        return info.metadata
+    return None
+
+
+def _process_requests(
+    error_status: Optional["status_pb2.Status"],
+    ack_reqs_dict: Dict[str, requests.AckRequest],
+    errors_dict: Optional[Dict[str, str]],
+):
+    """Process requests when exactly-once delivery is enabled by referring to
+    error_status and errors_dict.
+
+    The errors returned by the server in as `error_status` or in `errors_dict`
+    are used to complete the request futures in `ack_reqs_dict` (with a success
+    or exception) or to return requests for further retries.
+    """
+    requests_completed = []
+    requests_to_retry = []
+    for ack_id in ack_reqs_dict:
+        # Handle special errors returned for ack/modack RPCs via the ErrorInfo
+        # sidecar metadata when exactly-once delivery is enabled.
+        if errors_dict and ack_id in errors_dict:
+            exactly_once_error = errors_dict[ack_id]
+            if exactly_once_error.startswith("TRANSIENT_"):
+                requests_to_retry.append(ack_reqs_dict[ack_id])
+            else:
+                if exactly_once_error == "PERMANENT_FAILURE_INVALID_ACK_ID":
+                    exc = AcknowledgeError(AcknowledgeStatus.INVALID_ACK_ID, info=None)
+                else:
+                    exc = AcknowledgeError(AcknowledgeStatus.OTHER, exactly_once_error)
+                future = ack_reqs_dict[ack_id].future
+                if future is not None:
+                    future.set_exception(exc)
+                requests_completed.append(ack_reqs_dict[ack_id])
+        # Temporary GRPC errors are retried
+        elif (
+            error_status
+            and error_status.code in _EXACTLY_ONCE_DELIVERY_TEMPORARY_RETRY_ERRORS
+        ):
+            requests_to_retry.append(ack_reqs_dict[ack_id])
+        # Other GRPC errors are NOT retried
+        elif error_status:
+            if error_status.code == code_pb2.PERMISSION_DENIED:
+                exc = AcknowledgeError(AcknowledgeStatus.PERMISSION_DENIED, info=None)
+            elif error_status.code == code_pb2.FAILED_PRECONDITION:
+                exc = AcknowledgeError(AcknowledgeStatus.FAILED_PRECONDITION, info=None)
+            else:
+                exc = AcknowledgeError(AcknowledgeStatus.OTHER, str(error_status))
+            future = ack_reqs_dict[ack_id].future
+            if future is not None:
+                future.set_exception(exc)
+            requests_completed.append(ack_reqs_dict[ack_id])
+        # Since no error occurred, requests with futures are completed successfully.
+        elif ack_reqs_dict[ack_id].future:
+            future = ack_reqs_dict[ack_id].future
+            # success
+            assert future is not None
+            future.set_result(AcknowledgeStatus.SUCCESS)
+            requests_completed.append(ack_reqs_dict[ack_id])
+        # All other requests are considered completed.
+        else:
+            requests_completed.append(ack_reqs_dict[ack_id])
+
+    return requests_completed, requests_to_retry
+
+
 class StreamingPullManager(object):
     """The streaming pull manager coordinates pulling messages from Pub/Sub,
     leasing them, and scheduling them to be processed.
 
     Args:
-        client (~.pubsub_v1.subscriber.client): The subscriber client used
-            to create this instance.
-        subscription (str): The name of the subscription. The canonical
-            format for this is
+        client:
+            The subscriber client used to create this instance.
+        subscription:
+            The name of the subscription. The canonical format for this is
             ``projects/{project}/subscriptions/{subscription}``.
-        flow_control (~google.cloud.pubsub_v1.types.FlowControl): The flow
-            control settings.
-        use_legacy_flow_control (bool):
+        flow_control:
+            The flow control settings.
+        scheduler:
+            The scheduler to use to process messages. If not provided, a thread
+            pool-based scheduler will be used.
+        use_legacy_flow_control:
             If set to ``True``, flow control at the Cloud Pub/Sub server is disabled,
             though client-side flow control is still enabled. If set to ``False``
             (default), both server-side and client-side flow control are enabled.
-        scheduler (~google.cloud.pubsub_v1.scheduler.Scheduler): The scheduler
-            to use to process messages. If not provided, a thread pool-based
-            scheduler will be used.
-        await_callbacks_on_shutdown (bool):
+        await_callbacks_on_shutdown:
             If ``True``, the shutdown thread will wait until all scheduler threads
             terminate and only then proceed with shutting down the remaining running
             helper threads.
@@ -129,27 +255,32 @@ class StreamingPullManager(object):
 
     def __init__(
         self,
-        client,
-        subscription,
-        flow_control=types.FlowControl(),
-        scheduler=None,
-        use_legacy_flow_control=False,
-        await_callbacks_on_shutdown=False,
+        client: "subscriber.Client",
+        subscription: str,
+        flow_control: types.FlowControl = types.FlowControl(),
+        scheduler: ThreadScheduler = None,
+        use_legacy_flow_control: bool = False,
+        await_callbacks_on_shutdown: bool = False,
     ):
         self._client = client
         self._subscription = subscription
+        self._exactly_once_enabled = False
         self._flow_control = flow_control
         self._use_legacy_flow_control = use_legacy_flow_control
         self._await_callbacks_on_shutdown = await_callbacks_on_shutdown
         self._ack_histogram = histogram.Histogram()
         self._last_histogram_size = 0
-        self._ack_deadline = histogram.MIN_ACK_DEADLINE
-        self._rpc = None
-        self._callback = None
+        self._ack_deadline: Union[int, float] = histogram.MIN_ACK_DEADLINE
+        self._rpc: Optional[bidi.ResumableBidiRpc] = None
+        self._callback: Optional[functools.partial] = None
         self._closing = threading.Lock()
         self._closed = False
-        self._close_callbacks = []
-        self._regular_shutdown_thread = None  # Created on intentional shutdown.
+        self._close_callbacks: List[Callable[["StreamingPullManager", Any], Any]] = []
+        # Guarded by self._exactly_once_enabled_lock
+        self._send_new_ack_deadline = False
+
+        # A shutdown thread is created on intentional shutdown.
+        self._regular_shutdown_thread: Optional[threading.Thread] = None
 
         # Generate a random client id tied to this object. All streaming pull
         # connections (initial and re-connects) will then use the same client
@@ -158,9 +289,7 @@ class StreamingPullManager(object):
         self._client_id = str(uuid.uuid4())
 
         if scheduler is None:
-            self._scheduler = (
-                google.cloud.pubsub_v1.subscriber.scheduler.ThreadScheduler()
-            )
+            self._scheduler: Optional[ThreadScheduler] = ThreadScheduler()
         else:
             self._scheduler = scheduler
 
@@ -179,20 +308,26 @@ class StreamingPullManager(object):
         # currently on hold.
         self._pause_resume_lock = threading.Lock()
 
+        # A lock guarding the self._exactly_once_enabled variable. We may also
+        # acquire the self._ack_deadline_lock while this lock is held, but not
+        # the reverse. So, we maintain a simple ordering of these two locks to
+        # prevent deadlocks.
+        self._exactly_once_enabled_lock = threading.Lock()
+
         # A lock protecting the current ACK deadline used in the lease management. This
         # value can be potentially updated both by the leaser thread and by the message
         # consumer thread when invoking the internal _on_response() callback.
         self._ack_deadline_lock = threading.Lock()
 
         # The threads created in ``.open()``.
-        self._dispatcher = None
-        self._leaser = None
-        self._consumer = None
-        self._heartbeater = None
+        self._dispatcher: Optional[dispatcher.Dispatcher] = None
+        self._leaser: Optional[leaser.Leaser] = None
+        self._consumer: Optional[bidi.BackgroundConsumer] = None
+        self._heartbeater: Optional[heartbeater.Heartbeater] = None
 
     @property
-    def is_active(self):
-        """bool: True if this manager is actively streaming.
+    def is_active(self) -> bool:
+        """``True`` if this manager is actively streaming.
 
         Note that ``False`` does not indicate this is complete shut down,
         just that it stopped getting new messages.
@@ -200,42 +335,35 @@ class StreamingPullManager(object):
         return self._consumer is not None and self._consumer.is_active
 
     @property
-    def flow_control(self):
-        """google.cloud.pubsub_v1.types.FlowControl: The active flow control
-        settings."""
+    def flow_control(self) -> types.FlowControl:
+        """The active flow control settings."""
         return self._flow_control
 
     @property
-    def dispatcher(self):
-        """google.cloud.pubsub_v1.subscriber._protocol.dispatcher.Dispatcher:
-        The dispatcher helper.
-        """
+    def dispatcher(self) -> Optional[dispatcher.Dispatcher]:
+        """The dispatcher helper."""
         return self._dispatcher
 
     @property
-    def leaser(self):
-        """google.cloud.pubsub_v1.subscriber._protocol.leaser.Leaser:
-        The leaser helper.
-        """
+    def leaser(self) -> Optional[leaser.Leaser]:
+        """The leaser helper."""
         return self._leaser
 
     @property
-    def ack_histogram(self):
-        """google.cloud.pubsub_v1.subscriber._protocol.histogram.Histogram:
-        The histogram tracking time-to-acknowledge.
-        """
+    def ack_histogram(self) -> histogram.Histogram:
+        """The histogram tracking time-to-acknowledge."""
         return self._ack_histogram
 
     @property
-    def ack_deadline(self):
+    def ack_deadline(self) -> float:
         """Return the current ACK deadline based on historical data without updating it.
 
         Returns:
-            int: The ack deadline.
+            The ack deadline.
         """
         return self._obtain_ack_deadline(maybe_update=False)
 
-    def _obtain_ack_deadline(self, maybe_update: bool) -> int:
+    def _obtain_ack_deadline(self, maybe_update: bool) -> float:
         """The actual `ack_deadline` implementation.
 
         This method is "sticky". It will only perform the computations to check on the
@@ -243,12 +371,12 @@ class StreamingPullManager(object):
         time-to-ack data has gained a significant amount of new information.
 
         Args:
-            maybe_update (bool):
+            maybe_update:
                 If ``True``, also update the current ACK deadline before returning it if
                 enough new ACK data has been gathered.
 
         Returns:
-            int: The current ACK deadline in seconds to use.
+            The current ACK deadline in seconds to use.
         """
         with self._ack_deadline_lock:
             if not maybe_update:
@@ -270,10 +398,26 @@ class StreamingPullManager(object):
                     histogram.MIN_ACK_DEADLINE,
                 )
                 self._ack_deadline = min(self._ack_deadline, flow_control_setting)
+
+            # If the user explicitly sets a min ack_deadline, respect it.
+            if self.flow_control.min_duration_per_lease_extension > 0:
+                # The setting in flow control could be too high, adjust if needed.
+                flow_control_setting = min(
+                    self.flow_control.min_duration_per_lease_extension,
+                    histogram.MAX_ACK_DEADLINE,
+                )
+                self._ack_deadline = max(self._ack_deadline, flow_control_setting)
+            elif self._exactly_once_enabled:
+                # Higher minimum ack_deadline for subscriptions with
+                # exactly-once delivery enabled.
+                self._ack_deadline = max(
+                    self._ack_deadline, _MIN_ACK_DEADLINE_SECS_WHEN_EXACTLY_ONCE_ENABLED
+                )
+
             return self._ack_deadline
 
     @property
-    def load(self):
+    def load(self) -> float:
         """Return the current load.
 
         The load is represented as a float, where 1.0 represents having
@@ -287,7 +431,7 @@ class StreamingPullManager(object):
         running room on setting A if setting B is over.)
 
         Returns:
-            float: The load value.
+            The load value.
         """
         if self._leaser is None:
             return 0.0
@@ -307,15 +451,17 @@ class StreamingPullManager(object):
             ]
         )
 
-    def add_close_callback(self, callback):
+    def add_close_callback(
+        self, callback: Callable[["StreamingPullManager", Any], Any]
+    ) -> None:
         """Schedules a callable when the manager closes.
 
         Args:
-            callback (Callable): The method to call.
+            The method to call.
         """
         self._close_callbacks.append(callback)
 
-    def activate_ordering_keys(self, ordering_keys):
+    def activate_ordering_keys(self, ordering_keys: Iterable[str]) -> None:
         """Send the next message in the queue for each of the passed-in
         ordering keys, if they exist. Clean up state for keys that no longer
         have any queued messages.
@@ -326,8 +472,8 @@ class StreamingPullManager(object):
         This decision is by design because it simplifies MessagesOnHold.
 
         Args:
-            ordering_keys(Sequence[str]): A sequence of ordering keys to
-                activate. May be empty.
+            ordering_keys:
+                A sequence of ordering keys to activate. May be empty.
         """
         with self._pause_resume_lock:
             if self._scheduler is None:
@@ -337,7 +483,7 @@ class StreamingPullManager(object):
                 ordering_keys, self._schedule_message_on_hold
             )
 
-    def maybe_pause_consumer(self):
+    def maybe_pause_consumer(self) -> None:
         """Check the current load and pause the consumer if needed."""
         with self._pause_resume_lock:
             if self.load >= _MAX_LOAD:
@@ -347,7 +493,7 @@ class StreamingPullManager(object):
                     )
                     self._consumer.pause()
 
-    def maybe_resume_consumer(self):
+    def maybe_resume_consumer(self) -> None:
         """Check the load and held messages and resume the consumer if needed.
 
         If there are messages held internally, release those messages before
@@ -375,7 +521,7 @@ class StreamingPullManager(object):
             else:
                 _LOGGER.debug("Did not resume, current load is %.2f.", self.load)
 
-    def _maybe_release_messages(self):
+    def _maybe_release_messages(self) -> None:
         """Release (some of) the held messages if the current load allows for it.
 
         The method tries to release as many messages as the current leaser load
@@ -395,17 +541,19 @@ class StreamingPullManager(object):
 
             self._schedule_message_on_hold(msg)
             released_ack_ids.append(msg.ack_id)
+
+        assert self._leaser is not None
         self._leaser.start_lease_expiry_timer(released_ack_ids)
 
-    def _schedule_message_on_hold(self, msg):
-        """Schedule a message on hold to be sent to the user and change
-        on-hold-bytes.
+    def _schedule_message_on_hold(
+        self, msg: "google.cloud.pubsub_v1.subscriber.message.Message"
+    ):
+        """Schedule a message on hold to be sent to the user and change on-hold-bytes.
 
         The method assumes the caller has acquired the ``_pause_resume_lock``.
 
         Args:
-            msg (google.cloud.pubsub_v1.message.Message): The message to
-                schedule to be sent to the user.
+            msg: The message to schedule to be sent to the user.
         """
         assert msg, "Message must not be None."
 
@@ -424,55 +572,51 @@ class StreamingPullManager(object):
             self._messages_on_hold.size,
             self._on_hold_bytes,
         )
+        assert self._scheduler is not None
+        assert self._callback is not None
         self._scheduler.schedule(self._callback, msg)
 
-    def _send_unary_request(self, request):
-        """Send a request using a separate unary request instead of over the
-        stream.
-
-        Args:
-            request (gapic_types.StreamingPullRequest): The stream request to be
-                mapped into unary requests.
-        """
-        if request.ack_ids:
-            self._client.acknowledge(
-                subscription=self._subscription, ack_ids=list(request.ack_ids)
-            )
-
-        if request.modify_deadline_ack_ids:
-            # Send ack_ids with the same deadline seconds together.
-            deadline_to_ack_ids = collections.defaultdict(list)
-
-            for n, ack_id in enumerate(request.modify_deadline_ack_ids):
-                deadline = request.modify_deadline_seconds[n]
-                deadline_to_ack_ids[deadline].append(ack_id)
-
-            for deadline, ack_ids in deadline_to_ack_ids.items():
-                self._client.modify_ack_deadline(
-                    subscription=self._subscription,
-                    ack_ids=ack_ids,
-                    ack_deadline_seconds=deadline,
-                )
-
-        _LOGGER.debug("Sent request(s) over unary RPC.")
-
-    def send(self, request):
-        """Queue a request to be sent to the RPC.
+    def send_unary_ack(
+        self, ack_ids, ack_reqs_dict
+    ) -> Tuple[List[requests.AckRequest], List[requests.AckRequest]]:
+        """Send a request using a separate unary request instead of over the stream.
 
         If a RetryError occurs, the manager shutdown is triggered, and the
         error is re-raised.
         """
+        assert ack_ids
+        assert len(ack_ids) == len(ack_reqs_dict)
+
+        error_status = None
+        ack_errors_dict = None
         try:
-            self._send_unary_request(request)
-        except exceptions.GoogleAPICallError:
+            self._client.acknowledge(subscription=self._subscription, ack_ids=ack_ids)
+        except exceptions.GoogleAPICallError as exc:
             _LOGGER.debug(
                 "Exception while sending unary RPC. This is typically "
                 "non-fatal as stream requests are best-effort.",
                 exc_info=True,
             )
+            error_status = _get_status(exc)
+            ack_errors_dict = _get_ack_errors(exc)
         except exceptions.RetryError as exc:
+            exactly_once_delivery_enabled = self._exactly_once_delivery_enabled()
+            # Makes sure to complete futures so they don't block forever.
+            for req in ack_reqs_dict.values():
+                # Futures may be present even with exactly-once delivery
+                # disabled, in transition periods after the setting is changed on
+                # the subscription.
+                if req.future:
+                    if exactly_once_delivery_enabled:
+                        e = AcknowledgeError(
+                            AcknowledgeStatus.OTHER, "RetryError while sending ack RPC."
+                        )
+                        req.future.set_exception(e)
+                    else:
+                        req.future.set_result(AcknowledgeStatus.SUCCESS)
+
             _LOGGER.debug(
-                "RetryError while sending unary RPC. Waiting on a transient "
+                "RetryError while sending ack RPC. Waiting on a transient "
                 "error resolution for too long, will now trigger shutdown.",
                 exc_info=False,
             )
@@ -481,26 +625,147 @@ class StreamingPullManager(object):
             self._on_rpc_done(exc)
             raise
 
-    def heartbeat(self):
-        """Sends an empty request over the streaming pull RPC.
+        if self._exactly_once_delivery_enabled():
+            requests_completed, requests_to_retry = _process_requests(
+                error_status, ack_reqs_dict, ack_errors_dict
+            )
+        else:
+            requests_completed = []
+            requests_to_retry = []
+            # When exactly-once delivery is NOT enabled, acks/modacks are considered
+            # best-effort. So, they always succeed even if the RPC fails.
+            for req in ack_reqs_dict.values():
+                # Futures may be present even with exactly-once delivery
+                # disabled, in transition periods after the setting is changed on
+                # the subscription.
+                if req.future:
+                    req.future.set_result(AcknowledgeStatus.SUCCESS)
+                requests_completed.append(req)
+
+        return requests_completed, requests_to_retry
+
+    def send_unary_modack(
+        self, modify_deadline_ack_ids, modify_deadline_seconds, ack_reqs_dict
+    ) -> Tuple[List[requests.ModAckRequest], List[requests.ModAckRequest]]:
+        """Send a request using a separate unary request instead of over the stream.
+
+        If a RetryError occurs, the manager shutdown is triggered, and the
+        error is re-raised.
+        """
+        assert modify_deadline_ack_ids
+
+        error_status = None
+        modack_errors_dict = None
+        try:
+            # Send ack_ids with the same deadline seconds together.
+            deadline_to_ack_ids = collections.defaultdict(list)
+
+            for n, ack_id in enumerate(modify_deadline_ack_ids):
+                deadline = modify_deadline_seconds[n]
+                deadline_to_ack_ids[deadline].append(ack_id)
+
+            for deadline, ack_ids in deadline_to_ack_ids.items():
+                self._client.modify_ack_deadline(
+                    subscription=self._subscription,
+                    ack_ids=ack_ids,
+                    ack_deadline_seconds=deadline,
+                )
+        except exceptions.GoogleAPICallError as exc:
+            _LOGGER.debug(
+                "Exception while sending unary RPC. This is typically "
+                "non-fatal as stream requests are best-effort.",
+                exc_info=True,
+            )
+            error_status = _get_status(exc)
+            modack_errors_dict = _get_ack_errors(exc)
+        except exceptions.RetryError as exc:
+            exactly_once_delivery_enabled = self._exactly_once_delivery_enabled()
+            # Makes sure to complete futures so they don't block forever.
+            for req in ack_reqs_dict.values():
+                # Futures may be present even with exactly-once delivery
+                # disabled, in transition periods after the setting is changed on
+                # the subscription.
+                if req.future:
+                    if exactly_once_delivery_enabled:
+                        e = AcknowledgeError(
+                            AcknowledgeStatus.OTHER,
+                            "RetryError while sending modack RPC.",
+                        )
+                        req.future.set_exception(e)
+                    else:
+                        req.future.set_result(AcknowledgeStatus.SUCCESS)
+
+            _LOGGER.debug(
+                "RetryError while sending modack RPC. Waiting on a transient "
+                "error resolution for too long, will now trigger shutdown.",
+                exc_info=False,
+            )
+            # The underlying channel has been suffering from a retryable error
+            # for too long, time to give up and shut the streaming pull down.
+            self._on_rpc_done(exc)
+            raise
+
+        if self._exactly_once_delivery_enabled():
+            requests_completed, requests_to_retry = _process_requests(
+                error_status, ack_reqs_dict, modack_errors_dict
+            )
+        else:
+            requests_completed = []
+            requests_to_retry = []
+            # When exactly-once delivery is NOT enabled, acks/modacks are considered
+            # best-effort. So, they always succeed even if the RPC fails.
+            for req in ack_reqs_dict.values():
+                # Futures may be present even with exactly-once delivery
+                # disabled, in transition periods after the setting is changed on
+                # the subscription.
+                if req.future:
+                    req.future.set_result(AcknowledgeStatus.SUCCESS)
+                requests_completed.append(req)
+
+        return requests_completed, requests_to_retry
+
+    def heartbeat(self) -> bool:
+        """Sends a heartbeat request over the streaming pull RPC.
+
+        The request is empty by default, but may contain the current ack_deadline
+        if the self._exactly_once_enabled flag has changed.
 
         Returns:
-            bool: If a heartbeat request has actually been sent.
+            If a heartbeat request has actually been sent.
         """
         if self._rpc is not None and self._rpc.is_active:
-            self._rpc.send(gapic_types.StreamingPullRequest())
+            send_new_ack_deadline = False
+            with self._exactly_once_enabled_lock:
+                send_new_ack_deadline = self._send_new_ack_deadline
+                self._send_new_ack_deadline = False
+
+            if send_new_ack_deadline:
+                request = gapic_types.StreamingPullRequest(
+                    stream_ack_deadline_seconds=self.ack_deadline
+                )
+                _LOGGER.info(
+                    "Sending new ack_deadline of %d seconds.", self.ack_deadline
+                )
+            else:
+                request = gapic_types.StreamingPullRequest()
+
+            self._rpc.send(request)
             return True
 
         return False
 
-    def open(self, callback, on_callback_error):
+    def open(
+        self,
+        callback: Callable[["google.cloud.pubsub_v1.subscriber.message.Message"], Any],
+        on_callback_error: Callable[[Exception], Any],
+    ) -> None:
         """Begin consuming messages.
 
         Args:
-            callback (Callable[None, google.cloud.pubsub_v1.message.Message]):
+            callback:
                 A callback that will be called for each message received on the
                 stream.
-            on_callback_error (Callable[Exception]):
+            on_callback_error:
                 A callable that will be called if an exception is raised in
                 the provided `callback`.
         """
@@ -521,7 +786,7 @@ class StreamingPullManager(object):
             self._get_initial_request, stream_ack_deadline_seconds
         )
         self._rpc = bidi.ResumableBidiRpc(
-            start_rpc=self._client.api.streaming_pull,
+            start_rpc=self._client.streaming_pull,
             initial_request=get_initial_request,
             should_recover=self._should_recover,
             should_terminate=self._should_terminate,
@@ -536,7 +801,9 @@ class StreamingPullManager(object):
         )
 
         # Create references to threads
-        self._dispatcher = dispatcher.Dispatcher(self, self._scheduler.queue)
+        assert self._scheduler is not None
+        scheduler_queue = self._scheduler.queue
+        self._dispatcher = dispatcher.Dispatcher(self, scheduler_queue)
         self._consumer = bidi.BackgroundConsumer(self._rpc, self._on_response)
         self._leaser = leaser.Leaser(self)
         self._heartbeater = heartbeater.Heartbeater(self)
@@ -553,7 +820,7 @@ class StreamingPullManager(object):
         # Start the stream heartbeater thread.
         self._heartbeater.start()
 
-    def close(self, reason=None):
+    def close(self, reason: Any = None) -> None:
         """Stop consuming messages and shutdown all helper threads.
 
         This method is idempotent. Additional calls will have no effect.
@@ -562,7 +829,8 @@ class StreamingPullManager(object):
         thread.
 
         Args:
-            reason (Any): The reason to close this. If ``None``, this is considered
+            reason:
+                The reason to close this. If ``None``, this is considered
                 an "intentional" shutdown. This is passed to the callbacks
                 specified via :meth:`add_close_callback`.
         """
@@ -574,12 +842,13 @@ class StreamingPullManager(object):
         )
         self._regular_shutdown_thread.start()
 
-    def _shutdown(self, reason=None):
+    def _shutdown(self, reason: Any = None) -> None:
         """Run the actual shutdown sequence (stop the stream and all helper threads).
 
         Args:
-            reason (Any): The reason to close the stream. If ``None``, this is
-                considered an "intentional" shutdown.
+            reason:
+                The reason to close the stream. If ``None``, this is considered
+                an "intentional" shutdown.
         """
         with self._closing:
             if self._closed:
@@ -588,11 +857,13 @@ class StreamingPullManager(object):
             # Stop consuming messages.
             if self.is_active:
                 _LOGGER.debug("Stopping consumer.")
+                assert self._consumer is not None
                 self._consumer.stop()
             self._consumer = None
 
             # Shutdown all helper threads
             _LOGGER.debug("Stopping scheduler.")
+            assert self._scheduler is not None
             dropped_messages = self._scheduler.shutdown(
                 await_msg_callbacks=self._await_callbacks_on_shutdown
             )
@@ -608,6 +879,7 @@ class StreamingPullManager(object):
             # for the manager's maybe_resume_consumer() / maybe_pause_consumer(),
             # because the consumer gets shut down first.
             _LOGGER.debug("Stopping leaser.")
+            assert self._leaser is not None
             self._leaser.stop()
 
             total = len(dropped_messages) + len(
@@ -621,12 +893,14 @@ class StreamingPullManager(object):
                 msg.nack()
 
             _LOGGER.debug("Stopping dispatcher.")
+            assert self._dispatcher is not None
             self._dispatcher.stop()
             self._dispatcher = None
             # dispatcher terminated, OK to dispose the leaser reference now
             self._leaser = None
 
             _LOGGER.debug("Stopping heartbeater.")
+            assert self._heartbeater is not None
             self._heartbeater.stop()
             self._heartbeater = None
 
@@ -637,19 +911,20 @@ class StreamingPullManager(object):
             for callback in self._close_callbacks:
                 callback(self, reason)
 
-    def _get_initial_request(self, stream_ack_deadline_seconds):
+    def _get_initial_request(
+        self, stream_ack_deadline_seconds: int
+    ) -> gapic_types.StreamingPullRequest:
         """Return the initial request for the RPC.
 
         This defines the initial request that must always be sent to Pub/Sub
         immediately upon opening the subscription.
 
         Args:
-            stream_ack_deadline_seconds (int):
+            stream_ack_deadline_seconds:
                 The default message acknowledge deadline for the stream.
 
         Returns:
-            google.pubsub_v1.types.StreamingPullRequest: A request
-            suitable for being the first request on the stream (and not
+            A request suitable for being the first request on the stream (and not
             suitable for any other purpose).
         """
         # Any ack IDs that are under lease management need to have their
@@ -679,7 +954,43 @@ class StreamingPullManager(object):
         # Return the initial request.
         return request
 
-    def _on_response(self, response):
+    def _send_lease_modacks(self, ack_ids: Iterable[str], ack_deadline: float):
+        exactly_once_enabled = False
+        with self._exactly_once_enabled_lock:
+            exactly_once_enabled = self._exactly_once_enabled
+        if exactly_once_enabled:
+            items = []
+            for ack_id in ack_ids:
+                future = futures.Future()
+                request = requests.ModAckRequest(ack_id, ack_deadline, future)
+                items.append(request)
+
+            assert self._dispatcher is not None
+            self._dispatcher.modify_ack_deadline(items)
+
+            for req in items:
+                try:
+                    assert req.future is not None
+                    req.future.result()
+                except AcknowledgeError:
+                    _LOGGER.warning(
+                        "AcknowledgeError when lease-modacking a message.",
+                        exc_info=True,
+                    )
+        else:
+            items = [
+                requests.ModAckRequest(ack_id, self.ack_deadline, None)
+                for ack_id in ack_ids
+            ]
+            assert self._dispatcher is not None
+            self._dispatcher.modify_ack_deadline(items)
+
+    def _exactly_once_delivery_enabled(self) -> bool:
+        """Whether exactly-once delivery is enabled for the subscription."""
+        with self._exactly_once_enabled_lock:
+            return self._exactly_once_enabled
+
+    def _on_response(self, response: gapic_types.StreamingPullResponse) -> None:
         """Process all received Pub/Sub messages.
 
         For each message, send a modified acknowledgment request to the
@@ -709,22 +1020,36 @@ class StreamingPullManager(object):
             self._on_hold_bytes,
         )
 
+        with self._exactly_once_enabled_lock:
+            if (
+                response.subscription_properties.exactly_once_delivery_enabled
+                != self._exactly_once_enabled
+            ):
+                self._exactly_once_enabled = (
+                    response.subscription_properties.exactly_once_delivery_enabled
+                )
+                # Update ack_deadline, whose minimum depends on self._exactly_once_enabled
+                # This method acquires the self._ack_deadline_lock lock.
+                self._obtain_ack_deadline(maybe_update=True)
+                self._send_new_ack_deadline = True
+
         # Immediately (i.e. without waiting for the auto lease management)
         # modack the messages we received, as this tells the server that we've
         # received them.
-        items = [
-            requests.ModAckRequest(message.ack_id, self.ack_deadline)
-            for message in received_messages
-        ]
-        self._dispatcher.modify_ack_deadline(items)
+        ack_id_gen = (message.ack_id for message in received_messages)
+        self._send_lease_modacks(ack_id_gen, self.ack_deadline)
 
         with self._pause_resume_lock:
+            assert self._scheduler is not None
+            assert self._leaser is not None
+
             for received_message in received_messages:
                 message = google.cloud.pubsub_v1.subscriber.message.Message(
                     received_message.message,
                     received_message.ack_id,
                     received_message.delivery_attempt,
                     self._scheduler.queue,
+                    self._exactly_once_delivery_enabled,
                 )
                 self._messages_on_hold.put(message)
                 self._on_hold_bytes += message.size
@@ -733,13 +1058,13 @@ class StreamingPullManager(object):
                     byte_size=message.size,
                     ordering_key=message.ordering_key,
                 )
-                self.leaser.add([req])
+                self._leaser.add([req])
 
             self._maybe_release_messages()
 
         self.maybe_pause_consumer()
 
-    def _should_recover(self, exception):
+    def _should_recover(self, exception: BaseException) -> bool:
         """Determine if an error on the RPC stream should be recovered.
 
         If the exception is one of the retryable exceptions, this will signal
@@ -748,7 +1073,7 @@ class StreamingPullManager(object):
         This will cause the stream to exit when it returns :data:`False`.
 
         Returns:
-            bool: Indicates if the caller should recover or shut down.
+            Indicates if the caller should recover or shut down.
             Will be :data:`True` if the ``exception`` is "acceptable", i.e.
             in a list of retryable / idempotent exceptions.
         """
@@ -761,7 +1086,7 @@ class StreamingPullManager(object):
         _LOGGER.info("Observed non-recoverable stream error %s", exception)
         return False
 
-    def _should_terminate(self, exception):
+    def _should_terminate(self, exception: BaseException) -> bool:
         """Determine if an error on the RPC stream should be terminated.
 
         If the exception is one of the terminating exceptions, this will signal
@@ -770,7 +1095,7 @@ class StreamingPullManager(object):
         This will cause the stream to exit when it returns :data:`True`.
 
         Returns:
-            bool: Indicates if the caller should terminate or attempt recovery.
+            Indicates if the caller should terminate or attempt recovery.
             Will be :data:`True` if the ``exception`` is "acceptable", i.e.
             in a list of terminating exceptions.
         """
@@ -781,7 +1106,7 @@ class StreamingPullManager(object):
         _LOGGER.info("Observed non-terminating stream error %s", exception)
         return False
 
-    def _on_rpc_done(self, future):
+    def _on_rpc_done(self, future: Any) -> None:
         """Triggered whenever the underlying RPC terminates without recovery.
 
         This is typically triggered from one of two threads: the background

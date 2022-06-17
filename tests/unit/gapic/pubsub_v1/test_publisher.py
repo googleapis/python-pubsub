@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-
-# Copyright 2020 Google LLC
+# Copyright 2022 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 import os
 import mock
 
@@ -24,26 +22,29 @@ import math
 import pytest
 from proto.marshal.rules.dates import DurationRule, TimestampRule
 
-from google import auth
+
 from google.api_core import client_options
-from google.api_core import exceptions
+from google.api_core import exceptions as core_exceptions
 from google.api_core import gapic_v1
 from google.api_core import grpc_helpers
 from google.api_core import grpc_helpers_async
-from google.auth import credentials
+from google.api_core import path_template
+from google.auth import credentials as ga_credentials
 from google.auth.exceptions import MutualTLSChannelError
-from google.iam.v1 import iam_policy_pb2 as iam_policy  # type: ignore
-from google.iam.v1 import options_pb2 as options  # type: ignore
-from google.iam.v1 import policy_pb2 as policy  # type: ignore
+from google.iam.v1 import iam_policy_pb2  # type: ignore
+from google.iam.v1 import options_pb2  # type: ignore
+from google.iam.v1 import policy_pb2  # type: ignore
 from google.oauth2 import service_account
-from google.protobuf import field_mask_pb2 as field_mask  # type: ignore
-from google.protobuf import timestamp_pb2 as timestamp  # type: ignore
+from google.protobuf import duration_pb2  # type: ignore
+from google.protobuf import field_mask_pb2  # type: ignore
+from google.protobuf import timestamp_pb2  # type: ignore
 from google.pubsub_v1.services.publisher import PublisherAsyncClient
 from google.pubsub_v1.services.publisher import PublisherClient
 from google.pubsub_v1.services.publisher import pagers
 from google.pubsub_v1.services.publisher import transports
 from google.pubsub_v1.types import pubsub
 from google.pubsub_v1.types import schema
+import google.auth
 
 
 def client_cert_source_callback():
@@ -85,37 +86,78 @@ def test__get_default_mtls_endpoint():
     assert PublisherClient._get_default_mtls_endpoint(non_googleapi) == non_googleapi
 
 
-@pytest.mark.parametrize("client_class", [PublisherClient, PublisherAsyncClient,])
-def test_publisher_client_from_service_account_info(client_class):
-    creds = credentials.AnonymousCredentials()
+@pytest.mark.parametrize(
+    "client_class,transport_name",
+    [
+        (PublisherClient, "grpc"),
+        (PublisherAsyncClient, "grpc_asyncio"),
+    ],
+)
+def test_publisher_client_from_service_account_info(client_class, transport_name):
+    creds = ga_credentials.AnonymousCredentials()
     with mock.patch.object(
         service_account.Credentials, "from_service_account_info"
     ) as factory:
         factory.return_value = creds
         info = {"valid": True}
-        client = client_class.from_service_account_info(info)
+        client = client_class.from_service_account_info(info, transport=transport_name)
         assert client.transport._credentials == creds
         assert isinstance(client, client_class)
 
-        assert client.transport._host == "pubsub.googleapis.com:443"
+        assert client.transport._host == ("pubsub.googleapis.com:443")
 
 
-@pytest.mark.parametrize("client_class", [PublisherClient, PublisherAsyncClient,])
-def test_publisher_client_from_service_account_file(client_class):
-    creds = credentials.AnonymousCredentials()
+@pytest.mark.parametrize(
+    "transport_class,transport_name",
+    [
+        (transports.PublisherGrpcTransport, "grpc"),
+        (transports.PublisherGrpcAsyncIOTransport, "grpc_asyncio"),
+    ],
+)
+def test_publisher_client_service_account_always_use_jwt(
+    transport_class, transport_name
+):
+    with mock.patch.object(
+        service_account.Credentials, "with_always_use_jwt_access", create=True
+    ) as use_jwt:
+        creds = service_account.Credentials(None, None, None)
+        transport = transport_class(credentials=creds, always_use_jwt_access=True)
+        use_jwt.assert_called_once_with(True)
+
+    with mock.patch.object(
+        service_account.Credentials, "with_always_use_jwt_access", create=True
+    ) as use_jwt:
+        creds = service_account.Credentials(None, None, None)
+        transport = transport_class(credentials=creds, always_use_jwt_access=False)
+        use_jwt.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "client_class,transport_name",
+    [
+        (PublisherClient, "grpc"),
+        (PublisherAsyncClient, "grpc_asyncio"),
+    ],
+)
+def test_publisher_client_from_service_account_file(client_class, transport_name):
+    creds = ga_credentials.AnonymousCredentials()
     with mock.patch.object(
         service_account.Credentials, "from_service_account_file"
     ) as factory:
         factory.return_value = creds
-        client = client_class.from_service_account_file("dummy/file/path.json")
+        client = client_class.from_service_account_file(
+            "dummy/file/path.json", transport=transport_name
+        )
         assert client.transport._credentials == creds
         assert isinstance(client, client_class)
 
-        client = client_class.from_service_account_json("dummy/file/path.json")
+        client = client_class.from_service_account_json(
+            "dummy/file/path.json", transport=transport_name
+        )
         assert client.transport._credentials == creds
         assert isinstance(client, client_class)
 
-        assert client.transport._host == "pubsub.googleapis.com:443"
+        assert client.transport._host == ("pubsub.googleapis.com:443")
 
 
 def test_publisher_client_get_transport_class():
@@ -151,7 +193,7 @@ def test_publisher_client_get_transport_class():
 def test_publisher_client_client_options(client_class, transport_class, transport_name):
     # Check that if channel is provided we won't create a new one.
     with mock.patch.object(PublisherClient, "get_transport_class") as gtc:
-        transport = transport_class(credentials=credentials.AnonymousCredentials())
+        transport = transport_class(credentials=ga_credentials.AnonymousCredentials())
         client = client_class(transport=transport)
         gtc.assert_not_called()
 
@@ -164,7 +206,7 @@ def test_publisher_client_client_options(client_class, transport_class, transpor
     options = client_options.ClientOptions(api_endpoint="squid.clam.whelk")
     with mock.patch.object(transport_class, "__init__") as patched:
         patched.return_value = None
-        client = client_class(client_options=options)
+        client = client_class(transport=transport_name, client_options=options)
         patched.assert_called_once_with(
             credentials=None,
             credentials_file=None,
@@ -173,6 +215,7 @@ def test_publisher_client_client_options(client_class, transport_class, transpor
             client_cert_source_for_mtls=None,
             quota_project_id=None,
             client_info=transports.base.DEFAULT_CLIENT_INFO,
+            always_use_jwt_access=True,
         )
 
     # Check the case api_endpoint is not provided and GOOGLE_API_USE_MTLS_ENDPOINT is
@@ -180,7 +223,7 @@ def test_publisher_client_client_options(client_class, transport_class, transpor
     with mock.patch.dict(os.environ, {"GOOGLE_API_USE_MTLS_ENDPOINT": "never"}):
         with mock.patch.object(transport_class, "__init__") as patched:
             patched.return_value = None
-            client = client_class()
+            client = client_class(transport=transport_name)
             patched.assert_called_once_with(
                 credentials=None,
                 credentials_file=None,
@@ -189,6 +232,7 @@ def test_publisher_client_client_options(client_class, transport_class, transpor
                 client_cert_source_for_mtls=None,
                 quota_project_id=None,
                 client_info=transports.base.DEFAULT_CLIENT_INFO,
+                always_use_jwt_access=True,
             )
 
     # Check the case api_endpoint is not provided and GOOGLE_API_USE_MTLS_ENDPOINT is
@@ -196,7 +240,7 @@ def test_publisher_client_client_options(client_class, transport_class, transpor
     with mock.patch.dict(os.environ, {"GOOGLE_API_USE_MTLS_ENDPOINT": "always"}):
         with mock.patch.object(transport_class, "__init__") as patched:
             patched.return_value = None
-            client = client_class()
+            client = client_class(transport=transport_name)
             patched.assert_called_once_with(
                 credentials=None,
                 credentials_file=None,
@@ -205,26 +249,27 @@ def test_publisher_client_client_options(client_class, transport_class, transpor
                 client_cert_source_for_mtls=None,
                 quota_project_id=None,
                 client_info=transports.base.DEFAULT_CLIENT_INFO,
+                always_use_jwt_access=True,
             )
 
     # Check the case api_endpoint is not provided and GOOGLE_API_USE_MTLS_ENDPOINT has
     # unsupported value.
     with mock.patch.dict(os.environ, {"GOOGLE_API_USE_MTLS_ENDPOINT": "Unsupported"}):
         with pytest.raises(MutualTLSChannelError):
-            client = client_class()
+            client = client_class(transport=transport_name)
 
     # Check the case GOOGLE_API_USE_CLIENT_CERTIFICATE has unsupported value.
     with mock.patch.dict(
         os.environ, {"GOOGLE_API_USE_CLIENT_CERTIFICATE": "Unsupported"}
     ):
         with pytest.raises(ValueError):
-            client = client_class()
+            client = client_class(transport=transport_name)
 
     # Check the case quota_project_id is provided
     options = client_options.ClientOptions(quota_project_id="octopus")
     with mock.patch.object(transport_class, "__init__") as patched:
         patched.return_value = None
-        client = client_class(client_options=options)
+        client = client_class(client_options=options, transport=transport_name)
         patched.assert_called_once_with(
             credentials=None,
             credentials_file=None,
@@ -233,6 +278,7 @@ def test_publisher_client_client_options(client_class, transport_class, transpor
             client_cert_source_for_mtls=None,
             quota_project_id="octopus",
             client_info=transports.base.DEFAULT_CLIENT_INFO,
+            always_use_jwt_access=True,
         )
 
 
@@ -280,7 +326,7 @@ def test_publisher_client_mtls_env_auto(
         )
         with mock.patch.object(transport_class, "__init__") as patched:
             patched.return_value = None
-            client = client_class(client_options=options)
+            client = client_class(client_options=options, transport=transport_name)
 
             if use_client_cert_env == "false":
                 expected_client_cert_source = None
@@ -297,6 +343,7 @@ def test_publisher_client_mtls_env_auto(
                 client_cert_source_for_mtls=expected_client_cert_source,
                 quota_project_id=None,
                 client_info=transports.base.DEFAULT_CLIENT_INFO,
+                always_use_jwt_access=True,
             )
 
     # Check the case ADC client cert is provided. Whether client cert is used depends on
@@ -321,7 +368,7 @@ def test_publisher_client_mtls_env_auto(
                         expected_client_cert_source = client_cert_source_callback
 
                     patched.return_value = None
-                    client = client_class()
+                    client = client_class(transport=transport_name)
                     patched.assert_called_once_with(
                         credentials=None,
                         credentials_file=None,
@@ -330,6 +377,7 @@ def test_publisher_client_mtls_env_auto(
                         client_cert_source_for_mtls=expected_client_cert_source,
                         quota_project_id=None,
                         client_info=transports.base.DEFAULT_CLIENT_INFO,
+                        always_use_jwt_access=True,
                     )
 
     # Check the case client_cert_source and ADC client cert are not provided.
@@ -342,7 +390,7 @@ def test_publisher_client_mtls_env_auto(
                 return_value=False,
             ):
                 patched.return_value = None
-                client = client_class()
+                client = client_class(transport=transport_name)
                 patched.assert_called_once_with(
                     credentials=None,
                     credentials_file=None,
@@ -351,7 +399,85 @@ def test_publisher_client_mtls_env_auto(
                     client_cert_source_for_mtls=None,
                     quota_project_id=None,
                     client_info=transports.base.DEFAULT_CLIENT_INFO,
+                    always_use_jwt_access=True,
                 )
+
+
+@pytest.mark.parametrize("client_class", [PublisherClient, PublisherAsyncClient])
+@mock.patch.object(
+    PublisherClient, "DEFAULT_ENDPOINT", modify_default_endpoint(PublisherClient)
+)
+@mock.patch.object(
+    PublisherAsyncClient,
+    "DEFAULT_ENDPOINT",
+    modify_default_endpoint(PublisherAsyncClient),
+)
+def test_publisher_client_get_mtls_endpoint_and_cert_source(client_class):
+    mock_client_cert_source = mock.Mock()
+
+    # Test the case GOOGLE_API_USE_CLIENT_CERTIFICATE is "true".
+    with mock.patch.dict(os.environ, {"GOOGLE_API_USE_CLIENT_CERTIFICATE": "true"}):
+        mock_api_endpoint = "foo"
+        options = client_options.ClientOptions(
+            client_cert_source=mock_client_cert_source, api_endpoint=mock_api_endpoint
+        )
+        api_endpoint, cert_source = client_class.get_mtls_endpoint_and_cert_source(
+            options
+        )
+        assert api_endpoint == mock_api_endpoint
+        assert cert_source == mock_client_cert_source
+
+    # Test the case GOOGLE_API_USE_CLIENT_CERTIFICATE is "false".
+    with mock.patch.dict(os.environ, {"GOOGLE_API_USE_CLIENT_CERTIFICATE": "false"}):
+        mock_client_cert_source = mock.Mock()
+        mock_api_endpoint = "foo"
+        options = client_options.ClientOptions(
+            client_cert_source=mock_client_cert_source, api_endpoint=mock_api_endpoint
+        )
+        api_endpoint, cert_source = client_class.get_mtls_endpoint_and_cert_source(
+            options
+        )
+        assert api_endpoint == mock_api_endpoint
+        assert cert_source is None
+
+    # Test the case GOOGLE_API_USE_MTLS_ENDPOINT is "never".
+    with mock.patch.dict(os.environ, {"GOOGLE_API_USE_MTLS_ENDPOINT": "never"}):
+        api_endpoint, cert_source = client_class.get_mtls_endpoint_and_cert_source()
+        assert api_endpoint == client_class.DEFAULT_ENDPOINT
+        assert cert_source is None
+
+    # Test the case GOOGLE_API_USE_MTLS_ENDPOINT is "always".
+    with mock.patch.dict(os.environ, {"GOOGLE_API_USE_MTLS_ENDPOINT": "always"}):
+        api_endpoint, cert_source = client_class.get_mtls_endpoint_and_cert_source()
+        assert api_endpoint == client_class.DEFAULT_MTLS_ENDPOINT
+        assert cert_source is None
+
+    # Test the case GOOGLE_API_USE_MTLS_ENDPOINT is "auto" and default cert doesn't exist.
+    with mock.patch.dict(os.environ, {"GOOGLE_API_USE_CLIENT_CERTIFICATE": "true"}):
+        with mock.patch(
+            "google.auth.transport.mtls.has_default_client_cert_source",
+            return_value=False,
+        ):
+            api_endpoint, cert_source = client_class.get_mtls_endpoint_and_cert_source()
+            assert api_endpoint == client_class.DEFAULT_ENDPOINT
+            assert cert_source is None
+
+    # Test the case GOOGLE_API_USE_MTLS_ENDPOINT is "auto" and default cert exists.
+    with mock.patch.dict(os.environ, {"GOOGLE_API_USE_CLIENT_CERTIFICATE": "true"}):
+        with mock.patch(
+            "google.auth.transport.mtls.has_default_client_cert_source",
+            return_value=True,
+        ):
+            with mock.patch(
+                "google.auth.transport.mtls.default_client_cert_source",
+                return_value=mock_client_cert_source,
+            ):
+                (
+                    api_endpoint,
+                    cert_source,
+                ) = client_class.get_mtls_endpoint_and_cert_source()
+                assert api_endpoint == client_class.DEFAULT_MTLS_ENDPOINT
+                assert cert_source == mock_client_cert_source
 
 
 @pytest.mark.parametrize(
@@ -369,10 +495,12 @@ def test_publisher_client_client_options_scopes(
     client_class, transport_class, transport_name
 ):
     # Check the case scopes are provided.
-    options = client_options.ClientOptions(scopes=["1", "2"],)
+    options = client_options.ClientOptions(
+        scopes=["1", "2"],
+    )
     with mock.patch.object(transport_class, "__init__") as patched:
         patched.return_value = None
-        client = client_class(client_options=options)
+        client = client_class(client_options=options, transport=transport_name)
         patched.assert_called_once_with(
             credentials=None,
             credentials_file=None,
@@ -381,28 +509,31 @@ def test_publisher_client_client_options_scopes(
             client_cert_source_for_mtls=None,
             quota_project_id=None,
             client_info=transports.base.DEFAULT_CLIENT_INFO,
+            always_use_jwt_access=True,
         )
 
 
 @pytest.mark.parametrize(
-    "client_class,transport_class,transport_name",
+    "client_class,transport_class,transport_name,grpc_helpers",
     [
-        (PublisherClient, transports.PublisherGrpcTransport, "grpc"),
+        (PublisherClient, transports.PublisherGrpcTransport, "grpc", grpc_helpers),
         (
             PublisherAsyncClient,
             transports.PublisherGrpcAsyncIOTransport,
             "grpc_asyncio",
+            grpc_helpers_async,
         ),
     ],
 )
 def test_publisher_client_client_options_credentials_file(
-    client_class, transport_class, transport_name
+    client_class, transport_class, transport_name, grpc_helpers
 ):
     # Check the case credentials file is provided.
     options = client_options.ClientOptions(credentials_file="credentials.json")
+
     with mock.patch.object(transport_class, "__init__") as patched:
         patched.return_value = None
-        client = client_class(client_options=options)
+        client = client_class(client_options=options, transport=transport_name)
         patched.assert_called_once_with(
             credentials=None,
             credentials_file="credentials.json",
@@ -411,6 +542,7 @@ def test_publisher_client_client_options_credentials_file(
             client_cert_source_for_mtls=None,
             quota_project_id=None,
             client_info=transports.base.DEFAULT_CLIENT_INFO,
+            always_use_jwt_access=True,
         )
 
 
@@ -428,12 +560,87 @@ def test_publisher_client_client_options_from_dict():
             client_cert_source_for_mtls=None,
             quota_project_id=None,
             client_info=transports.base.DEFAULT_CLIENT_INFO,
+            always_use_jwt_access=True,
         )
 
 
-def test_create_topic(transport: str = "grpc", request_type=pubsub.Topic):
+@pytest.mark.parametrize(
+    "client_class,transport_class,transport_name,grpc_helpers",
+    [
+        (PublisherClient, transports.PublisherGrpcTransport, "grpc", grpc_helpers),
+        (
+            PublisherAsyncClient,
+            transports.PublisherGrpcAsyncIOTransport,
+            "grpc_asyncio",
+            grpc_helpers_async,
+        ),
+    ],
+)
+def test_publisher_client_create_channel_credentials_file(
+    client_class, transport_class, transport_name, grpc_helpers
+):
+    # Check the case credentials file is provided.
+    options = client_options.ClientOptions(credentials_file="credentials.json")
+
+    with mock.patch.object(transport_class, "__init__") as patched:
+        patched.return_value = None
+        client = client_class(client_options=options, transport=transport_name)
+        patched.assert_called_once_with(
+            credentials=None,
+            credentials_file="credentials.json",
+            host=client.DEFAULT_ENDPOINT,
+            scopes=None,
+            client_cert_source_for_mtls=None,
+            quota_project_id=None,
+            client_info=transports.base.DEFAULT_CLIENT_INFO,
+            always_use_jwt_access=True,
+        )
+
+    # test that the credentials from file are saved and used as the credentials.
+    with mock.patch.object(
+        google.auth, "load_credentials_from_file", autospec=True
+    ) as load_creds, mock.patch.object(
+        google.auth, "default", autospec=True
+    ) as adc, mock.patch.object(
+        grpc_helpers, "create_channel"
+    ) as create_channel:
+        creds = ga_credentials.AnonymousCredentials()
+        file_creds = ga_credentials.AnonymousCredentials()
+        load_creds.return_value = (file_creds, None)
+        adc.return_value = (creds, None)
+        client = client_class(client_options=options, transport=transport_name)
+        create_channel.assert_called_with(
+            "pubsub.googleapis.com:443",
+            credentials=file_creds,
+            credentials_file=None,
+            quota_project_id=None,
+            default_scopes=(
+                "https://www.googleapis.com/auth/cloud-platform",
+                "https://www.googleapis.com/auth/pubsub",
+            ),
+            scopes=None,
+            default_host="pubsub.googleapis.com",
+            ssl_credentials=None,
+            options=[
+                ("grpc.max_send_message_length", -1),
+                ("grpc.max_receive_message_length", -1),
+                ("grpc.max_metadata_size", 4 * 1024 * 1024),
+                ("grpc.keepalive_time_ms", 30000),
+            ],
+        )
+
+
+@pytest.mark.parametrize(
+    "request_type",
+    [
+        pubsub.Topic,
+        dict,
+    ],
+)
+def test_create_topic(request_type, transport: str = "grpc"):
     client = PublisherClient(
-        credentials=credentials.AnonymousCredentials(), transport=transport,
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport=transport,
     )
 
     # Everything is optional in proto3 as far as the runtime is concerned,
@@ -444,37 +651,30 @@ def test_create_topic(transport: str = "grpc", request_type=pubsub.Topic):
     with mock.patch.object(type(client.transport.create_topic), "__call__") as call:
         # Designate an appropriate return value for the call.
         call.return_value = pubsub.Topic(
-            name="name_value", kms_key_name="kms_key_name_value", satisfies_pzs=True,
+            name="name_value",
+            kms_key_name="kms_key_name_value",
+            satisfies_pzs=True,
         )
-
         response = client.create_topic(request)
 
         # Establish that the underlying gRPC stub method was called.
         assert len(call.mock_calls) == 1
         _, args, _ = call.mock_calls[0]
-
         assert args[0] == pubsub.Topic()
 
     # Establish that the response is the type that we expect.
-
     assert isinstance(response, pubsub.Topic)
-
     assert response.name == "name_value"
-
     assert response.kms_key_name == "kms_key_name_value"
-
     assert response.satisfies_pzs is True
-
-
-def test_create_topic_from_dict():
-    test_create_topic(request_type=dict)
 
 
 def test_create_topic_empty_call():
     # This test is a coverage failsafe to make sure that totally empty calls,
     # i.e. request == None and no flattened fields passed, work.
     client = PublisherClient(
-        credentials=credentials.AnonymousCredentials(), transport="grpc",
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="grpc",
     )
 
     # Mock the actual call within the gRPC stub, and fake the request.
@@ -482,7 +682,6 @@ def test_create_topic_empty_call():
         client.create_topic()
         call.assert_called()
         _, args, _ = call.mock_calls[0]
-
         assert args[0] == pubsub.Topic()
 
 
@@ -491,7 +690,8 @@ async def test_create_topic_async(
     transport: str = "grpc_asyncio", request_type=pubsub.Topic
 ):
     client = PublisherAsyncClient(
-        credentials=credentials.AnonymousCredentials(), transport=transport,
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport=transport,
     )
 
     # Everything is optional in proto3 as far as the runtime is concerned,
@@ -508,22 +708,17 @@ async def test_create_topic_async(
                 satisfies_pzs=True,
             )
         )
-
         response = await client.create_topic(request)
 
         # Establish that the underlying gRPC stub method was called.
         assert len(call.mock_calls)
         _, args, _ = call.mock_calls[0]
-
         assert args[0] == pubsub.Topic()
 
     # Establish that the response is the type that we expect.
     assert isinstance(response, pubsub.Topic)
-
     assert response.name == "name_value"
-
     assert response.kms_key_name == "kms_key_name_value"
-
     assert response.satisfies_pzs is True
 
 
@@ -533,17 +728,19 @@ async def test_create_topic_async_from_dict():
 
 
 def test_create_topic_field_headers():
-    client = PublisherClient(credentials=credentials.AnonymousCredentials(),)
+    client = PublisherClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
 
     # Any value that is part of the HTTP/1.1 URI should be sent as
     # a field header. Set these to a non-empty value.
     request = pubsub.Topic()
-    request.name = "name/value"
+
+    request.name = "name_value"
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(type(client.transport.create_topic), "__call__") as call:
         call.return_value = pubsub.Topic()
-
         client.create_topic(request)
 
         # Establish that the underlying gRPC stub method was called.
@@ -553,22 +750,27 @@ def test_create_topic_field_headers():
 
     # Establish that the field header was sent.
     _, _, kw = call.mock_calls[0]
-    assert ("x-goog-request-params", "name=name/value",) in kw["metadata"]
+    assert (
+        "x-goog-request-params",
+        "name=name_value",
+    ) in kw["metadata"]
 
 
 @pytest.mark.asyncio
 async def test_create_topic_field_headers_async():
-    client = PublisherAsyncClient(credentials=credentials.AnonymousCredentials(),)
+    client = PublisherAsyncClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
 
     # Any value that is part of the HTTP/1.1 URI should be sent as
     # a field header. Set these to a non-empty value.
     request = pubsub.Topic()
-    request.name = "name/value"
+
+    request.name = "name_value"
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(type(client.transport.create_topic), "__call__") as call:
         call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(pubsub.Topic())
-
         await client.create_topic(request)
 
         # Establish that the underlying gRPC stub method was called.
@@ -578,43 +780,55 @@ async def test_create_topic_field_headers_async():
 
     # Establish that the field header was sent.
     _, _, kw = call.mock_calls[0]
-    assert ("x-goog-request-params", "name=name/value",) in kw["metadata"]
+    assert (
+        "x-goog-request-params",
+        "name=name_value",
+    ) in kw["metadata"]
 
 
 def test_create_topic_flattened():
-    client = PublisherClient(credentials=credentials.AnonymousCredentials(),)
+    client = PublisherClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(type(client.transport.create_topic), "__call__") as call:
         # Designate an appropriate return value for the call.
         call.return_value = pubsub.Topic()
-
         # Call the method with a truthy value for each flattened field,
         # using the keyword arguments to the method.
-        client.create_topic(name="name_value",)
+        client.create_topic(
+            name="name_value",
+        )
 
         # Establish that the underlying call was made with the expected
         # request object values.
         assert len(call.mock_calls) == 1
         _, args, _ = call.mock_calls[0]
-
-        assert args[0].name == "name_value"
+        arg = args[0].name
+        mock_val = "name_value"
+        assert arg == mock_val
 
 
 def test_create_topic_flattened_error():
-    client = PublisherClient(credentials=credentials.AnonymousCredentials(),)
+    client = PublisherClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
 
     # Attempting to call a method with both a request object and flattened
     # fields is an error.
     with pytest.raises(ValueError):
         client.create_topic(
-            pubsub.Topic(), name="name_value",
+            pubsub.Topic(),
+            name="name_value",
         )
 
 
 @pytest.mark.asyncio
 async def test_create_topic_flattened_async():
-    client = PublisherAsyncClient(credentials=credentials.AnonymousCredentials(),)
+    client = PublisherAsyncClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(type(client.transport.create_topic), "__call__") as call:
@@ -624,31 +838,45 @@ async def test_create_topic_flattened_async():
         call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(pubsub.Topic())
         # Call the method with a truthy value for each flattened field,
         # using the keyword arguments to the method.
-        response = await client.create_topic(name="name_value",)
+        response = await client.create_topic(
+            name="name_value",
+        )
 
         # Establish that the underlying call was made with the expected
         # request object values.
         assert len(call.mock_calls)
         _, args, _ = call.mock_calls[0]
-
-        assert args[0].name == "name_value"
+        arg = args[0].name
+        mock_val = "name_value"
+        assert arg == mock_val
 
 
 @pytest.mark.asyncio
 async def test_create_topic_flattened_error_async():
-    client = PublisherAsyncClient(credentials=credentials.AnonymousCredentials(),)
+    client = PublisherAsyncClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
 
     # Attempting to call a method with both a request object and flattened
     # fields is an error.
     with pytest.raises(ValueError):
         await client.create_topic(
-            pubsub.Topic(), name="name_value",
+            pubsub.Topic(),
+            name="name_value",
         )
 
 
-def test_update_topic(transport: str = "grpc", request_type=pubsub.UpdateTopicRequest):
+@pytest.mark.parametrize(
+    "request_type",
+    [
+        pubsub.UpdateTopicRequest,
+        dict,
+    ],
+)
+def test_update_topic(request_type, transport: str = "grpc"):
     client = PublisherClient(
-        credentials=credentials.AnonymousCredentials(), transport=transport,
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport=transport,
     )
 
     # Everything is optional in proto3 as far as the runtime is concerned,
@@ -659,37 +887,30 @@ def test_update_topic(transport: str = "grpc", request_type=pubsub.UpdateTopicRe
     with mock.patch.object(type(client.transport.update_topic), "__call__") as call:
         # Designate an appropriate return value for the call.
         call.return_value = pubsub.Topic(
-            name="name_value", kms_key_name="kms_key_name_value", satisfies_pzs=True,
+            name="name_value",
+            kms_key_name="kms_key_name_value",
+            satisfies_pzs=True,
         )
-
         response = client.update_topic(request)
 
         # Establish that the underlying gRPC stub method was called.
         assert len(call.mock_calls) == 1
         _, args, _ = call.mock_calls[0]
-
         assert args[0] == pubsub.UpdateTopicRequest()
 
     # Establish that the response is the type that we expect.
-
     assert isinstance(response, pubsub.Topic)
-
     assert response.name == "name_value"
-
     assert response.kms_key_name == "kms_key_name_value"
-
     assert response.satisfies_pzs is True
-
-
-def test_update_topic_from_dict():
-    test_update_topic(request_type=dict)
 
 
 def test_update_topic_empty_call():
     # This test is a coverage failsafe to make sure that totally empty calls,
     # i.e. request == None and no flattened fields passed, work.
     client = PublisherClient(
-        credentials=credentials.AnonymousCredentials(), transport="grpc",
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="grpc",
     )
 
     # Mock the actual call within the gRPC stub, and fake the request.
@@ -697,7 +918,6 @@ def test_update_topic_empty_call():
         client.update_topic()
         call.assert_called()
         _, args, _ = call.mock_calls[0]
-
         assert args[0] == pubsub.UpdateTopicRequest()
 
 
@@ -706,7 +926,8 @@ async def test_update_topic_async(
     transport: str = "grpc_asyncio", request_type=pubsub.UpdateTopicRequest
 ):
     client = PublisherAsyncClient(
-        credentials=credentials.AnonymousCredentials(), transport=transport,
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport=transport,
     )
 
     # Everything is optional in proto3 as far as the runtime is concerned,
@@ -723,22 +944,17 @@ async def test_update_topic_async(
                 satisfies_pzs=True,
             )
         )
-
         response = await client.update_topic(request)
 
         # Establish that the underlying gRPC stub method was called.
         assert len(call.mock_calls)
         _, args, _ = call.mock_calls[0]
-
         assert args[0] == pubsub.UpdateTopicRequest()
 
     # Establish that the response is the type that we expect.
     assert isinstance(response, pubsub.Topic)
-
     assert response.name == "name_value"
-
     assert response.kms_key_name == "kms_key_name_value"
-
     assert response.satisfies_pzs is True
 
 
@@ -748,17 +964,19 @@ async def test_update_topic_async_from_dict():
 
 
 def test_update_topic_field_headers():
-    client = PublisherClient(credentials=credentials.AnonymousCredentials(),)
+    client = PublisherClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
 
     # Any value that is part of the HTTP/1.1 URI should be sent as
     # a field header. Set these to a non-empty value.
     request = pubsub.UpdateTopicRequest()
-    request.topic.name = "topic.name/value"
+
+    request.topic.name = "name_value"
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(type(client.transport.update_topic), "__call__") as call:
         call.return_value = pubsub.Topic()
-
         client.update_topic(request)
 
         # Establish that the underlying gRPC stub method was called.
@@ -768,22 +986,27 @@ def test_update_topic_field_headers():
 
     # Establish that the field header was sent.
     _, _, kw = call.mock_calls[0]
-    assert ("x-goog-request-params", "topic.name=topic.name/value",) in kw["metadata"]
+    assert (
+        "x-goog-request-params",
+        "topic.name=name_value",
+    ) in kw["metadata"]
 
 
 @pytest.mark.asyncio
 async def test_update_topic_field_headers_async():
-    client = PublisherAsyncClient(credentials=credentials.AnonymousCredentials(),)
+    client = PublisherAsyncClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
 
     # Any value that is part of the HTTP/1.1 URI should be sent as
     # a field header. Set these to a non-empty value.
     request = pubsub.UpdateTopicRequest()
-    request.topic.name = "topic.name/value"
+
+    request.topic.name = "name_value"
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(type(client.transport.update_topic), "__call__") as call:
         call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(pubsub.Topic())
-
         await client.update_topic(request)
 
         # Establish that the underlying gRPC stub method was called.
@@ -793,12 +1016,23 @@ async def test_update_topic_field_headers_async():
 
     # Establish that the field header was sent.
     _, _, kw = call.mock_calls[0]
-    assert ("x-goog-request-params", "topic.name=topic.name/value",) in kw["metadata"]
+    assert (
+        "x-goog-request-params",
+        "topic.name=name_value",
+    ) in kw["metadata"]
 
 
-def test_publish(transport: str = "grpc", request_type=pubsub.PublishRequest):
+@pytest.mark.parametrize(
+    "request_type",
+    [
+        pubsub.PublishRequest,
+        dict,
+    ],
+)
+def test_publish(request_type, transport: str = "grpc"):
     client = PublisherClient(
-        credentials=credentials.AnonymousCredentials(), transport=transport,
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport=transport,
     )
 
     # Everything is optional in proto3 as far as the runtime is concerned,
@@ -808,32 +1042,27 @@ def test_publish(transport: str = "grpc", request_type=pubsub.PublishRequest):
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(type(client.transport.publish), "__call__") as call:
         # Designate an appropriate return value for the call.
-        call.return_value = pubsub.PublishResponse(message_ids=["message_ids_value"],)
-
+        call.return_value = pubsub.PublishResponse(
+            message_ids=["message_ids_value"],
+        )
         response = client.publish(request)
 
         # Establish that the underlying gRPC stub method was called.
         assert len(call.mock_calls) == 1
         _, args, _ = call.mock_calls[0]
-
         assert args[0] == pubsub.PublishRequest()
 
     # Establish that the response is the type that we expect.
-
     assert isinstance(response, pubsub.PublishResponse)
-
     assert response.message_ids == ["message_ids_value"]
-
-
-def test_publish_from_dict():
-    test_publish(request_type=dict)
 
 
 def test_publish_empty_call():
     # This test is a coverage failsafe to make sure that totally empty calls,
     # i.e. request == None and no flattened fields passed, work.
     client = PublisherClient(
-        credentials=credentials.AnonymousCredentials(), transport="grpc",
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="grpc",
     )
 
     # Mock the actual call within the gRPC stub, and fake the request.
@@ -841,7 +1070,6 @@ def test_publish_empty_call():
         client.publish()
         call.assert_called()
         _, args, _ = call.mock_calls[0]
-
         assert args[0] == pubsub.PublishRequest()
 
 
@@ -850,7 +1078,8 @@ async def test_publish_async(
     transport: str = "grpc_asyncio", request_type=pubsub.PublishRequest
 ):
     client = PublisherAsyncClient(
-        credentials=credentials.AnonymousCredentials(), transport=transport,
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport=transport,
     )
 
     # Everything is optional in proto3 as far as the runtime is concerned,
@@ -861,20 +1090,19 @@ async def test_publish_async(
     with mock.patch.object(type(client.transport.publish), "__call__") as call:
         # Designate an appropriate return value for the call.
         call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(
-            pubsub.PublishResponse(message_ids=["message_ids_value"],)
+            pubsub.PublishResponse(
+                message_ids=["message_ids_value"],
+            )
         )
-
         response = await client.publish(request)
 
         # Establish that the underlying gRPC stub method was called.
         assert len(call.mock_calls)
         _, args, _ = call.mock_calls[0]
-
         assert args[0] == pubsub.PublishRequest()
 
     # Establish that the response is the type that we expect.
     assert isinstance(response, pubsub.PublishResponse)
-
     assert response.message_ids == ["message_ids_value"]
 
 
@@ -884,17 +1112,19 @@ async def test_publish_async_from_dict():
 
 
 def test_publish_field_headers():
-    client = PublisherClient(credentials=credentials.AnonymousCredentials(),)
+    client = PublisherClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
 
     # Any value that is part of the HTTP/1.1 URI should be sent as
     # a field header. Set these to a non-empty value.
     request = pubsub.PublishRequest()
-    request.topic = "topic/value"
+
+    request.topic = "topic_value"
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(type(client.transport.publish), "__call__") as call:
         call.return_value = pubsub.PublishResponse()
-
         client.publish(request)
 
         # Establish that the underlying gRPC stub method was called.
@@ -904,24 +1134,29 @@ def test_publish_field_headers():
 
     # Establish that the field header was sent.
     _, _, kw = call.mock_calls[0]
-    assert ("x-goog-request-params", "topic=topic/value",) in kw["metadata"]
+    assert (
+        "x-goog-request-params",
+        "topic=topic_value",
+    ) in kw["metadata"]
 
 
 @pytest.mark.asyncio
 async def test_publish_field_headers_async():
-    client = PublisherAsyncClient(credentials=credentials.AnonymousCredentials(),)
+    client = PublisherAsyncClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
 
     # Any value that is part of the HTTP/1.1 URI should be sent as
     # a field header. Set these to a non-empty value.
     request = pubsub.PublishRequest()
-    request.topic = "topic/value"
+
+    request.topic = "topic_value"
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(type(client.transport.publish), "__call__") as call:
         call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(
             pubsub.PublishResponse()
         )
-
         await client.publish(request)
 
         # Establish that the underlying gRPC stub method was called.
@@ -931,35 +1166,44 @@ async def test_publish_field_headers_async():
 
     # Establish that the field header was sent.
     _, _, kw = call.mock_calls[0]
-    assert ("x-goog-request-params", "topic=topic/value",) in kw["metadata"]
+    assert (
+        "x-goog-request-params",
+        "topic=topic_value",
+    ) in kw["metadata"]
 
 
 def test_publish_flattened():
-    client = PublisherClient(credentials=credentials.AnonymousCredentials(),)
+    client = PublisherClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(type(client.transport.publish), "__call__") as call:
         # Designate an appropriate return value for the call.
         call.return_value = pubsub.PublishResponse()
-
         # Call the method with a truthy value for each flattened field,
         # using the keyword arguments to the method.
         client.publish(
-            topic="topic_value", messages=[pubsub.PubsubMessage(data=b"data_blob")],
+            topic="topic_value",
+            messages=[pubsub.PubsubMessage(data=b"data_blob")],
         )
 
         # Establish that the underlying call was made with the expected
         # request object values.
         assert len(call.mock_calls) == 1
         _, args, _ = call.mock_calls[0]
-
-        assert args[0].topic == "topic_value"
-
-        assert args[0].messages == [pubsub.PubsubMessage(data=b"data_blob")]
+        arg = args[0].topic
+        mock_val = "topic_value"
+        assert arg == mock_val
+        arg = args[0].messages
+        mock_val = [pubsub.PubsubMessage(data=b"data_blob")]
+        assert arg == mock_val
 
 
 def test_publish_flattened_error():
-    client = PublisherClient(credentials=credentials.AnonymousCredentials(),)
+    client = PublisherClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
 
     # Attempting to call a method with both a request object and flattened
     # fields is an error.
@@ -973,7 +1217,9 @@ def test_publish_flattened_error():
 
 @pytest.mark.asyncio
 async def test_publish_flattened_async():
-    client = PublisherAsyncClient(credentials=credentials.AnonymousCredentials(),)
+    client = PublisherAsyncClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(type(client.transport.publish), "__call__") as call:
@@ -986,22 +1232,27 @@ async def test_publish_flattened_async():
         # Call the method with a truthy value for each flattened field,
         # using the keyword arguments to the method.
         response = await client.publish(
-            topic="topic_value", messages=[pubsub.PubsubMessage(data=b"data_blob")],
+            topic="topic_value",
+            messages=[pubsub.PubsubMessage(data=b"data_blob")],
         )
 
         # Establish that the underlying call was made with the expected
         # request object values.
         assert len(call.mock_calls)
         _, args, _ = call.mock_calls[0]
-
-        assert args[0].topic == "topic_value"
-
-        assert args[0].messages == [pubsub.PubsubMessage(data=b"data_blob")]
+        arg = args[0].topic
+        mock_val = "topic_value"
+        assert arg == mock_val
+        arg = args[0].messages
+        mock_val = [pubsub.PubsubMessage(data=b"data_blob")]
+        assert arg == mock_val
 
 
 @pytest.mark.asyncio
 async def test_publish_flattened_error_async():
-    client = PublisherAsyncClient(credentials=credentials.AnonymousCredentials(),)
+    client = PublisherAsyncClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
 
     # Attempting to call a method with both a request object and flattened
     # fields is an error.
@@ -1013,9 +1264,17 @@ async def test_publish_flattened_error_async():
         )
 
 
-def test_get_topic(transport: str = "grpc", request_type=pubsub.GetTopicRequest):
+@pytest.mark.parametrize(
+    "request_type",
+    [
+        pubsub.GetTopicRequest,
+        dict,
+    ],
+)
+def test_get_topic(request_type, transport: str = "grpc"):
     client = PublisherClient(
-        credentials=credentials.AnonymousCredentials(), transport=transport,
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport=transport,
     )
 
     # Everything is optional in proto3 as far as the runtime is concerned,
@@ -1026,37 +1285,30 @@ def test_get_topic(transport: str = "grpc", request_type=pubsub.GetTopicRequest)
     with mock.patch.object(type(client.transport.get_topic), "__call__") as call:
         # Designate an appropriate return value for the call.
         call.return_value = pubsub.Topic(
-            name="name_value", kms_key_name="kms_key_name_value", satisfies_pzs=True,
+            name="name_value",
+            kms_key_name="kms_key_name_value",
+            satisfies_pzs=True,
         )
-
         response = client.get_topic(request)
 
         # Establish that the underlying gRPC stub method was called.
         assert len(call.mock_calls) == 1
         _, args, _ = call.mock_calls[0]
-
         assert args[0] == pubsub.GetTopicRequest()
 
     # Establish that the response is the type that we expect.
-
     assert isinstance(response, pubsub.Topic)
-
     assert response.name == "name_value"
-
     assert response.kms_key_name == "kms_key_name_value"
-
     assert response.satisfies_pzs is True
-
-
-def test_get_topic_from_dict():
-    test_get_topic(request_type=dict)
 
 
 def test_get_topic_empty_call():
     # This test is a coverage failsafe to make sure that totally empty calls,
     # i.e. request == None and no flattened fields passed, work.
     client = PublisherClient(
-        credentials=credentials.AnonymousCredentials(), transport="grpc",
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="grpc",
     )
 
     # Mock the actual call within the gRPC stub, and fake the request.
@@ -1064,7 +1316,6 @@ def test_get_topic_empty_call():
         client.get_topic()
         call.assert_called()
         _, args, _ = call.mock_calls[0]
-
         assert args[0] == pubsub.GetTopicRequest()
 
 
@@ -1073,7 +1324,8 @@ async def test_get_topic_async(
     transport: str = "grpc_asyncio", request_type=pubsub.GetTopicRequest
 ):
     client = PublisherAsyncClient(
-        credentials=credentials.AnonymousCredentials(), transport=transport,
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport=transport,
     )
 
     # Everything is optional in proto3 as far as the runtime is concerned,
@@ -1090,22 +1342,17 @@ async def test_get_topic_async(
                 satisfies_pzs=True,
             )
         )
-
         response = await client.get_topic(request)
 
         # Establish that the underlying gRPC stub method was called.
         assert len(call.mock_calls)
         _, args, _ = call.mock_calls[0]
-
         assert args[0] == pubsub.GetTopicRequest()
 
     # Establish that the response is the type that we expect.
     assert isinstance(response, pubsub.Topic)
-
     assert response.name == "name_value"
-
     assert response.kms_key_name == "kms_key_name_value"
-
     assert response.satisfies_pzs is True
 
 
@@ -1115,17 +1362,19 @@ async def test_get_topic_async_from_dict():
 
 
 def test_get_topic_field_headers():
-    client = PublisherClient(credentials=credentials.AnonymousCredentials(),)
+    client = PublisherClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
 
     # Any value that is part of the HTTP/1.1 URI should be sent as
     # a field header. Set these to a non-empty value.
     request = pubsub.GetTopicRequest()
-    request.topic = "topic/value"
+
+    request.topic = "topic_value"
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(type(client.transport.get_topic), "__call__") as call:
         call.return_value = pubsub.Topic()
-
         client.get_topic(request)
 
         # Establish that the underlying gRPC stub method was called.
@@ -1135,22 +1384,27 @@ def test_get_topic_field_headers():
 
     # Establish that the field header was sent.
     _, _, kw = call.mock_calls[0]
-    assert ("x-goog-request-params", "topic=topic/value",) in kw["metadata"]
+    assert (
+        "x-goog-request-params",
+        "topic=topic_value",
+    ) in kw["metadata"]
 
 
 @pytest.mark.asyncio
 async def test_get_topic_field_headers_async():
-    client = PublisherAsyncClient(credentials=credentials.AnonymousCredentials(),)
+    client = PublisherAsyncClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
 
     # Any value that is part of the HTTP/1.1 URI should be sent as
     # a field header. Set these to a non-empty value.
     request = pubsub.GetTopicRequest()
-    request.topic = "topic/value"
+
+    request.topic = "topic_value"
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(type(client.transport.get_topic), "__call__") as call:
         call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(pubsub.Topic())
-
         await client.get_topic(request)
 
         # Establish that the underlying gRPC stub method was called.
@@ -1160,43 +1414,55 @@ async def test_get_topic_field_headers_async():
 
     # Establish that the field header was sent.
     _, _, kw = call.mock_calls[0]
-    assert ("x-goog-request-params", "topic=topic/value",) in kw["metadata"]
+    assert (
+        "x-goog-request-params",
+        "topic=topic_value",
+    ) in kw["metadata"]
 
 
 def test_get_topic_flattened():
-    client = PublisherClient(credentials=credentials.AnonymousCredentials(),)
+    client = PublisherClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(type(client.transport.get_topic), "__call__") as call:
         # Designate an appropriate return value for the call.
         call.return_value = pubsub.Topic()
-
         # Call the method with a truthy value for each flattened field,
         # using the keyword arguments to the method.
-        client.get_topic(topic="topic_value",)
+        client.get_topic(
+            topic="topic_value",
+        )
 
         # Establish that the underlying call was made with the expected
         # request object values.
         assert len(call.mock_calls) == 1
         _, args, _ = call.mock_calls[0]
-
-        assert args[0].topic == "topic_value"
+        arg = args[0].topic
+        mock_val = "topic_value"
+        assert arg == mock_val
 
 
 def test_get_topic_flattened_error():
-    client = PublisherClient(credentials=credentials.AnonymousCredentials(),)
+    client = PublisherClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
 
     # Attempting to call a method with both a request object and flattened
     # fields is an error.
     with pytest.raises(ValueError):
         client.get_topic(
-            pubsub.GetTopicRequest(), topic="topic_value",
+            pubsub.GetTopicRequest(),
+            topic="topic_value",
         )
 
 
 @pytest.mark.asyncio
 async def test_get_topic_flattened_async():
-    client = PublisherAsyncClient(credentials=credentials.AnonymousCredentials(),)
+    client = PublisherAsyncClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(type(client.transport.get_topic), "__call__") as call:
@@ -1206,31 +1472,45 @@ async def test_get_topic_flattened_async():
         call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(pubsub.Topic())
         # Call the method with a truthy value for each flattened field,
         # using the keyword arguments to the method.
-        response = await client.get_topic(topic="topic_value",)
+        response = await client.get_topic(
+            topic="topic_value",
+        )
 
         # Establish that the underlying call was made with the expected
         # request object values.
         assert len(call.mock_calls)
         _, args, _ = call.mock_calls[0]
-
-        assert args[0].topic == "topic_value"
+        arg = args[0].topic
+        mock_val = "topic_value"
+        assert arg == mock_val
 
 
 @pytest.mark.asyncio
 async def test_get_topic_flattened_error_async():
-    client = PublisherAsyncClient(credentials=credentials.AnonymousCredentials(),)
+    client = PublisherAsyncClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
 
     # Attempting to call a method with both a request object and flattened
     # fields is an error.
     with pytest.raises(ValueError):
         await client.get_topic(
-            pubsub.GetTopicRequest(), topic="topic_value",
+            pubsub.GetTopicRequest(),
+            topic="topic_value",
         )
 
 
-def test_list_topics(transport: str = "grpc", request_type=pubsub.ListTopicsRequest):
+@pytest.mark.parametrize(
+    "request_type",
+    [
+        pubsub.ListTopicsRequest,
+        dict,
+    ],
+)
+def test_list_topics(request_type, transport: str = "grpc"):
     client = PublisherClient(
-        credentials=credentials.AnonymousCredentials(), transport=transport,
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport=transport,
     )
 
     # Everything is optional in proto3 as far as the runtime is concerned,
@@ -1243,31 +1523,24 @@ def test_list_topics(transport: str = "grpc", request_type=pubsub.ListTopicsRequ
         call.return_value = pubsub.ListTopicsResponse(
             next_page_token="next_page_token_value",
         )
-
         response = client.list_topics(request)
 
         # Establish that the underlying gRPC stub method was called.
         assert len(call.mock_calls) == 1
         _, args, _ = call.mock_calls[0]
-
         assert args[0] == pubsub.ListTopicsRequest()
 
     # Establish that the response is the type that we expect.
-
     assert isinstance(response, pagers.ListTopicsPager)
-
     assert response.next_page_token == "next_page_token_value"
-
-
-def test_list_topics_from_dict():
-    test_list_topics(request_type=dict)
 
 
 def test_list_topics_empty_call():
     # This test is a coverage failsafe to make sure that totally empty calls,
     # i.e. request == None and no flattened fields passed, work.
     client = PublisherClient(
-        credentials=credentials.AnonymousCredentials(), transport="grpc",
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="grpc",
     )
 
     # Mock the actual call within the gRPC stub, and fake the request.
@@ -1275,7 +1548,6 @@ def test_list_topics_empty_call():
         client.list_topics()
         call.assert_called()
         _, args, _ = call.mock_calls[0]
-
         assert args[0] == pubsub.ListTopicsRequest()
 
 
@@ -1284,7 +1556,8 @@ async def test_list_topics_async(
     transport: str = "grpc_asyncio", request_type=pubsub.ListTopicsRequest
 ):
     client = PublisherAsyncClient(
-        credentials=credentials.AnonymousCredentials(), transport=transport,
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport=transport,
     )
 
     # Everything is optional in proto3 as far as the runtime is concerned,
@@ -1295,20 +1568,19 @@ async def test_list_topics_async(
     with mock.patch.object(type(client.transport.list_topics), "__call__") as call:
         # Designate an appropriate return value for the call.
         call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(
-            pubsub.ListTopicsResponse(next_page_token="next_page_token_value",)
+            pubsub.ListTopicsResponse(
+                next_page_token="next_page_token_value",
+            )
         )
-
         response = await client.list_topics(request)
 
         # Establish that the underlying gRPC stub method was called.
         assert len(call.mock_calls)
         _, args, _ = call.mock_calls[0]
-
         assert args[0] == pubsub.ListTopicsRequest()
 
     # Establish that the response is the type that we expect.
     assert isinstance(response, pagers.ListTopicsAsyncPager)
-
     assert response.next_page_token == "next_page_token_value"
 
 
@@ -1318,17 +1590,19 @@ async def test_list_topics_async_from_dict():
 
 
 def test_list_topics_field_headers():
-    client = PublisherClient(credentials=credentials.AnonymousCredentials(),)
+    client = PublisherClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
 
     # Any value that is part of the HTTP/1.1 URI should be sent as
     # a field header. Set these to a non-empty value.
     request = pubsub.ListTopicsRequest()
-    request.project = "project/value"
+
+    request.project = "project_value"
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(type(client.transport.list_topics), "__call__") as call:
         call.return_value = pubsub.ListTopicsResponse()
-
         client.list_topics(request)
 
         # Establish that the underlying gRPC stub method was called.
@@ -1338,24 +1612,29 @@ def test_list_topics_field_headers():
 
     # Establish that the field header was sent.
     _, _, kw = call.mock_calls[0]
-    assert ("x-goog-request-params", "project=project/value",) in kw["metadata"]
+    assert (
+        "x-goog-request-params",
+        "project=project_value",
+    ) in kw["metadata"]
 
 
 @pytest.mark.asyncio
 async def test_list_topics_field_headers_async():
-    client = PublisherAsyncClient(credentials=credentials.AnonymousCredentials(),)
+    client = PublisherAsyncClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
 
     # Any value that is part of the HTTP/1.1 URI should be sent as
     # a field header. Set these to a non-empty value.
     request = pubsub.ListTopicsRequest()
-    request.project = "project/value"
+
+    request.project = "project_value"
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(type(client.transport.list_topics), "__call__") as call:
         call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(
             pubsub.ListTopicsResponse()
         )
-
         await client.list_topics(request)
 
         # Establish that the underlying gRPC stub method was called.
@@ -1365,43 +1644,55 @@ async def test_list_topics_field_headers_async():
 
     # Establish that the field header was sent.
     _, _, kw = call.mock_calls[0]
-    assert ("x-goog-request-params", "project=project/value",) in kw["metadata"]
+    assert (
+        "x-goog-request-params",
+        "project=project_value",
+    ) in kw["metadata"]
 
 
 def test_list_topics_flattened():
-    client = PublisherClient(credentials=credentials.AnonymousCredentials(),)
+    client = PublisherClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(type(client.transport.list_topics), "__call__") as call:
         # Designate an appropriate return value for the call.
         call.return_value = pubsub.ListTopicsResponse()
-
         # Call the method with a truthy value for each flattened field,
         # using the keyword arguments to the method.
-        client.list_topics(project="project_value",)
+        client.list_topics(
+            project="project_value",
+        )
 
         # Establish that the underlying call was made with the expected
         # request object values.
         assert len(call.mock_calls) == 1
         _, args, _ = call.mock_calls[0]
-
-        assert args[0].project == "project_value"
+        arg = args[0].project
+        mock_val = "project_value"
+        assert arg == mock_val
 
 
 def test_list_topics_flattened_error():
-    client = PublisherClient(credentials=credentials.AnonymousCredentials(),)
+    client = PublisherClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
 
     # Attempting to call a method with both a request object and flattened
     # fields is an error.
     with pytest.raises(ValueError):
         client.list_topics(
-            pubsub.ListTopicsRequest(), project="project_value",
+            pubsub.ListTopicsRequest(),
+            project="project_value",
         )
 
 
 @pytest.mark.asyncio
 async def test_list_topics_flattened_async():
-    client = PublisherAsyncClient(credentials=credentials.AnonymousCredentials(),)
+    client = PublisherAsyncClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(type(client.transport.list_topics), "__call__") as call:
@@ -1413,42 +1704,68 @@ async def test_list_topics_flattened_async():
         )
         # Call the method with a truthy value for each flattened field,
         # using the keyword arguments to the method.
-        response = await client.list_topics(project="project_value",)
+        response = await client.list_topics(
+            project="project_value",
+        )
 
         # Establish that the underlying call was made with the expected
         # request object values.
         assert len(call.mock_calls)
         _, args, _ = call.mock_calls[0]
-
-        assert args[0].project == "project_value"
+        arg = args[0].project
+        mock_val = "project_value"
+        assert arg == mock_val
 
 
 @pytest.mark.asyncio
 async def test_list_topics_flattened_error_async():
-    client = PublisherAsyncClient(credentials=credentials.AnonymousCredentials(),)
+    client = PublisherAsyncClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
 
     # Attempting to call a method with both a request object and flattened
     # fields is an error.
     with pytest.raises(ValueError):
         await client.list_topics(
-            pubsub.ListTopicsRequest(), project="project_value",
+            pubsub.ListTopicsRequest(),
+            project="project_value",
         )
 
 
-def test_list_topics_pager():
-    client = PublisherClient(credentials=credentials.AnonymousCredentials,)
+def test_list_topics_pager(transport_name: str = "grpc"):
+    client = PublisherClient(
+        credentials=ga_credentials.AnonymousCredentials,
+        transport=transport_name,
+    )
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(type(client.transport.list_topics), "__call__") as call:
         # Set the response to a series of pages.
         call.side_effect = (
             pubsub.ListTopicsResponse(
-                topics=[pubsub.Topic(), pubsub.Topic(), pubsub.Topic(),],
+                topics=[
+                    pubsub.Topic(),
+                    pubsub.Topic(),
+                    pubsub.Topic(),
+                ],
                 next_page_token="abc",
             ),
-            pubsub.ListTopicsResponse(topics=[], next_page_token="def",),
-            pubsub.ListTopicsResponse(topics=[pubsub.Topic(),], next_page_token="ghi",),
-            pubsub.ListTopicsResponse(topics=[pubsub.Topic(), pubsub.Topic(),],),
+            pubsub.ListTopicsResponse(
+                topics=[],
+                next_page_token="def",
+            ),
+            pubsub.ListTopicsResponse(
+                topics=[
+                    pubsub.Topic(),
+                ],
+                next_page_token="ghi",
+            ),
+            pubsub.ListTopicsResponse(
+                topics=[
+                    pubsub.Topic(),
+                    pubsub.Topic(),
+                ],
+            ),
             RuntimeError,
         )
 
@@ -1460,25 +1777,45 @@ def test_list_topics_pager():
 
         assert pager._metadata == metadata
 
-        results = [i for i in pager]
+        results = list(pager)
         assert len(results) == 6
         assert all(isinstance(i, pubsub.Topic) for i in results)
 
 
-def test_list_topics_pages():
-    client = PublisherClient(credentials=credentials.AnonymousCredentials,)
+def test_list_topics_pages(transport_name: str = "grpc"):
+    client = PublisherClient(
+        credentials=ga_credentials.AnonymousCredentials,
+        transport=transport_name,
+    )
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(type(client.transport.list_topics), "__call__") as call:
         # Set the response to a series of pages.
         call.side_effect = (
             pubsub.ListTopicsResponse(
-                topics=[pubsub.Topic(), pubsub.Topic(), pubsub.Topic(),],
+                topics=[
+                    pubsub.Topic(),
+                    pubsub.Topic(),
+                    pubsub.Topic(),
+                ],
                 next_page_token="abc",
             ),
-            pubsub.ListTopicsResponse(topics=[], next_page_token="def",),
-            pubsub.ListTopicsResponse(topics=[pubsub.Topic(),], next_page_token="ghi",),
-            pubsub.ListTopicsResponse(topics=[pubsub.Topic(), pubsub.Topic(),],),
+            pubsub.ListTopicsResponse(
+                topics=[],
+                next_page_token="def",
+            ),
+            pubsub.ListTopicsResponse(
+                topics=[
+                    pubsub.Topic(),
+                ],
+                next_page_token="ghi",
+            ),
+            pubsub.ListTopicsResponse(
+                topics=[
+                    pubsub.Topic(),
+                    pubsub.Topic(),
+                ],
+            ),
             RuntimeError,
         )
         pages = list(client.list_topics(request={}).pages)
@@ -1488,7 +1825,9 @@ def test_list_topics_pages():
 
 @pytest.mark.asyncio
 async def test_list_topics_async_pager():
-    client = PublisherAsyncClient(credentials=credentials.AnonymousCredentials,)
+    client = PublisherAsyncClient(
+        credentials=ga_credentials.AnonymousCredentials,
+    )
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(
@@ -1497,18 +1836,37 @@ async def test_list_topics_async_pager():
         # Set the response to a series of pages.
         call.side_effect = (
             pubsub.ListTopicsResponse(
-                topics=[pubsub.Topic(), pubsub.Topic(), pubsub.Topic(),],
+                topics=[
+                    pubsub.Topic(),
+                    pubsub.Topic(),
+                    pubsub.Topic(),
+                ],
                 next_page_token="abc",
             ),
-            pubsub.ListTopicsResponse(topics=[], next_page_token="def",),
-            pubsub.ListTopicsResponse(topics=[pubsub.Topic(),], next_page_token="ghi",),
-            pubsub.ListTopicsResponse(topics=[pubsub.Topic(), pubsub.Topic(),],),
+            pubsub.ListTopicsResponse(
+                topics=[],
+                next_page_token="def",
+            ),
+            pubsub.ListTopicsResponse(
+                topics=[
+                    pubsub.Topic(),
+                ],
+                next_page_token="ghi",
+            ),
+            pubsub.ListTopicsResponse(
+                topics=[
+                    pubsub.Topic(),
+                    pubsub.Topic(),
+                ],
+            ),
             RuntimeError,
         )
-        async_pager = await client.list_topics(request={},)
+        async_pager = await client.list_topics(
+            request={},
+        )
         assert async_pager.next_page_token == "abc"
         responses = []
-        async for response in async_pager:
+        async for response in async_pager:  # pragma: no branch
             responses.append(response)
 
         assert len(responses) == 6
@@ -1517,7 +1875,9 @@ async def test_list_topics_async_pager():
 
 @pytest.mark.asyncio
 async def test_list_topics_async_pages():
-    client = PublisherAsyncClient(credentials=credentials.AnonymousCredentials,)
+    client = PublisherAsyncClient(
+        credentials=ga_credentials.AnonymousCredentials,
+    )
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(
@@ -1526,26 +1886,51 @@ async def test_list_topics_async_pages():
         # Set the response to a series of pages.
         call.side_effect = (
             pubsub.ListTopicsResponse(
-                topics=[pubsub.Topic(), pubsub.Topic(), pubsub.Topic(),],
+                topics=[
+                    pubsub.Topic(),
+                    pubsub.Topic(),
+                    pubsub.Topic(),
+                ],
                 next_page_token="abc",
             ),
-            pubsub.ListTopicsResponse(topics=[], next_page_token="def",),
-            pubsub.ListTopicsResponse(topics=[pubsub.Topic(),], next_page_token="ghi",),
-            pubsub.ListTopicsResponse(topics=[pubsub.Topic(), pubsub.Topic(),],),
+            pubsub.ListTopicsResponse(
+                topics=[],
+                next_page_token="def",
+            ),
+            pubsub.ListTopicsResponse(
+                topics=[
+                    pubsub.Topic(),
+                ],
+                next_page_token="ghi",
+            ),
+            pubsub.ListTopicsResponse(
+                topics=[
+                    pubsub.Topic(),
+                    pubsub.Topic(),
+                ],
+            ),
             RuntimeError,
         )
         pages = []
-        async for page_ in (await client.list_topics(request={})).pages:
+        async for page_ in (
+            await client.list_topics(request={})
+        ).pages:  # pragma: no branch
             pages.append(page_)
         for page_, token in zip(pages, ["abc", "def", "ghi", ""]):
             assert page_.raw_page.next_page_token == token
 
 
-def test_list_topic_subscriptions(
-    transport: str = "grpc", request_type=pubsub.ListTopicSubscriptionsRequest
-):
+@pytest.mark.parametrize(
+    "request_type",
+    [
+        pubsub.ListTopicSubscriptionsRequest,
+        dict,
+    ],
+)
+def test_list_topic_subscriptions(request_type, transport: str = "grpc"):
     client = PublisherClient(
-        credentials=credentials.AnonymousCredentials(), transport=transport,
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport=transport,
     )
 
     # Everything is optional in proto3 as far as the runtime is concerned,
@@ -1561,33 +1946,25 @@ def test_list_topic_subscriptions(
             subscriptions=["subscriptions_value"],
             next_page_token="next_page_token_value",
         )
-
         response = client.list_topic_subscriptions(request)
 
         # Establish that the underlying gRPC stub method was called.
         assert len(call.mock_calls) == 1
         _, args, _ = call.mock_calls[0]
-
         assert args[0] == pubsub.ListTopicSubscriptionsRequest()
 
     # Establish that the response is the type that we expect.
-
     assert isinstance(response, pagers.ListTopicSubscriptionsPager)
-
     assert response.subscriptions == ["subscriptions_value"]
-
     assert response.next_page_token == "next_page_token_value"
-
-
-def test_list_topic_subscriptions_from_dict():
-    test_list_topic_subscriptions(request_type=dict)
 
 
 def test_list_topic_subscriptions_empty_call():
     # This test is a coverage failsafe to make sure that totally empty calls,
     # i.e. request == None and no flattened fields passed, work.
     client = PublisherClient(
-        credentials=credentials.AnonymousCredentials(), transport="grpc",
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="grpc",
     )
 
     # Mock the actual call within the gRPC stub, and fake the request.
@@ -1597,7 +1974,6 @@ def test_list_topic_subscriptions_empty_call():
         client.list_topic_subscriptions()
         call.assert_called()
         _, args, _ = call.mock_calls[0]
-
         assert args[0] == pubsub.ListTopicSubscriptionsRequest()
 
 
@@ -1606,7 +1982,8 @@ async def test_list_topic_subscriptions_async(
     transport: str = "grpc_asyncio", request_type=pubsub.ListTopicSubscriptionsRequest
 ):
     client = PublisherAsyncClient(
-        credentials=credentials.AnonymousCredentials(), transport=transport,
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport=transport,
     )
 
     # Everything is optional in proto3 as far as the runtime is concerned,
@@ -1624,20 +2001,16 @@ async def test_list_topic_subscriptions_async(
                 next_page_token="next_page_token_value",
             )
         )
-
         response = await client.list_topic_subscriptions(request)
 
         # Establish that the underlying gRPC stub method was called.
         assert len(call.mock_calls)
         _, args, _ = call.mock_calls[0]
-
         assert args[0] == pubsub.ListTopicSubscriptionsRequest()
 
     # Establish that the response is the type that we expect.
     assert isinstance(response, pagers.ListTopicSubscriptionsAsyncPager)
-
     assert response.subscriptions == ["subscriptions_value"]
-
     assert response.next_page_token == "next_page_token_value"
 
 
@@ -1647,19 +2020,21 @@ async def test_list_topic_subscriptions_async_from_dict():
 
 
 def test_list_topic_subscriptions_field_headers():
-    client = PublisherClient(credentials=credentials.AnonymousCredentials(),)
+    client = PublisherClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
 
     # Any value that is part of the HTTP/1.1 URI should be sent as
     # a field header. Set these to a non-empty value.
     request = pubsub.ListTopicSubscriptionsRequest()
-    request.topic = "topic/value"
+
+    request.topic = "topic_value"
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(
         type(client.transport.list_topic_subscriptions), "__call__"
     ) as call:
         call.return_value = pubsub.ListTopicSubscriptionsResponse()
-
         client.list_topic_subscriptions(request)
 
         # Establish that the underlying gRPC stub method was called.
@@ -1669,17 +2044,23 @@ def test_list_topic_subscriptions_field_headers():
 
     # Establish that the field header was sent.
     _, _, kw = call.mock_calls[0]
-    assert ("x-goog-request-params", "topic=topic/value",) in kw["metadata"]
+    assert (
+        "x-goog-request-params",
+        "topic=topic_value",
+    ) in kw["metadata"]
 
 
 @pytest.mark.asyncio
 async def test_list_topic_subscriptions_field_headers_async():
-    client = PublisherAsyncClient(credentials=credentials.AnonymousCredentials(),)
+    client = PublisherAsyncClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
 
     # Any value that is part of the HTTP/1.1 URI should be sent as
     # a field header. Set these to a non-empty value.
     request = pubsub.ListTopicSubscriptionsRequest()
-    request.topic = "topic/value"
+
+    request.topic = "topic_value"
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(
@@ -1688,7 +2069,6 @@ async def test_list_topic_subscriptions_field_headers_async():
         call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(
             pubsub.ListTopicSubscriptionsResponse()
         )
-
         await client.list_topic_subscriptions(request)
 
         # Establish that the underlying gRPC stub method was called.
@@ -1698,11 +2078,16 @@ async def test_list_topic_subscriptions_field_headers_async():
 
     # Establish that the field header was sent.
     _, _, kw = call.mock_calls[0]
-    assert ("x-goog-request-params", "topic=topic/value",) in kw["metadata"]
+    assert (
+        "x-goog-request-params",
+        "topic=topic_value",
+    ) in kw["metadata"]
 
 
 def test_list_topic_subscriptions_flattened():
-    client = PublisherClient(credentials=credentials.AnonymousCredentials(),)
+    client = PublisherClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(
@@ -1710,33 +2095,40 @@ def test_list_topic_subscriptions_flattened():
     ) as call:
         # Designate an appropriate return value for the call.
         call.return_value = pubsub.ListTopicSubscriptionsResponse()
-
         # Call the method with a truthy value for each flattened field,
         # using the keyword arguments to the method.
-        client.list_topic_subscriptions(topic="topic_value",)
+        client.list_topic_subscriptions(
+            topic="topic_value",
+        )
 
         # Establish that the underlying call was made with the expected
         # request object values.
         assert len(call.mock_calls) == 1
         _, args, _ = call.mock_calls[0]
-
-        assert args[0].topic == "topic_value"
+        arg = args[0].topic
+        mock_val = "topic_value"
+        assert arg == mock_val
 
 
 def test_list_topic_subscriptions_flattened_error():
-    client = PublisherClient(credentials=credentials.AnonymousCredentials(),)
+    client = PublisherClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
 
     # Attempting to call a method with both a request object and flattened
     # fields is an error.
     with pytest.raises(ValueError):
         client.list_topic_subscriptions(
-            pubsub.ListTopicSubscriptionsRequest(), topic="topic_value",
+            pubsub.ListTopicSubscriptionsRequest(),
+            topic="topic_value",
         )
 
 
 @pytest.mark.asyncio
 async def test_list_topic_subscriptions_flattened_async():
-    client = PublisherAsyncClient(credentials=credentials.AnonymousCredentials(),)
+    client = PublisherAsyncClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(
@@ -1750,30 +2142,39 @@ async def test_list_topic_subscriptions_flattened_async():
         )
         # Call the method with a truthy value for each flattened field,
         # using the keyword arguments to the method.
-        response = await client.list_topic_subscriptions(topic="topic_value",)
+        response = await client.list_topic_subscriptions(
+            topic="topic_value",
+        )
 
         # Establish that the underlying call was made with the expected
         # request object values.
         assert len(call.mock_calls)
         _, args, _ = call.mock_calls[0]
-
-        assert args[0].topic == "topic_value"
+        arg = args[0].topic
+        mock_val = "topic_value"
+        assert arg == mock_val
 
 
 @pytest.mark.asyncio
 async def test_list_topic_subscriptions_flattened_error_async():
-    client = PublisherAsyncClient(credentials=credentials.AnonymousCredentials(),)
+    client = PublisherAsyncClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
 
     # Attempting to call a method with both a request object and flattened
     # fields is an error.
     with pytest.raises(ValueError):
         await client.list_topic_subscriptions(
-            pubsub.ListTopicSubscriptionsRequest(), topic="topic_value",
+            pubsub.ListTopicSubscriptionsRequest(),
+            topic="topic_value",
         )
 
 
-def test_list_topic_subscriptions_pager():
-    client = PublisherClient(credentials=credentials.AnonymousCredentials,)
+def test_list_topic_subscriptions_pager(transport_name: str = "grpc"):
+    client = PublisherClient(
+        credentials=ga_credentials.AnonymousCredentials,
+        transport=transport_name,
+    )
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(
@@ -1782,15 +2183,29 @@ def test_list_topic_subscriptions_pager():
         # Set the response to a series of pages.
         call.side_effect = (
             pubsub.ListTopicSubscriptionsResponse(
-                subscriptions=[str(), str(), str(),], next_page_token="abc",
+                subscriptions=[
+                    str(),
+                    str(),
+                    str(),
+                ],
+                next_page_token="abc",
             ),
             pubsub.ListTopicSubscriptionsResponse(
-                subscriptions=[], next_page_token="def",
+                subscriptions=[],
+                next_page_token="def",
             ),
             pubsub.ListTopicSubscriptionsResponse(
-                subscriptions=[str(),], next_page_token="ghi",
+                subscriptions=[
+                    str(),
+                ],
+                next_page_token="ghi",
             ),
-            pubsub.ListTopicSubscriptionsResponse(subscriptions=[str(), str(),],),
+            pubsub.ListTopicSubscriptionsResponse(
+                subscriptions=[
+                    str(),
+                    str(),
+                ],
+            ),
             RuntimeError,
         )
 
@@ -1802,13 +2217,16 @@ def test_list_topic_subscriptions_pager():
 
         assert pager._metadata == metadata
 
-        results = [i for i in pager]
+        results = list(pager)
         assert len(results) == 6
         assert all(isinstance(i, str) for i in results)
 
 
-def test_list_topic_subscriptions_pages():
-    client = PublisherClient(credentials=credentials.AnonymousCredentials,)
+def test_list_topic_subscriptions_pages(transport_name: str = "grpc"):
+    client = PublisherClient(
+        credentials=ga_credentials.AnonymousCredentials,
+        transport=transport_name,
+    )
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(
@@ -1817,15 +2235,29 @@ def test_list_topic_subscriptions_pages():
         # Set the response to a series of pages.
         call.side_effect = (
             pubsub.ListTopicSubscriptionsResponse(
-                subscriptions=[str(), str(), str(),], next_page_token="abc",
+                subscriptions=[
+                    str(),
+                    str(),
+                    str(),
+                ],
+                next_page_token="abc",
             ),
             pubsub.ListTopicSubscriptionsResponse(
-                subscriptions=[], next_page_token="def",
+                subscriptions=[],
+                next_page_token="def",
             ),
             pubsub.ListTopicSubscriptionsResponse(
-                subscriptions=[str(),], next_page_token="ghi",
+                subscriptions=[
+                    str(),
+                ],
+                next_page_token="ghi",
             ),
-            pubsub.ListTopicSubscriptionsResponse(subscriptions=[str(), str(),],),
+            pubsub.ListTopicSubscriptionsResponse(
+                subscriptions=[
+                    str(),
+                    str(),
+                ],
+            ),
             RuntimeError,
         )
         pages = list(client.list_topic_subscriptions(request={}).pages)
@@ -1835,7 +2267,9 @@ def test_list_topic_subscriptions_pages():
 
 @pytest.mark.asyncio
 async def test_list_topic_subscriptions_async_pager():
-    client = PublisherAsyncClient(credentials=credentials.AnonymousCredentials,)
+    client = PublisherAsyncClient(
+        credentials=ga_credentials.AnonymousCredentials,
+    )
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(
@@ -1846,21 +2280,37 @@ async def test_list_topic_subscriptions_async_pager():
         # Set the response to a series of pages.
         call.side_effect = (
             pubsub.ListTopicSubscriptionsResponse(
-                subscriptions=[str(), str(), str(),], next_page_token="abc",
+                subscriptions=[
+                    str(),
+                    str(),
+                    str(),
+                ],
+                next_page_token="abc",
             ),
             pubsub.ListTopicSubscriptionsResponse(
-                subscriptions=[], next_page_token="def",
+                subscriptions=[],
+                next_page_token="def",
             ),
             pubsub.ListTopicSubscriptionsResponse(
-                subscriptions=[str(),], next_page_token="ghi",
+                subscriptions=[
+                    str(),
+                ],
+                next_page_token="ghi",
             ),
-            pubsub.ListTopicSubscriptionsResponse(subscriptions=[str(), str(),],),
+            pubsub.ListTopicSubscriptionsResponse(
+                subscriptions=[
+                    str(),
+                    str(),
+                ],
+            ),
             RuntimeError,
         )
-        async_pager = await client.list_topic_subscriptions(request={},)
+        async_pager = await client.list_topic_subscriptions(
+            request={},
+        )
         assert async_pager.next_page_token == "abc"
         responses = []
-        async for response in async_pager:
+        async for response in async_pager:  # pragma: no branch
             responses.append(response)
 
         assert len(responses) == 6
@@ -1869,7 +2319,9 @@ async def test_list_topic_subscriptions_async_pager():
 
 @pytest.mark.asyncio
 async def test_list_topic_subscriptions_async_pages():
-    client = PublisherAsyncClient(credentials=credentials.AnonymousCredentials,)
+    client = PublisherAsyncClient(
+        credentials=ga_credentials.AnonymousCredentials,
+    )
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(
@@ -1880,29 +2332,51 @@ async def test_list_topic_subscriptions_async_pages():
         # Set the response to a series of pages.
         call.side_effect = (
             pubsub.ListTopicSubscriptionsResponse(
-                subscriptions=[str(), str(), str(),], next_page_token="abc",
+                subscriptions=[
+                    str(),
+                    str(),
+                    str(),
+                ],
+                next_page_token="abc",
             ),
             pubsub.ListTopicSubscriptionsResponse(
-                subscriptions=[], next_page_token="def",
+                subscriptions=[],
+                next_page_token="def",
             ),
             pubsub.ListTopicSubscriptionsResponse(
-                subscriptions=[str(),], next_page_token="ghi",
+                subscriptions=[
+                    str(),
+                ],
+                next_page_token="ghi",
             ),
-            pubsub.ListTopicSubscriptionsResponse(subscriptions=[str(), str(),],),
+            pubsub.ListTopicSubscriptionsResponse(
+                subscriptions=[
+                    str(),
+                    str(),
+                ],
+            ),
             RuntimeError,
         )
         pages = []
-        async for page_ in (await client.list_topic_subscriptions(request={})).pages:
+        async for page_ in (
+            await client.list_topic_subscriptions(request={})
+        ).pages:  # pragma: no branch
             pages.append(page_)
         for page_, token in zip(pages, ["abc", "def", "ghi", ""]):
             assert page_.raw_page.next_page_token == token
 
 
-def test_list_topic_snapshots(
-    transport: str = "grpc", request_type=pubsub.ListTopicSnapshotsRequest
-):
+@pytest.mark.parametrize(
+    "request_type",
+    [
+        pubsub.ListTopicSnapshotsRequest,
+        dict,
+    ],
+)
+def test_list_topic_snapshots(request_type, transport: str = "grpc"):
     client = PublisherClient(
-        credentials=credentials.AnonymousCredentials(), transport=transport,
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport=transport,
     )
 
     # Everything is optional in proto3 as far as the runtime is concerned,
@@ -1915,35 +2389,28 @@ def test_list_topic_snapshots(
     ) as call:
         # Designate an appropriate return value for the call.
         call.return_value = pubsub.ListTopicSnapshotsResponse(
-            snapshots=["snapshots_value"], next_page_token="next_page_token_value",
+            snapshots=["snapshots_value"],
+            next_page_token="next_page_token_value",
         )
-
         response = client.list_topic_snapshots(request)
 
         # Establish that the underlying gRPC stub method was called.
         assert len(call.mock_calls) == 1
         _, args, _ = call.mock_calls[0]
-
         assert args[0] == pubsub.ListTopicSnapshotsRequest()
 
     # Establish that the response is the type that we expect.
-
     assert isinstance(response, pagers.ListTopicSnapshotsPager)
-
     assert response.snapshots == ["snapshots_value"]
-
     assert response.next_page_token == "next_page_token_value"
-
-
-def test_list_topic_snapshots_from_dict():
-    test_list_topic_snapshots(request_type=dict)
 
 
 def test_list_topic_snapshots_empty_call():
     # This test is a coverage failsafe to make sure that totally empty calls,
     # i.e. request == None and no flattened fields passed, work.
     client = PublisherClient(
-        credentials=credentials.AnonymousCredentials(), transport="grpc",
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="grpc",
     )
 
     # Mock the actual call within the gRPC stub, and fake the request.
@@ -1953,7 +2420,6 @@ def test_list_topic_snapshots_empty_call():
         client.list_topic_snapshots()
         call.assert_called()
         _, args, _ = call.mock_calls[0]
-
         assert args[0] == pubsub.ListTopicSnapshotsRequest()
 
 
@@ -1962,7 +2428,8 @@ async def test_list_topic_snapshots_async(
     transport: str = "grpc_asyncio", request_type=pubsub.ListTopicSnapshotsRequest
 ):
     client = PublisherAsyncClient(
-        credentials=credentials.AnonymousCredentials(), transport=transport,
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport=transport,
     )
 
     # Everything is optional in proto3 as far as the runtime is concerned,
@@ -1976,23 +2443,20 @@ async def test_list_topic_snapshots_async(
         # Designate an appropriate return value for the call.
         call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(
             pubsub.ListTopicSnapshotsResponse(
-                snapshots=["snapshots_value"], next_page_token="next_page_token_value",
+                snapshots=["snapshots_value"],
+                next_page_token="next_page_token_value",
             )
         )
-
         response = await client.list_topic_snapshots(request)
 
         # Establish that the underlying gRPC stub method was called.
         assert len(call.mock_calls)
         _, args, _ = call.mock_calls[0]
-
         assert args[0] == pubsub.ListTopicSnapshotsRequest()
 
     # Establish that the response is the type that we expect.
     assert isinstance(response, pagers.ListTopicSnapshotsAsyncPager)
-
     assert response.snapshots == ["snapshots_value"]
-
     assert response.next_page_token == "next_page_token_value"
 
 
@@ -2002,19 +2466,21 @@ async def test_list_topic_snapshots_async_from_dict():
 
 
 def test_list_topic_snapshots_field_headers():
-    client = PublisherClient(credentials=credentials.AnonymousCredentials(),)
+    client = PublisherClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
 
     # Any value that is part of the HTTP/1.1 URI should be sent as
     # a field header. Set these to a non-empty value.
     request = pubsub.ListTopicSnapshotsRequest()
-    request.topic = "topic/value"
+
+    request.topic = "topic_value"
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(
         type(client.transport.list_topic_snapshots), "__call__"
     ) as call:
         call.return_value = pubsub.ListTopicSnapshotsResponse()
-
         client.list_topic_snapshots(request)
 
         # Establish that the underlying gRPC stub method was called.
@@ -2024,17 +2490,23 @@ def test_list_topic_snapshots_field_headers():
 
     # Establish that the field header was sent.
     _, _, kw = call.mock_calls[0]
-    assert ("x-goog-request-params", "topic=topic/value",) in kw["metadata"]
+    assert (
+        "x-goog-request-params",
+        "topic=topic_value",
+    ) in kw["metadata"]
 
 
 @pytest.mark.asyncio
 async def test_list_topic_snapshots_field_headers_async():
-    client = PublisherAsyncClient(credentials=credentials.AnonymousCredentials(),)
+    client = PublisherAsyncClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
 
     # Any value that is part of the HTTP/1.1 URI should be sent as
     # a field header. Set these to a non-empty value.
     request = pubsub.ListTopicSnapshotsRequest()
-    request.topic = "topic/value"
+
+    request.topic = "topic_value"
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(
@@ -2043,7 +2515,6 @@ async def test_list_topic_snapshots_field_headers_async():
         call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(
             pubsub.ListTopicSnapshotsResponse()
         )
-
         await client.list_topic_snapshots(request)
 
         # Establish that the underlying gRPC stub method was called.
@@ -2053,11 +2524,16 @@ async def test_list_topic_snapshots_field_headers_async():
 
     # Establish that the field header was sent.
     _, _, kw = call.mock_calls[0]
-    assert ("x-goog-request-params", "topic=topic/value",) in kw["metadata"]
+    assert (
+        "x-goog-request-params",
+        "topic=topic_value",
+    ) in kw["metadata"]
 
 
 def test_list_topic_snapshots_flattened():
-    client = PublisherClient(credentials=credentials.AnonymousCredentials(),)
+    client = PublisherClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(
@@ -2065,33 +2541,40 @@ def test_list_topic_snapshots_flattened():
     ) as call:
         # Designate an appropriate return value for the call.
         call.return_value = pubsub.ListTopicSnapshotsResponse()
-
         # Call the method with a truthy value for each flattened field,
         # using the keyword arguments to the method.
-        client.list_topic_snapshots(topic="topic_value",)
+        client.list_topic_snapshots(
+            topic="topic_value",
+        )
 
         # Establish that the underlying call was made with the expected
         # request object values.
         assert len(call.mock_calls) == 1
         _, args, _ = call.mock_calls[0]
-
-        assert args[0].topic == "topic_value"
+        arg = args[0].topic
+        mock_val = "topic_value"
+        assert arg == mock_val
 
 
 def test_list_topic_snapshots_flattened_error():
-    client = PublisherClient(credentials=credentials.AnonymousCredentials(),)
+    client = PublisherClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
 
     # Attempting to call a method with both a request object and flattened
     # fields is an error.
     with pytest.raises(ValueError):
         client.list_topic_snapshots(
-            pubsub.ListTopicSnapshotsRequest(), topic="topic_value",
+            pubsub.ListTopicSnapshotsRequest(),
+            topic="topic_value",
         )
 
 
 @pytest.mark.asyncio
 async def test_list_topic_snapshots_flattened_async():
-    client = PublisherAsyncClient(credentials=credentials.AnonymousCredentials(),)
+    client = PublisherAsyncClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(
@@ -2105,30 +2588,39 @@ async def test_list_topic_snapshots_flattened_async():
         )
         # Call the method with a truthy value for each flattened field,
         # using the keyword arguments to the method.
-        response = await client.list_topic_snapshots(topic="topic_value",)
+        response = await client.list_topic_snapshots(
+            topic="topic_value",
+        )
 
         # Establish that the underlying call was made with the expected
         # request object values.
         assert len(call.mock_calls)
         _, args, _ = call.mock_calls[0]
-
-        assert args[0].topic == "topic_value"
+        arg = args[0].topic
+        mock_val = "topic_value"
+        assert arg == mock_val
 
 
 @pytest.mark.asyncio
 async def test_list_topic_snapshots_flattened_error_async():
-    client = PublisherAsyncClient(credentials=credentials.AnonymousCredentials(),)
+    client = PublisherAsyncClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
 
     # Attempting to call a method with both a request object and flattened
     # fields is an error.
     with pytest.raises(ValueError):
         await client.list_topic_snapshots(
-            pubsub.ListTopicSnapshotsRequest(), topic="topic_value",
+            pubsub.ListTopicSnapshotsRequest(),
+            topic="topic_value",
         )
 
 
-def test_list_topic_snapshots_pager():
-    client = PublisherClient(credentials=credentials.AnonymousCredentials,)
+def test_list_topic_snapshots_pager(transport_name: str = "grpc"):
+    client = PublisherClient(
+        credentials=ga_credentials.AnonymousCredentials,
+        transport=transport_name,
+    )
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(
@@ -2137,13 +2629,29 @@ def test_list_topic_snapshots_pager():
         # Set the response to a series of pages.
         call.side_effect = (
             pubsub.ListTopicSnapshotsResponse(
-                snapshots=[str(), str(), str(),], next_page_token="abc",
+                snapshots=[
+                    str(),
+                    str(),
+                    str(),
+                ],
+                next_page_token="abc",
             ),
-            pubsub.ListTopicSnapshotsResponse(snapshots=[], next_page_token="def",),
             pubsub.ListTopicSnapshotsResponse(
-                snapshots=[str(),], next_page_token="ghi",
+                snapshots=[],
+                next_page_token="def",
             ),
-            pubsub.ListTopicSnapshotsResponse(snapshots=[str(), str(),],),
+            pubsub.ListTopicSnapshotsResponse(
+                snapshots=[
+                    str(),
+                ],
+                next_page_token="ghi",
+            ),
+            pubsub.ListTopicSnapshotsResponse(
+                snapshots=[
+                    str(),
+                    str(),
+                ],
+            ),
             RuntimeError,
         )
 
@@ -2155,13 +2663,16 @@ def test_list_topic_snapshots_pager():
 
         assert pager._metadata == metadata
 
-        results = [i for i in pager]
+        results = list(pager)
         assert len(results) == 6
         assert all(isinstance(i, str) for i in results)
 
 
-def test_list_topic_snapshots_pages():
-    client = PublisherClient(credentials=credentials.AnonymousCredentials,)
+def test_list_topic_snapshots_pages(transport_name: str = "grpc"):
+    client = PublisherClient(
+        credentials=ga_credentials.AnonymousCredentials,
+        transport=transport_name,
+    )
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(
@@ -2170,13 +2681,29 @@ def test_list_topic_snapshots_pages():
         # Set the response to a series of pages.
         call.side_effect = (
             pubsub.ListTopicSnapshotsResponse(
-                snapshots=[str(), str(), str(),], next_page_token="abc",
+                snapshots=[
+                    str(),
+                    str(),
+                    str(),
+                ],
+                next_page_token="abc",
             ),
-            pubsub.ListTopicSnapshotsResponse(snapshots=[], next_page_token="def",),
             pubsub.ListTopicSnapshotsResponse(
-                snapshots=[str(),], next_page_token="ghi",
+                snapshots=[],
+                next_page_token="def",
             ),
-            pubsub.ListTopicSnapshotsResponse(snapshots=[str(), str(),],),
+            pubsub.ListTopicSnapshotsResponse(
+                snapshots=[
+                    str(),
+                ],
+                next_page_token="ghi",
+            ),
+            pubsub.ListTopicSnapshotsResponse(
+                snapshots=[
+                    str(),
+                    str(),
+                ],
+            ),
             RuntimeError,
         )
         pages = list(client.list_topic_snapshots(request={}).pages)
@@ -2186,7 +2713,9 @@ def test_list_topic_snapshots_pages():
 
 @pytest.mark.asyncio
 async def test_list_topic_snapshots_async_pager():
-    client = PublisherAsyncClient(credentials=credentials.AnonymousCredentials,)
+    client = PublisherAsyncClient(
+        credentials=ga_credentials.AnonymousCredentials,
+    )
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(
@@ -2197,19 +2726,37 @@ async def test_list_topic_snapshots_async_pager():
         # Set the response to a series of pages.
         call.side_effect = (
             pubsub.ListTopicSnapshotsResponse(
-                snapshots=[str(), str(), str(),], next_page_token="abc",
+                snapshots=[
+                    str(),
+                    str(),
+                    str(),
+                ],
+                next_page_token="abc",
             ),
-            pubsub.ListTopicSnapshotsResponse(snapshots=[], next_page_token="def",),
             pubsub.ListTopicSnapshotsResponse(
-                snapshots=[str(),], next_page_token="ghi",
+                snapshots=[],
+                next_page_token="def",
             ),
-            pubsub.ListTopicSnapshotsResponse(snapshots=[str(), str(),],),
+            pubsub.ListTopicSnapshotsResponse(
+                snapshots=[
+                    str(),
+                ],
+                next_page_token="ghi",
+            ),
+            pubsub.ListTopicSnapshotsResponse(
+                snapshots=[
+                    str(),
+                    str(),
+                ],
+            ),
             RuntimeError,
         )
-        async_pager = await client.list_topic_snapshots(request={},)
+        async_pager = await client.list_topic_snapshots(
+            request={},
+        )
         assert async_pager.next_page_token == "abc"
         responses = []
-        async for response in async_pager:
+        async for response in async_pager:  # pragma: no branch
             responses.append(response)
 
         assert len(responses) == 6
@@ -2218,7 +2765,9 @@ async def test_list_topic_snapshots_async_pager():
 
 @pytest.mark.asyncio
 async def test_list_topic_snapshots_async_pages():
-    client = PublisherAsyncClient(credentials=credentials.AnonymousCredentials,)
+    client = PublisherAsyncClient(
+        credentials=ga_credentials.AnonymousCredentials,
+    )
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(
@@ -2229,25 +2778,51 @@ async def test_list_topic_snapshots_async_pages():
         # Set the response to a series of pages.
         call.side_effect = (
             pubsub.ListTopicSnapshotsResponse(
-                snapshots=[str(), str(), str(),], next_page_token="abc",
+                snapshots=[
+                    str(),
+                    str(),
+                    str(),
+                ],
+                next_page_token="abc",
             ),
-            pubsub.ListTopicSnapshotsResponse(snapshots=[], next_page_token="def",),
             pubsub.ListTopicSnapshotsResponse(
-                snapshots=[str(),], next_page_token="ghi",
+                snapshots=[],
+                next_page_token="def",
             ),
-            pubsub.ListTopicSnapshotsResponse(snapshots=[str(), str(),],),
+            pubsub.ListTopicSnapshotsResponse(
+                snapshots=[
+                    str(),
+                ],
+                next_page_token="ghi",
+            ),
+            pubsub.ListTopicSnapshotsResponse(
+                snapshots=[
+                    str(),
+                    str(),
+                ],
+            ),
             RuntimeError,
         )
         pages = []
-        async for page_ in (await client.list_topic_snapshots(request={})).pages:
+        async for page_ in (
+            await client.list_topic_snapshots(request={})
+        ).pages:  # pragma: no branch
             pages.append(page_)
         for page_, token in zip(pages, ["abc", "def", "ghi", ""]):
             assert page_.raw_page.next_page_token == token
 
 
-def test_delete_topic(transport: str = "grpc", request_type=pubsub.DeleteTopicRequest):
+@pytest.mark.parametrize(
+    "request_type",
+    [
+        pubsub.DeleteTopicRequest,
+        dict,
+    ],
+)
+def test_delete_topic(request_type, transport: str = "grpc"):
     client = PublisherClient(
-        credentials=credentials.AnonymousCredentials(), transport=transport,
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport=transport,
     )
 
     # Everything is optional in proto3 as far as the runtime is concerned,
@@ -2258,28 +2833,23 @@ def test_delete_topic(transport: str = "grpc", request_type=pubsub.DeleteTopicRe
     with mock.patch.object(type(client.transport.delete_topic), "__call__") as call:
         # Designate an appropriate return value for the call.
         call.return_value = None
-
         response = client.delete_topic(request)
 
         # Establish that the underlying gRPC stub method was called.
         assert len(call.mock_calls) == 1
         _, args, _ = call.mock_calls[0]
-
         assert args[0] == pubsub.DeleteTopicRequest()
 
     # Establish that the response is the type that we expect.
     assert response is None
 
 
-def test_delete_topic_from_dict():
-    test_delete_topic(request_type=dict)
-
-
 def test_delete_topic_empty_call():
     # This test is a coverage failsafe to make sure that totally empty calls,
     # i.e. request == None and no flattened fields passed, work.
     client = PublisherClient(
-        credentials=credentials.AnonymousCredentials(), transport="grpc",
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="grpc",
     )
 
     # Mock the actual call within the gRPC stub, and fake the request.
@@ -2287,7 +2857,6 @@ def test_delete_topic_empty_call():
         client.delete_topic()
         call.assert_called()
         _, args, _ = call.mock_calls[0]
-
         assert args[0] == pubsub.DeleteTopicRequest()
 
 
@@ -2296,7 +2865,8 @@ async def test_delete_topic_async(
     transport: str = "grpc_asyncio", request_type=pubsub.DeleteTopicRequest
 ):
     client = PublisherAsyncClient(
-        credentials=credentials.AnonymousCredentials(), transport=transport,
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport=transport,
     )
 
     # Everything is optional in proto3 as far as the runtime is concerned,
@@ -2307,13 +2877,11 @@ async def test_delete_topic_async(
     with mock.patch.object(type(client.transport.delete_topic), "__call__") as call:
         # Designate an appropriate return value for the call.
         call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(None)
-
         response = await client.delete_topic(request)
 
         # Establish that the underlying gRPC stub method was called.
         assert len(call.mock_calls)
         _, args, _ = call.mock_calls[0]
-
         assert args[0] == pubsub.DeleteTopicRequest()
 
     # Establish that the response is the type that we expect.
@@ -2326,17 +2894,19 @@ async def test_delete_topic_async_from_dict():
 
 
 def test_delete_topic_field_headers():
-    client = PublisherClient(credentials=credentials.AnonymousCredentials(),)
+    client = PublisherClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
 
     # Any value that is part of the HTTP/1.1 URI should be sent as
     # a field header. Set these to a non-empty value.
     request = pubsub.DeleteTopicRequest()
-    request.topic = "topic/value"
+
+    request.topic = "topic_value"
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(type(client.transport.delete_topic), "__call__") as call:
         call.return_value = None
-
         client.delete_topic(request)
 
         # Establish that the underlying gRPC stub method was called.
@@ -2346,22 +2916,27 @@ def test_delete_topic_field_headers():
 
     # Establish that the field header was sent.
     _, _, kw = call.mock_calls[0]
-    assert ("x-goog-request-params", "topic=topic/value",) in kw["metadata"]
+    assert (
+        "x-goog-request-params",
+        "topic=topic_value",
+    ) in kw["metadata"]
 
 
 @pytest.mark.asyncio
 async def test_delete_topic_field_headers_async():
-    client = PublisherAsyncClient(credentials=credentials.AnonymousCredentials(),)
+    client = PublisherAsyncClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
 
     # Any value that is part of the HTTP/1.1 URI should be sent as
     # a field header. Set these to a non-empty value.
     request = pubsub.DeleteTopicRequest()
-    request.topic = "topic/value"
+
+    request.topic = "topic_value"
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(type(client.transport.delete_topic), "__call__") as call:
         call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(None)
-
         await client.delete_topic(request)
 
         # Establish that the underlying gRPC stub method was called.
@@ -2371,43 +2946,55 @@ async def test_delete_topic_field_headers_async():
 
     # Establish that the field header was sent.
     _, _, kw = call.mock_calls[0]
-    assert ("x-goog-request-params", "topic=topic/value",) in kw["metadata"]
+    assert (
+        "x-goog-request-params",
+        "topic=topic_value",
+    ) in kw["metadata"]
 
 
 def test_delete_topic_flattened():
-    client = PublisherClient(credentials=credentials.AnonymousCredentials(),)
+    client = PublisherClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(type(client.transport.delete_topic), "__call__") as call:
         # Designate an appropriate return value for the call.
         call.return_value = None
-
         # Call the method with a truthy value for each flattened field,
         # using the keyword arguments to the method.
-        client.delete_topic(topic="topic_value",)
+        client.delete_topic(
+            topic="topic_value",
+        )
 
         # Establish that the underlying call was made with the expected
         # request object values.
         assert len(call.mock_calls) == 1
         _, args, _ = call.mock_calls[0]
-
-        assert args[0].topic == "topic_value"
+        arg = args[0].topic
+        mock_val = "topic_value"
+        assert arg == mock_val
 
 
 def test_delete_topic_flattened_error():
-    client = PublisherClient(credentials=credentials.AnonymousCredentials(),)
+    client = PublisherClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
 
     # Attempting to call a method with both a request object and flattened
     # fields is an error.
     with pytest.raises(ValueError):
         client.delete_topic(
-            pubsub.DeleteTopicRequest(), topic="topic_value",
+            pubsub.DeleteTopicRequest(),
+            topic="topic_value",
         )
 
 
 @pytest.mark.asyncio
 async def test_delete_topic_flattened_async():
-    client = PublisherAsyncClient(credentials=credentials.AnonymousCredentials(),)
+    client = PublisherAsyncClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(type(client.transport.delete_topic), "__call__") as call:
@@ -2417,33 +3004,45 @@ async def test_delete_topic_flattened_async():
         call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(None)
         # Call the method with a truthy value for each flattened field,
         # using the keyword arguments to the method.
-        response = await client.delete_topic(topic="topic_value",)
+        response = await client.delete_topic(
+            topic="topic_value",
+        )
 
         # Establish that the underlying call was made with the expected
         # request object values.
         assert len(call.mock_calls)
         _, args, _ = call.mock_calls[0]
-
-        assert args[0].topic == "topic_value"
+        arg = args[0].topic
+        mock_val = "topic_value"
+        assert arg == mock_val
 
 
 @pytest.mark.asyncio
 async def test_delete_topic_flattened_error_async():
-    client = PublisherAsyncClient(credentials=credentials.AnonymousCredentials(),)
+    client = PublisherAsyncClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
 
     # Attempting to call a method with both a request object and flattened
     # fields is an error.
     with pytest.raises(ValueError):
         await client.delete_topic(
-            pubsub.DeleteTopicRequest(), topic="topic_value",
+            pubsub.DeleteTopicRequest(),
+            topic="topic_value",
         )
 
 
-def test_detach_subscription(
-    transport: str = "grpc", request_type=pubsub.DetachSubscriptionRequest
-):
+@pytest.mark.parametrize(
+    "request_type",
+    [
+        pubsub.DetachSubscriptionRequest,
+        dict,
+    ],
+)
+def test_detach_subscription(request_type, transport: str = "grpc"):
     client = PublisherClient(
-        credentials=credentials.AnonymousCredentials(), transport=transport,
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport=transport,
     )
 
     # Everything is optional in proto3 as far as the runtime is concerned,
@@ -2456,29 +3055,23 @@ def test_detach_subscription(
     ) as call:
         # Designate an appropriate return value for the call.
         call.return_value = pubsub.DetachSubscriptionResponse()
-
         response = client.detach_subscription(request)
 
         # Establish that the underlying gRPC stub method was called.
         assert len(call.mock_calls) == 1
         _, args, _ = call.mock_calls[0]
-
         assert args[0] == pubsub.DetachSubscriptionRequest()
 
     # Establish that the response is the type that we expect.
-
     assert isinstance(response, pubsub.DetachSubscriptionResponse)
-
-
-def test_detach_subscription_from_dict():
-    test_detach_subscription(request_type=dict)
 
 
 def test_detach_subscription_empty_call():
     # This test is a coverage failsafe to make sure that totally empty calls,
     # i.e. request == None and no flattened fields passed, work.
     client = PublisherClient(
-        credentials=credentials.AnonymousCredentials(), transport="grpc",
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="grpc",
     )
 
     # Mock the actual call within the gRPC stub, and fake the request.
@@ -2488,7 +3081,6 @@ def test_detach_subscription_empty_call():
         client.detach_subscription()
         call.assert_called()
         _, args, _ = call.mock_calls[0]
-
         assert args[0] == pubsub.DetachSubscriptionRequest()
 
 
@@ -2497,7 +3089,8 @@ async def test_detach_subscription_async(
     transport: str = "grpc_asyncio", request_type=pubsub.DetachSubscriptionRequest
 ):
     client = PublisherAsyncClient(
-        credentials=credentials.AnonymousCredentials(), transport=transport,
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport=transport,
     )
 
     # Everything is optional in proto3 as far as the runtime is concerned,
@@ -2512,13 +3105,11 @@ async def test_detach_subscription_async(
         call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(
             pubsub.DetachSubscriptionResponse()
         )
-
         response = await client.detach_subscription(request)
 
         # Establish that the underlying gRPC stub method was called.
         assert len(call.mock_calls)
         _, args, _ = call.mock_calls[0]
-
         assert args[0] == pubsub.DetachSubscriptionRequest()
 
     # Establish that the response is the type that we expect.
@@ -2531,19 +3122,21 @@ async def test_detach_subscription_async_from_dict():
 
 
 def test_detach_subscription_field_headers():
-    client = PublisherClient(credentials=credentials.AnonymousCredentials(),)
+    client = PublisherClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
 
     # Any value that is part of the HTTP/1.1 URI should be sent as
     # a field header. Set these to a non-empty value.
     request = pubsub.DetachSubscriptionRequest()
-    request.subscription = "subscription/value"
+
+    request.subscription = "subscription_value"
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(
         type(client.transport.detach_subscription), "__call__"
     ) as call:
         call.return_value = pubsub.DetachSubscriptionResponse()
-
         client.detach_subscription(request)
 
         # Establish that the underlying gRPC stub method was called.
@@ -2553,19 +3146,23 @@ def test_detach_subscription_field_headers():
 
     # Establish that the field header was sent.
     _, _, kw = call.mock_calls[0]
-    assert ("x-goog-request-params", "subscription=subscription/value",) in kw[
-        "metadata"
-    ]
+    assert (
+        "x-goog-request-params",
+        "subscription=subscription_value",
+    ) in kw["metadata"]
 
 
 @pytest.mark.asyncio
 async def test_detach_subscription_field_headers_async():
-    client = PublisherAsyncClient(credentials=credentials.AnonymousCredentials(),)
+    client = PublisherAsyncClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
 
     # Any value that is part of the HTTP/1.1 URI should be sent as
     # a field header. Set these to a non-empty value.
     request = pubsub.DetachSubscriptionRequest()
-    request.subscription = "subscription/value"
+
+    request.subscription = "subscription_value"
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(
@@ -2574,7 +3171,6 @@ async def test_detach_subscription_field_headers_async():
         call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(
             pubsub.DetachSubscriptionResponse()
         )
-
         await client.detach_subscription(request)
 
         # Establish that the underlying gRPC stub method was called.
@@ -2584,24 +3180,26 @@ async def test_detach_subscription_field_headers_async():
 
     # Establish that the field header was sent.
     _, _, kw = call.mock_calls[0]
-    assert ("x-goog-request-params", "subscription=subscription/value",) in kw[
-        "metadata"
-    ]
+    assert (
+        "x-goog-request-params",
+        "subscription=subscription_value",
+    ) in kw["metadata"]
 
 
 def test_credentials_transport_error():
     # It is an error to provide credentials and a transport instance.
     transport = transports.PublisherGrpcTransport(
-        credentials=credentials.AnonymousCredentials(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
     with pytest.raises(ValueError):
         client = PublisherClient(
-            credentials=credentials.AnonymousCredentials(), transport=transport,
+            credentials=ga_credentials.AnonymousCredentials(),
+            transport=transport,
         )
 
     # It is an error to provide a credentials file and a transport instance.
     transport = transports.PublisherGrpcTransport(
-        credentials=credentials.AnonymousCredentials(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
     with pytest.raises(ValueError):
         client = PublisherClient(
@@ -2609,20 +3207,41 @@ def test_credentials_transport_error():
             transport=transport,
         )
 
+    # It is an error to provide an api_key and a transport instance.
+    transport = transports.PublisherGrpcTransport(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
+    options = client_options.ClientOptions()
+    options.api_key = "api_key"
+    with pytest.raises(ValueError):
+        client = PublisherClient(
+            client_options=options,
+            transport=transport,
+        )
+
+    # It is an error to provide an api_key and a credential.
+    options = mock.Mock()
+    options.api_key = "api_key"
+    with pytest.raises(ValueError):
+        client = PublisherClient(
+            client_options=options, credentials=ga_credentials.AnonymousCredentials()
+        )
+
     # It is an error to provide scopes and a transport instance.
     transport = transports.PublisherGrpcTransport(
-        credentials=credentials.AnonymousCredentials(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
     with pytest.raises(ValueError):
         client = PublisherClient(
-            client_options={"scopes": ["1", "2"]}, transport=transport,
+            client_options={"scopes": ["1", "2"]},
+            transport=transport,
         )
 
 
 def test_transport_instance():
     # A client may be instantiated with a custom transport instance.
     transport = transports.PublisherGrpcTransport(
-        credentials=credentials.AnonymousCredentials(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
     client = PublisherClient(transport=transport)
     assert client.transport is transport
@@ -2631,13 +3250,13 @@ def test_transport_instance():
 def test_transport_get_channel():
     # A client may be instantiated with a custom transport instance.
     transport = transports.PublisherGrpcTransport(
-        credentials=credentials.AnonymousCredentials(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
     channel = transport.grpc_channel
     assert channel
 
     transport = transports.PublisherGrpcAsyncIOTransport(
-        credentials=credentials.AnonymousCredentials(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
     channel = transport.grpc_channel
     assert channel
@@ -2645,27 +3264,48 @@ def test_transport_get_channel():
 
 @pytest.mark.parametrize(
     "transport_class",
-    [transports.PublisherGrpcTransport, transports.PublisherGrpcAsyncIOTransport,],
+    [
+        transports.PublisherGrpcTransport,
+        transports.PublisherGrpcAsyncIOTransport,
+    ],
 )
 def test_transport_adc(transport_class):
     # Test default credentials are used if not provided.
-    with mock.patch.object(auth, "default") as adc:
-        adc.return_value = (credentials.AnonymousCredentials(), None)
+    with mock.patch.object(google.auth, "default") as adc:
+        adc.return_value = (ga_credentials.AnonymousCredentials(), None)
         transport_class()
         adc.assert_called_once()
 
 
+@pytest.mark.parametrize(
+    "transport_name",
+    [
+        "grpc",
+    ],
+)
+def test_transport_kind(transport_name):
+    transport = PublisherClient.get_transport_class(transport_name)(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
+    assert transport.kind == transport_name
+
+
 def test_transport_grpc_default():
     # A client should use the gRPC transport by default.
-    client = PublisherClient(credentials=credentials.AnonymousCredentials(),)
-    assert isinstance(client.transport, transports.PublisherGrpcTransport,)
+    client = PublisherClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
+    assert isinstance(
+        client.transport,
+        transports.PublisherGrpcTransport,
+    )
 
 
 def test_publisher_base_transport_error():
     # Passing both a credentials object and credentials_file should raise an error
-    with pytest.raises(exceptions.DuplicateCredentialArgs):
+    with pytest.raises(core_exceptions.DuplicateCredentialArgs):
         transport = transports.PublisherTransport(
-            credentials=credentials.AnonymousCredentials(),
+            credentials=ga_credentials.AnonymousCredentials(),
             credentials_file="credentials.json",
         )
 
@@ -2677,7 +3317,7 @@ def test_publisher_base_transport():
     ) as Transport:
         Transport.return_value = None
         transport = transports.PublisherTransport(
-            credentials=credentials.AnonymousCredentials(),
+            credentials=ga_credentials.AnonymousCredentials(),
         )
 
     # Every method on the transport should just blindly
@@ -2700,22 +3340,35 @@ def test_publisher_base_transport():
         with pytest.raises(NotImplementedError):
             getattr(transport, method)(request=object())
 
+    with pytest.raises(NotImplementedError):
+        transport.close()
+
+    # Catch all for all remaining methods and properties
+    remainder = [
+        "kind",
+    ]
+    for r in remainder:
+        with pytest.raises(NotImplementedError):
+            getattr(transport, r)()
+
 
 def test_publisher_base_transport_with_credentials_file():
     # Instantiate the base transport with a credentials file
     with mock.patch.object(
-        auth, "load_credentials_from_file"
+        google.auth, "load_credentials_from_file", autospec=True
     ) as load_creds, mock.patch(
         "google.pubsub_v1.services.publisher.transports.PublisherTransport._prep_wrapped_messages"
     ) as Transport:
         Transport.return_value = None
-        load_creds.return_value = (credentials.AnonymousCredentials(), None)
+        load_creds.return_value = (ga_credentials.AnonymousCredentials(), None)
         transport = transports.PublisherTransport(
-            credentials_file="credentials.json", quota_project_id="octopus",
+            credentials_file="credentials.json",
+            quota_project_id="octopus",
         )
         load_creds.assert_called_once_with(
             "credentials.json",
-            scopes=(
+            scopes=None,
+            default_scopes=(
                 "https://www.googleapis.com/auth/cloud-platform",
                 "https://www.googleapis.com/auth/pubsub",
             ),
@@ -2725,22 +3378,23 @@ def test_publisher_base_transport_with_credentials_file():
 
 def test_publisher_base_transport_with_adc():
     # Test the default credentials are used if credentials and credentials_file are None.
-    with mock.patch.object(auth, "default") as adc, mock.patch(
+    with mock.patch.object(google.auth, "default", autospec=True) as adc, mock.patch(
         "google.pubsub_v1.services.publisher.transports.PublisherTransport._prep_wrapped_messages"
     ) as Transport:
         Transport.return_value = None
-        adc.return_value = (credentials.AnonymousCredentials(), None)
+        adc.return_value = (ga_credentials.AnonymousCredentials(), None)
         transport = transports.PublisherTransport()
         adc.assert_called_once()
 
 
 def test_publisher_auth_adc():
     # If no credentials are provided, we should use ADC credentials.
-    with mock.patch.object(auth, "default") as adc:
-        adc.return_value = (credentials.AnonymousCredentials(), None)
+    with mock.patch.object(google.auth, "default", autospec=True) as adc:
+        adc.return_value = (ga_credentials.AnonymousCredentials(), None)
         PublisherClient()
         adc.assert_called_once_with(
-            scopes=(
+            scopes=None,
+            default_scopes=(
                 "https://www.googleapis.com/auth/cloud-platform",
                 "https://www.googleapis.com/auth/pubsub",
             ),
@@ -2748,16 +3402,22 @@ def test_publisher_auth_adc():
         )
 
 
-def test_publisher_transport_auth_adc():
+@pytest.mark.parametrize(
+    "transport_class",
+    [
+        transports.PublisherGrpcTransport,
+        transports.PublisherGrpcAsyncIOTransport,
+    ],
+)
+def test_publisher_transport_auth_adc(transport_class):
     # If credentials and host are not provided, the transport class should use
     # ADC credentials.
-    with mock.patch.object(auth, "default") as adc:
-        adc.return_value = (credentials.AnonymousCredentials(), None)
-        transports.PublisherGrpcTransport(
-            host="squid.clam.whelk", quota_project_id="octopus"
-        )
+    with mock.patch.object(google.auth, "default", autospec=True) as adc:
+        adc.return_value = (ga_credentials.AnonymousCredentials(), None)
+        transport_class(quota_project_id="octopus", scopes=["1", "2"])
         adc.assert_called_once_with(
-            scopes=(
+            scopes=["1", "2"],
+            default_scopes=(
                 "https://www.googleapis.com/auth/cloud-platform",
                 "https://www.googleapis.com/auth/pubsub",
             ),
@@ -2766,11 +3426,51 @@ def test_publisher_transport_auth_adc():
 
 
 @pytest.mark.parametrize(
+    "transport_class,grpc_helpers",
+    [
+        (transports.PublisherGrpcTransport, grpc_helpers),
+        (transports.PublisherGrpcAsyncIOTransport, grpc_helpers_async),
+    ],
+)
+def test_publisher_transport_create_channel(transport_class, grpc_helpers):
+    # If credentials and host are not provided, the transport class should use
+    # ADC credentials.
+    with mock.patch.object(
+        google.auth, "default", autospec=True
+    ) as adc, mock.patch.object(
+        grpc_helpers, "create_channel", autospec=True
+    ) as create_channel:
+        creds = ga_credentials.AnonymousCredentials()
+        adc.return_value = (creds, None)
+        transport_class(quota_project_id="octopus", scopes=["1", "2"])
+
+        create_channel.assert_called_with(
+            "pubsub.googleapis.com:443",
+            credentials=creds,
+            credentials_file=None,
+            quota_project_id="octopus",
+            default_scopes=(
+                "https://www.googleapis.com/auth/cloud-platform",
+                "https://www.googleapis.com/auth/pubsub",
+            ),
+            scopes=["1", "2"],
+            default_host="pubsub.googleapis.com",
+            ssl_credentials=None,
+            options=[
+                ("grpc.max_send_message_length", -1),
+                ("grpc.max_receive_message_length", -1),
+                ("grpc.max_metadata_size", 4 * 1024 * 1024),
+                ("grpc.keepalive_time_ms", 30000),
+            ],
+        )
+
+
+@pytest.mark.parametrize(
     "transport_class",
     [transports.PublisherGrpcTransport, transports.PublisherGrpcAsyncIOTransport],
 )
 def test_publisher_grpc_transport_client_cert_source_for_mtls(transport_class):
-    cred = credentials.AnonymousCredentials()
+    cred = ga_credentials.AnonymousCredentials()
 
     # Check ssl_channel_credentials is used if provided.
     with mock.patch.object(transport_class, "create_channel") as mock_create_channel:
@@ -2784,15 +3484,13 @@ def test_publisher_grpc_transport_client_cert_source_for_mtls(transport_class):
             "squid.clam.whelk:443",
             credentials=cred,
             credentials_file=None,
-            scopes=(
-                "https://www.googleapis.com/auth/cloud-platform",
-                "https://www.googleapis.com/auth/pubsub",
-            ),
+            scopes=None,
             ssl_credentials=mock_ssl_channel_creds,
             quota_project_id=None,
             options=[
                 ("grpc.max_send_message_length", -1),
                 ("grpc.max_receive_message_length", -1),
+                ("grpc.max_metadata_size", 4 * 1024 * 1024),
                 ("grpc.keepalive_time_ms", 30000),
             ],
         )
@@ -2811,24 +3509,40 @@ def test_publisher_grpc_transport_client_cert_source_for_mtls(transport_class):
             )
 
 
-def test_publisher_host_no_port():
+@pytest.mark.parametrize(
+    "transport_name",
+    [
+        "grpc",
+        "grpc_asyncio",
+    ],
+)
+def test_publisher_host_no_port(transport_name):
     client = PublisherClient(
-        credentials=credentials.AnonymousCredentials(),
+        credentials=ga_credentials.AnonymousCredentials(),
         client_options=client_options.ClientOptions(
             api_endpoint="pubsub.googleapis.com"
         ),
+        transport=transport_name,
     )
-    assert client.transport._host == "pubsub.googleapis.com:443"
+    assert client.transport._host == ("pubsub.googleapis.com:443")
 
 
-def test_publisher_host_with_port():
+@pytest.mark.parametrize(
+    "transport_name",
+    [
+        "grpc",
+        "grpc_asyncio",
+    ],
+)
+def test_publisher_host_with_port(transport_name):
     client = PublisherClient(
-        credentials=credentials.AnonymousCredentials(),
+        credentials=ga_credentials.AnonymousCredentials(),
         client_options=client_options.ClientOptions(
             api_endpoint="pubsub.googleapis.com:8000"
         ),
+        transport=transport_name,
     )
-    assert client.transport._host == "pubsub.googleapis.com:8000"
+    assert client.transport._host == ("pubsub.googleapis.com:8000")
 
 
 def test_publisher_grpc_transport_channel():
@@ -2836,7 +3550,8 @@ def test_publisher_grpc_transport_channel():
 
     # Check that channel is used if provided.
     transport = transports.PublisherGrpcTransport(
-        host="squid.clam.whelk", channel=channel,
+        host="squid.clam.whelk",
+        channel=channel,
     )
     assert transport.grpc_channel == channel
     assert transport._host == "squid.clam.whelk:443"
@@ -2848,7 +3563,8 @@ def test_publisher_grpc_asyncio_transport_channel():
 
     # Check that channel is used if provided.
     transport = transports.PublisherGrpcAsyncIOTransport(
-        host="squid.clam.whelk", channel=channel,
+        host="squid.clam.whelk",
+        channel=channel,
     )
     assert transport.grpc_channel == channel
     assert transport._host == "squid.clam.whelk:443"
@@ -2874,9 +3590,9 @@ def test_publisher_transport_channel_mtls_with_client_cert_source(transport_clas
             mock_grpc_channel = mock.Mock()
             grpc_create_channel.return_value = mock_grpc_channel
 
-            cred = credentials.AnonymousCredentials()
+            cred = ga_credentials.AnonymousCredentials()
             with pytest.warns(DeprecationWarning):
-                with mock.patch.object(auth, "default") as adc:
+                with mock.patch.object(google.auth, "default") as adc:
                     adc.return_value = (cred, None)
                     transport = transport_class(
                         host="squid.clam.whelk",
@@ -2892,15 +3608,13 @@ def test_publisher_transport_channel_mtls_with_client_cert_source(transport_clas
                 "mtls.squid.clam.whelk:443",
                 credentials=cred,
                 credentials_file=None,
-                scopes=(
-                    "https://www.googleapis.com/auth/cloud-platform",
-                    "https://www.googleapis.com/auth/pubsub",
-                ),
+                scopes=None,
                 ssl_credentials=mock_ssl_cred,
                 quota_project_id=None,
                 options=[
                     ("grpc.max_send_message_length", -1),
                     ("grpc.max_receive_message_length", -1),
+                    ("grpc.max_metadata_size", 4 * 1024 * 1024),
                     ("grpc.keepalive_time_ms", 30000),
                 ],
             )
@@ -2940,15 +3654,13 @@ def test_publisher_transport_channel_mtls_with_adc(transport_class):
                 "mtls.squid.clam.whelk:443",
                 credentials=mock_cred,
                 credentials_file=None,
-                scopes=(
-                    "https://www.googleapis.com/auth/cloud-platform",
-                    "https://www.googleapis.com/auth/pubsub",
-                ),
+                scopes=None,
                 ssl_credentials=mock_ssl_cred,
                 quota_project_id=None,
                 options=[
                     ("grpc.max_send_message_length", -1),
                     ("grpc.max_receive_message_length", -1),
+                    ("grpc.max_metadata_size", 4 * 1024 * 1024),
                     ("grpc.keepalive_time_ms", 30000),
                 ],
             )
@@ -2958,9 +3670,9 @@ def test_publisher_transport_channel_mtls_with_adc(transport_class):
 def test_schema_path():
     project = "squid"
     schema = "clam"
-
     expected = "projects/{project}/schemas/{schema}".format(
-        project=project, schema=schema,
+        project=project,
+        schema=schema,
     )
     actual = PublisherClient.schema_path(project, schema)
     assert expected == actual
@@ -2981,9 +3693,9 @@ def test_parse_schema_path():
 def test_subscription_path():
     project = "oyster"
     subscription = "nudibranch"
-
     expected = "projects/{project}/subscriptions/{subscription}".format(
-        project=project, subscription=subscription,
+        project=project,
+        subscription=subscription,
     )
     actual = PublisherClient.subscription_path(project, subscription)
     assert expected == actual
@@ -3004,8 +3716,10 @@ def test_parse_subscription_path():
 def test_topic_path():
     project = "winkle"
     topic = "nautilus"
-
-    expected = "projects/{project}/topics/{topic}".format(project=project, topic=topic,)
+    expected = "projects/{project}/topics/{topic}".format(
+        project=project,
+        topic=topic,
+    )
     actual = PublisherClient.topic_path(project, topic)
     assert expected == actual
 
@@ -3024,7 +3738,6 @@ def test_parse_topic_path():
 
 def test_common_billing_account_path():
     billing_account = "squid"
-
     expected = "billingAccounts/{billing_account}".format(
         billing_account=billing_account,
     )
@@ -3045,8 +3758,9 @@ def test_parse_common_billing_account_path():
 
 def test_common_folder_path():
     folder = "whelk"
-
-    expected = "folders/{folder}".format(folder=folder,)
+    expected = "folders/{folder}".format(
+        folder=folder,
+    )
     actual = PublisherClient.common_folder_path(folder)
     assert expected == actual
 
@@ -3064,8 +3778,9 @@ def test_parse_common_folder_path():
 
 def test_common_organization_path():
     organization = "oyster"
-
-    expected = "organizations/{organization}".format(organization=organization,)
+    expected = "organizations/{organization}".format(
+        organization=organization,
+    )
     actual = PublisherClient.common_organization_path(organization)
     assert expected == actual
 
@@ -3083,8 +3798,9 @@ def test_parse_common_organization_path():
 
 def test_common_project_path():
     project = "cuttlefish"
-
-    expected = "projects/{project}".format(project=project,)
+    expected = "projects/{project}".format(
+        project=project,
+    )
     actual = PublisherClient.common_project_path(project)
     assert expected == actual
 
@@ -3103,9 +3819,9 @@ def test_parse_common_project_path():
 def test_common_location_path():
     project = "winkle"
     location = "nautilus"
-
     expected = "projects/{project}/locations/{location}".format(
-        project=project, location=location,
+        project=project,
+        location=location,
     )
     actual = PublisherClient.common_location_path(project, location)
     assert expected == actual
@@ -3123,14 +3839,15 @@ def test_parse_common_location_path():
     assert expected == actual
 
 
-def test_client_withDEFAULT_CLIENT_INFO():
+def test_client_with_default_client_info():
     client_info = gapic_v1.client_info.ClientInfo()
 
     with mock.patch.object(
         transports.PublisherTransport, "_prep_wrapped_messages"
     ) as prep:
         client = PublisherClient(
-            credentials=credentials.AnonymousCredentials(), client_info=client_info,
+            credentials=ga_credentials.AnonymousCredentials(),
+            client_info=client_info,
         )
         prep.assert_called_once_with(client_info)
 
@@ -3139,27 +3856,44 @@ def test_client_withDEFAULT_CLIENT_INFO():
     ) as prep:
         transport_class = PublisherClient.get_transport_class()
         transport = transport_class(
-            credentials=credentials.AnonymousCredentials(), client_info=client_info,
+            credentials=ga_credentials.AnonymousCredentials(),
+            client_info=client_info,
         )
         prep.assert_called_once_with(client_info)
 
 
+@pytest.mark.asyncio
+async def test_transport_close_async():
+    client = PublisherAsyncClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="grpc_asyncio",
+    )
+    with mock.patch.object(
+        type(getattr(client.transport, "grpc_channel")), "close"
+    ) as close:
+        async with client:
+            close.assert_not_called()
+        close.assert_called_once()
+
+
 def test_set_iam_policy(transport: str = "grpc"):
     client = PublisherClient(
-        credentials=credentials.AnonymousCredentials(), transport=transport,
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport=transport,
     )
 
     # Everything is optional in proto3 as far as the runtime is concerned,
     # and we are mocking out the actual API, so just send an empty request.
-    request = iam_policy.SetIamPolicyRequest()
+    request = iam_policy_pb2.SetIamPolicyRequest()
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(type(client.transport.set_iam_policy), "__call__") as call:
         # Designate an appropriate return value for the call.
-        call.return_value = policy.Policy(version=774, etag=b"etag_blob",)
-
+        call.return_value = policy_pb2.Policy(
+            version=774,
+            etag=b"etag_blob",
+        )
         response = client.set_iam_policy(request)
-
         # Establish that the underlying gRPC stub method was called.
         assert len(call.mock_calls) == 1
         _, args, _ = call.mock_calls[0]
@@ -3167,7 +3901,7 @@ def test_set_iam_policy(transport: str = "grpc"):
         assert args[0] == request
 
     # Establish that the response is the type that we expect.
-    assert isinstance(response, policy.Policy)
+    assert isinstance(response, policy_pb2.Policy)
 
     assert response.version == 774
 
@@ -3177,30 +3911,33 @@ def test_set_iam_policy(transport: str = "grpc"):
 @pytest.mark.asyncio
 async def test_set_iam_policy_async(transport: str = "grpc_asyncio"):
     client = PublisherAsyncClient(
-        credentials=credentials.AnonymousCredentials(), transport=transport,
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport=transport,
     )
 
     # Everything is optional in proto3 as far as the runtime is concerned,
     # and we are mocking out the actual API, so just send an empty request.
-    request = iam_policy.SetIamPolicyRequest()
+    request = iam_policy_pb2.SetIamPolicyRequest()
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(type(client.transport.set_iam_policy), "__call__") as call:
         # Designate an appropriate return value for the call.
+        # Designate an appropriate return value for the call.
         call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(
-            policy.Policy(version=774, etag=b"etag_blob",)
+            policy_pb2.Policy(
+                version=774,
+                etag=b"etag_blob",
+            )
         )
-
         response = await client.set_iam_policy(request)
-
         # Establish that the underlying gRPC stub method was called.
-        assert len(call.mock_calls)
+        assert len(call.mock_calls) == 1
         _, args, _ = call.mock_calls[0]
 
         assert args[0] == request
 
     # Establish that the response is the type that we expect.
-    assert isinstance(response, policy.Policy)
+    assert isinstance(response, policy_pb2.Policy)
 
     assert response.version == 774
 
@@ -3208,16 +3945,18 @@ async def test_set_iam_policy_async(transport: str = "grpc_asyncio"):
 
 
 def test_set_iam_policy_field_headers():
-    client = PublisherClient(credentials=credentials.AnonymousCredentials(),)
+    client = PublisherClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
 
     # Any value that is part of the HTTP/1.1 URI should be sent as
     # a field header. Set these to a non-empty value.
-    request = iam_policy.SetIamPolicyRequest()
+    request = iam_policy_pb2.SetIamPolicyRequest()
     request.resource = "resource/value"
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(type(client.transport.set_iam_policy), "__call__") as call:
-        call.return_value = policy.Policy()
+        call.return_value = policy_pb2.Policy()
 
         client.set_iam_policy(request)
 
@@ -3228,45 +3967,55 @@ def test_set_iam_policy_field_headers():
 
     # Establish that the field header was sent.
     _, _, kw = call.mock_calls[0]
-    assert ("x-goog-request-params", "resource=resource/value",) in kw["metadata"]
+    assert (
+        "x-goog-request-params",
+        "resource=resource/value",
+    ) in kw["metadata"]
 
 
 @pytest.mark.asyncio
 async def test_set_iam_policy_field_headers_async():
-    client = PublisherAsyncClient(credentials=credentials.AnonymousCredentials(),)
+    client = PublisherAsyncClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
 
     # Any value that is part of the HTTP/1.1 URI should be sent as
     # a field header. Set these to a non-empty value.
-    request = iam_policy.SetIamPolicyRequest()
+    request = iam_policy_pb2.SetIamPolicyRequest()
     request.resource = "resource/value"
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(type(client.transport.set_iam_policy), "__call__") as call:
-        call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(policy.Policy())
+        call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(policy_pb2.Policy())
 
         await client.set_iam_policy(request)
 
         # Establish that the underlying gRPC stub method was called.
-        assert len(call.mock_calls)
+        assert len(call.mock_calls) == 1
         _, args, _ = call.mock_calls[0]
         assert args[0] == request
 
     # Establish that the field header was sent.
     _, _, kw = call.mock_calls[0]
-    assert ("x-goog-request-params", "resource=resource/value",) in kw["metadata"]
+    assert (
+        "x-goog-request-params",
+        "resource=resource/value",
+    ) in kw["metadata"]
 
 
 def test_set_iam_policy_from_dict():
-    client = PublisherClient(credentials=credentials.AnonymousCredentials(),)
+    client = PublisherClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(type(client.transport.set_iam_policy), "__call__") as call:
         # Designate an appropriate return value for the call.
-        call.return_value = policy.Policy()
+        call.return_value = policy_pb2.Policy()
 
         response = client.set_iam_policy(
             request={
                 "resource": "resource_value",
-                "policy": policy.Policy(version=774),
+                "policy": policy_pb2.Policy(version=774),
             }
         )
         call.assert_called()
@@ -3274,16 +4023,18 @@ def test_set_iam_policy_from_dict():
 
 @pytest.mark.asyncio
 async def test_set_iam_policy_from_dict_async():
-    client = PublisherAsyncClient(credentials=credentials.AnonymousCredentials(),)
+    client = PublisherAsyncClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(type(client.transport.set_iam_policy), "__call__") as call:
         # Designate an appropriate return value for the call.
-        call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(policy.Policy())
+        call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(policy_pb2.Policy())
 
         response = await client.set_iam_policy(
             request={
                 "resource": "resource_value",
-                "policy": policy.Policy(version=774),
+                "policy": policy_pb2.Policy(version=774),
             }
         )
         call.assert_called()
@@ -3291,17 +4042,21 @@ async def test_set_iam_policy_from_dict_async():
 
 def test_get_iam_policy(transport: str = "grpc"):
     client = PublisherClient(
-        credentials=credentials.AnonymousCredentials(), transport=transport,
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport=transport,
     )
 
     # Everything is optional in proto3 as far as the runtime is concerned,
     # and we are mocking out the actual API, so just send an empty request.
-    request = iam_policy.GetIamPolicyRequest()
+    request = iam_policy_pb2.GetIamPolicyRequest()
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(type(client.transport.get_iam_policy), "__call__") as call:
         # Designate an appropriate return value for the call.
-        call.return_value = policy.Policy(version=774, etag=b"etag_blob",)
+        call.return_value = policy_pb2.Policy(
+            version=774,
+            etag=b"etag_blob",
+        )
 
         response = client.get_iam_policy(request)
 
@@ -3312,7 +4067,7 @@ def test_get_iam_policy(transport: str = "grpc"):
         assert args[0] == request
 
     # Establish that the response is the type that we expect.
-    assert isinstance(response, policy.Policy)
+    assert isinstance(response, policy_pb2.Policy)
 
     assert response.version == 774
 
@@ -3322,18 +4077,22 @@ def test_get_iam_policy(transport: str = "grpc"):
 @pytest.mark.asyncio
 async def test_get_iam_policy_async(transport: str = "grpc_asyncio"):
     client = PublisherAsyncClient(
-        credentials=credentials.AnonymousCredentials(), transport=transport,
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport=transport,
     )
 
     # Everything is optional in proto3 as far as the runtime is concerned,
     # and we are mocking out the actual API, so just send an empty request.
-    request = iam_policy.GetIamPolicyRequest()
+    request = iam_policy_pb2.GetIamPolicyRequest()
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(type(client.transport.get_iam_policy), "__call__") as call:
         # Designate an appropriate return value for the call.
         call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(
-            policy.Policy(version=774, etag=b"etag_blob",)
+            policy_pb2.Policy(
+                version=774,
+                etag=b"etag_blob",
+            )
         )
 
         response = await client.get_iam_policy(request)
@@ -3345,7 +4104,7 @@ async def test_get_iam_policy_async(transport: str = "grpc_asyncio"):
         assert args[0] == request
 
     # Establish that the response is the type that we expect.
-    assert isinstance(response, policy.Policy)
+    assert isinstance(response, policy_pb2.Policy)
 
     assert response.version == 774
 
@@ -3353,16 +4112,18 @@ async def test_get_iam_policy_async(transport: str = "grpc_asyncio"):
 
 
 def test_get_iam_policy_field_headers():
-    client = PublisherClient(credentials=credentials.AnonymousCredentials(),)
+    client = PublisherClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
 
     # Any value that is part of the HTTP/1.1 URI should be sent as
     # a field header. Set these to a non-empty value.
-    request = iam_policy.GetIamPolicyRequest()
+    request = iam_policy_pb2.GetIamPolicyRequest()
     request.resource = "resource/value"
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(type(client.transport.get_iam_policy), "__call__") as call:
-        call.return_value = policy.Policy()
+        call.return_value = policy_pb2.Policy()
 
         client.get_iam_policy(request)
 
@@ -3373,21 +4134,26 @@ def test_get_iam_policy_field_headers():
 
     # Establish that the field header was sent.
     _, _, kw = call.mock_calls[0]
-    assert ("x-goog-request-params", "resource=resource/value",) in kw["metadata"]
+    assert (
+        "x-goog-request-params",
+        "resource=resource/value",
+    ) in kw["metadata"]
 
 
 @pytest.mark.asyncio
 async def test_get_iam_policy_field_headers_async():
-    client = PublisherAsyncClient(credentials=credentials.AnonymousCredentials(),)
+    client = PublisherAsyncClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
 
     # Any value that is part of the HTTP/1.1 URI should be sent as
     # a field header. Set these to a non-empty value.
-    request = iam_policy.GetIamPolicyRequest()
+    request = iam_policy_pb2.GetIamPolicyRequest()
     request.resource = "resource/value"
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(type(client.transport.get_iam_policy), "__call__") as call:
-        call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(policy.Policy())
+        call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(policy_pb2.Policy())
 
         await client.get_iam_policy(request)
 
@@ -3398,20 +4164,25 @@ async def test_get_iam_policy_field_headers_async():
 
     # Establish that the field header was sent.
     _, _, kw = call.mock_calls[0]
-    assert ("x-goog-request-params", "resource=resource/value",) in kw["metadata"]
+    assert (
+        "x-goog-request-params",
+        "resource=resource/value",
+    ) in kw["metadata"]
 
 
 def test_get_iam_policy_from_dict():
-    client = PublisherClient(credentials=credentials.AnonymousCredentials(),)
+    client = PublisherClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(type(client.transport.get_iam_policy), "__call__") as call:
         # Designate an appropriate return value for the call.
-        call.return_value = policy.Policy()
+        call.return_value = policy_pb2.Policy()
 
         response = client.get_iam_policy(
             request={
                 "resource": "resource_value",
-                "options": options.GetPolicyOptions(requested_policy_version=2598),
+                "options": options_pb2.GetPolicyOptions(requested_policy_version=2598),
             }
         )
         call.assert_called()
@@ -3419,16 +4190,18 @@ def test_get_iam_policy_from_dict():
 
 @pytest.mark.asyncio
 async def test_get_iam_policy_from_dict_async():
-    client = PublisherAsyncClient(credentials=credentials.AnonymousCredentials(),)
+    client = PublisherAsyncClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(type(client.transport.get_iam_policy), "__call__") as call:
         # Designate an appropriate return value for the call.
-        call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(policy.Policy())
+        call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(policy_pb2.Policy())
 
         response = await client.get_iam_policy(
             request={
                 "resource": "resource_value",
-                "options": options.GetPolicyOptions(requested_policy_version=2598),
+                "options": options_pb2.GetPolicyOptions(requested_policy_version=2598),
             }
         )
         call.assert_called()
@@ -3436,19 +4209,20 @@ async def test_get_iam_policy_from_dict_async():
 
 def test_test_iam_permissions(transport: str = "grpc"):
     client = PublisherClient(
-        credentials=credentials.AnonymousCredentials(), transport=transport,
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport=transport,
     )
 
     # Everything is optional in proto3 as far as the runtime is concerned,
     # and we are mocking out the actual API, so just send an empty request.
-    request = iam_policy.TestIamPermissionsRequest()
+    request = iam_policy_pb2.TestIamPermissionsRequest()
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(
         type(client.transport.test_iam_permissions), "__call__"
     ) as call:
         # Designate an appropriate return value for the call.
-        call.return_value = iam_policy.TestIamPermissionsResponse(
+        call.return_value = iam_policy_pb2.TestIamPermissionsResponse(
             permissions=["permissions_value"],
         )
 
@@ -3461,7 +4235,7 @@ def test_test_iam_permissions(transport: str = "grpc"):
         assert args[0] == request
 
     # Establish that the response is the type that we expect.
-    assert isinstance(response, iam_policy.TestIamPermissionsResponse)
+    assert isinstance(response, iam_policy_pb2.TestIamPermissionsResponse)
 
     assert response.permissions == ["permissions_value"]
 
@@ -3469,12 +4243,13 @@ def test_test_iam_permissions(transport: str = "grpc"):
 @pytest.mark.asyncio
 async def test_test_iam_permissions_async(transport: str = "grpc_asyncio"):
     client = PublisherAsyncClient(
-        credentials=credentials.AnonymousCredentials(), transport=transport,
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport=transport,
     )
 
     # Everything is optional in proto3 as far as the runtime is concerned,
     # and we are mocking out the actual API, so just send an empty request.
-    request = iam_policy.TestIamPermissionsRequest()
+    request = iam_policy_pb2.TestIamPermissionsRequest()
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(
@@ -3482,7 +4257,9 @@ async def test_test_iam_permissions_async(transport: str = "grpc_asyncio"):
     ) as call:
         # Designate an appropriate return value for the call.
         call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(
-            iam_policy.TestIamPermissionsResponse(permissions=["permissions_value"],)
+            iam_policy_pb2.TestIamPermissionsResponse(
+                permissions=["permissions_value"],
+            )
         )
 
         response = await client.test_iam_permissions(request)
@@ -3494,24 +4271,26 @@ async def test_test_iam_permissions_async(transport: str = "grpc_asyncio"):
         assert args[0] == request
 
     # Establish that the response is the type that we expect.
-    assert isinstance(response, iam_policy.TestIamPermissionsResponse)
+    assert isinstance(response, iam_policy_pb2.TestIamPermissionsResponse)
 
     assert response.permissions == ["permissions_value"]
 
 
 def test_test_iam_permissions_field_headers():
-    client = PublisherClient(credentials=credentials.AnonymousCredentials(),)
+    client = PublisherClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
 
     # Any value that is part of the HTTP/1.1 URI should be sent as
     # a field header. Set these to a non-empty value.
-    request = iam_policy.TestIamPermissionsRequest()
+    request = iam_policy_pb2.TestIamPermissionsRequest()
     request.resource = "resource/value"
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(
         type(client.transport.test_iam_permissions), "__call__"
     ) as call:
-        call.return_value = iam_policy.TestIamPermissionsResponse()
+        call.return_value = iam_policy_pb2.TestIamPermissionsResponse()
 
         client.test_iam_permissions(request)
 
@@ -3522,16 +4301,21 @@ def test_test_iam_permissions_field_headers():
 
     # Establish that the field header was sent.
     _, _, kw = call.mock_calls[0]
-    assert ("x-goog-request-params", "resource=resource/value",) in kw["metadata"]
+    assert (
+        "x-goog-request-params",
+        "resource=resource/value",
+    ) in kw["metadata"]
 
 
 @pytest.mark.asyncio
 async def test_test_iam_permissions_field_headers_async():
-    client = PublisherAsyncClient(credentials=credentials.AnonymousCredentials(),)
+    client = PublisherAsyncClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
 
     # Any value that is part of the HTTP/1.1 URI should be sent as
     # a field header. Set these to a non-empty value.
-    request = iam_policy.TestIamPermissionsRequest()
+    request = iam_policy_pb2.TestIamPermissionsRequest()
     request.resource = "resource/value"
 
     # Mock the actual call within the gRPC stub, and fake the request.
@@ -3539,7 +4323,7 @@ async def test_test_iam_permissions_field_headers_async():
         type(client.transport.test_iam_permissions), "__call__"
     ) as call:
         call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(
-            iam_policy.TestIamPermissionsResponse()
+            iam_policy_pb2.TestIamPermissionsResponse()
         )
 
         await client.test_iam_permissions(request)
@@ -3551,17 +4335,22 @@ async def test_test_iam_permissions_field_headers_async():
 
     # Establish that the field header was sent.
     _, _, kw = call.mock_calls[0]
-    assert ("x-goog-request-params", "resource=resource/value",) in kw["metadata"]
+    assert (
+        "x-goog-request-params",
+        "resource=resource/value",
+    ) in kw["metadata"]
 
 
 def test_test_iam_permissions_from_dict():
-    client = PublisherClient(credentials=credentials.AnonymousCredentials(),)
+    client = PublisherClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(
         type(client.transport.test_iam_permissions), "__call__"
     ) as call:
         # Designate an appropriate return value for the call.
-        call.return_value = iam_policy.TestIamPermissionsResponse()
+        call.return_value = iam_policy_pb2.TestIamPermissionsResponse()
 
         response = client.test_iam_permissions(
             request={
@@ -3574,14 +4363,16 @@ def test_test_iam_permissions_from_dict():
 
 @pytest.mark.asyncio
 async def test_test_iam_permissions_from_dict_async():
-    client = PublisherAsyncClient(credentials=credentials.AnonymousCredentials(),)
+    client = PublisherAsyncClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(
         type(client.transport.test_iam_permissions), "__call__"
     ) as call:
         # Designate an appropriate return value for the call.
         call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(
-            iam_policy.TestIamPermissionsResponse()
+            iam_policy_pb2.TestIamPermissionsResponse()
         )
 
         response = await client.test_iam_permissions(
@@ -3591,3 +4382,66 @@ async def test_test_iam_permissions_from_dict_async():
             }
         )
         call.assert_called()
+
+
+def test_transport_close():
+    transports = {
+        "grpc": "_grpc_channel",
+    }
+
+    for transport, close_name in transports.items():
+        client = PublisherClient(
+            credentials=ga_credentials.AnonymousCredentials(), transport=transport
+        )
+        with mock.patch.object(
+            type(getattr(client.transport, close_name)), "close"
+        ) as close:
+            with client:
+                close.assert_not_called()
+            close.assert_called_once()
+
+
+def test_client_ctx():
+    transports = [
+        "grpc",
+    ]
+    for transport in transports:
+        client = PublisherClient(
+            credentials=ga_credentials.AnonymousCredentials(), transport=transport
+        )
+        # Test client calls underlying transport.
+        with mock.patch.object(type(client.transport), "close") as close:
+            close.assert_not_called()
+            with client:
+                pass
+            close.assert_called()
+
+
+@pytest.mark.parametrize(
+    "client_class,transport_class",
+    [
+        (PublisherClient, transports.PublisherGrpcTransport),
+        (PublisherAsyncClient, transports.PublisherGrpcAsyncIOTransport),
+    ],
+)
+def test_api_key_credentials(client_class, transport_class):
+    with mock.patch.object(
+        google.auth._default, "get_api_key_credentials", create=True
+    ) as get_api_key_credentials:
+        mock_cred = mock.Mock()
+        get_api_key_credentials.return_value = mock_cred
+        options = client_options.ClientOptions()
+        options.api_key = "api_key"
+        with mock.patch.object(transport_class, "__init__") as patched:
+            patched.return_value = None
+            client = client_class(client_options=options)
+            patched.assert_called_once_with(
+                credentials=mock_cred,
+                credentials_file=None,
+                host=client.DEFAULT_ENDPOINT,
+                scopes=None,
+                client_cert_source_for_mtls=None,
+                quota_project_id=None,
+                client_info=transports.base.DEFAULT_CLIENT_INFO,
+                always_use_jwt_access=True,
+            )
