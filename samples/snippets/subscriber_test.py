@@ -23,7 +23,7 @@ from _pytest.capture import CaptureFixture
 import backoff
 from flaky import flaky
 from google.api_core.exceptions import NotFound
-from google.cloud import pubsub_v1
+from google.cloud import bigquery, pubsub_v1
 import pytest
 
 import subscriber
@@ -543,6 +543,68 @@ def test_update_push_subscription(
 
     # Clean up.
     subscriber_client.delete_subscription(request={"subscription": subscription_path})
+
+
+def _create_bigquery_table(dataset_id: str, table_id: str) -> None:
+    client = bigquery.Client()
+    dataset = bigquery.Dataset(f"{PROJECT_ID}.{dataset_id}")
+    dataset.location = "US"
+    dataset = client.create_dataset(dataset)
+
+    table_id = f"{PROJECT_ID}.{dataset_id}.{table_id}"
+    schema = [
+        bigquery.SchemaField("data", "STRING", mode="REQUIRED"),
+        bigquery.SchemaField("message_id", "STRING", mode="REQUIRED"),
+        bigquery.SchemaField("attributes", "STRING", mode="REQUIRED"),
+        bigquery.SchemaField("subscription_name", "STRING", mode="REQUIRED"),
+        bigquery.SchemaField("publish_time", "TIMESTAMP", mode="REQUIRED"),
+    ]
+
+    table = bigquery.Table(table_id, schema=schema)
+    table = client.create_table(table)
+
+
+def _delete_bigquery_table(dataset_id: str) -> None:
+    client = bigquery.Client()
+    dataset = bigquery.Dataset(f"{PROJECT_ID}.{dataset_id}")
+    client.delete_dataset(dataset)
+
+
+def test_create_bigquery_subscription(
+    subscriber_client: pubsub_v1.SubscriberClient,
+    topic: str,
+    capsys: CaptureFixture[str],
+) -> None:
+    underscored_version = PY_VERSION.replace(".", "_")
+    dataset_id = f"python_samples_dataset_{underscored_version}_{UUID}"
+    table_id = f"python_samples_table_{underscored_version}_{UUID}"
+    full_table_id = f"{PROJECT_ID}.{dataset_id}.{table_id}"
+    _create_bigquery_table(dataset_id, table_id)
+
+    bigquery_subscription_for_create_name = (
+        f"subscription-test-subscription-bigquery-for-create-{PY_VERSION}-{UUID}"
+    )
+
+    subscription_path = subscriber_client.subscription_path(
+        PROJECT_ID, bigquery_subscription_for_create_name
+    )
+    try:
+        subscriber_client.delete_subscription(
+            request={"subscription": subscription_path}
+        )
+    except NotFound:
+        pass
+
+    subscriber.create_bigquery_subscription(
+        PROJECT_ID, TOPIC, bigquery_subscription_for_create_name, full_table_id
+    )
+
+    out, _ = capsys.readouterr()
+    assert f"{bigquery_subscription_for_create_name}" in out
+
+    # Clean up.
+    subscriber_client.delete_subscription(request={"subscription": subscription_path})
+    _delete_bigquery_table(dataset_id, delete_contents=True)
 
 
 def test_delete_subscription(
