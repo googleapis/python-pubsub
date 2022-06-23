@@ -384,14 +384,11 @@ def prerelease_deps(session):
 
     prerel_deps = [
         "protobuf",
-        "google-auth",
+        "googleapis-common-protos",
         "grpcio",
         "grpcio-status",
         "google-api-core",
         "proto-plus",
-        # dependencies of google-auth
-        "cryptography",
-        "pyasn1",
     ]
 
     for dep in prerel_deps:
