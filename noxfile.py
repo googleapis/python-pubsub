@@ -21,6 +21,7 @@ import os
 import pathlib
 import re
 import shutil
+from typing import Callable
 import warnings
 
 import nox
@@ -378,6 +379,33 @@ def docfx(session):
         os.path.join("docs", "_build", "html", ""),
     )
 
+def samples(
+    session: nox.sessions.Session) -> None:
+
+    """Runs py.test for a particular project."""
+    concurrent_args = []
+    if os.path.exists("samples/snippets/requirements.txt"):
+        if os.path.exists("samples/snippets/constraints.txt"):
+            session.install("-r", "samples/snippets/requirements.txt", "-c", "samples/snippets/constraints.txt")
+        else:
+            session.install("-r", "samples/snippets/requirements.txt")
+        with open("samples/snippets/requirements.txt") as rfile:
+            packages = rfile.read()
+
+    if os.path.exists("samples/snippets/requirements-test.txt"):
+        if os.path.exists("samples/snippets/constraints-test.txt"):
+            session.install(
+                "-r", "samples/snippets/requirements-test.txt", "-c", "samples/snippets/constraints-test.txt"
+            )
+        else:
+            session.install("-r", "samples/snippets/requirements-test.txt")
+        with open("samples/snippets/requirements-test.txt") as rtfile:
+            packages += rtfile.read()
+
+    session.run(
+        "py.test", "samples/snippets"
+    )
+
 
 @nox.session(python=SYSTEM_TEST_PYTHON_VERSIONS)
 def prerelease_deps(session):
@@ -442,5 +470,6 @@ def prerelease_deps(session):
     session.run("python", "-c", "import grpc; print(grpc.__version__)")
 
     session.run("py.test", "tests/unit")
-    session.run("py.test", "tests/system")
-    session.run("py.test", "samples/snippets")
+    samples(session)
+    system(session)
+
