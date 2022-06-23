@@ -383,7 +383,6 @@ def prerelease_deps(session):
     """Run all tests with prerelease versions of dependencies installed."""
 
     prerel_deps = [
-        "protobuf",
         "googleapis-common-protos",
         "google-auth",
         "grpcio",
