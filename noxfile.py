@@ -19,7 +19,6 @@
 from __future__ import absolute_import
 import os
 import pathlib
-import re
 import shutil
 import warnings
 
@@ -384,7 +383,7 @@ def prerelease_deps(session):
     """Run all tests with prerelease versions of dependencies installed."""
 
     prerel_deps = [
-        "googleapis-common-protos",
+        "protobuf",
         "google-auth",
         "grpcio",
         "grpcio-status",
