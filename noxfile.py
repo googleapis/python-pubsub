@@ -470,6 +470,6 @@ def prerelease_deps(session):
     session.run("python", "-c", "import grpc; print(grpc.__version__)")
 
     session.run("py.test", "tests/unit")
-    samples(session)
     system(session)
+    samples(session)
 
