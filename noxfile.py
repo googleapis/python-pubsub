@@ -19,6 +19,7 @@
 from __future__ import absolute_import
 import os
 import pathlib
+import re
 import shutil
 import warnings
 
@@ -383,13 +384,14 @@ def prerelease_deps(session):
     """Run all tests with prerelease versions of dependencies installed."""
 
     prerel_deps = [
-        "protobuf",
+        "protobuf >=3.19.0, <4.0.0dev",
         "googleapis-common-protos",
         "google-auth",
-        "grpcio",
-        "grpcio-status",
+        "grpcio >= 1.38.1, < 2.0dev",
+        "grpcio-status >= 1.16.0",
         "google-api-core",
-        "proto-plus",
+        "google-api-core[grpc] >= 1.31.5, <3.0.0dev,!=2.0.*,!=2.1.*,!=2.2.*,!=2.3.0",
+        "proto-plus >= 1.15.0, <2.0.0dev",
         # dependencies of google-auth
         "cryptography",
         "pyasn1",
@@ -435,7 +437,8 @@ def prerelease_deps(session):
     session.run(
         "python", "-c", "import google.protobuf; print(google.protobuf.__version__)"
     )
-    session.run("pip freeze")
+
+    session.run("pip", "freeze")
     session.run("python", "-c", "import grpc; print(grpc.__version__)")
 
     session.run("py.test", "tests/unit")
