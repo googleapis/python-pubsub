@@ -385,10 +385,14 @@ def prerelease_deps(session):
     prerel_deps = [
         "protobuf",
         "googleapis-common-protos",
+        "google-auth",
         "grpcio",
         "grpcio-status",
         "google-api-core",
         "proto-plus",
+        # dependencies of google-auth
+        "cryptography",
+        "pyasn1",
     ]
 
     for dep in prerel_deps:
@@ -431,6 +435,7 @@ def prerelease_deps(session):
     session.run(
         "python", "-c", "import google.protobuf; print(google.protobuf.__version__)"
     )
+    session.run("pip freeze")
     session.run("python", "-c", "import grpc; print(grpc.__version__)")
 
     session.run("py.test", "tests/unit")
