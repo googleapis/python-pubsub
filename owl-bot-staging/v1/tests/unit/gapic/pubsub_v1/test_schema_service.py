@@ -2271,7 +2271,6 @@ def test_schema_service_transport_auth_adc(transport_class):
     [
         transports.SchemaServiceGrpcTransport,
         transports.SchemaServiceGrpcAsyncIOTransport,
-        transports.SchemaServiceRestTransport,
     ],
 )
 def test_schema_service_transport_auth_gdch_credentials(transport_class):

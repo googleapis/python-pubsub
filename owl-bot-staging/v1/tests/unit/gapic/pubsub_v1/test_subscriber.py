@@ -4602,7 +4602,6 @@ def test_subscriber_transport_auth_adc(transport_class):
     [
         transports.SubscriberGrpcTransport,
         transports.SubscriberGrpcAsyncIOTransport,
-        transports.SubscriberRestTransport,
     ],
 )
 def test_subscriber_transport_auth_gdch_credentials(transport_class):
