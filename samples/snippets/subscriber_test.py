@@ -12,12 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from ctypes import Union
 import os
 import re
 import sys
 import time
-from typing import Any, Callable, cast, Generator, List, TypeVar
+from typing import Any, Callable, cast, Generator, List, TypeVar, Union
 import uuid
 
 from _pytest.capture import CaptureFixture
