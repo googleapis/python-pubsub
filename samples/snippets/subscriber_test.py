@@ -16,7 +16,7 @@ import os
 import re
 import sys
 import time
-from typing import Any, Callable, cast, Generator, List, TypeVar
+from typing import Any, Callable, Generator, List, TypeVar, cast
 import uuid
 
 from _pytest.capture import CaptureFixture
@@ -31,6 +31,7 @@ import subscriber
 # This uuid is shared across tests which run in parallel.
 UUID = uuid.uuid4().hex
 PY_VERSION = f"{sys.version_info.major}.{sys.version_info.minor}"
+UNDERSCORE_PY_VERSION = PY_VERSION.replace(".", "_")
 PROJECT_ID = os.environ["GOOGLE_CLOUD_PROJECT"]
 TOPIC = f"subscription-test-topic-{PY_VERSION}-{UUID}"
 DEAD_LETTER_TOPIC = f"subscription-test-dead-letter-topic-{PY_VERSION}-{UUID}"
@@ -42,6 +43,8 @@ REGIONAL_ENDPOINT = "us-east1-pubsub.googleapis.com:443"
 DEFAULT_MAX_DELIVERY_ATTEMPTS = 5
 UPDATED_MAX_DELIVERY_ATTEMPTS = 20
 FILTER = 'attributes.author="unknown"'
+BIGQUERY_DATASET_ID = f"python_samples_dataset_{UNDERSCORE_PY_VERSION}_{UUID}"
+BIGQUERY_TABLE_ID = f"python_samples_table_{UNDERSCORE_PY_VERSION}_{UUID}"
 
 C = TypeVar("C", bound=Callable[..., Any])
 
@@ -545,13 +548,14 @@ def test_update_push_subscription(
     subscriber_client.delete_subscription(request={"subscription": subscription_path})
 
 
-def _create_bigquery_table(dataset_id: str, table_id: str) -> None:
+@pytest.fixture(scope="module")
+def bigquery_table() -> Generator[str, None, None]:
     client = bigquery.Client()
-    dataset = bigquery.Dataset(f"{PROJECT_ID}.{dataset_id}")
+    dataset = bigquery.Dataset(f"{PROJECT_ID}.{BIGQUERY_DATASET_ID}")
     dataset.location = "US"
     dataset = client.create_dataset(dataset)
 
-    table_id = f"{PROJECT_ID}.{dataset_id}.{table_id}"
+    table_id = f"{PROJECT_ID}.{BIGQUERY_DATASET_ID}.{BIGQUERY_TABLE_ID}"
     schema = [
         bigquery.SchemaField("data", "STRING", mode="REQUIRED"),
         bigquery.SchemaField("message_id", "STRING", mode="REQUIRED"),
@@ -563,23 +567,18 @@ def _create_bigquery_table(dataset_id: str, table_id: str) -> None:
     table = bigquery.Table(table_id, schema=schema)
     table = client.create_table(table)
 
+    yield table_id
 
-def _delete_bigquery_table(dataset_id: str) -> None:
-    client = bigquery.Client()
-    dataset = bigquery.Dataset(f"{PROJECT_ID}.{dataset_id}")
-    client.delete_dataset(dataset)
+    client.delete_dataset(dataset, delete_contents=True)
 
 
 def test_create_bigquery_subscription(
     subscriber_client: pubsub_v1.SubscriberClient,
     topic: str,
+    bigquery_table: str,
     capsys: CaptureFixture[str],
 ) -> None:
     underscored_version = PY_VERSION.replace(".", "_")
-    dataset_id = f"python_samples_dataset_{underscored_version}_{UUID}"
-    table_id = f"python_samples_table_{underscored_version}_{UUID}"
-    full_table_id = f"{PROJECT_ID}.{dataset_id}.{table_id}"
-    _create_bigquery_table(dataset_id, table_id)
 
     bigquery_subscription_for_create_name = (
         f"subscription-test-subscription-bigquery-for-create-{PY_VERSION}-{UUID}"
@@ -596,7 +595,7 @@ def test_create_bigquery_subscription(
         pass
 
     subscriber.create_bigquery_subscription(
-        PROJECT_ID, TOPIC, bigquery_subscription_for_create_name, full_table_id
+        PROJECT_ID, TOPIC, bigquery_subscription_for_create_name, bigquery_table
     )
 
     out, _ = capsys.readouterr()
@@ -604,7 +603,6 @@ def test_create_bigquery_subscription(
 
     # Clean up.
     subscriber_client.delete_subscription(request={"subscription": subscription_path})
-    _delete_bigquery_table(dataset_id, delete_contents=True)
 
 
 def test_delete_subscription(
