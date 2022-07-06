@@ -19,8 +19,9 @@ import uuid
 from _pytest.capture import CaptureFixture
 from google.api_core.exceptions import NotFound
 from google.cloud import pubsub_v1
-import iam
 import pytest
+
+import iam
 
 
 UUID = uuid.uuid4().hex

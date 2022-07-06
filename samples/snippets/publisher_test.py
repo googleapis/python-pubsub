@@ -23,8 +23,9 @@ import backoff
 from google.api_core.exceptions import NotFound
 from google.cloud import pubsub_v1
 import mock
-import publisher
 import pytest
+
+import publisher
 
 
 # This uuid is shared across tests which run in parallel.
