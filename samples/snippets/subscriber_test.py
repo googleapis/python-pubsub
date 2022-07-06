@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from ctypes import Union
 import os
 import re
 import sys
@@ -141,7 +142,7 @@ def _publish_messages(
     publisher_client: pubsub_v1.PublisherClient,
     topic: str,
     message_num: int = 5,
-    **attrs: Any,
+    **attrs: Union[bytes, str],
 ) -> List[str]:
     message_ids = []
     for n in range(message_num):
