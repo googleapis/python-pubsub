@@ -28,7 +28,6 @@ from google.cloud.pubsub import SchemaServiceClient
 from google.cloud.pubsub import SubscriberClient
 from google.pubsub_v1.types import Encoding
 import pytest
-
 import schema
 
 # This uuid is shared across tests which run in parallel.
