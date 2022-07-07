@@ -3,7 +3,7 @@ Python Client for Google Cloud Pub/Sub API
 
 |stable| |pypi| |versions|
 
-`Google Cloud Pub/Sub API`_: 
+`Google Cloud Pub/Sub API`_: is designed to provide reliable, many-to-many, asynchronous messaging between applications. Publisher applications can send messages to a topic and other applications can subscribe to that topic to receive the messages. By decoupling senders and receivers, Google Cloud Pub/Sub allows developers to communicate between independently written applications.
 
 - `Client Library Documentation`_
 - `Product Documentation`_
