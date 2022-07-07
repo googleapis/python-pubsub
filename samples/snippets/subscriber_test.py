@@ -16,7 +16,7 @@ import os
 import re
 import sys
 import time
-from typing import Any, Callable, cast, Generator, List, TypeVar, Union
+from typing import Any, Callable, cast, Generator, List, TypeVar
 import uuid
 
 from _pytest.capture import CaptureFixture
@@ -141,7 +141,7 @@ def _publish_messages(
     publisher_client: pubsub_v1.PublisherClient,
     topic: str,
     message_num: int = 5,
-    **attrs: Union[bytes, str],
+    **attrs: Any, # noqa: ANN401
 ) -> List[str]:
     message_ids = []
     for n in range(message_num):
