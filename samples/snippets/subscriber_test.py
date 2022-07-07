@@ -578,8 +578,6 @@ def test_create_bigquery_subscription(
     bigquery_table: str,
     capsys: CaptureFixture[str],
 ) -> None:
-    underscored_version = PY_VERSION.replace(".", "_")
-
     bigquery_subscription_for_create_name = (
         f"subscription-test-subscription-bigquery-for-create-{PY_VERSION}-{UUID}"
     )
