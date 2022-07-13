@@ -15,9 +15,11 @@
 # limitations under the License.
 
 import argparse
+from time import sleep
 from typing import Optional
 
 from google.cloud import pubsub_v1
+from google.cloud.pubsub_v1.types import FlowControl
 
 
 def sub(project_id: str, subscription_id: str, timeout: Optional[float] = None) -> None:
@@ -31,11 +33,12 @@ def sub(project_id: str, subscription_id: str, timeout: Optional[float] = None) 
     def callback(message: pubsub_v1.subscriber.message.Message) -> None:
         print(f"Received {message}.")
         # Acknowledge the message. Unack'ed messages will be redelivered.
+        sleep(500)
         message.ack()
         print(f"Acknowledged {message.message_id}.")
 
     streaming_pull_future = subscriber_client.subscribe(
-        subscription_path, callback=callback
+        subscription_path, callback=callback, flow_control=FlowControl(max_messages=700000)
     )
     print(f"Listening for messages on {subscription_path}..\n")
 

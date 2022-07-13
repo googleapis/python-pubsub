@@ -932,10 +932,13 @@ class StreamingPullManager(object):
         if self._leaser is not None:
             # Explicitly copy the list, as it could be modified by another
             # thread.
-            lease_ids = list(self._leaser.ack_ids)
+            if len(self._leaser.ack_ids) < 100000:
+                _LOGGER.info("sending", len(lease_ids), "lease ids")
+                lease_ids = list(self._leaser.ack_ids)
+            else:
+                lease_ids = list(self._leaser.ack_ids[:100000])
         else:
             lease_ids = []
-
         # Put the request together.
         request = gapic_types.StreamingPullRequest(
             modify_deadline_ack_ids=list(lease_ids),
@@ -950,6 +953,7 @@ class StreamingPullManager(object):
                 0 if self._use_legacy_flow_control else self._flow_control.max_bytes
             ),
         )
+        
 
         # Return the initial request.
         return request
