@@ -930,6 +930,8 @@ class StreamingPullManager(object):
         # Put the request together.
         request = gapic_types.StreamingPullRequest(
             stream_ack_deadline_seconds=stream_ack_deadline_seconds,
+            modify_deadline_ack_ids=[],
+            modify_deadline_seconds=[],
             subscription=self._subscription,
             client_id=self._client_id,
             max_outstanding_messages=(
