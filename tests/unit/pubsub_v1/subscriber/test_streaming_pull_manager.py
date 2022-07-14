@@ -1318,8 +1318,6 @@ def test__get_initial_request():
     assert isinstance(initial_request, gapic_types.StreamingPullRequest)
     assert initial_request.subscription == "subscription-name"
     assert initial_request.stream_ack_deadline_seconds == 123
-    assert initial_request.modify_deadline_ack_ids == ["1", "2"]
-    assert initial_request.modify_deadline_seconds == [10, 10]
 
 
 def test__get_initial_request_wo_leaser():
@@ -1331,8 +1329,6 @@ def test__get_initial_request_wo_leaser():
     assert isinstance(initial_request, gapic_types.StreamingPullRequest)
     assert initial_request.subscription == "subscription-name"
     assert initial_request.stream_ack_deadline_seconds == 123
-    assert initial_request.modify_deadline_ack_ids == []
-    assert initial_request.modify_deadline_seconds == []
 
 
 def test__on_response_delivery_attempt():
