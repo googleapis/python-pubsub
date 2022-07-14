@@ -941,7 +941,6 @@ class StreamingPullManager(object):
                 0 if self._use_legacy_flow_control else self._flow_control.max_bytes
             ),
         )
-        
 
         # Return the initial request.
         return request
