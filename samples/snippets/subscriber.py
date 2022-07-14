@@ -582,7 +582,7 @@ def receive_messages_with_flow_control(
         message.ack()
 
     # Limit the subscriber to only have ten outstanding messages at a time.
-    flow_control = pubsub_v1.types.FlowControl(max_messages=700000)
+    flow_control = pubsub_v1.types.FlowControl(max_messages=10)
 
     streaming_pull_future = subscriber.subscribe(
         subscription_path, callback=callback, flow_control=flow_control
