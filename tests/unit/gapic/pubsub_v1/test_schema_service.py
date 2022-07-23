@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 import os
-from unittest import mock
+import mock
 
 import grpc
 from grpc.experimental import aio
