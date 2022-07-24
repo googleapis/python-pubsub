@@ -1428,9 +1428,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
                 based on attributes about the request and/or target
                 resource.
 
-                **JSON Example**
-
-                ::
+                **JSON Example**::
 
                     {
                       "bindings": [
@@ -1456,9 +1454,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
                       ]
                     }
 
-                **YAML Example**
-
-                ::
+                **YAML Example**::
 
                     bindings:
                     - members:
@@ -1551,9 +1547,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
                 based on attributes about the request and/or target
                 resource.
 
-                **JSON Example**
-
-                ::
+                **JSON Example**::
 
                     {
                       "bindings": [
@@ -1579,9 +1573,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
                       ]
                     }
 
-                **YAML Example**
-
-                ::
+                **YAML Example**::
 
                     bindings:
                     - members:

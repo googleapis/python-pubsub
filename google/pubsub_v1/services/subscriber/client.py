@@ -2278,9 +2278,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
                 based on attributes about the request and/or target
                 resource.
 
-                **JSON Example**
-
-                ::
+                **JSON Example**::
 
                     {
                       "bindings": [
@@ -2306,9 +2304,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
                       ]
                     }
 
-                **YAML Example**
-
-                ::
+                **YAML Example**::
 
                     bindings:
                     - members:
@@ -2400,9 +2396,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
                 based on attributes about the request and/or target
                 resource.
 
-                **JSON Example**
-
-                ::
+                **JSON Example**::
 
                     {
                       "bindings": [
@@ -2428,9 +2422,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
                       ]
                     }
 
-                **YAML Example**
-
-                ::
+                **YAML Example**::
 
                     bindings:
                     - members:
