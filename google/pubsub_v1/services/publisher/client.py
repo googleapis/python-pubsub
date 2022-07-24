@@ -488,6 +488,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
                 quota_project_id=client_options.quota_project_id,
                 client_info=client_info,
                 always_use_jwt_access=True,
+                api_audience=client_options.api_audience,
             )
 
     def create_topic(
@@ -1427,7 +1428,9 @@ class PublisherClient(metaclass=PublisherClientMeta):
                 based on attributes about the request and/or target
                 resource.
 
+
                 **JSON Example**::
+
 
                     {
                       "bindings": [
@@ -1453,7 +1456,9 @@ class PublisherClient(metaclass=PublisherClientMeta):
                       ]
                     }
 
+
                 **YAML Example**::
+
 
                     bindings:
                     - members:
@@ -1469,6 +1474,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
                         title: expirable access
                         description: Does not grant access after Sep 2020
                         expression: request.time < timestamp('2020-10-01T00:00:00.000Z')
+
 
                 For a description of IAM and its features, see the `IAM
                 developer's
@@ -1546,7 +1552,9 @@ class PublisherClient(metaclass=PublisherClientMeta):
                 based on attributes about the request and/or target
                 resource.
 
+
                 **JSON Example**::
+
 
                     {
                       "bindings": [
@@ -1572,7 +1580,9 @@ class PublisherClient(metaclass=PublisherClientMeta):
                       ]
                     }
 
+
                 **YAML Example**::
+
 
                     bindings:
                     - members:
@@ -1588,6 +1598,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
                         title: expirable access
                         description: Does not grant access after Sep 2020
                         expression: request.time < timestamp('2020-10-01T00:00:00.000Z')
+
 
                 For a description of IAM and its features, see the `IAM
                 developer's
