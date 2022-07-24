@@ -343,7 +343,7 @@ for library in s.get_staging_dirs(default_version):
     )
 
     # This line is required to move the generated code from the `owl-bot-staging` folder 
-    # to the destination folder `google/pubsub``
+    # to the destination folder `google/pubsub`
     s.move(
         library,
         excludes=[
