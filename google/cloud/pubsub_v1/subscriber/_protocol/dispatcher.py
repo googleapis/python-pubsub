@@ -19,7 +19,6 @@ import functools
 import itertools
 import logging
 import math
-from msilib.schema import Error
 import time
 import threading
 import typing
