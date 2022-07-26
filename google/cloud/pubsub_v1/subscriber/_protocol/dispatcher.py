@@ -140,7 +140,7 @@ class Dispatcher(object):
                         item.future.set_exception(
                             AcknowledgeError(
                                 AcknowledgeStatus.OTHER,
-                                "Stream is being shutdown, request was not sent",
+                                "Stream is being shutdown, request was not sent.",
                             )
                         )
                     else:
