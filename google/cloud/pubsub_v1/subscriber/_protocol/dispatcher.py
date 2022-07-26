@@ -19,6 +19,7 @@ import functools
 import itertools
 import logging
 import math
+from msilib.schema import Error
 import time
 import threading
 import typing
@@ -29,6 +30,7 @@ from google.api_core.retry import exponential_sleep_generator
 from google.cloud.pubsub_v1.subscriber._protocol import helper_threads
 from google.cloud.pubsub_v1.subscriber._protocol import requests
 from google.cloud.pubsub_v1.subscriber.exceptions import (
+    AcknowledgeError,
     AcknowledgeStatus,
 )
 
@@ -86,6 +88,7 @@ class Dispatcher(object):
         self._queue = queue
         self._thread: Optional[threading.Thread] = None
         self._operational_lock = threading.Lock()
+        self._shutdown_mode = False
 
     def start(self) -> None:
         """Start a thread to dispatch requests queued up by callbacks.
@@ -112,6 +115,7 @@ class Dispatcher(object):
     def stop(self) -> None:
         with self._operational_lock:
             if self._thread is not None:
+                self.enter_shutdown_mode()
                 # Signal the worker to stop by queueing a "poison pill"
                 self._queue.put(helper_threads.STOP)
                 self._thread.join()
@@ -125,6 +129,21 @@ class Dispatcher(object):
             items:
                 Queued requests to dispatch.
         """
+        exactly_once_delivery_enabled = self._manager._exactly_once_delivery_enabled()
+        if self._shutdown_mode:
+            for item in items:
+                if item.future is not None:
+                    if exactly_once_delivery_enabled:
+                        item.future.set_exception(
+                            AcknowledgeError(
+                                AcknowledgeStatus.OTHER,
+                                "Stream is being shutdown, request was not sent",
+                            )
+                        )
+                    else:
+                        item.future.set_result(AcknowledgeStatus.SUCCESS)
+            return
+
         lease_requests: List[requests.LeaseRequest] = []
         modack_requests: List[requests.ModAckRequest] = []
         ack_requests: List[requests.AckRequest] = []
@@ -136,7 +155,6 @@ class Dispatcher(object):
         ack_ids = set()
         nack_ids = set()
         drop_ids = set()
-        exactly_once_delivery_enabled = self._manager._exactly_once_delivery_enabled()
 
         for item in items:
             if isinstance(item, requests.LeaseRequest):
@@ -412,3 +430,6 @@ class Dispatcher(object):
                 for item in items
             ]
         )
+
+    def enter_shutdown_mode(self):
+        self._shutdown_mode = True
