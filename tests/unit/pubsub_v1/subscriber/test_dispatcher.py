@@ -242,7 +242,8 @@ def test_dispatch_in_shutdown_mode_no_futures(items, method_name):
     )
     dispatcher_ = dispatcher.Dispatcher(manager, mock.sentinel.queue)
 
-    dispatcher._enter_shutdown_mode()
+    with mock.patch.object(dispatcher_, "enter_shutdown_mode"):
+        dispatcher_.enter_shutdown_mode()
 
     manager._exactly_once_delivery_enabled.return_value = False
     with mock.patch.object(dispatcher_, method_name) as method:
@@ -298,7 +299,8 @@ def test_dispatch_in_shutdown_mode_no_eod(items, method_name):
     )
     dispatcher_ = dispatcher.Dispatcher(manager, mock.sentinel.queue)
 
-    dispatcher.enter_shutdown_mode()
+    with mock.patch.object(dispatcher_, "enter_shutdown_mode"):
+        dispatcher_.enter_shutdown_mode()
 
     manager._exactly_once_delivery_enabled.return_value = False
     with mock.patch.object(dispatcher_, method_name) as method:
@@ -357,7 +359,8 @@ def test_dispatch_in_shutdown_mode_with_eod(items, method_name):
     )
     dispatcher_ = dispatcher.Dispatcher(manager, mock.sentinel.queue)
 
-    dispatcher.enter_shutdown_mode()
+    with mock.patch.object(dispatcher_, "enter_shutdown_mode"):
+        dispatcher_.enter_shutdown_mode()
 
     manager._exactly_once_delivery_enabled.return_value = False
     with mock.patch.object(dispatcher_, method_name) as method:

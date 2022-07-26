@@ -430,5 +430,5 @@ class Dispatcher(object):
             ]
         )
 
-    def enter_shutdown_mode(self):
+    def enter_shutdown_mode(self) -> None:
         self._shutdown_mode = True
