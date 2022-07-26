@@ -242,14 +242,13 @@ def test_dispatch_in_shutdown_mode_no_futures(items, method_name):
     )
     dispatcher_ = dispatcher.Dispatcher(manager, mock.sentinel.queue)
 
-    with mock.patch.object(dispatcher_, "enter_shutdown_mode"):
-        dispatcher_.enter_shutdown_mode()
+    dispatcher_._shutdown_mode = True
 
     manager._exactly_once_delivery_enabled.return_value = False
     with mock.patch.object(dispatcher_, method_name) as method:
         dispatcher_.dispatch_callback(items)
 
-    method.assert_not_called([items[0]])
+    method.assert_not_called()
     manager._exactly_once_delivery_enabled.assert_called()
 
 
@@ -299,14 +298,13 @@ def test_dispatch_in_shutdown_mode_no_eod(items, method_name):
     )
     dispatcher_ = dispatcher.Dispatcher(manager, mock.sentinel.queue)
 
-    with mock.patch.object(dispatcher_, "enter_shutdown_mode"):
-        dispatcher_.enter_shutdown_mode()
+    dispatcher_._shutdown_mode = True
 
     manager._exactly_once_delivery_enabled.return_value = False
     with mock.patch.object(dispatcher_, method_name) as method:
         dispatcher_.dispatch_callback(items)
 
-    method.assert_not_called([items[0]])
+    method.assert_not_called()
     manager._exactly_once_delivery_enabled.assert_called()
 
     if method_name != "drop" and method_name != "lease":
@@ -359,20 +357,19 @@ def test_dispatch_in_shutdown_mode_with_eod(items, method_name):
     )
     dispatcher_ = dispatcher.Dispatcher(manager, mock.sentinel.queue)
 
-    with mock.patch.object(dispatcher_, "enter_shutdown_mode"):
-        dispatcher_.enter_shutdown_mode()
+    dispatcher_._shutdown_mode = True
 
-    manager._exactly_once_delivery_enabled.return_value = False
+    manager._exactly_once_delivery_enabled.return_value = True
     with mock.patch.object(dispatcher_, method_name) as method:
         dispatcher_.dispatch_callback(items)
 
-    method.assert_called_once_with([items[0]])
+    method.assert_not_called()
     manager._exactly_once_delivery_enabled.assert_called()
 
     if method_name != "drop" and method_name != "lease":
-        with pytest.raises(AcknowledgeError.OTHER) as err:
+        with pytest.raises(AcknowledgeError) as e:
             items[1].future.result()
-            assert err.errisinstance(AcknowledgeError.OTHER)
+        assert e.value.error_code == AcknowledgeStatus.OTHER
 
 
 @pytest.mark.parametrize(
@@ -580,6 +577,7 @@ def test_ack_no_time():
             future=None,
         )
     ]
+
     manager.send_unary_ack.return_value = (items, [])
     dispatcher_.ack(items)
 

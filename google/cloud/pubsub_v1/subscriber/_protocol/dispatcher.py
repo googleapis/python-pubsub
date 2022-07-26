@@ -131,7 +131,11 @@ class Dispatcher(object):
         exactly_once_delivery_enabled = self._manager._exactly_once_delivery_enabled()
         if self._shutdown_mode:
             for item in items:
-                if item.future is not None:
+                if (
+                    isinstance(item, requests.ModAckRequest)
+                    or isinstance(item, requests.AckRequest)
+                    or isinstance(item, requests.NackRequest)
+                ) and item.future is not None:
                     if exactly_once_delivery_enabled:
                         item.future.set_exception(
                             AcknowledgeError(
