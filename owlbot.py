@@ -28,7 +28,7 @@ default_version = "v1"
 for library in s.get_staging_dirs(default_version):
     # Work around gapic generator bug https://github.com/googleapis/gapic-generator-python/issues/902
     s.replace(
-        library / f"google/pubsub_{library.name}/types/*.py",
+        library / f"google/pubsub_{library.name}/**/*.py",
         r""".
     Attributes:""",
         r""".\n
@@ -37,7 +37,7 @@ for library in s.get_staging_dirs(default_version):
 
     # Work around gapic generator bug https://github.com/googleapis/gapic-generator-python/issues/902
     s.replace(
-        library / f"google/pubsub_{library.name}/types/*.py",
+        library / f"google/pubsub_{library.name}/**/*.py",
         r""".
         Attributes:""",
         r""".\n
@@ -265,13 +265,13 @@ for library in s.get_staging_dirs(default_version):
 
     # Allow timeout to be an instance of google.api_core.timeout.*
     s.replace(
-        library / f"google/pubsub_{library.name}/types/__init__.py",
+        library / f"google/pubsub_{library.name}/**/__init__.py",
         r"from \.pubsub import \(",
         "from typing import Union\n\n\g<0>",
     )
 
     s.replace(
-        library / f"google/pubsub_{library.name}/types/__init__.py",
+        library / f"google/pubsub_{library.name}/**/__init__.py",
         r"__all__ = \(\n",
         textwrap.dedent(
             '''\

@@ -16,75 +16,14 @@
 import proto  # type: ignore
 
 
-__protobuf__ = proto.module(
-    package="google.pubsub.v1",
-    manifest={
-        "SchemaView",
-        "Encoding",
-        "Schema",
-        "CreateSchemaRequest",
-        "GetSchemaRequest",
-        "ListSchemasRequest",
-        "ListSchemasResponse",
-        "DeleteSchemaRequest",
-        "ValidateSchemaRequest",
-        "ValidateSchemaResponse",
-        "ValidateMessageRequest",
-        "ValidateMessageResponse",
-    },
+__manifest__ = (
+    "CreateSchemaRequest",
+    "GetSchemaRequest",
+    "ListSchemasRequest",
+    "DeleteSchemaRequest",
+    "ValidateSchemaRequest",
+    "ValidateMessageRequest",
 )
-
-
-class SchemaView(proto.Enum):
-    r"""View of Schema object fields to be returned by GetSchema and
-    ListSchemas.
-    """
-    SCHEMA_VIEW_UNSPECIFIED = 0
-    BASIC = 1
-    FULL = 2
-
-
-class Encoding(proto.Enum):
-    r"""Possible encoding types for messages."""
-    ENCODING_UNSPECIFIED = 0
-    JSON = 1
-    BINARY = 2
-
-
-class Schema(proto.Message):
-    r"""A schema resource.
-
-    Attributes:
-        name (str):
-            Required. Name of the schema. Format is
-            ``projects/{project}/schemas/{schema}``.
-        type_ (google.pubsub_v1.types.Schema.Type):
-            The type of the schema definition.
-        definition (str):
-            The definition of the schema. This should contain a string
-            representing the full definition of the schema that is a
-            valid schema definition of the type specified in ``type``.
-    """
-
-    class Type(proto.Enum):
-        r"""Possible schema definition types."""
-        TYPE_UNSPECIFIED = 0
-        PROTOCOL_BUFFER = 1
-        AVRO = 2
-
-    name = proto.Field(
-        proto.STRING,
-        number=1,
-    )
-    type_ = proto.Field(
-        proto.ENUM,
-        number=2,
-        enum=Type,
-    )
-    definition = proto.Field(
-        proto.STRING,
-        number=3,
-    )
 
 
 class CreateSchemaRequest(proto.Message):
@@ -108,6 +47,7 @@ class CreateSchemaRequest(proto.Message):
             https://cloud.google.com/pubsub/docs/admin#resource_names
             for resource name constraints.
     """
+    __module__ = __module__.rsplit(".", maxsplit=1)[0]  # type: ignore
 
     parent = proto.Field(
         proto.STRING,
@@ -136,6 +76,7 @@ class GetSchemaRequest(proto.Message):
             returns a Schema with ``name`` and ``type``, but not
             ``definition``. Set to ``FULL`` to retrieve all fields.
     """
+    __module__ = __module__.rsplit(".", maxsplit=1)[0]  # type: ignore
 
     name = proto.Field(
         proto.STRING,
@@ -167,6 +108,7 @@ class ListSchemasRequest(proto.Message):
             ``ListSchemas`` call, and that the system should return the
             next page of data.
     """
+    __module__ = __module__.rsplit(".", maxsplit=1)[0]  # type: ignore
 
     parent = proto.Field(
         proto.STRING,
@@ -187,33 +129,6 @@ class ListSchemasRequest(proto.Message):
     )
 
 
-class ListSchemasResponse(proto.Message):
-    r"""Response for the ``ListSchemas`` method.
-
-    Attributes:
-        schemas (Sequence[google.pubsub_v1.types.Schema]):
-            The resulting schemas.
-        next_page_token (str):
-            If not empty, indicates that there may be more schemas that
-            match the request; this value should be passed in a new
-            ``ListSchemasRequest``.
-    """
-
-    @property
-    def raw_page(self):
-        return self
-
-    schemas = proto.RepeatedField(
-        proto.MESSAGE,
-        number=1,
-        message="Schema",
-    )
-    next_page_token = proto.Field(
-        proto.STRING,
-        number=2,
-    )
-
-
 class DeleteSchemaRequest(proto.Message):
     r"""Request for the ``DeleteSchema`` method.
 
@@ -222,6 +137,7 @@ class DeleteSchemaRequest(proto.Message):
             Required. Name of the schema to delete. Format is
             ``projects/{project}/schemas/{schema}``.
     """
+    __module__ = __module__.rsplit(".", maxsplit=1)[0]  # type: ignore
 
     name = proto.Field(
         proto.STRING,
@@ -239,6 +155,7 @@ class ValidateSchemaRequest(proto.Message):
         schema (google.pubsub_v1.types.Schema):
             Required. The schema object to validate.
     """
+    __module__ = __module__.rsplit(".", maxsplit=1)[0]  # type: ignore
 
     parent = proto.Field(
         proto.STRING,
@@ -249,10 +166,6 @@ class ValidateSchemaRequest(proto.Message):
         number=2,
         message="Schema",
     )
-
-
-class ValidateSchemaResponse(proto.Message):
-    r"""Response for the ``ValidateSchema`` method. Empty for now."""
 
 
 class ValidateMessageRequest(proto.Message):
@@ -284,6 +197,7 @@ class ValidateMessageRequest(proto.Message):
         encoding (google.pubsub_v1.types.Encoding):
             The encoding expected for messages
     """
+    __module__ = __module__.rsplit(".", maxsplit=1)[0]  # type: ignore
 
     parent = proto.Field(
         proto.STRING,
@@ -311,8 +225,4 @@ class ValidateMessageRequest(proto.Message):
     )
 
 
-class ValidateMessageResponse(proto.Message):
-    r"""Response for the ``ValidateMessage`` method. Empty for now."""
-
-
-__all__ = tuple(sorted(__protobuf__.manifest))
+__all__ = tuple(sorted(__manifest__))
