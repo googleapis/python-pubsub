@@ -21,7 +21,6 @@ from google.cloud.pubsub_v1.subscriber._protocol import streaming_pull_manager
 # try/except added for compatibility with python < 3.8
 try:
     from unittest import mock
-    from unittest.mock import AsyncMock
 except ImportError:
     import mock
 import pytest
