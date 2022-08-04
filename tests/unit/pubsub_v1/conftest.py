@@ -17,7 +17,6 @@ import google.auth.credentials
 # try/except added for compatibility with python < 3.8
 try:
     from unittest import mock
-    from unittest.mock import AsyncMock
 except ImportError:
     import mock
 import pytest
