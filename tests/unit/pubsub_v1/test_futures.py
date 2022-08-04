@@ -17,7 +17,12 @@ import sys
 import threading
 import time
 
-from unittest import mock
+# try/except added for compatibility with python < 3.8
+try:
+    from unittest import mock
+    from unittest.mock import AsyncMock
+except ImportError:
+    import mock
 import pytest
 
 from google.cloud.pubsub_v1 import exceptions
