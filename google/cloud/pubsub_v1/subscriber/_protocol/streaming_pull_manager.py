@@ -73,13 +73,15 @@ _MIN_ACK_DEADLINE_SECS_WHEN_EXACTLY_ONCE_ENABLED = 60
 """The minimum ack_deadline, in seconds, for when exactly_once is enabled for
 a subscription. We do this to reduce premature ack expiration.
 """
-_DEFAULT_STREAM_ACK_DEADLINE = 60
-"""The default stream ack deadline, in seconds."""
 
-_MAX_STREAM_ACK_DEADLINE = 600
-""""""
-_MIN_STREAM_ACK_DEADLINE = 10
-""""""
+_DEFAULT_STREAM_ACK_DEADLINE: float = 60
+"""The default stream ack deadline in seconds."""
+
+_MAX_STREAM_ACK_DEADLINE: float = 600
+"""The maximum stream ack deadline in seconds."""
+
+_MIN_STREAM_ACK_DEADLINE: float = 10
+"""The minimum stream ack deadline in seconds."""
 
 _EXACTLY_ONCE_DELIVERY_TEMPORARY_RETRY_ERRORS = {
     code_pb2.DEADLINE_EXCEEDED,
