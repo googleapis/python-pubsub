@@ -413,7 +413,8 @@ class StreamingPullManager(object):
                 self._ack_deadline = max(
                     self._ack_deadline, _MIN_ACK_DEADLINE_SECS_WHEN_EXACTLY_ONCE_ENABLED
                 )
-
+            # Set the _stream_ack_deadline to match the new ack_deadline
+            self._stream_ack_deadline = self._ack_deadline
             return self._ack_deadline
 
     @property
