@@ -20,7 +20,7 @@ import itertools
 import logging
 import threading
 import typing
-from typing import Any, Dict, Callable, Iterable, List, Optional, Tuple, Union
+from typing import Any, Dict, Callable, Iterable, List, Optional, Tuple
 import uuid
 
 import grpc  # type: ignore
