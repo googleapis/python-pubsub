@@ -111,16 +111,61 @@ def test_constructor_and_default_state():
     assert manager._client_id is not None
 
 
-def test_constructor_with_options():
+def test_constructor_with_default_options():
+    flow_control_ = types.FlowControl()
     manager = streaming_pull_manager.StreamingPullManager(
         mock.sentinel.client,
         mock.sentinel.subscription,
-        flow_control=mock.sentinel.flow_control,
+        flow_control=flow_control_,
         scheduler=mock.sentinel.scheduler,
     )
 
-    assert manager.flow_control == mock.sentinel.flow_control
+    assert manager.flow_control == flow_control_
     assert manager._scheduler == mock.sentinel.scheduler
+    assert manager._ack_deadline == 10
+    assert manager._stream_ack_deadline == 60
+
+
+def test_constructor_with_min_and_max_duration_per_lease_extension_():
+    flow_control_ = types.FlowControl(
+        min_duration_per_lease_extension=15, max_duration_per_lease_extension=20
+    )
+    manager = streaming_pull_manager.StreamingPullManager(
+        mock.sentinel.client,
+        mock.sentinel.subscription,
+        flow_control=flow_control_,
+        scheduler=mock.sentinel.scheduler,
+    )
+    assert manager._ack_deadline == 15
+    assert manager._stream_ack_deadline == 20
+
+
+def test_constructor_with_min_duration_per_lease_extension_too_low():
+    flow_control_ = types.FlowControl(
+        min_duration_per_lease_extension=9, max_duration_per_lease_extension=9
+    )
+    manager = streaming_pull_manager.StreamingPullManager(
+        mock.sentinel.client,
+        mock.sentinel.subscription,
+        flow_control=flow_control_,
+        scheduler=mock.sentinel.scheduler,
+    )
+    assert manager._ack_deadline == 10
+    assert manager._stream_ack_deadline == 10
+
+
+def test_constructor_with_max_duration_per_lease_extension_too_high():
+    flow_control_ = types.FlowControl(
+        max_duration_per_lease_extension=601, min_duration_per_lease_extension=601
+    )
+    manager = streaming_pull_manager.StreamingPullManager(
+        mock.sentinel.client,
+        mock.sentinel.subscription,
+        flow_control=flow_control_,
+        scheduler=mock.sentinel.scheduler,
+    )
+    assert manager._ack_deadline == 600
+    assert manager._stream_ack_deadline == 600
 
 
 def make_manager(**kwargs):
@@ -168,9 +213,13 @@ def test__obtain_ack_deadline_no_custom_flow_control_setting():
     manager._flow_control = types.FlowControl(
         min_duration_per_lease_extension=0, max_duration_per_lease_extension=0
     )
+    assert manager._stream_ack_deadline == 60
+    assert manager._ack_deadline == 10
+    assert manager._obtain_ack_deadline(maybe_update=False) == 10
 
     deadline = manager._obtain_ack_deadline(maybe_update=True)
     assert deadline == histogram.MIN_ACK_DEADLINE
+    assert manager._stream_ack_deadline == 60
 
     # When we get some historical data, the deadline is adjusted.
     manager.ack_histogram.add(histogram.MIN_ACK_DEADLINE * 2)
@@ -190,11 +239,14 @@ def test__obtain_ack_deadline_with_max_duration_per_lease_extension():
     manager._flow_control = types.FlowControl(
         max_duration_per_lease_extension=histogram.MIN_ACK_DEADLINE + 1
     )
+    assert manager._ack_deadline == 10
+
     manager.ack_histogram.add(histogram.MIN_ACK_DEADLINE * 3)  # make p99 value large
 
     # The deadline configured in flow control should prevail.
     deadline = manager._obtain_ack_deadline(maybe_update=True)
     assert deadline == histogram.MIN_ACK_DEADLINE + 1
+    assert manager._stream_ack_deadline == 60
 
 
 def test__obtain_ack_deadline_with_min_duration_per_lease_extension():
@@ -209,6 +261,7 @@ def test__obtain_ack_deadline_with_min_duration_per_lease_extension():
     # The deadline configured in flow control should prevail.
     deadline = manager._obtain_ack_deadline(maybe_update=True)
     assert deadline == histogram.MAX_ACK_DEADLINE
+    assert manager._stream_ack_deadline == histogram.MAX_ACK_DEADLINE
 
 
 def test__obtain_ack_deadline_with_max_duration_per_lease_extension_too_low():
@@ -235,6 +288,7 @@ def test__obtain_ack_deadline_with_min_duration_per_lease_extension_too_high():
     # The deadline configured in flow control should be adjusted to the maximum allowed.
     deadline = manager._obtain_ack_deadline(maybe_update=True)
     assert deadline == histogram.MAX_ACK_DEADLINE
+    assert manager._stream_ack_deadline == histogram.MAX_ACK_DEADLINE
 
 
 def test__obtain_ack_deadline_with_exactly_once_enabled():
@@ -251,6 +305,7 @@ def test__obtain_ack_deadline_with_exactly_once_enabled():
     # Since the 60-second min ack_deadline value for exactly_once subscriptions
     # seconds is higher than the histogram value, the deadline should be 60 sec.
     assert deadline == 60
+    assert manager._stream_ack_deadline == 60
 
 
 def test__obtain_ack_deadline_with_min_duration_per_lease_extension_with_exactly_once_enabled():
@@ -268,6 +323,7 @@ def test__obtain_ack_deadline_with_min_duration_per_lease_extension_with_exactly
     # User-defined custom min ack_deadline value takes precedence over
     # exactly_once default of 60 seconds.
     assert deadline == histogram.MAX_ACK_DEADLINE
+    assert manager._stream_ack_deadline == histogram.MAX_ACK_DEADLINE
 
 
 def test__obtain_ack_deadline_no_value_update():
@@ -296,12 +352,12 @@ def test__obtain_ack_deadline_no_value_update():
 
 def test_client_id():
     manager1 = make_manager()
-    request1 = manager1._get_initial_request(stream_ack_deadline_seconds=10)
+    request1 = manager1._get_initial_request(stream_ack_deadline_seconds=60)
     client_id_1 = request1.client_id
     assert client_id_1
 
     manager2 = make_manager()
-    request2 = manager2._get_initial_request(stream_ack_deadline_seconds=10)
+    request2 = manager2._get_initial_request(stream_ack_deadline_seconds=60)
     client_id_2 = request2.client_id
     assert client_id_2
 
@@ -312,7 +368,7 @@ def test_streaming_flow_control():
     manager = make_manager(
         flow_control=types.FlowControl(max_messages=10, max_bytes=1000)
     )
-    request = manager._get_initial_request(stream_ack_deadline_seconds=10)
+    request = manager._get_initial_request(stream_ack_deadline_seconds=60)
     assert request.max_outstanding_messages == 10
     assert request.max_outstanding_bytes == 1000
 
@@ -322,7 +378,7 @@ def test_streaming_flow_control_use_legacy_flow_control():
         flow_control=types.FlowControl(max_messages=10, max_bytes=1000),
         use_legacy_flow_control=True,
     )
-    request = manager._get_initial_request(stream_ack_deadline_seconds=10)
+    request = manager._get_initial_request(stream_ack_deadline_seconds=60)
     assert request.max_outstanding_messages == 0
     assert request.max_outstanding_bytes == 0
 
@@ -1050,12 +1106,12 @@ def test_heartbeat_stream_ack_deadline_seconds(caplog):
     result = manager.heartbeat()
 
     manager._rpc.send.assert_called_once_with(
-        gapic_types.StreamingPullRequest(stream_ack_deadline_seconds=10)
+        gapic_types.StreamingPullRequest(stream_ack_deadline_seconds=60)
     )
     assert result
     # Set to false after a send is initiated.
     assert not manager._send_new_ack_deadline
-    assert "Sending new ack_deadline of 10 seconds." in caplog.text
+    assert "Sending new ack_deadline of 60 seconds." in caplog.text
 
 
 @mock.patch("google.api_core.bidi.ResumableBidiRpc", autospec=True)
@@ -1100,7 +1156,7 @@ def test_open(heartbeater, dispatcher, leaser, background_consumer, resumable_bi
     )
     initial_request_arg = resumable_bidi_rpc.call_args.kwargs["initial_request"]
     assert initial_request_arg.func == manager._get_initial_request
-    assert initial_request_arg.args[0] == 18
+    assert initial_request_arg.args[0] == 60
     assert not manager._client.get_subscription.called
 
     resumable_bidi_rpc.return_value.add_done_callback.assert_called_once_with(
@@ -1785,6 +1841,7 @@ def test__on_response_disable_exactly_once():
     # exactly_once minimum since exactly_once has been disabled.
     deadline = manager._obtain_ack_deadline(maybe_update=True)
     assert deadline == histogram.MIN_ACK_DEADLINE
+    assert manager._stream_ack_deadline == 60
 
 
 def test__on_response_exactly_once_immediate_modacks_fail():
