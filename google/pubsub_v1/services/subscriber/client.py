@@ -77,7 +77,6 @@ class SubscriberClientMeta(type):
     ) -> Type[SubscriberTransport]:
         """Returns an appropriate transport class.
 
-
         Args:
             label: The name of the desired transport. If none is
                 provided, then the first transport in the registry is used.
@@ -107,7 +106,6 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
 
         Convert "*.sandbox.googleapis.com" and "*.googleapis.com" to
         "*.mtls.sandbox.googleapis.com" and "*.mtls.googleapis.com" respectively.
-
         Args:
             api_endpoint (Optional[str]): the api endpoint to convert.
         Returns:
@@ -152,7 +150,6 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
         """Creates an instance of this client using the provided credentials
             info.
 
-
         Args:
             info (dict): The service account private key info.
             args: Additional arguments to pass to the constructor.
@@ -169,7 +166,6 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
     def from_service_account_file(cls, filename: str, *args, **kwargs):
         """Creates an instance of this client using the provided credentials
             file.
-
 
         Args:
             filename (str): The path to the service account private key json
@@ -348,7 +344,6 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
 
         More details can be found at https://google.aip.dev/auth/4114.
 
-
         Args:
             client_options (google.api_core.client_options.ClientOptions): Custom options for the
                 client. Only the `api_endpoint` and `client_cert_source` properties may be used
@@ -403,7 +398,6 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
         client_info: gapic_v1.client_info.ClientInfo = DEFAULT_CLIENT_INFO,
     ) -> None:
         """Instantiates the subscriber client.
-
 
         Args:
             credentials (Optional[google.auth.credentials.Credentials]): The
@@ -500,6 +494,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
                 quota_project_id=client_options.quota_project_id,
                 client_info=client_info,
                 always_use_jwt_access=True,
+                api_audience=client_options.api_audience,
             )
 
     def create_subscription(
@@ -547,7 +542,6 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
 
                 # Handle the response
                 print(response)
-
 
         Args:
             request (Union[google.pubsub_v1.types.Subscription, dict]):
@@ -703,7 +697,6 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
                 # Handle the response
                 print(response)
 
-
         Args:
             request (Union[google.pubsub_v1.types.GetSubscriptionRequest, dict]):
                 The request object. Request for the GetSubscription
@@ -804,7 +797,6 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
                 # Handle the response
                 print(response)
 
-
         Args:
             request (Union[google.pubsub_v1.types.UpdateSubscriptionRequest, dict]):
                 The request object. Request for the UpdateSubscription
@@ -880,7 +872,6 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
                 # Handle the response
                 for response in page_result:
                     print(response)
-
 
         Args:
             request (Union[google.pubsub_v1.types.ListSubscriptionsRequest, dict]):
@@ -990,7 +981,6 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
                 # Make the request
                 client.delete_subscription(request=request)
 
-
         Args:
             request (Union[google.pubsub_v1.types.DeleteSubscriptionRequest, dict]):
                 The request object. Request for the DeleteSubscription
@@ -1084,7 +1074,6 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
 
                 # Make the request
                 client.modify_ack_deadline(request=request)
-
 
         Args:
             request (Union[google.pubsub_v1.types.ModifyAckDeadlineRequest, dict]):
@@ -1205,7 +1194,6 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
                 # Make the request
                 client.acknowledge(request=request)
 
-
         Args:
             request (Union[google.pubsub_v1.types.AcknowledgeRequest, dict]):
                 The request object. Request for the Acknowledge method.
@@ -1308,7 +1296,6 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
 
                 # Handle the response
                 print(response)
-
 
         Args:
             request (Union[google.pubsub_v1.types.PullRequest, dict]):
@@ -1457,7 +1444,6 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
                 for response in stream:
                     print(response)
 
-
         Args:
             requests (Iterator[google.pubsub_v1.types.StreamingPullRequest]):
                 The request object iterator. Request for the `StreamingPull`
@@ -1531,7 +1517,6 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
 
                 # Make the request
                 client.modify_push_config(request=request)
-
 
         Args:
             request (Union[google.pubsub_v1.types.ModifyPushConfigRequest, dict]):
@@ -1641,7 +1626,6 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
                 # Handle the response
                 print(response)
 
-
         Args:
             request (Union[google.pubsub_v1.types.GetSnapshotRequest, dict]):
                 The request object. Request for the GetSnapshot method.
@@ -1744,7 +1728,6 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
                 # Handle the response
                 for response in page_result:
                     print(response)
-
 
         Args:
             request (Union[google.pubsub_v1.types.ListSnapshotsRequest, dict]):
@@ -1872,7 +1855,6 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
                 # Handle the response
                 print(response)
 
-
         Args:
             request (Union[google.pubsub_v1.types.CreateSnapshotRequest, dict]):
                 The request object. Request for the `CreateSnapshot`
@@ -1999,7 +1981,6 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
                 # Handle the response
                 print(response)
 
-
         Args:
             request (Union[google.pubsub_v1.types.UpdateSnapshotRequest, dict]):
                 The request object. Request for the UpdateSnapshot
@@ -2086,7 +2067,6 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
 
                 # Make the request
                 client.delete_snapshot(request=request)
-
 
         Args:
             request (Union[google.pubsub_v1.types.DeleteSnapshotRequest, dict]):
@@ -2181,7 +2161,6 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
                 # Handle the response
                 print(response)
 
-
         Args:
             request (Union[google.pubsub_v1.types.SeekRequest, dict]):
                 The request object. Request for the `Seek` method.
@@ -2251,7 +2230,6 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
 
         Replaces any existing policy.
 
-
         Args:
             request (:class:`~.iam_policy_pb2.SetIamPolicyRequest`):
                 The request object. Request message for `SetIamPolicy`
@@ -2277,7 +2255,9 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
                 based on attributes about the request and/or target
                 resource.
 
-                **JSON Example**::
+                **JSON Example**
+
+                ::
 
                     {
                       "bindings": [
@@ -2303,7 +2283,9 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
                       ]
                     }
 
-                **YAML Example**::
+                **YAML Example**
+
+                ::
 
                     bindings:
                     - members:
@@ -2369,7 +2351,6 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
         Returns an empty policy if the function exists and does not have a
         policy set.
 
-
         Args:
             request (:class:`~.iam_policy_pb2.GetIamPolicyRequest`):
                 The request object. Request message for `GetIamPolicy`
@@ -2395,7 +2376,9 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
                 based on attributes about the request and/or target
                 resource.
 
-                **JSON Example**::
+                **JSON Example**
+
+                ::
 
                     {
                       "bindings": [
@@ -2421,7 +2404,9 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
                       ]
                     }
 
-                **YAML Example**::
+                **YAML Example**
+
+                ::
 
                     bindings:
                     - members:
@@ -2487,7 +2472,6 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
 
         If the function does not exist, this will return an empty set
         of permissions, not a NOT_FOUND error.
-
 
         Args:
             request (:class:`~.iam_policy_pb2.TestIamPermissionsRequest`):
