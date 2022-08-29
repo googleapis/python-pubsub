@@ -295,8 +295,9 @@ class SubscriberAsyncClient:
                 should not be set.
             push_config (:class:`google.pubsub_v1.types.PushConfig`):
                 If push delivery is used with this subscription, this
-                field is used to configure it. An empty ``pushConfig``
-                signifies that the subscriber will pull and ack messages
+                field is used to configure it. Either ``pushConfig`` or
+                ``bigQueryConfig`` can be set, but not both. If both are
+                empty, then the subscriber will pull and ack messages
                 using API methods.
 
                 This corresponds to the ``push_config`` field
@@ -2121,7 +2122,9 @@ class SubscriberAsyncClient:
                 expression that further constrains the role binding
                 based on attributes about the request and/or target
                 resource.
+
                 **JSON Example**
+
                 ::
                     {
                       "bindings": [
@@ -2146,8 +2149,11 @@ class SubscriberAsyncClient:
                         }
                       ]
                     }
+
                 **YAML Example**
+
                 ::
+
                     bindings:
                     - members:
                       - user:mike@example.com
@@ -2162,6 +2168,7 @@ class SubscriberAsyncClient:
                         title: expirable access
                         description: Does not grant access after Sep 2020
                         expression: request.time < timestamp('2020-10-01T00:00:00.000Z')
+
                 For a description of IAM and its features, see the `IAM
                 developer's
                 guide <https://cloud.google.com/iam/docs>`__.
@@ -2235,8 +2242,11 @@ class SubscriberAsyncClient:
                 expression that further constrains the role binding
                 based on attributes about the request and/or target
                 resource.
+
                 **JSON Example**
+
                 ::
+
                     {
                       "bindings": [
                         {
@@ -2260,8 +2270,11 @@ class SubscriberAsyncClient:
                         }
                       ]
                     }
+
                 **YAML Example**
+
                 ::
+
                     bindings:
                     - members:
                       - user:mike@example.com
@@ -2276,6 +2289,7 @@ class SubscriberAsyncClient:
                         title: expirable access
                         description: Does not grant access after Sep 2020
                         expression: request.time < timestamp('2020-10-01T00:00:00.000Z')
+
                 For a description of IAM and its features, see the `IAM
                 developer's
                 guide <https://cloud.google.com/iam/docs>`__.

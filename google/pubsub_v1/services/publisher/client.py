@@ -67,7 +67,6 @@ class PublisherClientMeta(type):
     ) -> Type[PublisherTransport]:
         """Returns an appropriate transport class.
 
-
         Args:
             label: The name of the desired transport. If none is
                 provided, then the first transport in the registry is used.
@@ -95,7 +94,6 @@ class PublisherClient(metaclass=PublisherClientMeta):
 
         Convert "*.sandbox.googleapis.com" and "*.googleapis.com" to
         "*.mtls.sandbox.googleapis.com" and "*.mtls.googleapis.com" respectively.
-
         Args:
             api_endpoint (Optional[str]): the api endpoint to convert.
         Returns:
@@ -140,7 +138,6 @@ class PublisherClient(metaclass=PublisherClientMeta):
         """Creates an instance of this client using the provided credentials
             info.
 
-
         Args:
             info (dict): The service account private key info.
             args: Additional arguments to pass to the constructor.
@@ -157,7 +154,6 @@ class PublisherClient(metaclass=PublisherClientMeta):
     def from_service_account_file(cls, filename: str, *args, **kwargs):
         """Creates an instance of this client using the provided credentials
             file.
-
 
         Args:
             filename (str): The path to the service account private key json
@@ -336,7 +332,6 @@ class PublisherClient(metaclass=PublisherClientMeta):
 
         More details can be found at https://google.aip.dev/auth/4114.
 
-
         Args:
             client_options (google.api_core.client_options.ClientOptions): Custom options for the
                 client. Only the `api_endpoint` and `client_cert_source` properties may be used
@@ -391,7 +386,6 @@ class PublisherClient(metaclass=PublisherClientMeta):
         client_info: gapic_v1.client_info.ClientInfo = DEFAULT_CLIENT_INFO,
     ) -> None:
         """Instantiates the publisher client.
-
 
         Args:
             credentials (Optional[google.auth.credentials.Credentials]): The
@@ -488,6 +482,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
                 quota_project_id=client_options.quota_project_id,
                 client_info=client_info,
                 always_use_jwt_access=True,
+                api_audience=client_options.api_audience,
             )
 
     def create_topic(
@@ -521,7 +516,6 @@ class PublisherClient(metaclass=PublisherClientMeta):
 
                 # Handle the response
                 print(response)
-
 
         Args:
             request (Union[google.pubsub_v1.types.Topic, dict]):
@@ -625,7 +619,6 @@ class PublisherClient(metaclass=PublisherClientMeta):
                 # Handle the response
                 print(response)
 
-
         Args:
             request (Union[google.pubsub_v1.types.UpdateTopicRequest, dict]):
                 The request object. Request for the UpdateTopic method.
@@ -703,7 +696,6 @@ class PublisherClient(metaclass=PublisherClientMeta):
 
                 # Handle the response
                 print(response)
-
 
         Args:
             request (Union[google.pubsub_v1.types.PublishRequest, dict]):
@@ -807,7 +799,6 @@ class PublisherClient(metaclass=PublisherClientMeta):
                 # Handle the response
                 print(response)
 
-
         Args:
             request (Union[google.pubsub_v1.types.GetTopicRequest, dict]):
                 The request object. Request for the GetTopic method.
@@ -901,7 +892,6 @@ class PublisherClient(metaclass=PublisherClientMeta):
                 # Handle the response
                 for response in page_result:
                     print(response)
-
 
         Args:
             request (Union[google.pubsub_v1.types.ListTopicsRequest, dict]):
@@ -1010,7 +1000,6 @@ class PublisherClient(metaclass=PublisherClientMeta):
                 # Handle the response
                 for response in page_result:
                     print(response)
-
 
         Args:
             request (Union[google.pubsub_v1.types.ListTopicSubscriptionsRequest, dict]):
@@ -1126,7 +1115,6 @@ class PublisherClient(metaclass=PublisherClientMeta):
                 for response in page_result:
                     print(response)
 
-
         Args:
             request (Union[google.pubsub_v1.types.ListTopicSnapshotsRequest, dict]):
                 The request object. Request for the `ListTopicSnapshots`
@@ -1237,7 +1225,6 @@ class PublisherClient(metaclass=PublisherClientMeta):
                 # Make the request
                 client.delete_topic(request=request)
 
-
         Args:
             request (Union[google.pubsub_v1.types.DeleteTopicRequest, dict]):
                 The request object. Request for the `DeleteTopic`
@@ -1328,7 +1315,6 @@ class PublisherClient(metaclass=PublisherClientMeta):
                 # Handle the response
                 print(response)
 
-
         Args:
             request (Union[google.pubsub_v1.types.DetachSubscriptionRequest, dict]):
                 The request object. Request for the DetachSubscription
@@ -1402,7 +1388,6 @@ class PublisherClient(metaclass=PublisherClientMeta):
 
         Replaces any existing policy.
 
-
         Args:
             request (:class:`~.iam_policy_pb2.SetIamPolicyRequest`):
                 The request object. Request message for `SetIamPolicy`
@@ -1429,7 +1414,9 @@ class PublisherClient(metaclass=PublisherClientMeta):
                 based on attributes about the request and/or target
                 resource.
 
-                **JSON Example**::
+                **JSON Example**
+
+                ::
 
                     {
                       "bindings": [
@@ -1455,7 +1442,9 @@ class PublisherClient(metaclass=PublisherClientMeta):
                       ]
                     }
 
-                **YAML Example**::
+                **YAML Example**
+
+                ::
 
                     bindings:
                     - members:
@@ -1521,7 +1510,6 @@ class PublisherClient(metaclass=PublisherClientMeta):
         Returns an empty policy if the function exists and does not have a
         policy set.
 
-
         Args:
             request (:class:`~.iam_policy_pb2.GetIamPolicyRequest`):
                 The request object. Request message for `GetIamPolicy`
@@ -1548,7 +1536,9 @@ class PublisherClient(metaclass=PublisherClientMeta):
                 based on attributes about the request and/or target
                 resource.
 
-                **JSON Example**::
+                **JSON Example**
+
+                ::
 
                     {
                       "bindings": [
@@ -1574,7 +1564,9 @@ class PublisherClient(metaclass=PublisherClientMeta):
                       ]
                     }
 
-                **YAML Example**::
+                **YAML Example**
+
+                ::
 
                     bindings:
                     - members:
@@ -1640,7 +1632,6 @@ class PublisherClient(metaclass=PublisherClientMeta):
 
         If the function does not exist, this will return an empty set
         of permissions, not a NOT_FOUND error.
-
 
         Args:
             request (:class:`~.iam_policy_pb2.TestIamPermissionsRequest`):

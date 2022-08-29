@@ -175,7 +175,7 @@ for library in s.get_staging_dirs(default_version):
     # Silence deprecation warnings in pull() method flattened parameter tests.
     s.replace(
         library / f"tests/unit/gapic/pubsub_{library.name}/test_subscriber.py",
-        "import mock",
+        "import os",
         "\g<0>\nimport warnings",
     )
 
@@ -236,31 +236,6 @@ for library in s.get_staging_dirs(default_version):
         ],
         r"""gapic_version=(pkg_resources\.get_distribution\(\s+)['"]google-cloud-pubsub['"]""",
         "client_library_version=\g<1>'google-cloud-pubsub'",
-    )
-
-    # Docstrings of *_iam_policy() methods are formatted poorly and must be fixed
-    # in order to avoid docstring format warnings in docs.
-    s.replace(
-        library / f"google/pubsub_{library.name}/services/*er/client.py",
-        r"(\s+)Args:",
-        "\n\g<1>Args:",
-    )
-    s.replace(
-        library / f"google/pubsub_{library.name}/services/*er/client.py",
-        r"(\s+)\*\*JSON Example\*\*\s+::",
-        "\n\g<1>**JSON Example**::\n",
-    )
-
-    s.replace(
-        library / f"google/pubsub_{library.name}/services/*er/client.py",
-        r"(\s+)\*\*YAML Example\*\*\s+::",
-        "\n\g<1>**YAML Example**::\n",
-    )
-
-    s.replace(
-        library / f"google/pubsub_{library.name}/services/*er/client.py",
-        r"(\s+)For a description of IAM and its features, see",
-        "\n\g<0>",
     )
 
     # Allow timeout to be an instance of google.api_core.timeout.*
@@ -342,6 +317,8 @@ for library in s.get_staging_dirs(default_version):
         "pip install google-cloud-pubsub",
     )
 
+    # This line is required to move the generated code from the `owl-bot-staging` folder 
+    # to the destination folder `google/pubsub`
     s.move(
         library,
         excludes=[
@@ -353,7 +330,6 @@ for library in s.get_staging_dirs(default_version):
             f"google/cloud/pubsub_{library.name}/types.py",
         ],
     )
-
 s.remove_staging_dirs()
 
 # ----------------------------------------------------------------------------
@@ -363,11 +339,11 @@ templated_files = gcp.CommonTemplates().py_library(
     microgenerator=True,
     samples=True,
     cov_level=100,
-    unit_test_python_versions=["3.6", "3.7", "3.8", "3.9", "3.10"],
+    unit_test_python_versions=["3.7", "3.8", "3.9", "3.10"],
     system_test_python_versions=["3.10"],
     system_test_external_dependencies=["psutil"],
 )
-s.move(templated_files, excludes=[".coveragerc", ".github/CODEOWNERS"])
+s.move(templated_files, excludes=["README.rst", ".coveragerc", ".github/CODEOWNERS"])
 python.configure_previous_major_version_branches()
 # ----------------------------------------------------------------------------
 # Samples templates

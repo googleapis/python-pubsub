@@ -5,6 +5,85 @@
 [1]: https://pypi.org/project/google-cloud-pubsub/#history
 
 
+## [2.13.6](https://github.com/googleapis/python-pubsub/compare/v2.13.5...v2.13.6) (2022-08-11)
+
+
+### Bug Fixes
+
+* **deps:** allow protobuf < 5.0.0 ([#762](https://github.com/googleapis/python-pubsub/issues/762)) ([260bd18](https://github.com/googleapis/python-pubsub/commit/260bd183ffe19992be9a1c1d298438c1f44d3fa9))
+* **deps:** require proto-plus >= 1.22.0 ([260bd18](https://github.com/googleapis/python-pubsub/commit/260bd183ffe19992be9a1c1d298438c1f44d3fa9))
+* set stream_ack_deadline to max_duration_per_lease_extension or 60 s, set ack_deadline to min_duration_per_lease_extension or 10 s ([#760](https://github.com/googleapis/python-pubsub/issues/760)) ([4444129](https://github.com/googleapis/python-pubsub/commit/4444129b28a19296752e865b73827b78e99adea5))
+* Update stream_ack_deadline with ack_deadline ([#763](https://github.com/googleapis/python-pubsub/issues/763)) ([e600ad8](https://github.com/googleapis/python-pubsub/commit/e600ad8228930445765ffa0c45500a7779e25817))
+
+## [2.13.5](https://github.com/googleapis/python-pubsub/compare/v2.13.4...v2.13.5) (2022-08-10)
+
+
+### Documentation
+
+* reorganize sphinx structure ([#751](https://github.com/googleapis/python-pubsub/issues/751)) ([b6de574](https://github.com/googleapis/python-pubsub/commit/b6de57458a1976a068dd229208b9b678a9d3f866))
+
+## [2.13.4](https://github.com/googleapis/python-pubsub/compare/v2.13.3...v2.13.4) (2022-07-15)
+
+
+### Bug Fixes
+
+* Remove bidi modacks on StreamingPull initial request ([#738](https://github.com/googleapis/python-pubsub/issues/738)) ([1e7d469](https://github.com/googleapis/python-pubsub/commit/1e7d46901c4472a3534980621e88d81aa2e50760))
+
+## [2.13.3](https://github.com/googleapis/python-pubsub/compare/v2.13.2...v2.13.3) (2022-07-13)
+
+
+### Bug Fixes
+
+* **deps:** require google-api-core>=1.32.0,>=2.8.0 ([#735](https://github.com/googleapis/python-pubsub/issues/735)) ([a5624fb](https://github.com/googleapis/python-pubsub/commit/a5624fbee2951c7f0c3e413d7d399a41fa0aa4bf))
+
+## [2.13.2](https://github.com/googleapis/python-pubsub/compare/v2.13.1...v2.13.2) (2022-07-08)
+
+
+### Bug Fixes
+
+* **deps:** require google-api-core >= 2.8.0 ([#726](https://github.com/googleapis/python-pubsub/issues/726)) ([c80ad41](https://github.com/googleapis/python-pubsub/commit/c80ad41abf36c709f8299a6fa22f3672705b1b6d))
+
+## [2.13.1](https://github.com/googleapis/python-pubsub/compare/v2.13.0...v2.13.1) (2022-07-07)
+
+
+### Bug Fixes
+
+* change info logs to debug ([#693](https://github.com/googleapis/python-pubsub/issues/693)) ([950fbce](https://github.com/googleapis/python-pubsub/commit/950fbce009fd56a55feea971f8e6083fa84d54fc))
+* require python 3.7+ ([#730](https://github.com/googleapis/python-pubsub/issues/730)) ([0d949b8](https://github.com/googleapis/python-pubsub/commit/0d949b8da096d1b0a5e26f607b1cd79fb560252a))
+
+## [2.13.0](https://github.com/googleapis/python-pubsub/compare/v2.12.1...v2.13.0) (2022-06-06)
+
+
+### Features
+
+* add BigQuery configuration for subscriptions ([#685](https://github.com/googleapis/python-pubsub/issues/685)) ([6fa03be](https://github.com/googleapis/python-pubsub/commit/6fa03be779d6a7105bb7c029b95d4c357d2a49df))
+
+
+### Bug Fixes
+
+* add info log for bidi streaming pull ack_deadline requests ([#692](https://github.com/googleapis/python-pubsub/issues/692)) ([fcb67dd](https://github.com/googleapis/python-pubsub/commit/fcb67dd0d8fff5a583ebe0a3a08d0219601df8e9))
+* **deps:** require protobuf <4.0.0dev ([#699](https://github.com/googleapis/python-pubsub/issues/699)) ([dcdf013](https://github.com/googleapis/python-pubsub/commit/dcdf0137905949662ce191adcb6dd588bd74f9fe))
+
+
+### Documentation
+
+* fix changelog header to consistent size ([#700](https://github.com/googleapis/python-pubsub/issues/700)) ([93f2b62](https://github.com/googleapis/python-pubsub/commit/93f2b62a18f622d8da71043a6b6d3f53295db308))
+
+## [2.12.1](https://github.com/googleapis/python-pubsub/compare/v2.12.0...v2.12.1) (2022-05-11)
+
+
+### Bug Fixes
+
+* Add emulator support to schema service ([#658](https://github.com/googleapis/python-pubsub/issues/658)) ([1a07d7c](https://github.com/googleapis/python-pubsub/commit/1a07d7ce3b3580191f74b7895dd1b8afb13baccb))
+* Handle duplicate acks with streaming pull ([#662](https://github.com/googleapis/python-pubsub/issues/662)) ([219491e](https://github.com/googleapis/python-pubsub/commit/219491ea1e615f33e1955e3afc204a0281c525db))
+* set min snooze on lease management to .01 sec ([#678](https://github.com/googleapis/python-pubsub/issues/678)) ([91c6e69](https://github.com/googleapis/python-pubsub/commit/91c6e69e96953919bc86004692edd3a52c7b9796))
+
+
+### Documentation
+
+* fix project_path typo in UPGRADING.md ([#660](https://github.com/googleapis/python-pubsub/issues/660)) ([20d661c](https://github.com/googleapis/python-pubsub/commit/20d661c8562cc1f777ac7b3f1ba03dcad7a831c0))
+* mark eod as preview ([#657](https://github.com/googleapis/python-pubsub/issues/657)) ([418e1a3](https://github.com/googleapis/python-pubsub/commit/418e1a3783441469713ca8ec8776007ff0fdb15d))
+
 ## [2.12.0](https://github.com/googleapis/python-pubsub/compare/v2.11.0...v2.12.0) (2022-04-06)
 
 
@@ -97,7 +176,7 @@
 
 * clarify the types of Message parameters ([#486](https://www.github.com/googleapis/python-pubsub/issues/486)) ([633e91b](https://www.github.com/googleapis/python-pubsub/commit/633e91bbfc0a8f4f484089acff6812b754f40c75))
 
-### [2.7.1](https://www.github.com/googleapis/python-pubsub/compare/v2.7.0...v2.7.1) (2021-08-13)
+## [2.7.1](https://www.github.com/googleapis/python-pubsub/compare/v2.7.0...v2.7.1) (2021-08-13)
 
 
 ### Bug Fixes
