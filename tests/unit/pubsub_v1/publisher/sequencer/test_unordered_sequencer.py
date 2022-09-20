@@ -19,6 +19,8 @@ if sys.version_info.major == 3 and sys.version_info.minor < 8:
 else:
     from unittest import mock
 
+import pytest
+
 from google.auth import credentials
 from google.cloud.pubsub_v1 import publisher
 from google.cloud.pubsub_v1 import types
