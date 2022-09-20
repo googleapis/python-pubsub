@@ -12,15 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import sys
 import warnings
 
 import grpc
 
-# try/except added for compatibility with python < 3.8
-try:
-    from unittest import mock
-except ImportError:
+# special case python < 3.8
+if sys.version_info.major == 3 and sys.version_info.minor < 8:
     import mock
+else:
+    from unittest import mock
+
 import pytest
 
 from google.api_core.gapic_v1.client_info import METRICS_METADATA_KEY
