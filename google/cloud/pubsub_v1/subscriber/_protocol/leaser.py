@@ -186,6 +186,7 @@ class Leaser(object):
             # Create a modack request.
             # We do not actually call `modify_ack_deadline` over and over
             # because it is more efficient to make a single request.
+            expired_ack_ids = []
             ack_ids = leased_messages.keys()
             if ack_ids:
                 _LOGGER.debug("Renewing lease for %d ack IDs.", len(ack_ids))
@@ -200,9 +201,27 @@ class Leaser(object):
                 expired_ack_ids = self._manager._send_lease_modacks(
                     ack_id_gen, deadline
                 )
-                if self._manager._exactly_once_delivery_enabled():
-                    for ack_id in expired_ack_ids:
-                        leased_messages.pop(ack_id)
+
+            # Drop more items based on expiration:
+            if self._manager._exactly_once_delivery_enabled():
+                to_drop = [
+                    requests.DropRequest(ack_id, item.size, item.ordering_key)
+                    for ack_id, item in leased_messages.items()
+                    if ack_id in expired_ack_ids
+                ]
+                if to_drop:
+                    _LOGGER.warning(
+                        "Dropping %s items because they were leased too long.",
+                        len(to_drop),
+                    )
+                    assert self._manager.dispatcher is not None
+                    self._manager.dispatcher.drop(to_drop)
+
+                # Remove dropped items from our copy of the leased messages (they
+                # have already been removed from the real one by
+                # self._manager.drop(), which calls self.remove()).
+                for item in to_drop:
+                    leased_messages.pop(item.ack_id)
 
             # Now wait an appropriate period of time and do this again.
             #
