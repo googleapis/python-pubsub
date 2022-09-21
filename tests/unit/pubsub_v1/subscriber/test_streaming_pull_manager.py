@@ -1882,6 +1882,9 @@ def test__on_response_exactly_once_immediate_modacks_fail():
 
     # Actually run the method and prove that modack and schedule are called in
     # the expected way.
+    
+    fake_leaser_add(leaser, init_msg_count=0, assumed_msg_size=10)
+    
     manager._on_response(response)
 
     # The second messages should be scheduled, and not the first.
@@ -1897,10 +1900,8 @@ def test__on_response_exactly_once_immediate_modacks_fail():
     # No messages available
     assert manager._messages_on_hold.get() is None
 
-    # exactly_once should be enabled
-    manager._on_response(response)
     # do not add message
-    assert manager.load == 0
+    assert manager.load == .001
 
 
 def test__should_recover_true():
