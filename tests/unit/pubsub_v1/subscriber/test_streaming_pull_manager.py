@@ -1069,60 +1069,6 @@ def test_send_unary_modack_retry_error_exactly_once_enabled_with_futures(
     )
 
 
-@mock.patch("google.api_core.bidi.ResumableBidiRpc", autospec=True)
-@mock.patch("google.api_core.bidi.BackgroundConsumer", autospec=True)
-@mock.patch("google.cloud.pubsub_v1.subscriber._protocol.leaser.Leaser", autospec=True)
-@mock.patch(
-    "google.cloud.pubsub_v1.subscriber._protocol.dispatcher.Dispatcher", autospec=True
-)
-@mock.patch(
-    "google.cloud.pubsub_v1.subscriber._protocol.heartbeater.Heartbeater", autospec=True
-)
-def test_open(heartbeater, dispatcher, leaser, background_consumer, resumable_bidi_rpc):
-    manager = make_manager()
-
-    with mock.patch.object(
-        type(manager), "ack_deadline", new=mock.PropertyMock(return_value=18)
-    ):
-        manager.open(mock.sentinel.callback, mock.sentinel.on_callback_error)
-
-    heartbeater.assert_called_once_with(manager)
-    heartbeater.return_value.start.assert_called_once()
-    assert manager._heartbeater == heartbeater.return_value
-
-    dispatcher.assert_called_once_with(manager, manager._scheduler.queue)
-    dispatcher.return_value.start.assert_called_once()
-    assert manager._dispatcher == dispatcher.return_value
-
-    leaser.assert_called_once_with(manager)
-    leaser.return_value.start.assert_called_once()
-    assert manager.leaser == leaser.return_value
-
-    background_consumer.assert_called_once_with(manager._rpc, manager._on_response)
-    background_consumer.return_value.start.assert_called_once()
-    assert manager._consumer == background_consumer.return_value
-
-    resumable_bidi_rpc.assert_called_once_with(
-        start_rpc=manager._client.streaming_pull,
-        initial_request=mock.ANY,
-        should_recover=manager._should_recover,
-        should_terminate=manager._should_terminate,
-        throttle_reopen=True,
-    )
-    initial_request_arg = resumable_bidi_rpc.call_args.kwargs["initial_request"]
-    assert initial_request_arg.func == manager._get_initial_request
-    assert initial_request_arg.args[0] == 60
-    assert not manager._client.get_subscription.called
-
-    resumable_bidi_rpc.return_value.add_done_callback.assert_called_once_with(
-        manager._on_rpc_done
-    )
-    assert manager._rpc == resumable_bidi_rpc.return_value
-
-    manager._consumer.is_active = True
-    assert manager.is_active is True
-
-
 def test_heartbeat():
     manager = make_manager()
     manager._rpc = mock.create_autospec(bidi.BidiRpc, instance=True)
