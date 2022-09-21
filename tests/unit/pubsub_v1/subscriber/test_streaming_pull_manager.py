@@ -1069,6 +1069,60 @@ def test_send_unary_modack_retry_error_exactly_once_enabled_with_futures(
     )
 
 
+@mock.patch("google.api_core.bidi.ResumableBidiRpc", autospec=True)
+@mock.patch("google.api_core.bidi.BackgroundConsumer", autospec=True)
+@mock.patch("google.cloud.pubsub_v1.subscriber._protocol.leaser.Leaser", autospec=True)
+@mock.patch(
+    "google.cloud.pubsub_v1.subscriber._protocol.dispatcher.Dispatcher", autospec=True
+)
+@mock.patch(
+    "google.cloud.pubsub_v1.subscriber._protocol.heartbeater.Heartbeater", autospec=True
+)
+def test_open(heartbeater, dispatcher, leaser, background_consumer, resumable_bidi_rpc):
+    manager = make_manager()
+
+    with mock.patch.object(
+        type(manager), "ack_deadline", new=mock.PropertyMock(return_value=18)
+    ):
+        manager.open(mock.sentinel.callback, mock.sentinel.on_callback_error)
+
+    heartbeater.assert_called_once_with(manager)
+    heartbeater.return_value.start.assert_called_once()
+    assert manager._heartbeater == heartbeater.return_value
+
+    dispatcher.assert_called_once_with(manager, manager._scheduler.queue)
+    dispatcher.return_value.start.assert_called_once()
+    assert manager._dispatcher == dispatcher.return_value
+
+    leaser.assert_called_once_with(manager)
+    leaser.return_value.start.assert_called_once()
+    assert manager.leaser == leaser.return_value
+
+    background_consumer.assert_called_once_with(manager._rpc, manager._on_response)
+    background_consumer.return_value.start.assert_called_once()
+    assert manager._consumer == background_consumer.return_value
+
+    resumable_bidi_rpc.assert_called_once_with(
+        start_rpc=manager._client.streaming_pull,
+        initial_request=mock.ANY,
+        should_recover=manager._should_recover,
+        should_terminate=manager._should_terminate,
+        throttle_reopen=True,
+    )
+    initial_request_arg = resumable_bidi_rpc.call_args.kwargs["initial_request"]
+    assert initial_request_arg.func == manager._get_initial_request
+    assert initial_request_arg.args[0] == 60
+    assert not manager._client.get_subscription.called
+
+    resumable_bidi_rpc.return_value.add_done_callback.assert_called_once_with(
+        manager._on_rpc_done
+    )
+    assert manager._rpc == resumable_bidi_rpc.return_value
+
+    manager._consumer.is_active = True
+    assert manager.is_active is True
+
+
 def test_heartbeat():
     manager = make_manager()
     manager._rpc = mock.create_autospec(bidi.BidiRpc, instance=True)
@@ -1120,6 +1174,7 @@ def test_heartbeat_stream_ack_deadline_seconds(caplog):
     "google.cloud.pubsub_v1.subscriber._protocol.heartbeater.Heartbeater", autospec=True
 )
 def test_open(heartbeater, dispatcher, leaser, background_consumer, resumable_bidi_rpc):
+
     manager = make_manager()
 
     with mock.patch.object(
@@ -1847,11 +1902,18 @@ def test__on_response_exactly_once_immediate_modacks_fail():
     def complete_futures_with_error(*args, **kwargs):
         modack_requests = args[0]
         for req in modack_requests:
-            req.future.set_exception(
-                subscriber_exceptions.AcknowledgeError(
-                    subscriber_exceptions.AcknowledgeStatus.SUCCESS, None
+            if req.ack_id == "fack":
+                req.future.set_exception(
+                    subscriber_exceptions.AcknowledgeError(
+                        subscriber_exceptions.AcknowledgeStatus.INVALID_ACK_ID, None
+                    )
                 )
-            )
+            else:
+                req.future.set_exception(
+                    subscriber_exceptions.AcknowledgeError(
+                        subscriber_exceptions.AcknowledgeStatus.SUCCESS, None
+                    )
+                )
 
     dispatcher.modify_ack_deadline.side_effect = complete_futures_with_error
 
@@ -1861,19 +1923,38 @@ def test__on_response_exactly_once_immediate_modacks_fail():
             gapic_types.ReceivedMessage(
                 ack_id="fack",
                 message=gapic_types.PubsubMessage(data=b"foo", message_id="1"),
-            )
+            ),
+            gapic_types.ReceivedMessage(
+                ack_id="good",
+                message=gapic_types.PubsubMessage(data=b"foo", message_id="2"),
+            ),
         ],
         subscription_properties=gapic_types.StreamingPullResponse.SubscriptionProperties(
             exactly_once_delivery_enabled=True
         ),
     )
 
-    # adjust message bookkeeping in leaser
-    fake_leaser_add(leaser, init_msg_count=0, assumed_msg_size=42)
+    # Actually run the method and prove that modack and schedule are called in
+    # the expected way.
+    manager._on_response(response)
+
+    # The second messages should be scheduled, and not the first.
+
+    schedule_calls = scheduler.schedule.mock_calls
+    assert len(schedule_calls) == 1
+    call_args = schedule_calls[0][1]
+    assert call_args[0] == mock.sentinel.callback
+    assert isinstance(call_args[1], message.Message)
+    assert call_args[1].message_id == "2"
+
+    assert manager._messages_on_hold.size == 0
+    # No messages available
+    assert manager._messages_on_hold.get() is None
 
     # exactly_once should be enabled
     manager._on_response(response)
-    # exceptions are logged, but otherwise no effect
+    # do not add message
+    assert manager.load == 0
 
 
 def test__should_recover_true():

@@ -197,7 +197,12 @@ class Leaser(object):
                 #       is inactive.
                 assert self._manager.dispatcher is not None
                 ack_id_gen = (ack_id for ack_id in ack_ids)
-                self._manager._send_lease_modacks(ack_id_gen, deadline)
+                expired_ack_ids = self._manager._send_lease_modacks(
+                    ack_id_gen, deadline
+                )
+                if self._manager._exactly_once_delivery_enabled():
+                    for ack_id in expired_ack_ids:
+                        leased_messages.pop(ack_id)
 
             # Now wait an appropriate period of time and do this again.
             #
