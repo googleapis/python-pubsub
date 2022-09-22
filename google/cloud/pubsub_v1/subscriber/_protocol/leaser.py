@@ -197,7 +197,29 @@ class Leaser(object):
                 #       is inactive.
                 assert self._manager.dispatcher is not None
                 ack_id_gen = (ack_id for ack_id in ack_ids)
-                self._manager._send_lease_modacks(ack_id_gen, deadline)
+                expired_ack_id_set = set(
+                    self._manager._send_lease_modacks(ack_id_gen, deadline)
+                )
+                if self._manager._exactly_once_delivery_enabled():
+                    to_drop = [
+                        requests.DropRequest(ack_id, item.size, item.ordering_key)
+                        for ack_id, item in leased_messages.items()
+                        if ack_id in expired_ack_id_set
+                    ]
+
+                    if to_drop:
+                        _LOGGER.warning(
+                            "Dropping %s items because they were already expired.",
+                            len(to_drop),
+                        )
+                        assert self._manager.dispatcher is not None
+                        self._manager.dispatcher.drop(to_drop)
+
+                    # Remove dropped items from our copy of the leased messages (they
+                    # have already been removed from the real one by
+                    # self._manager.drop(), which calls self.remove()).
+                    for item in to_drop:
+                        leased_messages.pop(item.ack_id)
 
             # Now wait an appropriate period of time and do this again.
             #
