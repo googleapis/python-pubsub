@@ -1909,6 +1909,29 @@ def test__on_response_exactly_once_immediate_modacks_fail():
     assert manager.load == 0.001
 
 
+def test__on_response_resets_count_consecutive_errors():
+    manager, _, dispatcher, leaser, _, scheduler = make_running_manager()
+    manager._callback = mock.sentinel.callback
+    complete_modify_ack_deadline_calls(dispatcher)
+
+    # Set up the messages.
+    response = gapic_types.StreamingPullResponse(
+        received_messages=[
+            gapic_types.ReceivedMessage(
+                ack_id="fack",
+                message=gapic_types.PubsubMessage(data=b"foo", message_id="1"),
+            )
+        ],
+    )
+
+    # adjust message bookkeeping in leaser
+    fake_leaser_add(leaser, init_msg_count=0, assumed_msg_size=42)
+
+    manager._count_consecutive_recoverable_errors = 1
+    manager._on_response(response)
+    assert manager._count_consecutive_recoverable_errors == 0
+
+
 def test__should_recover_true():
     manager = make_manager()
 
@@ -1916,6 +1939,17 @@ def test__should_recover_true():
     exc = exceptions.ServiceUnavailable(details)
 
     assert manager._should_recover(exc) is True
+
+
+def test__should_recover_max_error():
+    manager = make_manager(max_recoverable_errors=5)
+
+    details = "UNAVAILABLE. Service taking nap."
+    exc = exceptions.ServiceUnavailable(details)
+
+    for i in range(0, 4):
+        assert manager._should_recover(exc) is True
+    assert manager._should_recover(exc) is False
 
 
 def test__should_recover_false():

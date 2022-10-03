@@ -154,6 +154,7 @@ class Client(subscriber_client.SubscriberClient):
         scheduler: Optional["subscriber.scheduler.ThreadScheduler"] = None,
         use_legacy_flow_control: bool = False,
         await_callbacks_on_shutdown: bool = False,
+        max_recoverable_errors: int = None,
     ) -> futures.StreamingPullFuture:
         """Asynchronously start receiving messages on a given subscription.
 
@@ -247,6 +248,10 @@ class Client(subscriber_client.SubscriberClient):
                 immediately after the background stream and its helper threads have been
                 terminated, but some of the message callback threads might still be
                 running at that point.
+            max_recoverable_errors:
+                The maximum number of consecutive recoverable stream errors before failing the subscription.
+                If ``None`` (default), the subscription will retry indefinitely when encountering recoverable errors
+
 
         Returns:
             A future instance that can be used to manage the background stream.
@@ -260,6 +265,7 @@ class Client(subscriber_client.SubscriberClient):
             scheduler=scheduler,
             use_legacy_flow_control=use_legacy_flow_control,
             await_callbacks_on_shutdown=await_callbacks_on_shutdown,
+            max_recoverable_errors=max_recoverable_errors,
         )
 
         future = futures.StreamingPullFuture(manager)

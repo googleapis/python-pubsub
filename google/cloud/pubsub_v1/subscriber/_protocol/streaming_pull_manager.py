@@ -260,6 +260,10 @@ class StreamingPullManager(object):
             This setting affects when the on close callbacks get invoked, and
             consequently, when the StreamingPullFuture associated with the stream gets
             resolved.
+        max_recoverable_errors:
+            The maximum number of consecutive recoverable stream errors before failing the subscription.
+            If ``None`` (default), the subscription will retry indefinitely when encountering recoverable errors
+
     """
 
     def __init__(
@@ -270,6 +274,7 @@ class StreamingPullManager(object):
         scheduler: ThreadScheduler = None,
         use_legacy_flow_control: bool = False,
         await_callbacks_on_shutdown: bool = False,
+        max_recoverable_errors: int = None,
     ):
         self._client = client
         self._subscription = subscription
@@ -279,6 +284,8 @@ class StreamingPullManager(object):
         self._await_callbacks_on_shutdown = await_callbacks_on_shutdown
         self._ack_histogram = histogram.Histogram()
         self._last_histogram_size = 0
+        self._max_recoverable_errors = max_recoverable_errors
+        self._count_consecutive_recoverable_errors = 0
 
         # If max_duration_per_lease_extension is the default
         # we set the stream_ack_deadline to the default of 60
@@ -1050,6 +1057,9 @@ class StreamingPullManager(object):
             )
             return
 
+        # When receiving a message, reset the consecutive error count to 0
+        self._count_consecutive_recoverable_errors = 0
+
         # IMPORTANT: Circumvent the wrapper class and operate on the raw underlying
         # protobuf message to significantly gain on attribute access performance.
         received_messages = response._pb.received_messages
@@ -1126,8 +1136,22 @@ class StreamingPullManager(object):
         # If this is in the list of idempotent exceptions, then we want to
         # recover.
         if isinstance(exception, _RETRYABLE_STREAM_ERRORS):
-            _LOGGER.debug("Observed recoverable stream error %s", exception)
-            return True
+            self._count_consecutive_recoverable_errors += 1
+            if (
+                self._max_recoverable_errors is None
+                or self._max_recoverable_errors
+                > self._count_consecutive_recoverable_errors
+            ):
+                _LOGGER.debug("Observed recoverable stream error %s", exception)
+                return True
+            else:
+                _LOGGER.info(
+                    "Observed %d consecutive recoverable errors returning non-recoverable error %s",
+                    self._count_consecutive_recoverable_errors,
+                    exception,
+                )
+                return False
+
         _LOGGER.debug("Observed non-recoverable stream error %s", exception)
         return False
 
