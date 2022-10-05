@@ -1846,7 +1846,7 @@ def test__on_response_disable_exactly_once():
     assert manager._stream_ack_deadline == 60
 
 
-def test__on_response_exactly_once_immediate_modacks_fail():
+def test__on_response_exactly_once_immediate_modacks_fail(caplog):
     manager, _, dispatcher, leaser, _, scheduler = make_running_manager()
     manager._callback = mock.sentinel.callback
 
@@ -1890,7 +1890,8 @@ def test__on_response_exactly_once_immediate_modacks_fail():
 
     fake_leaser_add(leaser, init_msg_count=0, assumed_msg_size=10)
 
-    manager._on_response(response)
+    with caplog.at_level(logging.WARNING):
+        manager._on_response(response)
 
     # The second messages should be scheduled, and not the first.
 
@@ -1902,6 +1903,14 @@ def test__on_response_exactly_once_immediate_modacks_fail():
     assert call_args[1].message_id == "2"
 
     assert manager._messages_on_hold.size == 0
+
+    expected_warnings = [
+        record.message.lower()
+        for record in caplog.records
+        if "unexpectedly negative" in record.message
+    ]
+    assert len(expected_warnings) == 0
+
     # No messages available
     assert manager._messages_on_hold.get() is None
 
