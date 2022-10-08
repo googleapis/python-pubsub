@@ -5,6 +5,373 @@
 [1]: https://pypi.org/project/google-cloud-pubsub/#history
 
 
+## [2.13.8](https://github.com/googleapis/python-pubsub/compare/v2.13.7...v2.13.8) (2022-10-03)
+
+
+### Bug Fixes
+
+* **deps:** Require protobuf >= 3.20.2 ([#792](https://github.com/googleapis/python-pubsub/issues/792)) ([1a54f7c](https://github.com/googleapis/python-pubsub/commit/1a54f7cd3d997270e0a5d70f7caea32d8753be76))
+
+## [2.13.7](https://github.com/googleapis/python-pubsub/compare/v2.13.6...v2.13.7) (2022-09-22)
+
+
+### Bug Fixes
+
+* Remove expired ack_ids ([#787](https://github.com/googleapis/python-pubsub/issues/787)) ([b4b809d](https://github.com/googleapis/python-pubsub/commit/b4b809d616cf93881815d6baadf2dd322ab566d1))
+
+## [2.13.6](https://github.com/googleapis/python-pubsub/compare/v2.13.5...v2.13.6) (2022-08-11)
+
+
+### Bug Fixes
+
+* **deps:** allow protobuf < 5.0.0 ([#762](https://github.com/googleapis/python-pubsub/issues/762)) ([260bd18](https://github.com/googleapis/python-pubsub/commit/260bd183ffe19992be9a1c1d298438c1f44d3fa9))
+* **deps:** require proto-plus >= 1.22.0 ([260bd18](https://github.com/googleapis/python-pubsub/commit/260bd183ffe19992be9a1c1d298438c1f44d3fa9))
+* set stream_ack_deadline to max_duration_per_lease_extension or 60 s, set ack_deadline to min_duration_per_lease_extension or 10 s ([#760](https://github.com/googleapis/python-pubsub/issues/760)) ([4444129](https://github.com/googleapis/python-pubsub/commit/4444129b28a19296752e865b73827b78e99adea5))
+* Update stream_ack_deadline with ack_deadline ([#763](https://github.com/googleapis/python-pubsub/issues/763)) ([e600ad8](https://github.com/googleapis/python-pubsub/commit/e600ad8228930445765ffa0c45500a7779e25817))
+
+## [2.13.5](https://github.com/googleapis/python-pubsub/compare/v2.13.4...v2.13.5) (2022-08-10)
+
+
+### Documentation
+
+* reorganize sphinx structure ([#751](https://github.com/googleapis/python-pubsub/issues/751)) ([b6de574](https://github.com/googleapis/python-pubsub/commit/b6de57458a1976a068dd229208b9b678a9d3f866))
+
+## [2.13.4](https://github.com/googleapis/python-pubsub/compare/v2.13.3...v2.13.4) (2022-07-15)
+
+
+### Bug Fixes
+
+* Remove bidi modacks on StreamingPull initial request ([#738](https://github.com/googleapis/python-pubsub/issues/738)) ([1e7d469](https://github.com/googleapis/python-pubsub/commit/1e7d46901c4472a3534980621e88d81aa2e50760))
+
+## [2.13.3](https://github.com/googleapis/python-pubsub/compare/v2.13.2...v2.13.3) (2022-07-13)
+
+
+### Bug Fixes
+
+* **deps:** require google-api-core>=1.32.0,>=2.8.0 ([#735](https://github.com/googleapis/python-pubsub/issues/735)) ([a5624fb](https://github.com/googleapis/python-pubsub/commit/a5624fbee2951c7f0c3e413d7d399a41fa0aa4bf))
+
+## [2.13.2](https://github.com/googleapis/python-pubsub/compare/v2.13.1...v2.13.2) (2022-07-08)
+
+
+### Bug Fixes
+
+* **deps:** require google-api-core >= 2.8.0 ([#726](https://github.com/googleapis/python-pubsub/issues/726)) ([c80ad41](https://github.com/googleapis/python-pubsub/commit/c80ad41abf36c709f8299a6fa22f3672705b1b6d))
+
+## [2.13.1](https://github.com/googleapis/python-pubsub/compare/v2.13.0...v2.13.1) (2022-07-07)
+
+
+### Bug Fixes
+
+* change info logs to debug ([#693](https://github.com/googleapis/python-pubsub/issues/693)) ([950fbce](https://github.com/googleapis/python-pubsub/commit/950fbce009fd56a55feea971f8e6083fa84d54fc))
+* require python 3.7+ ([#730](https://github.com/googleapis/python-pubsub/issues/730)) ([0d949b8](https://github.com/googleapis/python-pubsub/commit/0d949b8da096d1b0a5e26f607b1cd79fb560252a))
+
+## [2.13.0](https://github.com/googleapis/python-pubsub/compare/v2.12.1...v2.13.0) (2022-06-06)
+
+
+### Features
+
+* add BigQuery configuration for subscriptions ([#685](https://github.com/googleapis/python-pubsub/issues/685)) ([6fa03be](https://github.com/googleapis/python-pubsub/commit/6fa03be779d6a7105bb7c029b95d4c357d2a49df))
+
+
+### Bug Fixes
+
+* add info log for bidi streaming pull ack_deadline requests ([#692](https://github.com/googleapis/python-pubsub/issues/692)) ([fcb67dd](https://github.com/googleapis/python-pubsub/commit/fcb67dd0d8fff5a583ebe0a3a08d0219601df8e9))
+* **deps:** require protobuf <4.0.0dev ([#699](https://github.com/googleapis/python-pubsub/issues/699)) ([dcdf013](https://github.com/googleapis/python-pubsub/commit/dcdf0137905949662ce191adcb6dd588bd74f9fe))
+
+
+### Documentation
+
+* fix changelog header to consistent size ([#700](https://github.com/googleapis/python-pubsub/issues/700)) ([93f2b62](https://github.com/googleapis/python-pubsub/commit/93f2b62a18f622d8da71043a6b6d3f53295db308))
+
+## [2.12.1](https://github.com/googleapis/python-pubsub/compare/v2.12.0...v2.12.1) (2022-05-11)
+
+
+### Bug Fixes
+
+* Add emulator support to schema service ([#658](https://github.com/googleapis/python-pubsub/issues/658)) ([1a07d7c](https://github.com/googleapis/python-pubsub/commit/1a07d7ce3b3580191f74b7895dd1b8afb13baccb))
+* Handle duplicate acks with streaming pull ([#662](https://github.com/googleapis/python-pubsub/issues/662)) ([219491e](https://github.com/googleapis/python-pubsub/commit/219491ea1e615f33e1955e3afc204a0281c525db))
+* set min snooze on lease management to .01 sec ([#678](https://github.com/googleapis/python-pubsub/issues/678)) ([91c6e69](https://github.com/googleapis/python-pubsub/commit/91c6e69e96953919bc86004692edd3a52c7b9796))
+
+
+### Documentation
+
+* fix project_path typo in UPGRADING.md ([#660](https://github.com/googleapis/python-pubsub/issues/660)) ([20d661c](https://github.com/googleapis/python-pubsub/commit/20d661c8562cc1f777ac7b3f1ba03dcad7a831c0))
+* mark eod as preview ([#657](https://github.com/googleapis/python-pubsub/issues/657)) ([418e1a3](https://github.com/googleapis/python-pubsub/commit/418e1a3783441469713ca8ec8776007ff0fdb15d))
+
+## [2.12.0](https://github.com/googleapis/python-pubsub/compare/v2.11.0...v2.12.0) (2022-04-06)
+
+
+### Features
+
+* increase GRPC max metadata size to 4 MB ([#623](https://github.com/googleapis/python-pubsub/issues/623)) ([54b9e07](https://github.com/googleapis/python-pubsub/commit/54b9e07401b7309f16ecfe2a7afc36ea69f24a9c))
+
+
+### Bug Fixes
+
+* mypy errors ([#622](https://github.com/googleapis/python-pubsub/issues/622)) ([dab13d5](https://github.com/googleapis/python-pubsub/commit/dab13d5fb1d723c971cd84ae20f18462e624a26d))
+* process ErrorInfo / GRPC errors for ack/modack only when exactly-once delivery is enabled ([#626](https://github.com/googleapis/python-pubsub/issues/626)) ([cc1953b](https://github.com/googleapis/python-pubsub/commit/cc1953bcf942fb394a92ba50ba615adf822bfe7d))
+
+## [2.11.0](https://github.com/googleapis/python-pubsub/compare/v2.10.0...v2.11.0) (2022-03-09)
+
+
+### Features
+
+* retry temporary GRPC statuses for ack/modack/nack when exactly-once delivery is enabled ([#607](https://github.com/googleapis/python-pubsub/issues/607)) ([a91bed8](https://github.com/googleapis/python-pubsub/commit/a91bed829c9040fcc6c1e70b99b66188ac4ded40))
+* return singleton success future for exactly-once methods in Message ([#608](https://github.com/googleapis/python-pubsub/issues/608)) ([253ced2](https://github.com/googleapis/python-pubsub/commit/253ced28f308450c7a1a93cc38f6d101ecd7d4c0))
+
+
+### Bug Fixes
+
+* **deps:** require google-api-core>=1.31.5, >=2.3.2 ([#600](https://github.com/googleapis/python-pubsub/issues/600)) ([1608b7f](https://github.com/googleapis/python-pubsub/commit/1608b7ffdd5b5db87e1e55fde763440ca9a4086e))
+* **deps:** require proto-plus>=1.15.0 ([1608b7f](https://github.com/googleapis/python-pubsub/commit/1608b7ffdd5b5db87e1e55fde763440ca9a4086e))
+
+## [2.10.0](https://github.com/googleapis/python-pubsub/compare/v2.9.0...v2.10.0) (2022-03-04)
+
+
+### Features
+
+* add api key support ([#571](https://github.com/googleapis/python-pubsub/issues/571)) ([cdda762](https://github.com/googleapis/python-pubsub/commit/cdda762f6d15d96f5e2d7fac975f3494dc49eaa9))
+* add exactly once delivery flag ([#577](https://github.com/googleapis/python-pubsub/issues/577)) ([d6614e2](https://github.com/googleapis/python-pubsub/commit/d6614e274328c58449e67dfc788e2e7986c0c10b))
+* add support for exactly once delivery ([#578](https://github.com/googleapis/python-pubsub/issues/578)) ([95a86fa](https://github.com/googleapis/python-pubsub/commit/95a86fa5f528701b760064f0cece0efa4e60cd44))
+* exactly-once delivery support ([#550](https://github.com/googleapis/python-pubsub/issues/550)) ([2fb6e15](https://github.com/googleapis/python-pubsub/commit/2fb6e1533192ae81dceee5c71283169a0a85a015))
+
+
+### Bug Fixes
+
+* **deps:** move libcst to extras ([#585](https://github.com/googleapis/python-pubsub/issues/585)) ([0846762](https://github.com/googleapis/python-pubsub/commit/084676243ca4afd54cda601e589b80883f9703a3))
+* refactor client classes for safer type checking ([#552](https://github.com/googleapis/python-pubsub/issues/552)) ([7f705be](https://github.com/googleapis/python-pubsub/commit/7f705beb927383f14b9d56f0341ee0de101f7c05))
+* resolve DuplicateCredentialArgs error when using credentials_file ([8ca8cf2](https://github.com/googleapis/python-pubsub/commit/8ca8cf27333baf823a1dffd081e63079f1a12625))
+
+
+### Samples
+* samples: create subscription with filtering enabled [#580](https://github.com/googleapis/python-pubsub/pull/580)
+* samples: handle empty response in sync pull samples [#586](https://github.com/googleapis/python-pubsub/pull/586)
+* samples: sample for receiving messages with exactly-once delivery enabled [#588](https://github.com/googleapis/python-pubsub/pull/588)
+* samples: create subscription with exactly once delivery [#592](https://github.com/googleapis/python-pubsub/pull/592)
+(https://github.com/googleapis/python-pubsub/pull/588
+
+
+### Documentation
+
+* add autogenerated code snippets ([aa3754c](https://github.com/googleapis/python-pubsub/commit/aa3754cf432bd02be2734a23a32d5b36cd216aee))
+* Docs have inconsistent default values for max_latency and max_bytes ([#572](https://github.com/googleapis/python-pubsub/issues/572)) ([d136dfd](https://github.com/googleapis/python-pubsub/commit/d136dfdb69ebeebd1411a1415f863b94d07078f0))
+
+## [2.9.0](https://www.github.com/googleapis/python-pubsub/compare/v2.8.0...v2.9.0) (2021-11-10)
+
+
+### Features
+
+* add context manager support in client ([#516](https://www.github.com/googleapis/python-pubsub/issues/516)) ([51eae67](https://www.github.com/googleapis/python-pubsub/commit/51eae67c47e2ce7d2f7620209e98df4a129801b5))
+* add support for Python 3.10 ([#518](https://www.github.com/googleapis/python-pubsub/issues/518)) ([bb25d75](https://www.github.com/googleapis/python-pubsub/commit/bb25d755d70ba19e69d8a281be65f13eb994967d))
+
+
+### Bug Fixes
+
+* add 'dict' annotation type to 'request' ([b72522a](https://www.github.com/googleapis/python-pubsub/commit/b72522a4617c4b2773fb6a5a631038791aa08300))
+* **deps:** drop packaging dependency ([290b9c5](https://www.github.com/googleapis/python-pubsub/commit/290b9c5615eaa03674b773a27b756483abd76195))
+* **deps:** require google-api-core >= 1.28.0 ([290b9c5](https://www.github.com/googleapis/python-pubsub/commit/290b9c5615eaa03674b773a27b756483abd76195))
+* improper types in pagers generation ([2ad639d](https://www.github.com/googleapis/python-pubsub/commit/2ad639d6370c7a085498595d7bd0d7eaadfff3c1))
+
+
+### Documentation
+
+* add type annotations to codebase ([#509](https://www.github.com/googleapis/python-pubsub/issues/509)) ([093cabf](https://www.github.com/googleapis/python-pubsub/commit/093cabff9f0464b1dfaa8f373b6fffbc439518de))
+* list oneofs in docstring ([290b9c5](https://www.github.com/googleapis/python-pubsub/commit/290b9c5615eaa03674b773a27b756483abd76195))
+
+## [2.8.0](https://www.github.com/googleapis/python-pubsub/compare/v2.7.1...v2.8.0) (2021-09-02)
+
+
+### Features
+
+* closed subscriber as context manager raises ([#488](https://www.github.com/googleapis/python-pubsub/issues/488)) ([a05a3f2](https://www.github.com/googleapis/python-pubsub/commit/a05a3f250cf8567ffe0d2eb3ecc45856a2bcd07c))
+
+
+### Documentation
+
+* clarify the types of Message parameters ([#486](https://www.github.com/googleapis/python-pubsub/issues/486)) ([633e91b](https://www.github.com/googleapis/python-pubsub/commit/633e91bbfc0a8f4f484089acff6812b754f40c75))
+
+## [2.7.1](https://www.github.com/googleapis/python-pubsub/compare/v2.7.0...v2.7.1) (2021-08-13)
+
+
+### Bug Fixes
+
+* remove dependency on pytz ([#472](https://www.github.com/googleapis/python-pubsub/issues/472)) ([972cc16](https://www.github.com/googleapis/python-pubsub/commit/972cc163f5a1477b37a5ab7e329faf1468637fa2))
+
+## [2.7.0](https://www.github.com/googleapis/python-pubsub/compare/v2.6.1...v2.7.0) (2021-07-24)
+
+
+### Features
+
+* Add `always_use_jwt_access`. ([1f30ef7](https://www.github.com/googleapis/python-pubsub/commit/1f30ef7f26ae1156751bc42305b1eb156115b5e5))
+* Add method signature for `Subscriber.Pull` without the deprecated `return_immediately` field. ([1f30ef7](https://www.github.com/googleapis/python-pubsub/commit/1f30ef7f26ae1156751bc42305b1eb156115b5e5))
+* Add Pub/Sub topic retention fields. ([#456](https://www.github.com/googleapis/python-pubsub/issues/456)) ([911829d](https://www.github.com/googleapis/python-pubsub/commit/911829d85c6ec36a87b873cbfe34497b1a493dde))
+* Add subscription properties to streaming pull response. ([1f30ef7](https://www.github.com/googleapis/python-pubsub/commit/1f30ef7f26ae1156751bc42305b1eb156115b5e5))
+* Support self-signed JWT flow for service accounts. ([1f30ef7](https://www.github.com/googleapis/python-pubsub/commit/1f30ef7f26ae1156751bc42305b1eb156115b5e5))
+
+
+### Bug Fixes
+
+* Add async client to `%name_%version/init.py`. ([1f30ef7](https://www.github.com/googleapis/python-pubsub/commit/1f30ef7f26ae1156751bc42305b1eb156115b5e5))
+* Disable `always_use_jwt_access`. ([1f30ef7](https://www.github.com/googleapis/python-pubsub/commit/1f30ef7f26ae1156751bc42305b1eb156115b5e5))
+* Enable self signed JWT for gRPC. ([#458](https://www.github.com/googleapis/python-pubsub/issues/458)) ([c6e0ff6](https://www.github.com/googleapis/python-pubsub/commit/c6e0ff69faeda614aa6088af59d3420e16720d27))
+
+### Dependencies
+
+* Add `packaging` requirement. ([1f30ef7](https://www.github.com/googleapis/python-pubsub/commit/1f30ef7f26ae1156751bc42305b1eb156115b5e5))
+* Require `google-api-core >= 1.26.0`. ([1f30ef7](https://www.github.com/googleapis/python-pubsub/commit/1f30ef7f26ae1156751bc42305b1eb156115b5e5))
+
+## 2.6.1
+
+07-05-2021 10:33 PDT
+
+### Dependencies
+
+- Fix possible crash by requiring `grpcio >= 1.38.1`. ([#414](https://github.com/googleapis/python-pubsub/issues/414)) ([7037a28](https://github.com/googleapis/python-pubsub/pull/435/commits/7037a28090aa4efa01808231721716bca80bb0b7))
+
+### Documentation
+
+- Adjust samples for publishing with error handler and flow control. ([#433](https://github.com/googleapis/python-pubsub/pull/433))
+
+### Internal / Testing Changes
+
+- Fix flaky sync pull sample test. ([#434](https://github.com/googleapis/python-pubsub/pull/434))
+- Mitigate flaky snippets tests. ([#432](https://github.com/googleapis/python-pubsub/pull/432))
+
+## [2.6.0](https://www.github.com/googleapis/python-pubsub/compare/v2.5.0...v2.6.0) (2021-06-17)
+
+
+### Features
+
+* support customizable retry and timeout settings on the publisher client ([#299](https://www.github.com/googleapis/python-pubsub/issues/299)) ([7597604](https://www.github.com/googleapis/python-pubsub/commit/7597604b41fa3a1e9bf34addc35c8647dde007cc))
+
+
+### Bug Fixes
+
+* ACK deadline set for received messages can be too low  ([#416](https://www.github.com/googleapis/python-pubsub/issues/416)) ([e907f6e](https://www.github.com/googleapis/python-pubsub/commit/e907f6e05f59f64a3b08df3304e92ec960997be6))
+* threads can skip the line in publisher flow controller ([#422](https://www.github.com/googleapis/python-pubsub/issues/422)) ([ef89f55](https://www.github.com/googleapis/python-pubsub/commit/ef89f55a41044e9ad26b91132b4b1be9c7b2c127))
+
+
+### Documentation
+
+* block until the streaming pull shuts down ([#424](https://www.github.com/googleapis/python-pubsub/issues/424)) ([d0d0b70](https://www.github.com/googleapis/python-pubsub/commit/d0d0b704642df8dee893d3f585aeb666e19696fb))
+* explain that future.cancel() is non-blocking ([#420](https://www.github.com/googleapis/python-pubsub/issues/420)) ([c825789](https://www.github.com/googleapis/python-pubsub/commit/c825789bdff310f44cbb132a723e99d1e6331d8f))
+
+## [2.5.0](https://www.github.com/googleapis/python-pubsub/compare/v2.4.2...v2.5.0) (2021-05-18)
+
+
+### Features
+
+* Make publish futures compatible with `concurrent.futures.as_completed()`. ([#397](https://www.github.com/googleapis/python-pubsub/issues/397)) ([e29a2c0](https://www.github.com/googleapis/python-pubsub/commit/e29a2c0ac6c5d2ebf2311646e552a02f184cfedc))
+
+
+### Bug Fixes
+
+* Scheduler errors when executor in shutdown. ([#399](https://www.github.com/googleapis/python-pubsub/issues/399)) ([39a83d3](https://www.github.com/googleapis/python-pubsub/commit/39a83d3eef196e88478ad8362201a2ab12e9f681))
+
+## 2.4.2
+
+05-06-2021 23:50 PDT
+
+
+### Implementation Changes
+
+- Fix memory leak when publishing messages. ([#406](https://github.com/googleapis/python-pubsub/pull/406))
+- Do not crash if distribution cannot be found when extracting semantic version. ([#393](https://github.com/googleapis/python-pubsub/pull/393))
+- Emit a warning if `return_immediately` is set with synchronous pull. ([#355](https://github.com/googleapis/python-pubsub/pull/355))
+- Regenerate GAPIC layer with latest changes, use explicit default timeouts. ([#345](https://github.com/googleapis/python-pubsub/pull/345))
+
+
+### Documentation
+
+- Add additional info on `use_legacy_flow_control` parameter. ([#301](https://github.com/googleapis/python-pubsub/pull/301))
+- Remove EXPERIMENTAL tag for ordering keys in `publisher/client.py`. ([#324](https://github.com/googleapis/python-pubsub/pull/324))
+- Fix `create_topic()` call in README. ([#360](https://github.com/googleapis/python-pubsub/pull/360))
+- Generate PyPI token in secrets manager, fix spacing in docs (via synth). ([#384](https://github.com/googleapis/python-pubsub/pull/384))
+- Add `SECURITY.md`. ([#401](https://github.com/googleapis/python-pubsub/pull/401))
+
+
+### Internal / Testing Changes
+
+- Require 100% unit test coverage (via synth). ([#359](https://github.com/googleapis/python-pubsub/pull/359))
+- Bump test coverage to 100%. ([#364](https://github.com/googleapis/python-pubsub/pull/364))
+- Fix streaming pull close unit test flakiness. ([#361](https://github.com/googleapis/python-pubsub/pull/361))
+- Pass explicit credentials in all unit tests creating clients. ([#369](https://github.com/googleapis/python-pubsub/pull/369))
+- Fix flaky test for blocking pull shutdown. ([#378](https://github.com/googleapis/python-pubsub/pull/378))
+- Add missing licence header. ([#377](https://github.com/googleapis/python-pubsub/pull/377))
+
+## [2.4.1](https://www.github.com/googleapis/python-pubsub/compare/v2.4.0...v2.4.1) (2021-03-30)
+
+### Bug Fixes
+
+* Move `await_msg_callbacks` flag to `subscribe()` method, fixing a regression in Pub/Sub Lite client.
+  ([#320](https://www.github.com/googleapis/python-pubsub/issues/320)) ([d40d027](https://www.github.com/googleapis/python-pubsub/commit/d40d02713c8c189937ae5c21d099b88a3131a59f))
+* SSL error when using the client with the emulator. ([#297](https://www.github.com/googleapis/python-pubsub/issues/297)) ([83db672](https://www.github.com/googleapis/python-pubsub/commit/83db67239d3521457138699109f766d574a0a2c4))
+
+### Implementation Changes
+
+* (samples) Bump the max_time to 10 minutes for a flaky test. ([#311](https://www.github.com/googleapis/python-pubsub/issues/311)) ([e2678d4](https://www.github.com/googleapis/python-pubsub/commit/e2678d47c08e6b03782d2d744a4e630b933fdd51)), closes [#291](https://www.github.com/googleapis/python-pubsub/issues/291)
+* (samples) Mark delivery attempts test as flaky. ([#326](https://www.github.com/googleapis/python-pubsub/issues/326)) ([5a97ef1](https://www.github.com/googleapis/python-pubsub/commit/5a97ef1bb7512fe814a8f72a43b3e9698434cd8d))
+* (samples) Mitigate flakiness in subscriber_tests. ([#304](https://www.github.com/googleapis/python-pubsub/issues/304)) ([271a385](https://www.github.com/googleapis/python-pubsub/commit/271a3856d835967f18f6becdae5ad53d585d0ccf))
+* (samples) Retry `InternalServerError` in dead letter policy test. ([#329](https://www.github.com/googleapis/python-pubsub/issues/329)) ([34c9b11](https://www.github.com/googleapis/python-pubsub/commit/34c9b11ae697c280f32642c3101b7f7da971f589)), closes [#321](https://www.github.com/googleapis/python-pubsub/issues/321)
+
+### Documentation
+
+* Remove EXPERIMENTAL tag for ordering keys in `types.py`. ([#323](https://www.github.com/googleapis/python-pubsub/issues/323)) ([659cd7a](https://www.github.com/googleapis/python-pubsub/commit/659cd7ae2784245d4217fbc722dac04bd3222d32))
+* Remove EXPERIMENTAL tag from `Schema` service (via synth). ([#307](https://www.github.com/googleapis/python-pubsub/issues/307)) ([ad85202](https://www.github.com/googleapis/python-pubsub/commit/ad852028836520db779c5cc33689ffd7e5458a7d))
+
+
+## 2.4.0
+
+02-22-2021 05:02 PST
+
+
+### Implementation Changes
+
+### New Features
+
+- Add graceful streaming pull shutdown. ([#292](https://github.com/googleapis/python-pubsub/pull/292))
+
+### Documentation
+
+- Update samples with using the subscriber client as a context manager. ([#254](https://github.com/googleapis/python-pubsub/pull/254))
+
+## [2.3.0](https://www.github.com/googleapis/python-pubsub/compare/v2.2.0...v2.3.0) (2021-02-08)
+
+
+### Features
+
+* surface SchemaServiceClient in google.cloud.pubsub ([#281](https://www.github.com/googleapis/python-pubsub/issues/281)) ([8751bcc](https://www.github.com/googleapis/python-pubsub/commit/8751bcc5eb782df55769b48253629a3bde3d4661))
+
+
+### Bug Fixes
+
+* client version missing from the user agent header ([#275](https://www.github.com/googleapis/python-pubsub/issues/275)) ([b112f4f](https://www.github.com/googleapis/python-pubsub/commit/b112f4fcbf6f2bce8dcf37871bdc540b11f54fe3))
+* Don't open the google.cloud package by adding pubsub.py ([#269](https://www.github.com/googleapis/python-pubsub/issues/269)) ([542d79d](https://www.github.com/googleapis/python-pubsub/commit/542d79d7c5fb7403016150ba477485756cd4097b))
+* flaky samples tests ([#263](https://www.github.com/googleapis/python-pubsub/issues/263)) ([3d6a29d](https://www.github.com/googleapis/python-pubsub/commit/3d6a29de07cc09be663c90a3333f4cd33633994f))
+* Modify synth.py to update grpc transport options ([#266](https://www.github.com/googleapis/python-pubsub/issues/266)) ([41dcd30](https://www.github.com/googleapis/python-pubsub/commit/41dcd30636168f3dd1248f1d99170d531fc9bcb8))
+* pass anonymous credentials for emulator ([#250](https://www.github.com/googleapis/python-pubsub/issues/250)) ([8eed8e1](https://www.github.com/googleapis/python-pubsub/commit/8eed8e16019510dc8b20fb6b009d61a7ac532d26))
+* remove grpc send/recieve limits ([#259](https://www.github.com/googleapis/python-pubsub/issues/259)) ([fd2840c](https://www.github.com/googleapis/python-pubsub/commit/fd2840c10f92b03da7f4b40ac69c602220757c0a))
+
+## [2.2.0](https://www.github.com/googleapis/python-pubsub/compare/v2.1.0...v2.2.0) (2020-11-16)
+
+
+### Features
+
+* Add dead lettering max delivery attempts argument ([#236](https://www.github.com/googleapis/python-pubsub/issues/236)) ([7687ae5](https://www.github.com/googleapis/python-pubsub/commit/7687ae500bdb9c76e3ffb23302b4f32dc9627d81))
+* Enable server side flow control by default with the option to turn it off ([#231](https://www.github.com/googleapis/python-pubsub/issues/231)) ([94d738c](https://www.github.com/googleapis/python-pubsub/commit/94d738c07c6404a152c6729f5ba4b106b1fe9355))
+
+
+### Bug Fixes
+
+* fix mtls issue in handwritten layer ([#226](https://www.github.com/googleapis/python-pubsub/issues/226)) ([09a409c](https://www.github.com/googleapis/python-pubsub/commit/09a409c6240a74dcb46d8f3f86d4fb95a52274a7))
+* make fixup script consistent with migration docs ([#208](https://www.github.com/googleapis/python-pubsub/issues/208)) ([b64e218](https://www.github.com/googleapis/python-pubsub/commit/b64e2187ab0810437575580d6ddb5315ff60e274))
+
+
+### Documentation
+
+* document potentially unexpected blocking behavior of publish() method ([#214](https://www.github.com/googleapis/python-pubsub/issues/214)) ([b6d9bd7](https://www.github.com/googleapis/python-pubsub/commit/b6d9bd7c38d4fe597c25b7b5869fd4a1259c7687))
+* fix get topic_path in subscriber sample ([#210](https://www.github.com/googleapis/python-pubsub/issues/210)) ([7228f6c](https://www.github.com/googleapis/python-pubsub/commit/7228f6c9a4c050bf22bb4bc3582b89b04eaa8702))
+
 ## 2.1.0
 
 09-21-2020 02:19 PDT

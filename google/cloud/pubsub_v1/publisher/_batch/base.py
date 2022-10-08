@@ -16,12 +16,17 @@ from __future__ import absolute_import
 
 import abc
 import enum
+import typing
+from typing import Optional, Sequence
 
-import six
+
+if typing.TYPE_CHECKING:  # pragma: NO COVER
+    from google.cloud import pubsub_v1
+    from google.cloud.pubsub_v1 import types
+    from google.pubsub_v1 import types as gapic_types
 
 
-@six.add_metaclass(abc.ABCMeta)
-class Batch(object):
+class Batch(metaclass=abc.ABCMeta):
     """The base batching class for Pub/Sub publishing.
 
     Although the :class:`~.pubsub_v1.publisher.batch.thread.Batch` class, based
@@ -53,7 +58,7 @@ class Batch(object):
 
     @staticmethod
     @abc.abstractmethod
-    def make_lock():
+    def make_lock():  # pragma: NO COVER
         """Return a lock in the chosen concurrency model.
 
         Returns:
@@ -63,17 +68,17 @@ class Batch(object):
 
     @property
     @abc.abstractmethod
-    def messages(self):
+    def messages(self) -> Sequence["gapic_types.PubsubMessage"]:  # pragma: NO COVER
         """Return the messages currently in the batch.
 
         Returns:
-            Sequence: The messages currently in the batch.
+            The messages currently in the batch.
         """
         raise NotImplementedError
 
     @property
     @abc.abstractmethod
-    def size(self):
+    def size(self) -> int:  # pragma: NO COVER
         """Return the total size of all of the messages currently in the batch.
 
         The size includes any overhead of the actual ``PublishRequest`` that is
@@ -87,42 +92,45 @@ class Batch(object):
 
     @property
     @abc.abstractmethod
-    def settings(self):
+    def settings(self) -> "types.BatchSettings":  # pragma: NO COVER
         """Return the batch settings.
 
         Returns:
-            ~.pubsub_v1.types.BatchSettings: The batch settings. These are
-                considered immutable once the batch has been opened.
+            The batch settings. These are considered immutable once the batch has
+            been opened.
         """
         raise NotImplementedError
 
     @property
     @abc.abstractmethod
-    def status(self):
+    def status(self) -> "BatchStatus":  # pragma: NO COVER
         """Return the status of this batch.
 
         Returns:
-            str: The status of this batch. All statuses are human-readable,
-                all-lowercase strings. The ones represented in the
-                :class:`BaseBatch.Status` enum are special, but other statuses
-                are permitted.
+            The status of this batch. All statuses are human-readable, all-lowercase
+            strings. The ones represented in the :class:`BaseBatch.Status` enum are
+            special, but other statuses are permitted.
         """
         raise NotImplementedError
 
-    def cancel(self, cancellation_reason):
+    def cancel(
+        self, cancellation_reason: "BatchCancellationReason"
+    ) -> None:  # pragma: NO COVER
         """Complete pending futures with an exception.
 
         This method must be called before publishing starts (ie: while the
         batch is still accepting messages.)
 
         Args:
-            cancellation_reason (BatchCancellationReason): The reason why this
-                batch has been cancelled.
+            cancellation_reason:
+                The reason why this batch has been cancelled.
         """
         raise NotImplementedError
 
     @abc.abstractmethod
-    def publish(self, message):
+    def publish(
+        self, message: "gapic_types.PubsubMessage"
+    ) -> Optional["pubsub_v1.publisher.futures.Future"]:  # pragma: NO COVER
         """Publish a single message.
 
         Add the given message to this object; this will cause it to be
@@ -132,11 +140,12 @@ class Batch(object):
         This method is called by :meth:`~.PublisherClient.publish`.
 
         Args:
-            message (~.pubsub_v1.types.PubsubMessage): The Pub/Sub message.
+            message: The Pub/Sub message.
 
         Returns:
-            ~google.api_core.future.Future: An object conforming to the
-                :class:`concurrent.futures.Future` interface.
+            An object conforming to the :class:`concurrent.futures.Future` interface.
+            If :data:`None` is returned, that signals that the batch cannot
+            accept a message.
         """
         raise NotImplementedError
 

@@ -15,11 +15,12 @@
 # limitations under the License.
 
 import argparse
+from typing import Optional
 
 from google.cloud import pubsub_v1
 
 
-def sub(project_id, subscription_id, timeout=None):
+def sub(project_id: str, subscription_id: str, timeout: Optional[float] = None) -> None:
     """Receives messages from a Pub/Sub subscription."""
     # Initialize a Subscriber client
     subscriber_client = pubsub_v1.SubscriberClient()
@@ -27,7 +28,7 @@ def sub(project_id, subscription_id, timeout=None):
     # `projects/{project_id}/subscriptions/{subscription_id}`
     subscription_path = subscriber_client.subscription_path(project_id, subscription_id)
 
-    def callback(message):
+    def callback(message: pubsub_v1.subscriber.message.Message) -> None:
         print(f"Received {message}.")
         # Acknowledge the message. Unack'ed messages will be redelivered.
         message.ack()
@@ -43,7 +44,8 @@ def sub(project_id, subscription_id, timeout=None):
         # exiting while messages get processed in the callbacks.
         streaming_pull_future.result(timeout=timeout)
     except:  # noqa
-        streaming_pull_future.cancel()
+        streaming_pull_future.cancel()  # Trigger the shutdown.
+        streaming_pull_future.result()  # Block until the shutdown is complete.
 
     subscriber_client.close()
 

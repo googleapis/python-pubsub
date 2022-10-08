@@ -14,7 +14,13 @@
 
 from __future__ import absolute_import
 
+import typing
+from typing import Any, Callable, Union
+
 from google.cloud.pubsub_v1 import futures
+
+if typing.TYPE_CHECKING:  # pragma: NO COVER
+    from google.cloud import pubsub_v1
 
 
 class Future(futures.Future):
@@ -25,28 +31,53 @@ class Future(futures.Future):
     ID, unless an error occurs.
     """
 
-    def result(self, timeout=None):
+    def cancel(self) -> bool:
+        """Actions in Pub/Sub generally may not be canceled.
+
+        This method always returns ``False``.
+        """
+        return False
+
+    def cancelled(self) -> bool:
+        """Actions in Pub/Sub generally may not be canceled.
+
+        This method always returns ``False``.
+        """
+        return False
+
+    def result(self, timeout: Union[int, float] = None) -> str:
         """Return the message ID or raise an exception.
 
         This blocks until the message has been published successfully and
         returns the message ID unless an exception is raised.
 
         Args:
-            timeout (Union[int, float]): The number of seconds before this call
+            timeout: The number of seconds before this call
                 times out and raises TimeoutError.
 
         Returns:
-            str: The message ID.
+            The message ID.
 
         Raises:
             concurrent.futures.TimeoutError: If the request times out.
             Exception: For undefined exceptions in the underlying
                 call execution.
         """
-        # Attempt to get the exception if there is one.
-        # If there is not one, then we know everything worked, and we can
-        # return an appropriate value.
-        err = self.exception(timeout=timeout)
-        if err is None:
-            return self._result
-        raise err
+        return super().result(timeout=timeout)
+
+    # This exists to make the type checkers happy.
+    def add_done_callback(
+        self, callback: Callable[["pubsub_v1.publisher.futures.Future"], Any]
+    ) -> None:
+        """Attach a callable that will be called when the future finishes.
+
+        Args:
+            callback:
+                A callable that will be called with this future as its only
+                argument when the future completes or is cancelled. The callable
+                will always be called by a thread in the same process in which
+                it was added. If the future has already completed or been
+                cancelled then the callable will be called immediately. These
+                callables are called in the order that they were added.
+        """
+        return super().add_done_callback(callback)  # type: ignore

@@ -13,7 +13,14 @@
 # limitations under the License.
 
 import concurrent.futures as futures
-import mock
+import sys
+
+# special case python < 3.8
+if sys.version_info.major == 3 and sys.version_info.minor < 8:
+    import mock
+else:
+    from unittest import mock
+
 import pytest
 
 from google.auth import credentials
@@ -25,7 +32,7 @@ _ORDERING_KEY = "ordering_key_1"
 
 
 def create_message():
-    return gapic_types.PubsubMessage(data=b"foo", attributes={"bar": u"baz"})
+    return gapic_types.PubsubMessage(data=b"foo", attributes={"bar": "baz"})
 
 
 def create_client():
@@ -182,6 +189,18 @@ def test_publish_custom_retry():
     assert sequencer._ordered_batches  # batch exists
     batch = sequencer._ordered_batches[0]
     assert batch._commit_retry is mock.sentinel.custom_retry
+
+
+def test_publish_custom_timeout():
+    client = create_client()
+    message = create_message()
+    sequencer = create_ordered_sequencer(client)
+
+    sequencer.publish(message, timeout=mock.sentinel.custom_timeout)
+
+    assert sequencer._ordered_batches  # batch exists
+    batch = sequencer._ordered_batches[0]
+    assert batch._commit_timeout is mock.sentinel.custom_timeout
 
 
 def test_publish_batch_full():

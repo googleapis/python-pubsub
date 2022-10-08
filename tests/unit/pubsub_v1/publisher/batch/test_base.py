@@ -13,8 +13,13 @@
 # limitations under the License.
 
 from __future__ import absolute_import
+import sys
 
-import mock
+# special case python < 3.8
+if sys.version_info.major == 3 and sys.version_info.minor < 8:
+    import mock
+else:
+    from unittest import mock
 
 from google.auth import credentials
 from google.cloud.pubsub_v1 import publisher
@@ -24,12 +29,11 @@ from google.cloud.pubsub_v1.publisher._batch.thread import Batch
 from google.pubsub_v1 import types as gapic_types
 
 
-def create_batch(status=None, settings=types.BatchSettings()):
+def create_batch(status, settings=types.BatchSettings()):
     """Create a batch object, which does not commit.
 
     Args:
-        status (str): If provided, the batch's internal status will be set
-            to the provided status.
+        status (str): The batch's internal status will be set to the provided status.
 
     Returns:
         ~.pubsub_v1.publisher.batch.thread.Batch: The batch object
@@ -37,8 +41,7 @@ def create_batch(status=None, settings=types.BatchSettings()):
     creds = mock.Mock(spec=credentials.Credentials)
     client = publisher.Client(credentials=creds)
     batch = Batch(client, "topic_name", settings)
-    if status:
-        batch._status = status
+    batch._status = status
     return batch
 
 

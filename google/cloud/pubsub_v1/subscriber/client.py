@@ -16,33 +16,34 @@ from __future__ import absolute_import
 
 import os
 import pkg_resources
+import typing
+from typing import cast, Any, Callable, Optional, Sequence, Union
+import warnings
 
-import grpc
+from google.auth.credentials import AnonymousCredentials  # type: ignore
+from google.oauth2 import service_account  # type: ignore
 
-from google.api_core import grpc_helpers
-from google.oauth2 import service_account
-
-from google.cloud.pubsub_v1 import _gapic
 from google.cloud.pubsub_v1 import types
 from google.cloud.pubsub_v1.subscriber import futures
 from google.cloud.pubsub_v1.subscriber._protocol import streaming_pull_manager
 from google.pubsub_v1.services.subscriber import client as subscriber_client
-from google.pubsub_v1.services.subscriber.transports import (
-    grpc as subscriber_grpc_transport,
-)
+
+if typing.TYPE_CHECKING:  # pragma: NO COVER
+    from google.cloud.pubsub_v1 import subscriber
+    from google.pubsub_v1.services.subscriber.transports.grpc import (
+        SubscriberGrpcTransport,
+    )
 
 
-__version__ = pkg_resources.get_distribution("google-cloud-pubsub").version
+try:
+    __version__ = pkg_resources.get_distribution("google-cloud-pubsub").version
+except pkg_resources.DistributionNotFound:
+    # Distribution might not be available if we are not running from within
+    # a PIP package.
+    __version__ = "0.0"
 
-_BLACKLISTED_METHODS = (
-    "publish",
-    "from_service_account_file",
-    "from_service_account_json",
-)
 
-
-@_gapic.add_methods(subscriber_client.SubscriberClient, blacklist=_BLACKLISTED_METHODS)
-class Client(object):
+class Client(subscriber_client.SubscriberClient):
     """A subscriber client for Google Cloud Pub/Sub.
 
     This creates an object that is capable of subscribing to messages.
@@ -50,7 +51,7 @@ class Client(object):
     get sensible defaults.
 
     Args:
-        kwargs (dict): Any additional arguments provided are sent as keyword
+        kwargs: Any additional arguments provided are sent as keyword
             keyword arguments to the underlying
             :class:`~google.cloud.pubsub_v1.gapic.subscriber_client.SubscriberClient`.
             Generally you should not need to set additional keyword
@@ -72,65 +73,30 @@ class Client(object):
         )
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any):
         # Sanity check: Is our goal to use the emulator?
         # If so, create a grpc insecure channel with the emulator host
         # as the target.
         if os.environ.get("PUBSUB_EMULATOR_HOST"):
-            kwargs["channel"] = grpc.insecure_channel(
-                target=os.environ.get("PUBSUB_EMULATOR_HOST")
-            )
+            kwargs["client_options"] = {
+                "api_endpoint": os.environ.get("PUBSUB_EMULATOR_HOST")
+            }
+            kwargs["credentials"] = AnonymousCredentials()
 
-        # The GAPIC client has mTLS logic to determine the api endpoint and the
-        # ssl credentials to use. Here we create a GAPIC client to help compute the
-        # api endpoint and ssl credentials. The api endpoint will be used to set
-        # `self._target`, and ssl credentials will be passed to
-        # `grpc_helpers.create_channel` to establish a mTLS channel (if ssl
-        # credentials is not None).
-        client_options = kwargs.get("client_options", None)
-        credentials = kwargs.get("credentials", None)
-        client_for_mtls_info = subscriber_client.SubscriberClient(
-            credentials=credentials, client_options=client_options
-        )
-
-        self._target = client_for_mtls_info._transport._host
-
-        # Use a custom channel.
-        # We need this in order to set appropriate default message size and
-        # keepalive options.
-        if "transport" not in kwargs:
-            channel = kwargs.pop("channel", None)
-            if channel is None:
-                channel = grpc_helpers.create_channel(
-                    credentials=kwargs.pop("credentials", None),
-                    target=self.target,
-                    ssl_credentials=client_for_mtls_info._transport._ssl_channel_credentials,
-                    scopes=subscriber_client.SubscriberClient._DEFAULT_SCOPES,
-                    options={
-                        "grpc.max_send_message_length": -1,
-                        "grpc.max_receive_message_length": -1,
-                        "grpc.keepalive_time_ms": 30000,
-                    }.items(),
-                )
-            # cannot pass both 'channel' and 'credentials'
-            kwargs.pop("credentials", None)
-            transport = subscriber_grpc_transport.SubscriberGrpcTransport(
-                channel=channel
-            )
-            kwargs["transport"] = transport
-
-        # Add the metrics headers, and instantiate the underlying GAPIC
-        # client.
-        self._api = subscriber_client.SubscriberClient(**kwargs)
+        # Instantiate the underlying GAPIC client.
+        super().__init__(**kwargs)
+        self._target = self._transport._host
+        self._closed = False
 
     @classmethod
-    def from_service_account_file(cls, filename, **kwargs):
+    def from_service_account_file(  # type: ignore[override]
+        cls, filename: str, **kwargs: Any
+    ) -> "Client":
         """Creates an instance of this client using the provided credentials
         file.
 
         Args:
-            filename (str): The path to the service account private key json
-                file.
+            filename: The path to the service account private key json file.
             kwargs: Additional arguments to pass to the constructor.
 
         Returns:
@@ -141,23 +107,54 @@ class Client(object):
         kwargs["credentials"] = credentials
         return cls(**kwargs)
 
-    from_service_account_json = from_service_account_file
+    from_service_account_json = from_service_account_file  # type: ignore[assignment]
 
     @property
-    def target(self):
+    def target(self) -> str:
         """Return the target (where the API is).
 
         Returns:
-            str: The location of the API.
+            The location of the API.
         """
         return self._target
 
     @property
-    def api(self):
-        """The underlying gapic API client."""
-        return self._api
+    def closed(self) -> bool:
+        """Return whether the client has been closed and cannot be used anymore.
 
-    def subscribe(self, subscription, callback, flow_control=(), scheduler=None):
+        .. versionadded:: 2.8.0
+        """
+        return self._closed
+
+    @property
+    def api(self):
+        """The underlying gapic API client.
+
+        .. versionchanged:: 2.10.0
+            Instead of a GAPIC ``SubscriberClient`` client instance, this property is a
+            proxy object to it with the same interface.
+
+        .. deprecated:: 2.10.0
+            Use the GAPIC methods and properties on the client instance directly
+            instead of through the :attr:`api` attribute.
+        """
+        msg = (
+            'The "api" property only exists for backward compatibility, access its '
+            'attributes directly thorugh the client instance (e.g. "client.foo" '
+            'instead of "client.api.foo").'
+        )
+        warnings.warn(msg, category=DeprecationWarning)
+        return super()
+
+    def subscribe(
+        self,
+        subscription: str,
+        callback: Callable[["subscriber.message.Message"], Any],
+        flow_control: Union[types.FlowControl, Sequence] = (),
+        scheduler: Optional["subscriber.scheduler.ThreadScheduler"] = None,
+        use_legacy_flow_control: bool = False,
+        await_callbacks_on_shutdown: bool = False,
+    ) -> futures.StreamingPullFuture:
         """Asynchronously start receiving messages on a given subscription.
 
         This method starts a background thread to begin pulling messages from
@@ -178,6 +175,10 @@ class Client(object):
         leading it to "starve" other clients of messages. Increasing these
         settings may lead to faster throughput for messages that do not take
         a long time to process.
+
+        The ``use_legacy_flow_control`` argument disables enforcing flow control
+        settings at the Cloud Pub/Sub server, and only the client side flow control
+        will be enforced.
 
         This method starts the receiver in the background and returns a
         *Future* representing its execution. Waiting on the future (calling
@@ -213,32 +214,52 @@ class Client(object):
             try:
                 future.result()
             except KeyboardInterrupt:
-                future.cancel()
+                future.cancel()  # Trigger the shutdown.
+                future.result()  # Block until the shutdown is complete.
 
         Args:
-            subscription (str): The name of the subscription. The
-                subscription should have already been created (for example,
-                by using :meth:`create_subscription`).
-            callback (Callable[~google.cloud.pubsub_v1.subscriber.message.Message]):
+            subscription:
+                The name of the subscription. The subscription should have already been
+                created (for example, by using :meth:`create_subscription`).
+            callback:
                 The callback function. This function receives the message as
                 its only argument and will be called from a different thread/
                 process depending on the scheduling strategy.
-            flow_control (~google.cloud.pubsub_v1.types.FlowControl): The flow control
-                settings. Use this to prevent situations where you are
+            flow_control:
+                The flow control settings. Use this to prevent situations where you are
                 inundated with too many messages at once.
-            scheduler (~google.cloud.pubsub_v1.subscriber.scheduler.Scheduler): An optional
-                *scheduler* to use when executing the callback. This controls
-                how callbacks are executed concurrently. This object must not be shared
-                across multiple SubscriberClients.
+            scheduler:
+                An optional *scheduler* to use when executing the callback. This
+                controls how callbacks are executed concurrently. This object must not
+                be shared across multiple ``SubscriberClient`` instances.
+            use_legacy_flow_control (bool):
+                If set to ``True``, flow control at the Cloud Pub/Sub server is disabled,
+                though client-side flow control is still enabled. If set to ``False``
+                (default), both server-side and client-side flow control are enabled.
+            await_callbacks_on_shutdown:
+                If ``True``, after canceling the returned future, the latter's
+                ``result()`` method will block until the background stream and its
+                helper threads have been terminated, and all currently executing message
+                callbacks are done processing.
+
+                If ``False`` (default), the returned future's ``result()`` method will
+                not block after canceling the future. The method will instead return
+                immediately after the background stream and its helper threads have been
+                terminated, but some of the message callback threads might still be
+                running at that point.
 
         Returns:
-            A :class:`~google.cloud.pubsub_v1.subscriber.futures.StreamingPullFuture`
-            instance that can be used to manage the background stream.
+            A future instance that can be used to manage the background stream.
         """
         flow_control = types.FlowControl(*flow_control)
 
         manager = streaming_pull_manager.StreamingPullManager(
-            self, subscription, flow_control=flow_control, scheduler=scheduler
+            self,
+            subscription,
+            flow_control=flow_control,
+            scheduler=scheduler,
+            use_legacy_flow_control=use_legacy_flow_control,
+            await_callbacks_on_shutdown=await_callbacks_on_shutdown,
         )
 
         future = futures.StreamingPullFuture(manager)
@@ -247,7 +268,7 @@ class Client(object):
 
         return future
 
-    def close(self):
+    def close(self) -> None:
         """Close the underlying channel to release socket resources.
 
         After a channel has been closed, the client instance cannot be used
@@ -255,9 +276,13 @@ class Client(object):
 
         This method is idempotent.
         """
-        self.api._transport.grpc_channel.close()
+        transport = cast("SubscriberGrpcTransport", self._transport)
+        transport.grpc_channel.close()
+        self._closed = True
 
-    def __enter__(self):
+    def __enter__(self) -> "Client":
+        if self._closed:
+            raise RuntimeError("Closed subscriber cannot be used as context manager.")
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):

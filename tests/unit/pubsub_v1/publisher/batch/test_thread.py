@@ -13,10 +13,16 @@
 # limitations under the License.
 
 import datetime
+import sys
 import threading
 import time
 
-import mock
+# special case python < 3.8
+if sys.version_info.major == 3 and sys.version_info.minor < 8:
+    import mock
+else:
+    from unittest import mock
+
 import pytest
 
 import google.api_core.exceptions
@@ -42,6 +48,7 @@ def create_batch(
     batch_done_callback=None,
     commit_when_full=True,
     commit_retry=gapic_v1.method.DEFAULT,
+    commit_timeout: gapic_types.TimeoutType = gapic_v1.method.DEFAULT,
     **batch_settings
 ):
     """Return a batch object suitable for testing.
@@ -54,6 +61,8 @@ def create_batch(
             has reached byte-size or number-of-messages limits.
         commit_retry (Optional[google.api_core.retry.Retry]): The retry settings
             for the batch commit call.
+        commit_timeout (:class:`~.pubsub_v1.types.TimeoutType`):
+            The timeout to apply to the batch commit call.
         batch_settings (Mapping[str, str]): Arguments passed on to the
             :class:``~.pubsub_v1.types.BatchSettings`` constructor.
 
@@ -69,6 +78,7 @@ def create_batch(
         batch_done_callback=batch_done_callback,
         commit_when_full=commit_when_full,
         commit_retry=commit_retry,
+        commit_timeout=commit_timeout,
     )
 
 
@@ -124,7 +134,7 @@ def test_blocking__commit():
     # Set up the underlying API publish method to return a PublishResponse.
     publish_response = gapic_types.PublishResponse(message_ids=["a", "b"])
     patch = mock.patch.object(
-        type(batch.client.api), "publish", return_value=publish_response
+        type(batch.client), "_gapic_publish", return_value=publish_response
     )
     with patch as publish:
         batch._commit()
@@ -138,6 +148,7 @@ def test_blocking__commit():
             gapic_types.PubsubMessage(data=b"This is another message."),
         ],
         retry=gapic_v1.method.DEFAULT,
+        timeout=gapic_v1.method.DEFAULT,
     )
 
     # Establish that all of the futures are done, and that they have the
@@ -155,7 +166,7 @@ def test_blocking__commit_custom_retry():
     # Set up the underlying API publish method to return a PublishResponse.
     publish_response = gapic_types.PublishResponse(message_ids=["a"])
     patch = mock.patch.object(
-        type(batch.client.api), "publish", return_value=publish_response
+        type(batch.client), "_gapic_publish", return_value=publish_response
     )
     with patch as publish:
         batch._commit()
@@ -166,6 +177,29 @@ def test_blocking__commit_custom_retry():
         topic="topic_name",
         messages=[gapic_types.PubsubMessage(data=b"This is my message.")],
         retry=mock.sentinel.custom_retry,
+        timeout=gapic_v1.method.DEFAULT,
+    )
+
+
+def test_blocking__commit_custom_timeout():
+    batch = create_batch(commit_timeout=mock.sentinel.custom_timeout)
+    batch.publish({"data": b"This is my message."})
+
+    # Set up the underlying API publish method to return a PublishResponse.
+    publish_response = gapic_types.PublishResponse(message_ids=["a"])
+    patch = mock.patch.object(
+        type(batch.client), "_gapic_publish", return_value=publish_response
+    )
+    with patch as publish:
+        batch._commit()
+
+    # Establish that the underlying API call was made with expected
+    # arguments.
+    publish.assert_called_once_with(
+        topic="topic_name",
+        messages=[gapic_types.PubsubMessage(data=b"This is my message.")],
+        retry=gapic_v1.method.DEFAULT,
+        timeout=mock.sentinel.custom_timeout,
     )
 
 
@@ -173,14 +207,14 @@ def test_client_api_publish_not_blocking_additional_publish_calls():
     batch = create_batch(max_messages=1)
     api_publish_called = threading.Event()
 
-    def api_publish_delay(topic="", messages=(), retry=None):
+    def api_publish_delay(topic="", messages=(), retry=None, timeout=None):
         api_publish_called.set()
         time.sleep(1.0)
         message_ids = [str(i) for i in range(len(messages))]
         return gapic_types.PublishResponse(message_ids=message_ids)
 
     api_publish_patch = mock.patch.object(
-        type(batch.client.api), "publish", side_effect=api_publish_delay
+        type(batch.client), "_gapic_publish", side_effect=api_publish_delay
     )
 
     with api_publish_patch:
@@ -188,7 +222,7 @@ def test_client_api_publish_not_blocking_additional_publish_calls():
 
         start = datetime.datetime.now()
         event_set = api_publish_called.wait(timeout=1.0)
-        if not event_set:
+        if not event_set:  # pragma: NO COVER
             pytest.fail("API publish was not called in time")
         batch.publish({"data": b"second message"})
         end = datetime.datetime.now()
@@ -224,7 +258,7 @@ def test_blocking__commit_already_started(_LOGGER):
 
 def test_blocking__commit_no_messages():
     batch = create_batch()
-    with mock.patch.object(type(batch.client.api), "publish") as publish:
+    with mock.patch.object(type(batch.client), "_gapic_publish") as publish:
         batch._commit()
 
     assert publish.call_count == 0
@@ -240,7 +274,7 @@ def test_blocking__commit_wrong_messageid_length():
     # Set up a PublishResponse that only returns one message ID.
     publish_response = gapic_types.PublishResponse(message_ids=["a"])
     patch = mock.patch.object(
-        type(batch.client.api), "publish", return_value=publish_response
+        type(batch.client), "_gapic_publish", return_value=publish_response
     )
 
     with patch:
@@ -260,7 +294,7 @@ def test_block__commmit_api_error():
 
     # Make the API throw an error when publishing.
     error = google.api_core.exceptions.InternalServerError("uh oh")
-    patch = mock.patch.object(type(batch.client.api), "publish", side_effect=error)
+    patch = mock.patch.object(type(batch.client), "_gapic_publish", side_effect=error)
 
     with patch:
         batch._commit()
@@ -279,7 +313,7 @@ def test_block__commmit_retry_error():
 
     # Make the API throw an error when publishing.
     error = google.api_core.exceptions.RetryError("uh oh", None)
-    patch = mock.patch.object(type(batch.client.api), "publish", side_effect=error)
+    patch = mock.patch.object(type(batch.client), "_gapic_publish", side_effect=error)
 
     with patch:
         batch._commit()
@@ -508,7 +542,7 @@ def test_batch_done_callback_called_on_success():
     publish_response = gapic_types.PublishResponse(message_ids=["a"])
 
     with mock.patch.object(
-        type(batch.client.api), "publish", return_value=publish_response
+        type(batch.client), "_gapic_publish", return_value=publish_response
     ):
         batch._commit()
 
@@ -531,8 +565,8 @@ def test_batch_done_callback_called_on_publish_failure():
     error = google.api_core.exceptions.InternalServerError("uh oh")
 
     with mock.patch.object(
-        type(batch.client.api),
-        "publish",
+        type(batch.client),
+        "_gapic_publish",
         return_value=publish_response,
         side_effect=error,
     ):
@@ -554,7 +588,7 @@ def test_batch_done_callback_called_on_publish_response_invalid():
     publish_response = gapic_types.PublishResponse(message_ids=[])
 
     with mock.patch.object(
-        type(batch.client.api), "publish", return_value=publish_response
+        type(batch.client), "_gapic_publish", return_value=publish_response
     ):
         batch._commit()
 

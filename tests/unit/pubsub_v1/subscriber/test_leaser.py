@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import logging
+import sys
 import threading
 
 from google.cloud.pubsub_v1 import types
@@ -22,7 +23,12 @@ from google.cloud.pubsub_v1.subscriber._protocol import leaser
 from google.cloud.pubsub_v1.subscriber._protocol import requests
 from google.cloud.pubsub_v1.subscriber._protocol import streaming_pull_manager
 
-import mock
+# special case python < 3.8
+if sys.version_info.major == 3 and sys.version_info.minor < 8:
+    import mock
+else:
+    from unittest import mock
+
 import pytest
 
 
@@ -84,24 +90,30 @@ def create_manager(flow_control=types.FlowControl()):
     manager.is_active = True
     manager.flow_control = flow_control
     manager.ack_histogram = histogram.Histogram()
-    manager.ack_deadline = 10
+    manager._obtain_ack_deadline.return_value = 10
     return manager
 
 
-def test_maintain_leases_inactive(caplog):
-    caplog.set_level(logging.INFO)
+def test_maintain_leases_inactive_manager(caplog):
+    caplog.set_level(logging.DEBUG)
     manager = create_manager()
     manager.is_active = False
 
     leaser_ = leaser.Leaser(manager)
+    make_sleep_mark_event_as_done(leaser_)
+    leaser_.add(
+        [requests.LeaseRequest(ack_id="my_ack_ID", byte_size=42, ordering_key="")]
+    )
 
     leaser_.maintain_leases()
 
+    # Leases should still be maintained even if the manager is inactive.
+    manager._send_lease_modacks.assert_called()
     assert "exiting" in caplog.text
 
 
 def test_maintain_leases_stopped(caplog):
-    caplog.set_level(logging.INFO)
+    caplog.set_level(logging.DEBUG)
     manager = create_manager()
 
     leaser_ = leaser.Leaser(manager)
@@ -112,35 +124,37 @@ def test_maintain_leases_stopped(caplog):
     assert "exiting" in caplog.text
 
 
-def make_sleep_mark_manager_as_inactive(leaser):
-    # Make sleep mark the manager as inactive so that maintain_leases
+def make_sleep_mark_event_as_done(leaser):
+    # Make sleep actually trigger the done event so that heartbeat()
     # exits at the end of the first run.
-    def trigger_inactive(timeout):
+    def trigger_done(timeout):
         assert 0 < timeout < 10
-        leaser._manager.is_active = False
+        leaser._stop_event.set()
 
-    leaser._stop_event.wait = trigger_inactive
+    leaser._stop_event.wait = trigger_done
 
 
 def test_maintain_leases_ack_ids():
     manager = create_manager()
     leaser_ = leaser.Leaser(manager)
-    make_sleep_mark_manager_as_inactive(leaser_)
+    make_sleep_mark_event_as_done(leaser_)
     leaser_.add(
         [requests.LeaseRequest(ack_id="my ack id", byte_size=50, ordering_key="")]
     )
 
     leaser_.maintain_leases()
 
-    manager.dispatcher.modify_ack_deadline.assert_called_once_with(
-        [requests.ModAckRequest(ack_id="my ack id", seconds=10)]
-    )
+    assert len(manager._send_lease_modacks.mock_calls) == 1
+    call = manager._send_lease_modacks.mock_calls[0]
+    ack_ids = list(call.args[0])
+    assert ack_ids == ["my ack id"]
+    assert call.args[1] == 10
 
 
 def test_maintain_leases_no_ack_ids():
     manager = create_manager()
     leaser_ = leaser.Leaser(manager)
-    make_sleep_mark_manager_as_inactive(leaser_)
+    make_sleep_mark_event_as_done(leaser_)
 
     leaser_.maintain_leases()
 
@@ -151,7 +165,7 @@ def test_maintain_leases_no_ack_ids():
 def test_maintain_leases_outdated_items(time):
     manager = create_manager()
     leaser_ = leaser.Leaser(manager)
-    make_sleep_mark_manager_as_inactive(leaser_)
+    make_sleep_mark_event_as_done(leaser_)
 
     # Add and start expiry timer at the beginning of the timeline.
     time.return_value = 0
@@ -176,14 +190,11 @@ def test_maintain_leases_outdated_items(time):
     leaser_.maintain_leases()
 
     # ack2, ack3, and ack4 should be renewed. ack1 should've been dropped
-    modacks = manager.dispatcher.modify_ack_deadline.call_args.args[0]
-    expected = [
-        requests.ModAckRequest(ack_id="ack2", seconds=10),
-        requests.ModAckRequest(ack_id="ack3", seconds=10),
-        requests.ModAckRequest(ack_id="ack4", seconds=10),
-    ]
-    # Use sorting to allow for ordering variance.
-    assert sorted(modacks) == sorted(expected)
+    assert len(manager._send_lease_modacks.mock_calls) == 1
+    call = manager._send_lease_modacks.mock_calls[0]
+    ack_ids = list(call.args[0])
+    assert ack_ids == ["ack2", "ack3", "ack4"]
+    assert call.args[1] == 10
 
     manager.dispatcher.drop.assert_called_once_with(
         [requests.DropRequest(ack_id="ack1", byte_size=50, ordering_key="")]

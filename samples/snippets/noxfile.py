@@ -14,9 +14,11 @@
 
 from __future__ import print_function
 
+import glob
 import os
 from pathlib import Path
 import sys
+from typing import Callable, Dict, List, Optional
 
 import nox
 
@@ -27,8 +29,10 @@ import nox
 # WARNING - WARNING - WARNING - WARNING - WARNING
 # WARNING - WARNING - WARNING - WARNING - WARNING
 
-# Copy `noxfile_config.py` to your directory and modify it instead.
+BLACK_VERSION = "black==22.3.0"
+ISORT_VERSION = "isort==5.10.1"
 
+# Copy `noxfile_config.py` to your directory and modify it instead.
 
 # `TEST_CONFIG` dict is a configuration hook that allows users to
 # modify the test configurations. The values here should be in sync
@@ -37,13 +41,20 @@ import nox
 
 TEST_CONFIG = {
     # You can opt out from the test for specific Python versions.
-    "ignored_versions": ["2.7"],
+    "ignored_versions": [],
+    # Old samples are opted out of enforcing Python type hints
+    # All new samples should feature them
+    "enforce_type_hints": False,
     # An envvar key for determining the project id to use. Change it
     # to 'BUILD_SPECIFIC_GCLOUD_PROJECT' if you want to opt in using a
     # build specific Cloud project. You can also use your own string
     # to use your own Cloud project.
     "gcloud_project_env": "GOOGLE_CLOUD_PROJECT",
     # 'gcloud_project_env': 'BUILD_SPECIFIC_GCLOUD_PROJECT',
+    # If you need to use a specific version of pip,
+    # change pip_version_override to the string representation
+    # of the version number, for example, "20.2.4"
+    "pip_version_override": None,
     # A dictionary you want to inject into your test. Don't put any
     # secrets here. These values will override predefined values.
     "envs": {},
@@ -62,7 +73,7 @@ except ImportError as e:
 TEST_CONFIG.update(TEST_CONFIG_OVERRIDE)
 
 
-def get_pytest_env_vars():
+def get_pytest_env_vars() -> Dict[str, str]:
     """Returns a dict for pytest invocation."""
     ret = {}
 
@@ -77,21 +88,28 @@ def get_pytest_env_vars():
 
 
 # DO NOT EDIT - automatically generated.
-# All versions used to tested samples.
-ALL_VERSIONS = ["2.7", "3.6", "3.7", "3.8"]
+# All versions used to test samples.
+ALL_VERSIONS = ["3.7", "3.8", "3.9", "3.10"]
 
 # Any default versions that should be ignored.
 IGNORED_VERSIONS = TEST_CONFIG["ignored_versions"]
 
 TESTED_VERSIONS = sorted([v for v in ALL_VERSIONS if v not in IGNORED_VERSIONS])
 
-INSTALL_LIBRARY_FROM_SOURCE = bool(os.environ.get("INSTALL_LIBRARY_FROM_SOURCE", False))
+INSTALL_LIBRARY_FROM_SOURCE = os.environ.get("INSTALL_LIBRARY_FROM_SOURCE", False) in (
+    "True",
+    "true",
+)
+
+# Error if a python version is missing
+nox.options.error_on_missing_interpreters = True
+
 #
 # Style Checks
 #
 
 
-def _determine_local_import_names(start_dir):
+def _determine_local_import_names(start_dir: str) -> List[str]:
     """Determines all import names that should be considered "local".
 
     This is used when running the linter to insure that import order is
@@ -129,8 +147,11 @@ FLAKE8_COMMON_ARGS = [
 
 
 @nox.session
-def lint(session):
-    session.install("flake8", "flake8-import-order")
+def lint(session: nox.sessions.Session) -> None:
+    if not TEST_CONFIG["enforce_type_hints"]:
+        session.install("flake8", "flake8-import-order")
+    else:
+        session.install("flake8", "flake8-import-order", "flake8-annotations")
 
     local_names = _determine_local_import_names(".")
     args = FLAKE8_COMMON_ARGS + [
@@ -142,6 +163,39 @@ def lint(session):
 
 
 #
+# Black
+#
+
+
+@nox.session
+def blacken(session: nox.sessions.Session) -> None:
+    """Run black. Format code to uniform standard."""
+    session.install(BLACK_VERSION)
+    python_files = [path for path in os.listdir(".") if path.endswith(".py")]
+
+    session.run("black", *python_files)
+
+
+#
+# format = isort + black
+#
+
+@nox.session
+def format(session: nox.sessions.Session) -> None:
+    """
+    Run isort to sort imports. Then run black
+    to format code to uniform standard.
+    """
+    session.install(BLACK_VERSION, ISORT_VERSION)
+    python_files = [path for path in os.listdir(".") if path.endswith(".py")]
+
+    # Use the --fss option to sort imports using strict alphabetical order.
+    # See https://pycqa.github.io/isort/docs/configuration/options.html#force-sort-within-sections
+    session.run("isort", "--fss", *python_files)
+    session.run("black", *python_files)
+
+
+#
 # Sample Tests
 #
 
@@ -149,13 +203,39 @@ def lint(session):
 PYTEST_COMMON_ARGS = ["--junitxml=sponge_log.xml"]
 
 
-def _session_tests(session, post_install=None):
+def _session_tests(
+    session: nox.sessions.Session, post_install: Callable = None
+) -> None:
+    # check for presence of tests
+    test_list = glob.glob("**/*_test.py", recursive=True) + glob.glob("**/test_*.py", recursive=True)
+    test_list.extend(glob.glob("**/tests", recursive=True))
+
+    if len(test_list) == 0:
+        print("No tests found, skipping directory.")
+        return
+
+    if TEST_CONFIG["pip_version_override"]:
+        pip_version = TEST_CONFIG["pip_version_override"]
+        session.install(f"pip=={pip_version}")
     """Runs py.test for a particular project."""
+    concurrent_args = []
     if os.path.exists("requirements.txt"):
-        session.install("-r", "requirements.txt")
+        if os.path.exists("constraints.txt"):
+            session.install("-r", "requirements.txt", "-c", "constraints.txt")
+        else:
+            session.install("-r", "requirements.txt")
+        with open("requirements.txt") as rfile:
+            packages = rfile.read()
 
     if os.path.exists("requirements-test.txt"):
-        session.install("-r", "requirements-test.txt")
+        if os.path.exists("constraints-test.txt"):
+            session.install(
+                "-r", "requirements-test.txt", "-c", "constraints-test.txt"
+            )
+        else:
+            session.install("-r", "requirements-test.txt")
+        with open("requirements-test.txt") as rtfile:
+            packages += rtfile.read()
 
     if INSTALL_LIBRARY_FROM_SOURCE:
         session.install("-e", _get_repo_root())
@@ -163,19 +243,24 @@ def _session_tests(session, post_install=None):
     if post_install:
         post_install(session)
 
+    if "pytest-parallel" in packages:
+        concurrent_args.extend(['--workers', 'auto', '--tests-per-worker', 'auto'])
+    elif "pytest-xdist" in packages:
+        concurrent_args.extend(['-n', 'auto'])
+
     session.run(
         "pytest",
-        *(PYTEST_COMMON_ARGS + session.posargs),
+        *(PYTEST_COMMON_ARGS + session.posargs + concurrent_args),
         # Pytest will return 5 when no tests are collected. This can happen
         # on travis where slow and flaky tests are excluded.
         # See http://doc.pytest.org/en/latest/_modules/_pytest/main.html
         success_codes=[0, 5],
-        env=get_pytest_env_vars()
+        env=get_pytest_env_vars(),
     )
 
 
 @nox.session(python=ALL_VERSIONS)
-def py(session):
+def py(session: nox.sessions.Session) -> None:
     """Runs py.test for a sample using the specified version of Python."""
     if session.python in TESTED_VERSIONS:
         _session_tests(session)
@@ -190,7 +275,7 @@ def py(session):
 #
 
 
-def _get_repo_root():
+def _get_repo_root() -> Optional[str]:
     """ Returns the root folder of the project. """
     # Get root of this repository. Assume we don't have directories nested deeper than 10 items.
     p = Path(os.getcwd())
@@ -213,7 +298,7 @@ GENERATED_READMES = sorted([x for x in Path(".").rglob("*.rst.in")])
 
 @nox.session
 @nox.parametrize("path", GENERATED_READMES)
-def readmegen(session, path):
+def readmegen(session: nox.sessions.Session, path: str) -> None:
     """(Re-)generates the readme for a sample."""
     session.install("jinja2", "pyyaml")
     dir_ = os.path.dirname(path)

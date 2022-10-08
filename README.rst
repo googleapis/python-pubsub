@@ -20,14 +20,14 @@ independently written applications.
 - `Client Library Documentation`_
 
 .. |GA| image:: https://img.shields.io/badge/support-GA-gold.svg
-   :target: https://github.com/googleapis/google-cloud-python/blob/master/README.rst#general-availability
+   :target: https://github.com/googleapis/google-cloud-python/blob/main/README.rst#general-availability
 .. |pypi| image:: https://img.shields.io/pypi/v/google-cloud-pubsub.svg
    :target: https://pypi.org/project/google-cloud-pubsub/
 .. |versions| image:: https://img.shields.io/pypi/pyversions/google-cloud-pubsub.svg
    :target: https://pypi.org/project/google-cloud-pubsub/
 .. _Google Cloud Pub / Sub: https://cloud.google.com/pubsub/
 .. _Product Documentation: https://cloud.google.com/pubsub/docs
-.. _Client Library Documentation: https://googleapis.dev/python/pubsub/latest
+.. _Client Library Documentation: https://cloud.google.com/python/docs/reference/pubsub/latest
 
 Quick Start
 -----------
@@ -60,11 +60,11 @@ dependencies.
 
 Supported Python Versions
 ^^^^^^^^^^^^^^^^^^^^^^^^^
-Python >= 3.6
+Python >= 3.7
 
 Deprecated Python Versions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
-Python == 2.7.
+Python <= 3.6.
 
 The last version of this library compatible with Python 2.7 is google-cloud-pubsub==1.7.0.
 
@@ -110,12 +110,13 @@ messages to it
         project_id=os.getenv('GOOGLE_CLOUD_PROJECT'),
         topic='MY_TOPIC_NAME',  # Set this to something appropriate.
     )
-    publisher.create_topic(topic_name)
-    publisher.publish(topic_name, b'My first message!', spam='eggs')
+    publisher.create_topic(name=topic_name)
+    future = publisher.publish(topic_name, b'My first message!', spam='eggs')
+    future.result()
 
 To learn more, consult the `publishing documentation`_.
 
-.. _publishing documentation: https://googleapis.dev/python/pubsub/latest
+.. _publishing documentation: https://cloud.google.com/python/docs/reference/pubsub/latest
 
 
 Subscribing
@@ -129,23 +130,24 @@ the topic, and subscribe to that, passing a callback function.
     import os
     from google.cloud import pubsub_v1
 
-    subscriber = pubsub_v1.SubscriberClient()
     topic_name = 'projects/{project_id}/topics/{topic}'.format(
         project_id=os.getenv('GOOGLE_CLOUD_PROJECT'),
         topic='MY_TOPIC_NAME',  # Set this to something appropriate.
     )
+
     subscription_name = 'projects/{project_id}/subscriptions/{sub}'.format(
         project_id=os.getenv('GOOGLE_CLOUD_PROJECT'),
         sub='MY_SUBSCRIPTION_NAME',  # Set this to something appropriate.
     )
-    subscriber.create_subscription(
-        name=subscription_name, topic=topic_name)
 
     def callback(message):
         print(message.data)
         message.ack()
 
-    future = subscriber.subscribe(subscription_name, callback)
+    with pubsub_v1.SubscriberClient() as subscriber:
+        subscriber.create_subscription(
+            name=subscription_name, topic=topic_name)  
+        future = subscriber.subscribe(subscription_name, callback)
 
 The future returned by the call to ``subscriber.subscribe`` can be used to
 block the current thread until a given condition obtains:
@@ -160,7 +162,7 @@ block the current thread until a given condition obtains:
 It is also possible to pull messages in a synchronous (blocking) fashion. To
 learn more about subscribing, consult the `subscriber documentation`_.
 
-.. _subscriber documentation: https://googleapis.dev/python/pubsub/latest
+.. _subscriber documentation: https://cloud.google.com/python/docs/reference/pubsub/latest
 
 
 Authentication
@@ -212,7 +214,7 @@ Contributions to this library are always welcome and highly encouraged.
 
 See the `CONTRIBUTING doc`_ for more information on how to get started.
 
-.. _CONTRIBUTING doc: https://github.com/googleapis/google-cloud-python/blob/master/CONTRIBUTING.rst
+.. _CONTRIBUTING doc: https://github.com/googleapis/google-cloud-python/blob/main/CONTRIBUTING.rst
 
 Community
 ---------
@@ -228,4 +230,4 @@ License
 
 Apache 2.0 - See `the LICENSE`_ for more information.
 
-.. _the LICENSE: https://github.com/googleapis/google-cloud-python/blob/master/LICENSE
+.. _the LICENSE: https://github.com/googleapis/google-cloud-python/blob/main/LICENSE

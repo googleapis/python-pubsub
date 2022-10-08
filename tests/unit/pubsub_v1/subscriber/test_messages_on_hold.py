@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from six.moves import queue
+import queue
 
 from google.cloud.pubsub_v1.subscriber import message
 from google.cloud.pubsub_v1.subscriber._protocol import messages_on_hold
@@ -21,7 +21,13 @@ from google.pubsub_v1 import types as gapic_types
 
 def make_message(ack_id, ordering_key):
     proto_msg = gapic_types.PubsubMessage(data=b"Q", ordering_key=ordering_key)
-    return message.Message(proto_msg._pb, ack_id, 0, queue.Queue())
+    return message.Message(
+        proto_msg._pb,
+        ack_id,
+        0,
+        queue.Queue(),
+        exactly_once_delivery_enabled_func=lambda: False,  # pragma: NO COVER
+    )
 
 
 def test_init():

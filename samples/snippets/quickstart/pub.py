@@ -19,7 +19,7 @@ import argparse
 from google.cloud import pubsub_v1
 
 
-def pub(project_id, topic_id):
+def pub(project_id: str, topic_id: str) -> None:
     """Publishes a message to a Pub/Sub topic."""
     # Initialize a Publisher client.
     client = pubsub_v1.PublisherClient()
@@ -33,7 +33,7 @@ def pub(project_id, topic_id):
     api_future = client.publish(topic_path, data)
     message_id = api_future.result()
 
-    print(f"Published {data} to {topic_path}: {message_id}")
+    print(f"Published {data.decode()} to {topic_path}: {message_id}")
 
 
 if __name__ == "__main__":

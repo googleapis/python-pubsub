@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-
-# Copyright 2020 Google LLC
+# Copyright 2022 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,11 +14,17 @@
 # limitations under the License.
 #
 
-from google.pubsub_v1.services.publisher.async_client import PublisherAsyncClient
 from google.pubsub_v1.services.publisher.client import PublisherClient
-from google.pubsub_v1.services.subscriber.async_client import SubscriberAsyncClient
+from google.pubsub_v1.services.publisher.async_client import PublisherAsyncClient
+from google.pubsub_v1.services.schema_service.client import SchemaServiceClient
+from google.pubsub_v1.services.schema_service.async_client import (
+    SchemaServiceAsyncClient,
+)
 from google.pubsub_v1.services.subscriber.client import SubscriberClient
+from google.pubsub_v1.services.subscriber.async_client import SubscriberAsyncClient
+
 from google.pubsub_v1.types.pubsub import AcknowledgeRequest
+from google.pubsub_v1.types.pubsub import BigQueryConfig
 from google.pubsub_v1.types.pubsub import CreateSnapshotRequest
 from google.pubsub_v1.types.pubsub import DeadLetterPolicy
 from google.pubsub_v1.types.pubsub import DeleteSnapshotRequest
@@ -37,10 +42,10 @@ from google.pubsub_v1.types.pubsub import ListSubscriptionsRequest
 from google.pubsub_v1.types.pubsub import ListSubscriptionsResponse
 from google.pubsub_v1.types.pubsub import ListTopicSnapshotsRequest
 from google.pubsub_v1.types.pubsub import ListTopicSnapshotsResponse
-from google.pubsub_v1.types.pubsub import ListTopicSubscriptionsRequest
-from google.pubsub_v1.types.pubsub import ListTopicSubscriptionsResponse
 from google.pubsub_v1.types.pubsub import ListTopicsRequest
 from google.pubsub_v1.types.pubsub import ListTopicsResponse
+from google.pubsub_v1.types.pubsub import ListTopicSubscriptionsRequest
+from google.pubsub_v1.types.pubsub import ListTopicSubscriptionsResponse
 from google.pubsub_v1.types.pubsub import MessageStoragePolicy
 from google.pubsub_v1.types.pubsub import ModifyAckDeadlineRequest
 from google.pubsub_v1.types.pubsub import ModifyPushConfigRequest
@@ -52,6 +57,7 @@ from google.pubsub_v1.types.pubsub import PullResponse
 from google.pubsub_v1.types.pubsub import PushConfig
 from google.pubsub_v1.types.pubsub import ReceivedMessage
 from google.pubsub_v1.types.pubsub import RetryPolicy
+from google.pubsub_v1.types.pubsub import SchemaSettings
 from google.pubsub_v1.types.pubsub import SeekRequest
 from google.pubsub_v1.types.pubsub import SeekResponse
 from google.pubsub_v1.types.pubsub import Snapshot
@@ -62,9 +68,28 @@ from google.pubsub_v1.types.pubsub import Topic
 from google.pubsub_v1.types.pubsub import UpdateSnapshotRequest
 from google.pubsub_v1.types.pubsub import UpdateSubscriptionRequest
 from google.pubsub_v1.types.pubsub import UpdateTopicRequest
+from google.pubsub_v1.types.schema import CreateSchemaRequest
+from google.pubsub_v1.types.schema import DeleteSchemaRequest
+from google.pubsub_v1.types.schema import GetSchemaRequest
+from google.pubsub_v1.types.schema import ListSchemasRequest
+from google.pubsub_v1.types.schema import ListSchemasResponse
+from google.pubsub_v1.types.schema import Schema
+from google.pubsub_v1.types.schema import ValidateMessageRequest
+from google.pubsub_v1.types.schema import ValidateMessageResponse
+from google.pubsub_v1.types.schema import ValidateSchemaRequest
+from google.pubsub_v1.types.schema import ValidateSchemaResponse
+from google.pubsub_v1.types.schema import Encoding
+from google.pubsub_v1.types.schema import SchemaView
 
 __all__ = (
+    "PublisherClient",
+    "PublisherAsyncClient",
+    "SchemaServiceClient",
+    "SchemaServiceAsyncClient",
+    "SubscriberClient",
+    "SubscriberAsyncClient",
     "AcknowledgeRequest",
+    "BigQueryConfig",
     "CreateSnapshotRequest",
     "DeadLetterPolicy",
     "DeleteSnapshotRequest",
@@ -82,33 +107,42 @@ __all__ = (
     "ListSubscriptionsResponse",
     "ListTopicSnapshotsRequest",
     "ListTopicSnapshotsResponse",
-    "ListTopicSubscriptionsRequest",
-    "ListTopicSubscriptionsResponse",
     "ListTopicsRequest",
     "ListTopicsResponse",
+    "ListTopicSubscriptionsRequest",
+    "ListTopicSubscriptionsResponse",
     "MessageStoragePolicy",
     "ModifyAckDeadlineRequest",
     "ModifyPushConfigRequest",
     "PublishRequest",
     "PublishResponse",
-    "PublisherAsyncClient",
-    "PublisherClient",
     "PubsubMessage",
     "PullRequest",
     "PullResponse",
     "PushConfig",
     "ReceivedMessage",
     "RetryPolicy",
+    "SchemaSettings",
     "SeekRequest",
     "SeekResponse",
     "Snapshot",
     "StreamingPullRequest",
     "StreamingPullResponse",
-    "SubscriberAsyncClient",
-    "SubscriberClient",
     "Subscription",
     "Topic",
     "UpdateSnapshotRequest",
     "UpdateSubscriptionRequest",
     "UpdateTopicRequest",
+    "CreateSchemaRequest",
+    "DeleteSchemaRequest",
+    "GetSchemaRequest",
+    "ListSchemasRequest",
+    "ListSchemasResponse",
+    "Schema",
+    "ValidateMessageRequest",
+    "ValidateMessageResponse",
+    "ValidateSchemaRequest",
+    "ValidateSchemaResponse",
+    "Encoding",
+    "SchemaView",
 )

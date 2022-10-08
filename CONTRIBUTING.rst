@@ -21,8 +21,8 @@ In order to add a feature:
 - The feature must be documented in both the API and narrative
   documentation.
 
-- The feature must work fully on the following CPython versions:  2.7,
-  3.5, 3.6, 3.7 and 3.8 on both UNIX and Windows.
+- The feature must work fully on the following CPython versions:
+  3.7, 3.8, 3.9 and 3.10 on both UNIX and Windows.
 
 - The feature must not add unnecessary dependencies (where
   "unnecessary" is of course subjective, but new dependencies should
@@ -50,9 +50,9 @@ You'll have to create a development environment using a Git checkout:
    # Configure remotes such that you can pull changes from the googleapis/python-pubsub
    # repository into your local repository.
    $ git remote add upstream git@github.com:googleapis/python-pubsub.git
-   # fetch and merge changes from upstream into master
+   # fetch and merge changes from upstream into main
    $ git fetch upstream
-   $ git merge upstream/master
+   $ git merge upstream/main
 
 Now your local repo is set up such that you will push changes to your GitHub
 repo, from which you can submit a pull request.
@@ -68,10 +68,12 @@ Using ``nox``
 We use `nox <https://nox.readthedocs.io/en/latest/>`__ to instrument our tests.
 
 - To test your changes, run unit tests with ``nox``::
+    $ nox -s unit
 
-    $ nox -s unit-2.7
-    $ nox -s unit-3.7
-    $ ...
+- To run a single unit test::
+
+    $ nox -s unit-3.10 -- -k <name of test>
+
 
   .. note::
 
@@ -79,25 +81,6 @@ We use `nox <https://nox.readthedocs.io/en/latest/>`__ to instrument our tests.
     ``noxfile.py`` files in each directory.
 
 .. nox: https://pypi.org/project/nox/
-
-Note on Editable Installs / Develop Mode
-========================================
-
-- As mentioned previously, using ``setuptools`` in `develop mode`_
-  or a ``pip`` `editable install`_ is not possible with this
-  library. This is because this library uses `namespace packages`_.
-  For context see `Issue #2316`_ and the relevant `PyPA issue`_.
-
-  Since ``editable`` / ``develop`` mode can't be used, packages
-  need to be installed directly. Hence your changes to the source
-  tree don't get incorporated into the **already installed**
-  package.
-
-.. _namespace packages: https://www.python.org/dev/peps/pep-0420/
-.. _Issue #2316: https://github.com/GoogleCloudPlatform/google-cloud-python/issues/2316
-.. _PyPA issue: https://github.com/pypa/packaging-problems/issues/12
-.. _develop mode: https://setuptools.readthedocs.io/en/latest/setuptools.html#development-mode
-.. _editable install: https://pip.pypa.io/en/stable/reference/pip_install/#editable-installs
 
 *****************************************
 I'm getting weird errors... Can you help?
@@ -112,8 +95,12 @@ On Debian/Ubuntu::
 ************
 Coding Style
 ************
+- We use the automatic code formatter ``black``. You can run it using
+  the nox session ``blacken``. This will eliminate many lint errors. Run via::
 
-- PEP8 compliance, with exceptions defined in the linter configuration.
+   $ nox -s blacken
+
+- PEP8 compliance is required, with exceptions defined in the linter configuration.
   If you have ``nox`` installed, you can test that you have not introduced
   any non-compliant code via::
 
@@ -123,12 +110,22 @@ Coding Style
   variables::
 
    export GOOGLE_CLOUD_TESTING_REMOTE="upstream"
-   export GOOGLE_CLOUD_TESTING_BRANCH="master"
+   export GOOGLE_CLOUD_TESTING_BRANCH="main"
 
   By doing this, you are specifying the location of the most up-to-date
-  version of ``python-pubsub``. The the suggested remote name ``upstream``
-  should point to the official ``googleapis`` checkout and the
-  the branch should be the main branch on that remote (``master``).
+  version of ``python-pubsub``. The
+  remote name ``upstream`` should point to the official ``googleapis``
+  checkout and the branch should be the default branch on that remote (``main``).
+
+- This repository contains configuration for the
+  `pre-commit <https://pre-commit.com/>`__ tool, which automates checking
+  our linters during a commit.  If you have it installed on your ``$PATH``,
+  you can enable enforcing those checks via:
+
+.. code-block:: bash
+
+   $ pre-commit install
+   pre-commit installed at .git/hooks/pre-commit
 
 Exceptions to PEP8:
 
@@ -142,34 +139,23 @@ Running System Tests
 
 - To run system tests, you can execute::
 
-   $ nox -s system-3.7
-   $ nox -s system-2.7
+   # Run all system tests
+   $ nox -s system
+
+   # Run a single system test
+   $ nox -s system-3.10 -- -k <name of test>
+
 
   .. note::
 
-      System tests are only configured to run under Python 2.7 and
-      Python 3.7. For expediency, we do not run them in older versions
-      of Python 3.
+      System tests are only configured to run under Python 3.10.
+      For expediency, we do not run them in older versions of Python 3.
 
   This alone will not run the tests. You'll need to change some local
   auth settings and change some configuration in your project to
   run all the tests.
 
-- System tests will be run against an actual project and
-  so you'll need to provide some environment variables to facilitate
-  authentication to your project:
-
-  - ``GOOGLE_APPLICATION_CREDENTIALS``: The path to a JSON key file;
-    Such a file can be downloaded directly from the developer's console by clicking
-    "Generate new JSON key". See private key
-    `docs <https://cloud.google.com/storage/docs/authentication#generating-a-private-key>`__
-    for more details.
-
-- Once you have downloaded your json keys, set the environment variable 
-  ``GOOGLE_APPLICATION_CREDENTIALS`` to the absolute path of the json file::
-
-   $ export GOOGLE_APPLICATION_CREDENTIALS="/Users/<your_username>/path/to/app_credentials.json"
-
+- System tests will be run against an actual project. You should use local credentials from gcloud when possible. See `Best practices for application authentication <https://cloud.google.com/docs/authentication/best-practices-applications#local_development_and_testing_with_the>`__. Some tests require a service account. For those tests see `Authenticating as a service account <https://cloud.google.com/docs/authentication/production>`__.
 
 *************
 Test Coverage
@@ -191,6 +177,30 @@ Build the docs via:
 
    $ nox -s docs
 
+*************************
+Samples and code snippets
+*************************
+
+Code samples and snippets live in the `samples/` catalogue. Feel free to
+provide more examples, but make sure to write tests for those examples.
+Each folder containing example code requires its own `noxfile.py` script
+which automates testing. If you decide to create a new folder, you can
+base it on the `samples/snippets` folder (providing `noxfile.py` and
+the requirements files).
+
+The tests will run against a real Google Cloud Project, so you should
+configure them just like the System Tests.
+
+- To run sample tests, you can execute::
+
+   # Run all tests in a folder
+   $ cd samples/snippets
+   $ nox -s py-3.8
+
+   # Run a single sample test
+   $ cd samples/snippets
+   $ nox -s py-3.8 -- -k <name of test>
+
 ********************************************
 Note About ``README`` as it pertains to PyPI
 ********************************************
@@ -199,7 +209,7 @@ The `description on PyPI`_ for the project comes directly from the
 ``README``. Due to the reStructuredText (``rst``) parser used by
 PyPI, relative links which will work on GitHub (e.g. ``CONTRIBUTING.rst``
 instead of
-``https://github.com/googleapis/python-pubsub/blob/master/CONTRIBUTING.rst``)
+``https://github.com/googleapis/python-pubsub/blob/main/CONTRIBUTING.rst``)
 may cause problems creating links or rendering the description.
 
 .. _description on PyPI: https://pypi.org/project/google-cloud-pubsub
@@ -211,25 +221,24 @@ Supported Python Versions
 
 We support:
 
--  `Python 3.5`_
--  `Python 3.6`_
 -  `Python 3.7`_
 -  `Python 3.8`_
+-  `Python 3.9`_
+-  `Python 3.10`_
 
-.. _Python 3.5: https://docs.python.org/3.5/
-.. _Python 3.6: https://docs.python.org/3.6/
 .. _Python 3.7: https://docs.python.org/3.7/
 .. _Python 3.8: https://docs.python.org/3.8/
+.. _Python 3.9: https://docs.python.org/3.9/
+.. _Python 3.10: https://docs.python.org/3.10/
 
 
 Supported versions can be found in our ``noxfile.py`` `config`_.
 
-.. _config: https://github.com/googleapis/python-pubsub/blob/master/noxfile.py
+.. _config: https://github.com/googleapis/python-pubsub/blob/main/noxfile.py
 
-Python 2.7 support is deprecated. All code changes should maintain Python 2.7 compatibility until January 1, 2020.
 
-We also explicitly decided to support Python 3 beginning with version
-3.5. Reasons for this include:
+We also explicitly decided to support Python 3 beginning with version 3.7.
+Reasons for this include:
 
 -  Encouraging use of newest versions of Python 3
 -  Taking the lead of `prominent`_ open-source `projects`_
