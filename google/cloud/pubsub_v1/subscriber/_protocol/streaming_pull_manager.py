@@ -996,7 +996,7 @@ class StreamingPullManager(object):
         return request
 
     def _send_lease_modacks(
-        self, ack_ids: Iterable[str], ack_deadline: float
+        self, ack_ids: Iterable[str], ack_deadline: float, warn_on_invalid=True
     ) -> List[str]:
         exactly_once_enabled = False
         with self._exactly_once_enabled_lock:
@@ -1017,10 +1017,14 @@ class StreamingPullManager(object):
                     assert req.future is not None
                     req.future.result()
                 except AcknowledgeError as ack_error:
-                    _LOGGER.warning(
-                        "AcknowledgeError when lease-modacking a message.",
-                        exc_info=True,
-                    )
+                    if (
+                        ack_error.error_code != AcknowledgeStatus.INVALID_ACK_ID
+                        or warn_on_invalid
+                    ):
+                        _LOGGER.warning(
+                            "AcknowledgeError when lease-modacking a message.",
+                            exc_info=True,
+                        )
                     if ack_error.error_code == AcknowledgeStatus.INVALID_ACK_ID:
                         expired_ack_ids.append(req.ack_id)
             return expired_ack_ids
@@ -1088,7 +1092,11 @@ class StreamingPullManager(object):
         # modack the messages we received, as this tells the server that we've
         # received them.
         ack_id_gen = (message.ack_id for message in received_messages)
-        expired_ack_ids = set(self._send_lease_modacks(ack_id_gen, self.ack_deadline))
+        expired_ack_ids = set(
+            self._send_lease_modacks(
+                ack_id_gen, self.ack_deadline, warn_on_invalid=False
+            )
+        )
 
         with self._pause_resume_lock:
             assert self._scheduler is not None
