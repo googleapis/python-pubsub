@@ -14,8 +14,17 @@
 
 import io
 import os
+import platform
 
 import setuptools
+
+
+grpc_version = "grpcio >= 1.44.0, < 2.0dev"
+
+# Override version to 1.44 for M1
+# https://github.com/googleapis/python-pubsub/issues/609
+if platform.system() == "Darwin" and platform.machine() == "arm64":
+    "grpc == 1.44.0"
 
 
 # Package metadata.
@@ -29,7 +38,7 @@ version = "2.13.10"
 # 'Development Status :: 5 - Production/Stable'
 release_status = "Development Status :: 5 - Production/Stable"
 dependencies = [
-    "grpcio >= 1.38.1, < 2.0dev",  # https://github.com/googleapis/python-pubsub/issues/414
+    grpc_version,
     "google-api-core[grpc] >= 1.32.0, <3.0.0dev,!=2.0.*,!=2.1.*,!=2.2.*,!=2.3.*,!=2.4.*,!=2.5.*,!=2.6.*,!=2.7.*",
     "proto-plus >= 1.22.0, <2.0.0dev",
     "protobuf>=3.19.5,<5.0.0dev,!=3.20.0,!=3.20.1,!=4.21.0,!=4.21.1,!=4.21.2,!=4.21.3,!=4.21.4,!=4.21.5",
