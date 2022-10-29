@@ -27,6 +27,7 @@ from typing import (
     Tuple,
     Type,
     Union,
+    cast,
 )
 import warnings
 import pkg_resources
@@ -394,7 +395,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
         *,
         credentials: Optional[ga_credentials.Credentials] = None,
         transport: Union[str, SubscriberTransport, None] = None,
-        client_options: Optional[client_options_lib.ClientOptions] = None,
+        client_options: Optional[Union[client_options_lib.ClientOptions, dict]] = None,
         client_info: gapic_v1.client_info.ClientInfo = DEFAULT_CLIENT_INFO,
     ) -> None:
         """Instantiates the subscriber client.
@@ -408,7 +409,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
             transport (Union[str, SubscriberTransport]): The
                 transport to use. If set to None, a transport is chosen
                 automatically.
-            client_options (google.api_core.client_options.ClientOptions): Custom options for the
+            client_options (Optional[Union[google.api_core.client_options.ClientOptions, dict]]): Custom options for the
                 client. It won't take effect if a ``transport`` instance is provided.
                 (1) The ``api_endpoint`` property can be used to override the
                 default endpoint provided by the client. GOOGLE_API_USE_MTLS_ENDPOINT
@@ -438,6 +439,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
             client_options = client_options_lib.from_dict(client_options)
         if client_options is None:
             client_options = client_options_lib.ClientOptions()
+        client_options = cast(client_options_lib.ClientOptions, client_options)
 
         api_endpoint, client_cert_source_func = self.get_mtls_endpoint_and_cert_source(
             client_options
