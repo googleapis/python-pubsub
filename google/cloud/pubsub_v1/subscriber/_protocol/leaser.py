@@ -147,7 +147,6 @@ class Leaser(object):
         repeats.
         """
         while not self._stop_event.is_set():
-            start_time = time.time()
             # Determine the appropriate duration for the lease. This is
             # based off of how long previous messages have taken to ack, with
             # a sensible default and within the ranges allowed by Pub/Sub.
@@ -205,14 +204,11 @@ class Leaser(object):
             # We determine the appropriate period of time based on a random
             # period between:
             # minimum: MAX_BATCH_LATENCY (to prevent duplicate modacks being created in one batch)
-            # maximum: 90% of the deadline,
-            # minus the time spent since the start of this while loop.
+            # maximum: 90% of the deadline
             # This maximum time attempts to prevent ack expiration before new lease modacks arrive at the server.
             # This use of jitter (http://bit.ly/2s2ekL7) helps decrease contention in cases
             # where there are many clients.
-            snooze = random.uniform(
-                _MAX_BATCH_LATENCY, (deadline * 0.9) - (start_time - time.time())
-            )
+            snooze = random.uniform(_MAX_BATCH_LATENCY, deadline * 0.9)
             _LOGGER.debug("Snoozing lease management for %f seconds.", snooze)
             self._stop_event.wait(timeout=snooze)
 
