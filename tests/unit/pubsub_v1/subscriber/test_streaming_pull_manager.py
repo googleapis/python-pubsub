@@ -686,7 +686,7 @@ def test_send_unary_modack_default_deadline():
         modify_deadline_ack_ids=["ack_id3", "ack_id4", "ack_id5"],
         modify_deadline_seconds=None,
         ack_reqs_dict=ack_reqs_dict,
-        default_deadline=10
+        default_deadline=10,
     )
 
     manager._client.modify_ack_deadline.assert_has_calls(
