@@ -319,7 +319,11 @@ class Dispatcher(object):
         self._manager.leaser.add(items)
         self._manager.maybe_pause_consumer()
 
-    def modify_ack_deadline(self, items: Sequence[requests.ModAckRequest]) -> None:
+    def modify_ack_deadline(
+        self,
+        items: Sequence[requests.ModAckRequest],
+        default_deadline: Optional[float] = None,
+    ) -> None:
         """Modify the ack deadline for the given messages.
 
         Args:
@@ -329,7 +333,9 @@ class Dispatcher(object):
         # to avoid the server-side max request size limit.
         items_gen = iter(items)
         ack_ids_gen = (item.ack_id for item in items)
-        deadline_seconds_gen = (item.seconds for item in items)
+        deadline_seconds_gen = None
+        if default_deadline is None:
+            deadline_seconds_gen = (item.seconds for item in items)
         total_chunks = int(math.ceil(len(items) / _ACK_IDS_BATCH_SIZE))
 
         for _ in range(total_chunks):
@@ -338,13 +344,15 @@ class Dispatcher(object):
                 for req in itertools.islice(items_gen, _ACK_IDS_BATCH_SIZE)
             }
             # no further work needs to be done for `requests_to_retry`
-            requests_completed, requests_to_retry = self._manager.send_unary_modack(
-                modify_deadline_ack_ids=list(
-                    itertools.islice(ack_ids_gen, _ACK_IDS_BATCH_SIZE)
+            _, requests_to_retry = self._manager.send_unary_modack(
+                modify_deadline_ack_ids=itertools.islice(
+                    ack_ids_gen, _ACK_IDS_BATCH_SIZE
                 ),
-                modify_deadline_seconds=list(
-                    itertools.islice(deadline_seconds_gen, _ACK_IDS_BATCH_SIZE)
-                ),
+                modify_deadline_seconds=itertools.islice(
+                    deadline_seconds_gen, _ACK_IDS_BATCH_SIZE
+                )
+                if default_deadline is None
+                else [default_deadline],
                 ack_reqs_dict=ack_reqs_dict,
             )
             assert (
