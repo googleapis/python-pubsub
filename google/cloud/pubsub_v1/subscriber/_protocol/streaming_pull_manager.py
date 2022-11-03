@@ -688,7 +688,7 @@ class StreamingPullManager(object):
     def send_unary_modack(
         self,
         modify_deadline_ack_ids,
-        modify_deadline_seconds: List[float] | itertools.islice,
+        modify_deadline_seconds,
         ack_reqs_dict,
     ) -> Tuple[List[requests.ModAckRequest], List[requests.ModAckRequest]]:
         """Send a request using a separate unary request instead of over the stream.
