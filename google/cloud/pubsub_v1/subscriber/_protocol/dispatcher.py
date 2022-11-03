@@ -14,6 +14,7 @@
 
 from __future__ import absolute_import
 from __future__ import division
+from email.policy import default
 
 import functools
 import itertools
@@ -352,8 +353,9 @@ class Dispatcher(object):
                     deadline_seconds_gen, _ACK_IDS_BATCH_SIZE
                 )
                 if default_deadline is None
-                else [default_deadline],
+                else None,
                 ack_reqs_dict=ack_reqs_dict,
+                default_deadline=default_deadline,
             )
             assert (
                 len(requests_to_retry) <= _ACK_IDS_BATCH_SIZE

@@ -734,8 +734,10 @@ def test_modify_ack_deadline_splitting_large_payload_with_default_deadline():
     for call in calls:
         modack_ackids = list(call[1]["modify_deadline_ack_ids"])
         modack_deadline_seconds = call[1]["modify_deadline_seconds"]
+        default_deadline = call[1]["default_deadline"]
         assert len(list(modack_ackids)) <= dispatcher._ACK_IDS_BATCH_SIZE
-        assert len(list(modack_deadline_seconds)) == 1
+        assert modack_deadline_seconds is None
+        assert default_deadline == 60
         sent_ack_ids.update(modack_ackids)
 
     assert set(sent_ack_ids) == all_ack_ids  # all messages should have been MODACK-ed

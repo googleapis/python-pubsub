@@ -690,6 +690,7 @@ class StreamingPullManager(object):
         modify_deadline_ack_ids,
         modify_deadline_seconds,
         ack_reqs_dict,
+        default_deadline=None,
     ) -> Tuple[List[requests.ModAckRequest], List[requests.ModAckRequest]]:
         """Send a request using a separate unary request instead of over the stream.
 
@@ -697,12 +698,11 @@ class StreamingPullManager(object):
         error is re-raised.
         """
         assert modify_deadline_ack_ids
-        assert len(modify_deadline_seconds) > 0
 
         error_status = None
         modack_errors_dict = None
         try:
-            if len(modify_deadline_seconds) > 1:
+            if default_deadline is None:
                 # Send ack_ids with the same deadline seconds together.
                 deadline_to_ack_ids = collections.defaultdict(list)
 
@@ -722,7 +722,7 @@ class StreamingPullManager(object):
                 self._client.modify_ack_deadline(
                     subscription=self._subscription,
                     ack_ids=modify_deadline_ack_ids,
-                    ack_deadline_seconds=modify_deadline_seconds[0],
+                    ack_deadline_seconds=default_deadline,
                 )
         except exceptions.GoogleAPICallError as exc:
             _LOGGER.debug(
