@@ -14,7 +14,6 @@
 
 from __future__ import absolute_import
 from __future__ import division
-from email.policy import default
 
 import functools
 import itertools
