@@ -151,6 +151,51 @@ def test_maintain_leases_ack_ids():
     assert call.args[1] == 10
 
 
+def test_maintain_leases_expired_ack_ids_ignored():
+    manager = create_manager()
+    leaser_ = leaser.Leaser(manager)
+    make_sleep_mark_event_as_done(leaser_)
+    leaser_.add(
+        [requests.LeaseRequest(ack_id="my ack id", byte_size=50, ordering_key="")]
+    )
+    manager._exactly_once_delivery_enabled.return_value = False
+    manager._send_lease_modacks.return_value = set(["my ack id"])
+    leaser_.maintain_leases()
+
+    assert len(manager._send_lease_modacks.mock_calls) == 1
+
+    call = manager._send_lease_modacks.mock_calls[0]
+    ack_ids = list(call.args[0])
+    assert ack_ids == ["my ack id"]
+    assert call.args[1] == 10
+
+
+def test_maintain_leases_expired_ack_ids_exactly_once():
+    manager = create_manager()
+    leaser_ = leaser.Leaser(manager)
+    make_sleep_mark_event_as_done(leaser_)
+    leaser_.add(
+        [requests.LeaseRequest(ack_id="my ack id", byte_size=50, ordering_key="")]
+    )
+    manager._exactly_once_delivery_enabled.return_value = True
+    manager._send_lease_modacks.return_value = set(["my ack id"])
+    leaser_.maintain_leases()
+
+    assert len(manager._send_lease_modacks.mock_calls) == 1
+
+    call = manager._send_lease_modacks.mock_calls[0]
+    ack_ids = list(call.args[0])
+    assert ack_ids == ["my ack id"]
+    assert call.args[1] == 10
+
+    assert len(manager.dispatcher.drop.mock_calls) == 1
+    call = manager.dispatcher.drop.mock_calls[0]
+    drop_requests = list(call.args[0])
+    assert drop_requests[0].ack_id == "my ack id"
+    assert drop_requests[0].byte_size == 50
+    assert drop_requests[0].ordering_key == ""
+
+
 def test_maintain_leases_no_ack_ids():
     manager = create_manager()
     leaser_ = leaser.Leaser(manager)
