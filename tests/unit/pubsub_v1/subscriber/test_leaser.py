@@ -105,6 +105,7 @@ def test_maintain_leases_inactive_manager(caplog):
         [requests.LeaseRequest(ack_id="my_ack_ID", byte_size=42, ordering_key="")]
     )
 
+    manager._send_lease_modacks.return_value = set()
     leaser_.maintain_leases()
 
     # Leases should still be maintained even if the manager is inactive.
@@ -119,6 +120,7 @@ def test_maintain_leases_stopped(caplog):
     leaser_ = leaser.Leaser(manager)
     leaser_.stop()
 
+    manager._send_lease_modacks.return_value = set()
     leaser_.maintain_leases()
 
     assert "exiting" in caplog.text
@@ -142,6 +144,7 @@ def test_maintain_leases_ack_ids():
         [requests.LeaseRequest(ack_id="my ack id", byte_size=50, ordering_key="")]
     )
 
+    manager._send_lease_modacks.return_value = set()
     leaser_.maintain_leases()
 
     assert len(manager._send_lease_modacks.mock_calls) == 1
@@ -232,6 +235,7 @@ def test_maintain_leases_outdated_items(time):
     # Now make sure time reports that we are past the end of our timeline.
     time.return_value = manager.flow_control.max_lease_duration + 1
 
+    manager._send_lease_modacks.return_value = set()
     leaser_.maintain_leases()
 
     # ack2, ack3, and ack4 should be renewed. ack1 should've been dropped

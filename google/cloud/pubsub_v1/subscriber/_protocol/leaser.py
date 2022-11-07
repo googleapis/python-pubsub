@@ -199,6 +199,7 @@ class Leaser(object):
                 #       is inactive.
                 assert self._manager.dispatcher is not None
                 ack_id_gen = (ack_id for ack_id in ack_ids)
+                _LOGGER.warning("calling send_lease_modacks with: ")
                 expired_ack_ids = self._manager._send_lease_modacks(
                     ack_id_gen, deadline
                 )
