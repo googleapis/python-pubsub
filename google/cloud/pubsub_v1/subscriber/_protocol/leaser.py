@@ -198,24 +198,23 @@ class Leaser(object):
                 #       is inactive.
                 assert self._manager.dispatcher is not None
                 ack_id_gen = (ack_id for ack_id in ack_ids)
-                _LOGGER.warning("calling send_lease_modacks with: ")
                 expired_ack_ids = self._manager._send_lease_modacks(
                     ack_id_gen, deadline
                 )
 
             start_time = time.time()
             # If exactly once delivery is enabled, we should drop all expired ack_ids from lease management.
-            if self._manager._exactly_once_delivery_enabled():
-                for ack_id in expired_ack_ids:
-                    self._manager.dispatcher.drop(
-                        [
-                            requests.DropRequest(
-                                ack_id,
-                                leased_messages.get(ack_id).size,
-                                leased_messages.get(ack_id).ordering_key,
-                            )
-                        ]
-                    )
+            if self._manager._exactly_once_delivery_enabled() and len(expired_ack_ids):
+                self._manager.dispatcher.drop(
+                    [
+                        requests.DropRequest(
+                            ack_id,
+                            leased_messages.get(ack_id).size,
+                            leased_messages.get(ack_id).ordering_key,
+                        )
+                        for ack_id in expired_ack_ids
+                    ]
+                )
             # Now wait an appropriate period of time and do this again.
             #
             # We determine the appropriate period of time based on a random

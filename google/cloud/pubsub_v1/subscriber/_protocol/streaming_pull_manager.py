@@ -698,6 +698,8 @@ class StreamingPullManager(object):
         error is re-raised.
         """
         assert modify_deadline_ack_ids
+        # Either we have a generator or a single deadline.
+        assert modify_deadline_seconds is None or default_deadline is None
 
         error_status = None
         modack_errors_dict = None
