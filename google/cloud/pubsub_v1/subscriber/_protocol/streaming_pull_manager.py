@@ -718,9 +718,8 @@ class StreamingPullManager(object):
                         ack_ids=ack_ids,
                         ack_deadline_seconds=deadline,
                     )
-            # If modify_deadline_seconds is only one element,
-            # all requests have the same deadline.
             else:
+                # We can send all requests with the default deadline.
                 self._client.modify_ack_deadline(
                     subscription=self._subscription,
                     ack_ids=modify_deadline_ack_ids,
