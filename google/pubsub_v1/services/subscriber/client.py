@@ -20,6 +20,8 @@ import re
 from typing import (
     Dict,
     Mapping,
+    MutableMapping,
+    MutableSequence,
     Optional,
     Iterable,
     Iterator,
@@ -74,7 +76,7 @@ class SubscriberClientMeta(type):
 
     def get_transport_class(
         cls,
-        label: str = None,
+        label: Optional[str] = None,
     ) -> Type[SubscriberTransport]:
         """Returns an appropriate transport class.
 
@@ -394,7 +396,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
         self,
         *,
         credentials: Optional[ga_credentials.Credentials] = None,
-        transport: Union[str, SubscriberTransport, None] = None,
+        transport: Optional[Union[str, SubscriberTransport]] = None,
         client_options: Optional[Union[client_options_lib.ClientOptions, dict]] = None,
         client_info: gapic_v1.client_info.ClientInfo = DEFAULT_CLIENT_INFO,
     ) -> None:
@@ -501,14 +503,14 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
 
     def create_subscription(
         self,
-        request: Union[pubsub.Subscription, dict] = None,
+        request: Optional[Union[pubsub.Subscription, dict]] = None,
         *,
-        name: str = None,
-        topic: str = None,
-        push_config: pubsub.PushConfig = None,
-        ack_deadline_seconds: int = None,
+        name: Optional[str] = None,
+        topic: Optional[str] = None,
+        push_config: Optional[pubsub.PushConfig] = None,
+        ack_deadline_seconds: Optional[int] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        timeout: Optional[float] = None,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pubsub.Subscription:
         r"""Creates a subscription to a given topic. See the [resource name
@@ -678,11 +680,11 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
 
     def get_subscription(
         self,
-        request: Union[pubsub.GetSubscriptionRequest, dict] = None,
+        request: Optional[Union[pubsub.GetSubscriptionRequest, dict]] = None,
         *,
-        subscription: str = None,
+        subscription: Optional[str] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        timeout: Optional[float] = None,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pubsub.Subscription:
         r"""Gets the configuration details of a subscription.
@@ -780,10 +782,10 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
 
     def update_subscription(
         self,
-        request: Union[pubsub.UpdateSubscriptionRequest, dict] = None,
+        request: Optional[Union[pubsub.UpdateSubscriptionRequest, dict]] = None,
         *,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        timeout: Optional[float] = None,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pubsub.Subscription:
         r"""Updates an existing subscription. Note that certain
@@ -867,11 +869,11 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
 
     def list_subscriptions(
         self,
-        request: Union[pubsub.ListSubscriptionsRequest, dict] = None,
+        request: Optional[Union[pubsub.ListSubscriptionsRequest, dict]] = None,
         *,
-        project: str = None,
+        project: Optional[str] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        timeout: Optional[float] = None,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pagers.ListSubscriptionsPager:
         r"""Lists matching subscriptions.
@@ -981,11 +983,11 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
 
     def delete_subscription(
         self,
-        request: Union[pubsub.DeleteSubscriptionRequest, dict] = None,
+        request: Optional[Union[pubsub.DeleteSubscriptionRequest, dict]] = None,
         *,
-        subscription: str = None,
+        subscription: Optional[str] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        timeout: Optional[float] = None,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> None:
         r"""Deletes an existing subscription. All messages retained in the
@@ -1078,13 +1080,13 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
 
     def modify_ack_deadline(
         self,
-        request: Union[pubsub.ModifyAckDeadlineRequest, dict] = None,
+        request: Optional[Union[pubsub.ModifyAckDeadlineRequest, dict]] = None,
         *,
-        subscription: str = None,
-        ack_ids: Sequence[str] = None,
-        ack_deadline_seconds: int = None,
+        subscription: Optional[str] = None,
+        ack_ids: Optional[MutableSequence[str]] = None,
+        ack_deadline_seconds: Optional[int] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        timeout: Optional[float] = None,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> None:
         r"""Modifies the ack deadline for a specific message. This method is
@@ -1130,7 +1132,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
                 This corresponds to the ``subscription`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
-            ack_ids (Sequence[str]):
+            ack_ids (MutableSequence[str]):
                 Required. List of acknowledgment IDs.
                 This corresponds to the ``ack_ids`` field
                 on the ``request`` instance; if ``request`` is provided, this
@@ -1204,12 +1206,12 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
 
     def acknowledge(
         self,
-        request: Union[pubsub.AcknowledgeRequest, dict] = None,
+        request: Optional[Union[pubsub.AcknowledgeRequest, dict]] = None,
         *,
-        subscription: str = None,
-        ack_ids: Sequence[str] = None,
+        subscription: Optional[str] = None,
+        ack_ids: Optional[MutableSequence[str]] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        timeout: Optional[float] = None,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> None:
         r"""Acknowledges the messages associated with the ``ack_ids`` in the
@@ -1256,7 +1258,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
                 This corresponds to the ``subscription`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
-            ack_ids (Sequence[str]):
+            ack_ids (MutableSequence[str]):
                 Required. The acknowledgment ID for the messages being
                 acknowledged that was returned by the Pub/Sub system in
                 the ``Pull`` response. Must not be empty.
@@ -1315,13 +1317,13 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
 
     def pull(
         self,
-        request: Union[pubsub.PullRequest, dict] = None,
+        request: Optional[Union[pubsub.PullRequest, dict]] = None,
         *,
-        subscription: str = None,
-        return_immediately: bool = None,
-        max_messages: int = None,
+        subscription: Optional[str] = None,
+        return_immediately: Optional[bool] = None,
+        max_messages: Optional[int] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        timeout: Optional[float] = None,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pubsub.PullResponse:
         r"""Pulls messages from the server. The server may return
@@ -1456,10 +1458,10 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
 
     def streaming_pull(
         self,
-        requests: Iterator[pubsub.StreamingPullRequest] = None,
+        requests: Optional[Iterator[pubsub.StreamingPullRequest]] = None,
         *,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        timeout: Optional[float] = None,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> Iterable[pubsub.StreamingPullResponse]:
         r"""Establishes a stream with the server, which sends messages down
@@ -1551,12 +1553,12 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
 
     def modify_push_config(
         self,
-        request: Union[pubsub.ModifyPushConfigRequest, dict] = None,
+        request: Optional[Union[pubsub.ModifyPushConfigRequest, dict]] = None,
         *,
-        subscription: str = None,
-        push_config: pubsub.PushConfig = None,
+        subscription: Optional[str] = None,
+        push_config: Optional[pubsub.PushConfig] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        timeout: Optional[float] = None,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> None:
         r"""Modifies the ``PushConfig`` for a specified subscription.
@@ -1664,11 +1666,11 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
 
     def get_snapshot(
         self,
-        request: Union[pubsub.GetSnapshotRequest, dict] = None,
+        request: Optional[Union[pubsub.GetSnapshotRequest, dict]] = None,
         *,
-        snapshot: str = None,
+        snapshot: Optional[str] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        timeout: Optional[float] = None,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pubsub.Snapshot:
         r"""Gets the configuration details of a snapshot.
@@ -1775,11 +1777,11 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
 
     def list_snapshots(
         self,
-        request: Union[pubsub.ListSnapshotsRequest, dict] = None,
+        request: Optional[Union[pubsub.ListSnapshotsRequest, dict]] = None,
         *,
-        project: str = None,
+        project: Optional[str] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        timeout: Optional[float] = None,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pagers.ListSnapshotsPager:
         r"""Lists the existing snapshots. Snapshots are used in
@@ -1893,12 +1895,12 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
 
     def create_snapshot(
         self,
-        request: Union[pubsub.CreateSnapshotRequest, dict] = None,
+        request: Optional[Union[pubsub.CreateSnapshotRequest, dict]] = None,
         *,
-        name: str = None,
-        subscription: str = None,
+        name: Optional[str] = None,
+        subscription: Optional[str] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        timeout: Optional[float] = None,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pubsub.Snapshot:
         r"""Creates a snapshot from the requested subscription. Snapshots
@@ -2041,10 +2043,10 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
 
     def update_snapshot(
         self,
-        request: Union[pubsub.UpdateSnapshotRequest, dict] = None,
+        request: Optional[Union[pubsub.UpdateSnapshotRequest, dict]] = None,
         *,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        timeout: Optional[float] = None,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pubsub.Snapshot:
         r"""Updates an existing snapshot. Snapshots are used in
@@ -2134,11 +2136,11 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
 
     def delete_snapshot(
         self,
-        request: Union[pubsub.DeleteSnapshotRequest, dict] = None,
+        request: Optional[Union[pubsub.DeleteSnapshotRequest, dict]] = None,
         *,
-        snapshot: str = None,
+        snapshot: Optional[str] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        timeout: Optional[float] = None,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> None:
         r"""Removes an existing snapshot. Snapshots are used in [Seek]
@@ -2233,10 +2235,10 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
 
     def seek(
         self,
-        request: Union[pubsub.SeekRequest, dict] = None,
+        request: Optional[Union[pubsub.SeekRequest, dict]] = None,
         *,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        timeout: Optional[float] = None,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pubsub.SeekResponse:
         r"""Seeks an existing subscription to a point in time or to a given
@@ -2334,10 +2336,10 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
 
     def set_iam_policy(
         self,
-        request: iam_policy_pb2.SetIamPolicyRequest = None,
+        request: Optional[iam_policy_pb2.SetIamPolicyRequest] = None,
         *,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        timeout: Optional[float] = None,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> policy_pb2.Policy:
         r"""Sets the IAM access control policy on the specified function.
@@ -2454,10 +2456,10 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
 
     def get_iam_policy(
         self,
-        request: iam_policy_pb2.GetIamPolicyRequest = None,
+        request: Optional[iam_policy_pb2.GetIamPolicyRequest] = None,
         *,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        timeout: Optional[float] = None,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> policy_pb2.Policy:
         r"""Gets the IAM access control policy for a function.
@@ -2575,10 +2577,10 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
 
     def test_iam_permissions(
         self,
-        request: iam_policy_pb2.TestIamPermissionsRequest = None,
+        request: Optional[iam_policy_pb2.TestIamPermissionsRequest] = None,
         *,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        timeout: Optional[float] = None,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> iam_policy_pb2.TestIamPermissionsResponse:
         r"""Tests the specified IAM permissions against the IAM access control
