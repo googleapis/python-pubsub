@@ -210,8 +210,8 @@ class Leaser(object):
                     [
                         requests.DropRequest(
                             ack_id,
-                            leased_messages.get(ack_id).size,
-                            leased_messages.get(ack_id).ordering_key,
+                            leased_messages.get(ack_id).size, # type: ignore
+                            leased_messages.get(ack_id).ordering_key, # type: ignore
                         )
                         for ack_id in expired_ack_ids
                         if ack_id in leased_messages
