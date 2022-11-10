@@ -333,7 +333,7 @@ class Dispatcher(object):
         # to avoid the server-side max request size limit.
         items_gen = iter(items)
         ack_ids_gen = (item.ack_id for item in items)
-        modify_deadline_seconds_gen = (item.seconds for item in items)
+        deadline_seconds_gen = (item.seconds for item in items)
         total_chunks = int(math.ceil(len(items) / _ACK_IDS_BATCH_SIZE))
 
         for _ in range(total_chunks):
@@ -349,7 +349,7 @@ class Dispatcher(object):
                         ack_ids_gen, _ACK_IDS_BATCH_SIZE
                     ),
                     modify_deadline_seconds=itertools.islice(
-                        modify_deadline_seconds_gen, _ACK_IDS_BATCH_SIZE
+                        deadline_seconds_gen, _ACK_IDS_BATCH_SIZE
                     ),
                     ack_reqs_dict=ack_reqs_dict,
                     default_deadline=None,
