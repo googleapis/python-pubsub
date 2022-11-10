@@ -205,6 +205,7 @@ class Leaser(object):
             start_time = time.time()
             # If exactly once delivery is enabled, we should drop all expired ack_ids from lease management.
             if self._manager._exactly_once_delivery_enabled() and len(expired_ack_ids):
+                assert self._manager.dispatcher is not None
                 self._manager.dispatcher.drop(
                     [
                         requests.DropRequest(
@@ -213,6 +214,7 @@ class Leaser(object):
                             leased_messages.get(ack_id).ordering_key,
                         )
                         for ack_id in expired_ack_ids
+                        if ack_id in leased_messages
                     ]
                 )
             # Now wait an appropriate period of time and do this again.
