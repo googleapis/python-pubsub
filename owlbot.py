@@ -329,8 +329,9 @@ s.remove_staging_dirs()
 # ----------------------------------------------------------------------------
 
 templated_files = gcp.CommonTemplates().py_library(
-    cov_level=100,
     microgenerator=True,
+    samples=True,
+    cov_level=100,
     versions=gcp.common.detect_versions(path="./google", default_first=True),
     unit_test_python_versions=["3.7", "3.8", "3.9", "3.10"],
     system_test_python_versions=["3.10"],
