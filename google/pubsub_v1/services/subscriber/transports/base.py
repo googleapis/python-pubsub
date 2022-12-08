@@ -32,7 +32,7 @@ from google.protobuf import empty_pb2  # type: ignore
 from google.pubsub_v1.types import pubsub
 
 DEFAULT_CLIENT_INFO = gapic_v1.client_info.ClientInfo(
-    gapic_version=package_version.__version__
+    client_library_version=package_version.__version__
 )
 
 
