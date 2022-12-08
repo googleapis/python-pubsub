@@ -139,7 +139,7 @@ for library in s.get_staging_dirs(default_version):
     # Emit deprecation warning if return_immediately flag is set with synchronous pull.
     s.replace(
         library / f"google/pubsub_{library.name}/services/subscriber/*client.py",
-        r"from google.api_core.client_options import ClientOptions",
+        r"from google.pubsub_v1 import gapic_version as package_version",
         "import warnings\n\g<0>",
     )
 

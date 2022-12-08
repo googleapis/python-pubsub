@@ -32,6 +32,7 @@ from typing import (
     cast,
 )
 
+import warnings
 from google.pubsub_v1 import gapic_version as package_version
 
 from google.api_core import client_options as client_options_lib
