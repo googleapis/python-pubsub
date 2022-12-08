@@ -191,6 +191,24 @@ for library in s.get_staging_dirs(default_version):
     if count < 1:
         raise Exception("Catch warnings replacement failed.")
 
+    count = s.replace(
+        library / f"tests/unit/gapic/pubsub_{library.name}/test_subscriber.py",
+        textwrap.dedent(
+            r"""
+        ([^\n\S]+# Call the method with a truthy value for each flattened field,
+        [^\n\S]+# using the keyword arguments to the method\.)
+        \s+response = (await client\.pull\(.*?\))"""
+        ),
+        """\n\g<1>
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=DeprecationWarning)
+            \g<2>""",
+        flags=re.MULTILINE | re.DOTALL,
+    )
+
+    if count < 1:
+        raise Exception("Catch warnings replacement failed.")
+
     # Make sure that client library version is present in user agent header.
     count = s.replace(
         [
@@ -216,24 +234,6 @@ for library in s.get_staging_dirs(default_version):
 
     if count < 1:
         raise Exception("client_library_version replacement failed.")
-
-    count = s.replace(
-        library / f"tests/unit/gapic/pubsub_{library.name}/test_subscriber.py",
-        textwrap.dedent(
-            r"""
-        ([^\n\S]+# Call the method with a truthy value for each flattened field,
-        [^\n\S]+# using the keyword arguments to the method\.)
-        \s+response = (await client\.pull\(.*?\))"""
-        ),
-        """\n\g<1>
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=DeprecationWarning)
-            \g<2>""",
-        flags=re.MULTILINE | re.DOTALL,
-    )
-
-    if count < 1:
-        raise Exception("Catch warnings replacement failed.")
 
     # Allow timeout to be an instance of google.api_core.timeout.*
     count = s.replace(
