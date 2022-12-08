@@ -209,29 +209,6 @@ for library in s.get_staging_dirs(default_version):
     if count < 1:
         raise Exception("Catch warnings replacement failed.")
 
-    # Make sure that client library version is present in user agent header.
-    s.replace(
-        [
-            library
-            / f"google/pubsub_{library.name}/services/publisher/async_client.py",
-            library / f"google/pubsub_{library.name}/services/publisher/client.py",
-            library
-            / f"google/pubsub_{library.name}/services/publisher/transports/base.py",
-            library
-            / f"google/pubsub_{library.name}/services/schema_service/async_client.py",
-            library / f"google/pubsub_{library.name}/services/schema_service/client.py",
-            library
-            / f"google/pubsub_{library.name}/services/schema_service/transports/base.py",
-            library
-            / f"google/pubsub_{library.name}/services/subscriber/async_client.py",
-            library / f"google/pubsub_{library.name}/services/subscriber/client.py",
-            library
-            / f"google/pubsub_{library.name}/services/subscriber/transports/base.py",
-        ],
-        r"""gapic_version=(pkg_resources\.get_distribution\(\s+)['"]google-cloud-pubsub['"]""",
-        "client_library_version=\g<1>'google-cloud-pubsub'",
-    )
-
     # Allow timeout to be an instance of google.api_core.timeout.*
     count = s.replace(
         library / f"google/pubsub_{library.name}/types/__init__.py",
