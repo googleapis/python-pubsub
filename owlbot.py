@@ -139,7 +139,7 @@ for library in s.get_staging_dirs(default_version):
     # Emit deprecation warning if return_immediately flag is set with synchronous pull.
     s.replace(
         library / f"google/pubsub_{library.name}/services/subscriber/*client.py",
-        r"import pkg_resources",
+        r"from google.api_core.client_options import ClientOptions",
         "import warnings\n\g<0>",
     )
 
@@ -282,7 +282,7 @@ for library in s.get_staging_dirs(default_version):
 
     count = s.replace(
         library / f"google/pubsub_{library.name}/services/publisher/*client.py",
-        r"(\s+)timeout: Optional\[float\] = None.*\n",
+        r"(\s+)timeout: Union\[float, object\] = gapic_v1.method.DEFAULT.*\n",
         f"\g<1>timeout: TimeoutType = gapic_{library.name}.method.DEFAULT,",
     )
 
