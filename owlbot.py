@@ -354,7 +354,7 @@ s.replace(
     "noxfile.py", r'"blacken",', '\g<0>\n    "mypy",',
 )
 s.replace(
-    "noxfile.py", r'"mock",', '\g<0>\n    "mock==5.0.0",',
+    "noxfile.py", r'"mock",', '"mock==5.0.0"',
 )
 s.replace(
     "noxfile.py",
