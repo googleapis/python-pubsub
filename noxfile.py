@@ -35,7 +35,7 @@ DEFAULT_PYTHON_VERSION = "3.8"
 
 UNIT_TEST_PYTHON_VERSIONS = ["3.7", "3.8", "3.9", "3.10", "3.11"]
 UNIT_TEST_STANDARD_DEPENDENCIES = [
-    "mock",
+    "mock==5.0.0",
     "asyncmock",
     "pytest",
     "pytest-cov",
