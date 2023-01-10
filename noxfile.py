@@ -35,7 +35,8 @@ DEFAULT_PYTHON_VERSION = "3.8"
 
 UNIT_TEST_PYTHON_VERSIONS = ["3.7", "3.8", "3.9", "3.10", "3.11"]
 UNIT_TEST_STANDARD_DEPENDENCIES = [
-    "mock==5.0.0" "asyncmock",
+    "mock==5.0.0",
+    "asyncmock",
     "pytest",
     "pytest-cov",
     "pytest-asyncio",
@@ -48,7 +49,8 @@ UNIT_TEST_EXTRAS_BY_PYTHON = {}
 
 SYSTEM_TEST_PYTHON_VERSIONS = ["3.10"]
 SYSTEM_TEST_STANDARD_DEPENDENCIES = [
-    "mock==5.0.0" "pytest",
+    "mock==5.0.0",
+    "pytest",
     "google-cloud-testutils",
 ]
 SYSTEM_TEST_EXTERNAL_DEPENDENCIES = [
