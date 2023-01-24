@@ -817,15 +817,34 @@ if __name__ == "__main__":
         create_avro_schema(args.project_id, args.schema_id, args.avsc_file)
     if args.command == "create-proto":
         create_proto_schema(args.project_id, args.schema_id, args.proto_file)
+    if args.command == "commit-avro":
+        commit_avro_schema(args.project_id, args.schema_id, args.avsc_file)
+    if args.command == "commit-proto":
+        commit_proto_schema(args.project_id, args.schema_id, args.proto_file)
     if args.command == "get":
         get_schema(args.project_id, args.schema_id)
+    if args.command == "get-revision":
+        get_schema_revision(args.project_id, args.schema_id, args.revision_id)
     if args.command == "list":
         list_schemas(args.project_id)
+    if args.command == "list-revisions":
+        list_schema_revisions(args.project_id, args.schema_id)
     if args.command == "delete":
         delete_schema(args.project_id, args.schema_id)
+    if args.command == "delete-revision":
+        delete_schema_revision(args.project_id, args.schema_id, args.revision_id)
     if args.command == "create-topic":
         create_topic_with_schema(
             args.project_id, args.topic_id, args.schema_id, args.message_encoding
+        )
+    if args.command == "create-topic-with-revisions":
+        create_topic_with_schema_revisions(
+            args.project_id,
+            args.topic_id,
+            args.schema_id,
+            args.first_revision_id,
+            args.last_revision_id,
+            args.message_encoding,
         )
     if args.command == "publish-avro":
         publish_avro_records(args.project_id, args.topic_id, args.avsc_file)
@@ -833,6 +852,10 @@ if __name__ == "__main__":
         publish_proto_messages(args.project_id, args.topic_id)
     if args.command == "receive-avro":
         subscribe_with_avro_schema(
+            args.project_id, args.subscription_id, args.avsc_file, args.timeout
+        )
+    if args.command == "receive-avro-with-revisions":
+        subscribe_with_avro_schema_with_revisions(
             args.project_id, args.subscription_id, args.avsc_file, args.timeout
         )
     if args.command == "receive-proto":
