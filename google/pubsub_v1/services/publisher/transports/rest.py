@@ -144,7 +144,10 @@ class PublisherRestInterceptor:
 
 
     """
-    def pre_create_topic(self, request: pubsub.Topic, metadata: Sequence[Tuple[str, str]]) -> Tuple[pubsub.Topic, Sequence[Tuple[str, str]]]:
+
+    def pre_create_topic(
+        self, request: pubsub.Topic, metadata: Sequence[Tuple[str, str]]
+    ) -> Tuple[pubsub.Topic, Sequence[Tuple[str, str]]]:
         """Pre-rpc interceptor for create_topic
 
         Override in a subclass to manipulate the request or metadata
@@ -160,7 +163,10 @@ class PublisherRestInterceptor:
         it is returned to user code.
         """
         return response
-    def pre_delete_topic(self, request: pubsub.DeleteTopicRequest, metadata: Sequence[Tuple[str, str]]) -> Tuple[pubsub.DeleteTopicRequest, Sequence[Tuple[str, str]]]:
+
+    def pre_delete_topic(
+        self, request: pubsub.DeleteTopicRequest, metadata: Sequence[Tuple[str, str]]
+    ) -> Tuple[pubsub.DeleteTopicRequest, Sequence[Tuple[str, str]]]:
         """Pre-rpc interceptor for delete_topic
 
         Override in a subclass to manipulate the request or metadata
@@ -168,7 +174,11 @@ class PublisherRestInterceptor:
         """
         return request, metadata
 
-    def pre_detach_subscription(self, request: pubsub.DetachSubscriptionRequest, metadata: Sequence[Tuple[str, str]]) -> Tuple[pubsub.DetachSubscriptionRequest, Sequence[Tuple[str, str]]]:
+    def pre_detach_subscription(
+        self,
+        request: pubsub.DetachSubscriptionRequest,
+        metadata: Sequence[Tuple[str, str]],
+    ) -> Tuple[pubsub.DetachSubscriptionRequest, Sequence[Tuple[str, str]]]:
         """Pre-rpc interceptor for detach_subscription
 
         Override in a subclass to manipulate the request or metadata
@@ -176,7 +186,9 @@ class PublisherRestInterceptor:
         """
         return request, metadata
 
-    def post_detach_subscription(self, response: pubsub.DetachSubscriptionResponse) -> pubsub.DetachSubscriptionResponse:
+    def post_detach_subscription(
+        self, response: pubsub.DetachSubscriptionResponse
+    ) -> pubsub.DetachSubscriptionResponse:
         """Post-rpc interceptor for detach_subscription
 
         Override in a subclass to manipulate the response
@@ -184,7 +196,10 @@ class PublisherRestInterceptor:
         it is returned to user code.
         """
         return response
-    def pre_get_topic(self, request: pubsub.GetTopicRequest, metadata: Sequence[Tuple[str, str]]) -> Tuple[pubsub.GetTopicRequest, Sequence[Tuple[str, str]]]:
+
+    def pre_get_topic(
+        self, request: pubsub.GetTopicRequest, metadata: Sequence[Tuple[str, str]]
+    ) -> Tuple[pubsub.GetTopicRequest, Sequence[Tuple[str, str]]]:
         """Pre-rpc interceptor for get_topic
 
         Override in a subclass to manipulate the request or metadata
@@ -200,7 +215,10 @@ class PublisherRestInterceptor:
         it is returned to user code.
         """
         return response
-    def pre_list_topics(self, request: pubsub.ListTopicsRequest, metadata: Sequence[Tuple[str, str]]) -> Tuple[pubsub.ListTopicsRequest, Sequence[Tuple[str, str]]]:
+
+    def pre_list_topics(
+        self, request: pubsub.ListTopicsRequest, metadata: Sequence[Tuple[str, str]]
+    ) -> Tuple[pubsub.ListTopicsRequest, Sequence[Tuple[str, str]]]:
         """Pre-rpc interceptor for list_topics
 
         Override in a subclass to manipulate the request or metadata
@@ -208,7 +226,9 @@ class PublisherRestInterceptor:
         """
         return request, metadata
 
-    def post_list_topics(self, response: pubsub.ListTopicsResponse) -> pubsub.ListTopicsResponse:
+    def post_list_topics(
+        self, response: pubsub.ListTopicsResponse
+    ) -> pubsub.ListTopicsResponse:
         """Post-rpc interceptor for list_topics
 
         Override in a subclass to manipulate the response
@@ -216,7 +236,12 @@ class PublisherRestInterceptor:
         it is returned to user code.
         """
         return response
-    def pre_list_topic_snapshots(self, request: pubsub.ListTopicSnapshotsRequest, metadata: Sequence[Tuple[str, str]]) -> Tuple[pubsub.ListTopicSnapshotsRequest, Sequence[Tuple[str, str]]]:
+
+    def pre_list_topic_snapshots(
+        self,
+        request: pubsub.ListTopicSnapshotsRequest,
+        metadata: Sequence[Tuple[str, str]],
+    ) -> Tuple[pubsub.ListTopicSnapshotsRequest, Sequence[Tuple[str, str]]]:
         """Pre-rpc interceptor for list_topic_snapshots
 
         Override in a subclass to manipulate the request or metadata
@@ -224,7 +249,9 @@ class PublisherRestInterceptor:
         """
         return request, metadata
 
-    def post_list_topic_snapshots(self, response: pubsub.ListTopicSnapshotsResponse) -> pubsub.ListTopicSnapshotsResponse:
+    def post_list_topic_snapshots(
+        self, response: pubsub.ListTopicSnapshotsResponse
+    ) -> pubsub.ListTopicSnapshotsResponse:
         """Post-rpc interceptor for list_topic_snapshots
 
         Override in a subclass to manipulate the response
@@ -232,7 +259,12 @@ class PublisherRestInterceptor:
         it is returned to user code.
         """
         return response
-    def pre_list_topic_subscriptions(self, request: pubsub.ListTopicSubscriptionsRequest, metadata: Sequence[Tuple[str, str]]) -> Tuple[pubsub.ListTopicSubscriptionsRequest, Sequence[Tuple[str, str]]]:
+
+    def pre_list_topic_subscriptions(
+        self,
+        request: pubsub.ListTopicSubscriptionsRequest,
+        metadata: Sequence[Tuple[str, str]],
+    ) -> Tuple[pubsub.ListTopicSubscriptionsRequest, Sequence[Tuple[str, str]]]:
         """Pre-rpc interceptor for list_topic_subscriptions
 
         Override in a subclass to manipulate the request or metadata
@@ -240,7 +272,9 @@ class PublisherRestInterceptor:
         """
         return request, metadata
 
-    def post_list_topic_subscriptions(self, response: pubsub.ListTopicSubscriptionsResponse) -> pubsub.ListTopicSubscriptionsResponse:
+    def post_list_topic_subscriptions(
+        self, response: pubsub.ListTopicSubscriptionsResponse
+    ) -> pubsub.ListTopicSubscriptionsResponse:
         """Post-rpc interceptor for list_topic_subscriptions
 
         Override in a subclass to manipulate the response
@@ -248,7 +282,10 @@ class PublisherRestInterceptor:
         it is returned to user code.
         """
         return response
-    def pre_publish(self, request: pubsub.PublishRequest, metadata: Sequence[Tuple[str, str]]) -> Tuple[pubsub.PublishRequest, Sequence[Tuple[str, str]]]:
+
+    def pre_publish(
+        self, request: pubsub.PublishRequest, metadata: Sequence[Tuple[str, str]]
+    ) -> Tuple[pubsub.PublishRequest, Sequence[Tuple[str, str]]]:
         """Pre-rpc interceptor for publish
 
         Override in a subclass to manipulate the request or metadata
@@ -264,7 +301,10 @@ class PublisherRestInterceptor:
         it is returned to user code.
         """
         return response
-    def pre_update_topic(self, request: pubsub.UpdateTopicRequest, metadata: Sequence[Tuple[str, str]]) -> Tuple[pubsub.UpdateTopicRequest, Sequence[Tuple[str, str]]]:
+
+    def pre_update_topic(
+        self, request: pubsub.UpdateTopicRequest, metadata: Sequence[Tuple[str, str]]
+    ) -> Tuple[pubsub.UpdateTopicRequest, Sequence[Tuple[str, str]]]:
         """Pre-rpc interceptor for update_topic
 
         Override in a subclass to manipulate the request or metadata
@@ -303,20 +343,21 @@ class PublisherRestTransport(PublisherTransport):
 
     """
 
-    def __init__(self, *,
-            host: str = 'pubsub.googleapis.com',
-            credentials: Optional[ga_credentials.Credentials] = None,
-            credentials_file: Optional[str] = None,
-            scopes: Optional[Sequence[str]] = None,
-            client_cert_source_for_mtls: Optional[Callable[[
-                ], Tuple[bytes, bytes]]] = None,
-            quota_project_id: Optional[str] = None,
-            client_info: gapic_v1.client_info.ClientInfo = DEFAULT_CLIENT_INFO,
-            always_use_jwt_access: Optional[bool] = False,
-            url_scheme: str = 'https',
-            interceptor: Optional[PublisherRestInterceptor] = None,
-            api_audience: Optional[str] = None,
-            ) -> None:
+    def __init__(
+        self,
+        *,
+        host: str = "pubsub.googleapis.com",
+        credentials: Optional[ga_credentials.Credentials] = None,
+        credentials_file: Optional[str] = None,
+        scopes: Optional[Sequence[str]] = None,
+        client_cert_source_for_mtls: Optional[Callable[[], Tuple[bytes, bytes]]] = None,
+        quota_project_id: Optional[str] = None,
+        client_info: gapic_v1.client_info.ClientInfo = DEFAULT_CLIENT_INFO,
+        always_use_jwt_access: Optional[bool] = False,
+        url_scheme: str = "https",
+        interceptor: Optional[PublisherRestInterceptor] = None,
+        api_audience: Optional[str] = None,
+    ) -> None:
         """Instantiate the transport.
 
         Args:
@@ -355,7 +396,9 @@ class PublisherRestTransport(PublisherTransport):
         # credentials object
         maybe_url_match = re.match("^(?P<scheme>http(?:s)?://)?(?P<host>.*)$", host)
         if maybe_url_match is None:
-            raise ValueError(f"Unexpected hostname structure: {host}")  # pragma: NO COVER
+            raise ValueError(
+                f"Unexpected hostname structure: {host}"
+            )  # pragma: NO COVER
 
         url_match_items = maybe_url_match.groupdict()
 
@@ -366,10 +409,11 @@ class PublisherRestTransport(PublisherTransport):
             credentials=credentials,
             client_info=client_info,
             always_use_jwt_access=always_use_jwt_access,
-            api_audience=api_audience
+            api_audience=api_audience,
         )
         self._session = AuthorizedSession(
-            self._credentials, default_host=self.DEFAULT_HOST)
+            self._credentials, default_host=self.DEFAULT_HOST
+        )
         if client_cert_source_for_mtls:
             self._session.configure_mtls_channel(client_cert_source_for_mtls)
         self._interceptor = interceptor or PublisherRestInterceptor()
@@ -379,19 +423,24 @@ class PublisherRestTransport(PublisherTransport):
         def __hash__(self):
             return hash("CreateTopic")
 
-        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, str] =  {
-        }
+        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, str] = {}
 
         @classmethod
         def _get_unset_required_fields(cls, message_dict):
-            return {k: v for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items() if k not in message_dict}
+            return {
+                k: v
+                for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items()
+                if k not in message_dict
+            }
 
-        def __call__(self,
-                request: pubsub.Topic, *,
-                retry: OptionalRetry=gapic_v1.method.DEFAULT,
-                timeout: Optional[float]=None,
-                metadata: Sequence[Tuple[str, str]]=(),
-                ) -> pubsub.Topic:
+        def __call__(
+            self,
+            request: pubsub.Topic,
+            *,
+            retry: OptionalRetry = gapic_v1.method.DEFAULT,
+            timeout: Optional[float] = None,
+            metadata: Sequence[Tuple[str, str]] = (),
+        ) -> pubsub.Topic:
             r"""Call the create topic method over HTTP.
 
             Args:
@@ -408,11 +457,12 @@ class PublisherRestTransport(PublisherTransport):
                     A topic resource.
             """
 
-            http_options: List[Dict[str, str]] = [{
-                'method': 'put',
-                'uri': '/v1/{name=projects/*/topics/*}',
-                'body': '*',
-            },
+            http_options: List[Dict[str, str]] = [
+                {
+                    "method": "put",
+                    "uri": "/v1/{name=projects/*/topics/*}",
+                    "body": "*",
+                },
             ]
             request, metadata = self._interceptor.pre_create_topic(request, metadata)
             pb_request = pubsub.Topic.pb(request)
@@ -421,33 +471,35 @@ class PublisherRestTransport(PublisherTransport):
             # Jsonify the request body
 
             body = json_format.MessageToJson(
-                transcoded_request['body'],
-                including_default_value_fields=False,
-                use_integers_for_enums=True
-            )
-            uri = transcoded_request['uri']
-            method = transcoded_request['method']
-
-            # Jsonify the query params
-            query_params = json.loads(json_format.MessageToJson(
-                transcoded_request['query_params'],
+                transcoded_request["body"],
                 including_default_value_fields=False,
                 use_integers_for_enums=True,
-            ))
+            )
+            uri = transcoded_request["uri"]
+            method = transcoded_request["method"]
+
+            # Jsonify the query params
+            query_params = json.loads(
+                json_format.MessageToJson(
+                    transcoded_request["query_params"],
+                    including_default_value_fields=False,
+                    use_integers_for_enums=True,
+                )
+            )
             query_params.update(self._get_unset_required_fields(query_params))
 
             query_params["$alt"] = "json;enum-encoding=int"
 
             # Send the request
             headers = dict(metadata)
-            headers['Content-Type'] = 'application/json'
+            headers["Content-Type"] = "application/json"
             response = getattr(self._session, method)(
                 "{host}{uri}".format(host=self._host, uri=uri),
                 timeout=timeout,
                 headers=headers,
                 params=rest_helpers.flatten_query_params(query_params, strict=True),
                 data=body,
-                )
+            )
 
             # In case of error, raise the appropriate core_exceptions.GoogleAPICallError exception
             # subclass.
@@ -466,19 +518,24 @@ class PublisherRestTransport(PublisherTransport):
         def __hash__(self):
             return hash("DeleteTopic")
 
-        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, str] =  {
-        }
+        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, str] = {}
 
         @classmethod
         def _get_unset_required_fields(cls, message_dict):
-            return {k: v for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items() if k not in message_dict}
+            return {
+                k: v
+                for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items()
+                if k not in message_dict
+            }
 
-        def __call__(self,
-                request: pubsub.DeleteTopicRequest, *,
-                retry: OptionalRetry=gapic_v1.method.DEFAULT,
-                timeout: Optional[float]=None,
-                metadata: Sequence[Tuple[str, str]]=(),
-                ):
+        def __call__(
+            self,
+            request: pubsub.DeleteTopicRequest,
+            *,
+            retry: OptionalRetry = gapic_v1.method.DEFAULT,
+            timeout: Optional[float] = None,
+            metadata: Sequence[Tuple[str, str]] = (),
+        ):
             r"""Call the delete topic method over HTTP.
 
             Args:
@@ -491,37 +548,40 @@ class PublisherRestTransport(PublisherTransport):
                     sent along with the request as metadata.
             """
 
-            http_options: List[Dict[str, str]] = [{
-                'method': 'delete',
-                'uri': '/v1/{topic=projects/*/topics/*}',
-            },
+            http_options: List[Dict[str, str]] = [
+                {
+                    "method": "delete",
+                    "uri": "/v1/{topic=projects/*/topics/*}",
+                },
             ]
             request, metadata = self._interceptor.pre_delete_topic(request, metadata)
             pb_request = pubsub.DeleteTopicRequest.pb(request)
             transcoded_request = path_template.transcode(http_options, pb_request)
 
-            uri = transcoded_request['uri']
-            method = transcoded_request['method']
+            uri = transcoded_request["uri"]
+            method = transcoded_request["method"]
 
             # Jsonify the query params
-            query_params = json.loads(json_format.MessageToJson(
-                transcoded_request['query_params'],
-                including_default_value_fields=False,
-                use_integers_for_enums=True,
-            ))
+            query_params = json.loads(
+                json_format.MessageToJson(
+                    transcoded_request["query_params"],
+                    including_default_value_fields=False,
+                    use_integers_for_enums=True,
+                )
+            )
             query_params.update(self._get_unset_required_fields(query_params))
 
             query_params["$alt"] = "json;enum-encoding=int"
 
             # Send the request
             headers = dict(metadata)
-            headers['Content-Type'] = 'application/json'
+            headers["Content-Type"] = "application/json"
             response = getattr(self._session, method)(
                 "{host}{uri}".format(host=self._host, uri=uri),
                 timeout=timeout,
                 headers=headers,
                 params=rest_helpers.flatten_query_params(query_params, strict=True),
-                )
+            )
 
             # In case of error, raise the appropriate core_exceptions.GoogleAPICallError exception
             # subclass.
@@ -532,19 +592,24 @@ class PublisherRestTransport(PublisherTransport):
         def __hash__(self):
             return hash("DetachSubscription")
 
-        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, str] =  {
-        }
+        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, str] = {}
 
         @classmethod
         def _get_unset_required_fields(cls, message_dict):
-            return {k: v for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items() if k not in message_dict}
+            return {
+                k: v
+                for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items()
+                if k not in message_dict
+            }
 
-        def __call__(self,
-                request: pubsub.DetachSubscriptionRequest, *,
-                retry: OptionalRetry=gapic_v1.method.DEFAULT,
-                timeout: Optional[float]=None,
-                metadata: Sequence[Tuple[str, str]]=(),
-                ) -> pubsub.DetachSubscriptionResponse:
+        def __call__(
+            self,
+            request: pubsub.DetachSubscriptionRequest,
+            *,
+            retry: OptionalRetry = gapic_v1.method.DEFAULT,
+            timeout: Optional[float] = None,
+            metadata: Sequence[Tuple[str, str]] = (),
+        ) -> pubsub.DetachSubscriptionResponse:
             r"""Call the detach subscription method over HTTP.
 
             Args:
@@ -565,37 +630,42 @@ class PublisherRestTransport(PublisherTransport):
 
             """
 
-            http_options: List[Dict[str, str]] = [{
-                'method': 'post',
-                'uri': '/v1/{subscription=projects/*/subscriptions/*}:detach',
-            },
+            http_options: List[Dict[str, str]] = [
+                {
+                    "method": "post",
+                    "uri": "/v1/{subscription=projects/*/subscriptions/*}:detach",
+                },
             ]
-            request, metadata = self._interceptor.pre_detach_subscription(request, metadata)
+            request, metadata = self._interceptor.pre_detach_subscription(
+                request, metadata
+            )
             pb_request = pubsub.DetachSubscriptionRequest.pb(request)
             transcoded_request = path_template.transcode(http_options, pb_request)
 
-            uri = transcoded_request['uri']
-            method = transcoded_request['method']
+            uri = transcoded_request["uri"]
+            method = transcoded_request["method"]
 
             # Jsonify the query params
-            query_params = json.loads(json_format.MessageToJson(
-                transcoded_request['query_params'],
-                including_default_value_fields=False,
-                use_integers_for_enums=True,
-            ))
+            query_params = json.loads(
+                json_format.MessageToJson(
+                    transcoded_request["query_params"],
+                    including_default_value_fields=False,
+                    use_integers_for_enums=True,
+                )
+            )
             query_params.update(self._get_unset_required_fields(query_params))
 
             query_params["$alt"] = "json;enum-encoding=int"
 
             # Send the request
             headers = dict(metadata)
-            headers['Content-Type'] = 'application/json'
+            headers["Content-Type"] = "application/json"
             response = getattr(self._session, method)(
                 "{host}{uri}".format(host=self._host, uri=uri),
                 timeout=timeout,
                 headers=headers,
                 params=rest_helpers.flatten_query_params(query_params, strict=True),
-                )
+            )
 
             # In case of error, raise the appropriate core_exceptions.GoogleAPICallError exception
             # subclass.
@@ -614,19 +684,24 @@ class PublisherRestTransport(PublisherTransport):
         def __hash__(self):
             return hash("GetTopic")
 
-        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, str] =  {
-        }
+        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, str] = {}
 
         @classmethod
         def _get_unset_required_fields(cls, message_dict):
-            return {k: v for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items() if k not in message_dict}
+            return {
+                k: v
+                for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items()
+                if k not in message_dict
+            }
 
-        def __call__(self,
-                request: pubsub.GetTopicRequest, *,
-                retry: OptionalRetry=gapic_v1.method.DEFAULT,
-                timeout: Optional[float]=None,
-                metadata: Sequence[Tuple[str, str]]=(),
-                ) -> pubsub.Topic:
+        def __call__(
+            self,
+            request: pubsub.GetTopicRequest,
+            *,
+            retry: OptionalRetry = gapic_v1.method.DEFAULT,
+            timeout: Optional[float] = None,
+            metadata: Sequence[Tuple[str, str]] = (),
+        ) -> pubsub.Topic:
             r"""Call the get topic method over HTTP.
 
             Args:
@@ -643,37 +718,40 @@ class PublisherRestTransport(PublisherTransport):
                     A topic resource.
             """
 
-            http_options: List[Dict[str, str]] = [{
-                'method': 'get',
-                'uri': '/v1/{topic=projects/*/topics/*}',
-            },
+            http_options: List[Dict[str, str]] = [
+                {
+                    "method": "get",
+                    "uri": "/v1/{topic=projects/*/topics/*}",
+                },
             ]
             request, metadata = self._interceptor.pre_get_topic(request, metadata)
             pb_request = pubsub.GetTopicRequest.pb(request)
             transcoded_request = path_template.transcode(http_options, pb_request)
 
-            uri = transcoded_request['uri']
-            method = transcoded_request['method']
+            uri = transcoded_request["uri"]
+            method = transcoded_request["method"]
 
             # Jsonify the query params
-            query_params = json.loads(json_format.MessageToJson(
-                transcoded_request['query_params'],
-                including_default_value_fields=False,
-                use_integers_for_enums=True,
-            ))
+            query_params = json.loads(
+                json_format.MessageToJson(
+                    transcoded_request["query_params"],
+                    including_default_value_fields=False,
+                    use_integers_for_enums=True,
+                )
+            )
             query_params.update(self._get_unset_required_fields(query_params))
 
             query_params["$alt"] = "json;enum-encoding=int"
 
             # Send the request
             headers = dict(metadata)
-            headers['Content-Type'] = 'application/json'
+            headers["Content-Type"] = "application/json"
             response = getattr(self._session, method)(
                 "{host}{uri}".format(host=self._host, uri=uri),
                 timeout=timeout,
                 headers=headers,
                 params=rest_helpers.flatten_query_params(query_params, strict=True),
-                )
+            )
 
             # In case of error, raise the appropriate core_exceptions.GoogleAPICallError exception
             # subclass.
@@ -692,19 +770,24 @@ class PublisherRestTransport(PublisherTransport):
         def __hash__(self):
             return hash("ListTopics")
 
-        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, str] =  {
-        }
+        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, str] = {}
 
         @classmethod
         def _get_unset_required_fields(cls, message_dict):
-            return {k: v for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items() if k not in message_dict}
+            return {
+                k: v
+                for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items()
+                if k not in message_dict
+            }
 
-        def __call__(self,
-                request: pubsub.ListTopicsRequest, *,
-                retry: OptionalRetry=gapic_v1.method.DEFAULT,
-                timeout: Optional[float]=None,
-                metadata: Sequence[Tuple[str, str]]=(),
-                ) -> pubsub.ListTopicsResponse:
+        def __call__(
+            self,
+            request: pubsub.ListTopicsRequest,
+            *,
+            retry: OptionalRetry = gapic_v1.method.DEFAULT,
+            timeout: Optional[float] = None,
+            metadata: Sequence[Tuple[str, str]] = (),
+        ) -> pubsub.ListTopicsResponse:
             r"""Call the list topics method over HTTP.
 
             Args:
@@ -721,37 +804,40 @@ class PublisherRestTransport(PublisherTransport):
                     Response for the ``ListTopics`` method.
             """
 
-            http_options: List[Dict[str, str]] = [{
-                'method': 'get',
-                'uri': '/v1/{project=projects/*}/topics',
-            },
+            http_options: List[Dict[str, str]] = [
+                {
+                    "method": "get",
+                    "uri": "/v1/{project=projects/*}/topics",
+                },
             ]
             request, metadata = self._interceptor.pre_list_topics(request, metadata)
             pb_request = pubsub.ListTopicsRequest.pb(request)
             transcoded_request = path_template.transcode(http_options, pb_request)
 
-            uri = transcoded_request['uri']
-            method = transcoded_request['method']
+            uri = transcoded_request["uri"]
+            method = transcoded_request["method"]
 
             # Jsonify the query params
-            query_params = json.loads(json_format.MessageToJson(
-                transcoded_request['query_params'],
-                including_default_value_fields=False,
-                use_integers_for_enums=True,
-            ))
+            query_params = json.loads(
+                json_format.MessageToJson(
+                    transcoded_request["query_params"],
+                    including_default_value_fields=False,
+                    use_integers_for_enums=True,
+                )
+            )
             query_params.update(self._get_unset_required_fields(query_params))
 
             query_params["$alt"] = "json;enum-encoding=int"
 
             # Send the request
             headers = dict(metadata)
-            headers['Content-Type'] = 'application/json'
+            headers["Content-Type"] = "application/json"
             response = getattr(self._session, method)(
                 "{host}{uri}".format(host=self._host, uri=uri),
                 timeout=timeout,
                 headers=headers,
                 params=rest_helpers.flatten_query_params(query_params, strict=True),
-                )
+            )
 
             # In case of error, raise the appropriate core_exceptions.GoogleAPICallError exception
             # subclass.
@@ -770,19 +856,24 @@ class PublisherRestTransport(PublisherTransport):
         def __hash__(self):
             return hash("ListTopicSnapshots")
 
-        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, str] =  {
-        }
+        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, str] = {}
 
         @classmethod
         def _get_unset_required_fields(cls, message_dict):
-            return {k: v for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items() if k not in message_dict}
+            return {
+                k: v
+                for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items()
+                if k not in message_dict
+            }
 
-        def __call__(self,
-                request: pubsub.ListTopicSnapshotsRequest, *,
-                retry: OptionalRetry=gapic_v1.method.DEFAULT,
-                timeout: Optional[float]=None,
-                metadata: Sequence[Tuple[str, str]]=(),
-                ) -> pubsub.ListTopicSnapshotsResponse:
+        def __call__(
+            self,
+            request: pubsub.ListTopicSnapshotsRequest,
+            *,
+            retry: OptionalRetry = gapic_v1.method.DEFAULT,
+            timeout: Optional[float] = None,
+            metadata: Sequence[Tuple[str, str]] = (),
+        ) -> pubsub.ListTopicSnapshotsResponse:
             r"""Call the list topic snapshots method over HTTP.
 
             Args:
@@ -799,37 +890,42 @@ class PublisherRestTransport(PublisherTransport):
                     Response for the ``ListTopicSnapshots`` method.
             """
 
-            http_options: List[Dict[str, str]] = [{
-                'method': 'get',
-                'uri': '/v1/{topic=projects/*/topics/*}/snapshots',
-            },
+            http_options: List[Dict[str, str]] = [
+                {
+                    "method": "get",
+                    "uri": "/v1/{topic=projects/*/topics/*}/snapshots",
+                },
             ]
-            request, metadata = self._interceptor.pre_list_topic_snapshots(request, metadata)
+            request, metadata = self._interceptor.pre_list_topic_snapshots(
+                request, metadata
+            )
             pb_request = pubsub.ListTopicSnapshotsRequest.pb(request)
             transcoded_request = path_template.transcode(http_options, pb_request)
 
-            uri = transcoded_request['uri']
-            method = transcoded_request['method']
+            uri = transcoded_request["uri"]
+            method = transcoded_request["method"]
 
             # Jsonify the query params
-            query_params = json.loads(json_format.MessageToJson(
-                transcoded_request['query_params'],
-                including_default_value_fields=False,
-                use_integers_for_enums=True,
-            ))
+            query_params = json.loads(
+                json_format.MessageToJson(
+                    transcoded_request["query_params"],
+                    including_default_value_fields=False,
+                    use_integers_for_enums=True,
+                )
+            )
             query_params.update(self._get_unset_required_fields(query_params))
 
             query_params["$alt"] = "json;enum-encoding=int"
 
             # Send the request
             headers = dict(metadata)
-            headers['Content-Type'] = 'application/json'
+            headers["Content-Type"] = "application/json"
             response = getattr(self._session, method)(
                 "{host}{uri}".format(host=self._host, uri=uri),
                 timeout=timeout,
                 headers=headers,
                 params=rest_helpers.flatten_query_params(query_params, strict=True),
-                )
+            )
 
             # In case of error, raise the appropriate core_exceptions.GoogleAPICallError exception
             # subclass.
@@ -848,19 +944,24 @@ class PublisherRestTransport(PublisherTransport):
         def __hash__(self):
             return hash("ListTopicSubscriptions")
 
-        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, str] =  {
-        }
+        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, str] = {}
 
         @classmethod
         def _get_unset_required_fields(cls, message_dict):
-            return {k: v for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items() if k not in message_dict}
+            return {
+                k: v
+                for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items()
+                if k not in message_dict
+            }
 
-        def __call__(self,
-                request: pubsub.ListTopicSubscriptionsRequest, *,
-                retry: OptionalRetry=gapic_v1.method.DEFAULT,
-                timeout: Optional[float]=None,
-                metadata: Sequence[Tuple[str, str]]=(),
-                ) -> pubsub.ListTopicSubscriptionsResponse:
+        def __call__(
+            self,
+            request: pubsub.ListTopicSubscriptionsRequest,
+            *,
+            retry: OptionalRetry = gapic_v1.method.DEFAULT,
+            timeout: Optional[float] = None,
+            metadata: Sequence[Tuple[str, str]] = (),
+        ) -> pubsub.ListTopicSubscriptionsResponse:
             r"""Call the list topic subscriptions method over HTTP.
 
             Args:
@@ -877,37 +978,42 @@ class PublisherRestTransport(PublisherTransport):
                     Response for the ``ListTopicSubscriptions`` method.
             """
 
-            http_options: List[Dict[str, str]] = [{
-                'method': 'get',
-                'uri': '/v1/{topic=projects/*/topics/*}/subscriptions',
-            },
+            http_options: List[Dict[str, str]] = [
+                {
+                    "method": "get",
+                    "uri": "/v1/{topic=projects/*/topics/*}/subscriptions",
+                },
             ]
-            request, metadata = self._interceptor.pre_list_topic_subscriptions(request, metadata)
+            request, metadata = self._interceptor.pre_list_topic_subscriptions(
+                request, metadata
+            )
             pb_request = pubsub.ListTopicSubscriptionsRequest.pb(request)
             transcoded_request = path_template.transcode(http_options, pb_request)
 
-            uri = transcoded_request['uri']
-            method = transcoded_request['method']
+            uri = transcoded_request["uri"]
+            method = transcoded_request["method"]
 
             # Jsonify the query params
-            query_params = json.loads(json_format.MessageToJson(
-                transcoded_request['query_params'],
-                including_default_value_fields=False,
-                use_integers_for_enums=True,
-            ))
+            query_params = json.loads(
+                json_format.MessageToJson(
+                    transcoded_request["query_params"],
+                    including_default_value_fields=False,
+                    use_integers_for_enums=True,
+                )
+            )
             query_params.update(self._get_unset_required_fields(query_params))
 
             query_params["$alt"] = "json;enum-encoding=int"
 
             # Send the request
             headers = dict(metadata)
-            headers['Content-Type'] = 'application/json'
+            headers["Content-Type"] = "application/json"
             response = getattr(self._session, method)(
                 "{host}{uri}".format(host=self._host, uri=uri),
                 timeout=timeout,
                 headers=headers,
                 params=rest_helpers.flatten_query_params(query_params, strict=True),
-                )
+            )
 
             # In case of error, raise the appropriate core_exceptions.GoogleAPICallError exception
             # subclass.
@@ -926,19 +1032,24 @@ class PublisherRestTransport(PublisherTransport):
         def __hash__(self):
             return hash("Publish")
 
-        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, str] =  {
-        }
+        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, str] = {}
 
         @classmethod
         def _get_unset_required_fields(cls, message_dict):
-            return {k: v for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items() if k not in message_dict}
+            return {
+                k: v
+                for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items()
+                if k not in message_dict
+            }
 
-        def __call__(self,
-                request: pubsub.PublishRequest, *,
-                retry: OptionalRetry=gapic_v1.method.DEFAULT,
-                timeout: Optional[float]=None,
-                metadata: Sequence[Tuple[str, str]]=(),
-                ) -> pubsub.PublishResponse:
+        def __call__(
+            self,
+            request: pubsub.PublishRequest,
+            *,
+            retry: OptionalRetry = gapic_v1.method.DEFAULT,
+            timeout: Optional[float] = None,
+            metadata: Sequence[Tuple[str, str]] = (),
+        ) -> pubsub.PublishResponse:
             r"""Call the publish method over HTTP.
 
             Args:
@@ -955,11 +1066,12 @@ class PublisherRestTransport(PublisherTransport):
                     Response for the ``Publish`` method.
             """
 
-            http_options: List[Dict[str, str]] = [{
-                'method': 'post',
-                'uri': '/v1/{topic=projects/*/topics/*}:publish',
-                'body': '*',
-            },
+            http_options: List[Dict[str, str]] = [
+                {
+                    "method": "post",
+                    "uri": "/v1/{topic=projects/*/topics/*}:publish",
+                    "body": "*",
+                },
             ]
             request, metadata = self._interceptor.pre_publish(request, metadata)
             pb_request = pubsub.PublishRequest.pb(request)
@@ -968,33 +1080,35 @@ class PublisherRestTransport(PublisherTransport):
             # Jsonify the request body
 
             body = json_format.MessageToJson(
-                transcoded_request['body'],
-                including_default_value_fields=False,
-                use_integers_for_enums=True
-            )
-            uri = transcoded_request['uri']
-            method = transcoded_request['method']
-
-            # Jsonify the query params
-            query_params = json.loads(json_format.MessageToJson(
-                transcoded_request['query_params'],
+                transcoded_request["body"],
                 including_default_value_fields=False,
                 use_integers_for_enums=True,
-            ))
+            )
+            uri = transcoded_request["uri"]
+            method = transcoded_request["method"]
+
+            # Jsonify the query params
+            query_params = json.loads(
+                json_format.MessageToJson(
+                    transcoded_request["query_params"],
+                    including_default_value_fields=False,
+                    use_integers_for_enums=True,
+                )
+            )
             query_params.update(self._get_unset_required_fields(query_params))
 
             query_params["$alt"] = "json;enum-encoding=int"
 
             # Send the request
             headers = dict(metadata)
-            headers['Content-Type'] = 'application/json'
+            headers["Content-Type"] = "application/json"
             response = getattr(self._session, method)(
                 "{host}{uri}".format(host=self._host, uri=uri),
                 timeout=timeout,
                 headers=headers,
                 params=rest_helpers.flatten_query_params(query_params, strict=True),
                 data=body,
-                )
+            )
 
             # In case of error, raise the appropriate core_exceptions.GoogleAPICallError exception
             # subclass.
@@ -1013,19 +1127,24 @@ class PublisherRestTransport(PublisherTransport):
         def __hash__(self):
             return hash("UpdateTopic")
 
-        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, str] =  {
-        }
+        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, str] = {}
 
         @classmethod
         def _get_unset_required_fields(cls, message_dict):
-            return {k: v for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items() if k not in message_dict}
+            return {
+                k: v
+                for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items()
+                if k not in message_dict
+            }
 
-        def __call__(self,
-                request: pubsub.UpdateTopicRequest, *,
-                retry: OptionalRetry=gapic_v1.method.DEFAULT,
-                timeout: Optional[float]=None,
-                metadata: Sequence[Tuple[str, str]]=(),
-                ) -> pubsub.Topic:
+        def __call__(
+            self,
+            request: pubsub.UpdateTopicRequest,
+            *,
+            retry: OptionalRetry = gapic_v1.method.DEFAULT,
+            timeout: Optional[float] = None,
+            metadata: Sequence[Tuple[str, str]] = (),
+        ) -> pubsub.Topic:
             r"""Call the update topic method over HTTP.
 
             Args:
@@ -1042,11 +1161,12 @@ class PublisherRestTransport(PublisherTransport):
                     A topic resource.
             """
 
-            http_options: List[Dict[str, str]] = [{
-                'method': 'patch',
-                'uri': '/v1/{topic.name=projects/*/topics/*}',
-                'body': '*',
-            },
+            http_options: List[Dict[str, str]] = [
+                {
+                    "method": "patch",
+                    "uri": "/v1/{topic.name=projects/*/topics/*}",
+                    "body": "*",
+                },
             ]
             request, metadata = self._interceptor.pre_update_topic(request, metadata)
             pb_request = pubsub.UpdateTopicRequest.pb(request)
@@ -1055,33 +1175,35 @@ class PublisherRestTransport(PublisherTransport):
             # Jsonify the request body
 
             body = json_format.MessageToJson(
-                transcoded_request['body'],
-                including_default_value_fields=False,
-                use_integers_for_enums=True
-            )
-            uri = transcoded_request['uri']
-            method = transcoded_request['method']
-
-            # Jsonify the query params
-            query_params = json.loads(json_format.MessageToJson(
-                transcoded_request['query_params'],
+                transcoded_request["body"],
                 including_default_value_fields=False,
                 use_integers_for_enums=True,
-            ))
+            )
+            uri = transcoded_request["uri"]
+            method = transcoded_request["method"]
+
+            # Jsonify the query params
+            query_params = json.loads(
+                json_format.MessageToJson(
+                    transcoded_request["query_params"],
+                    including_default_value_fields=False,
+                    use_integers_for_enums=True,
+                )
+            )
             query_params.update(self._get_unset_required_fields(query_params))
 
             query_params["$alt"] = "json;enum-encoding=int"
 
             # Send the request
             headers = dict(metadata)
-            headers['Content-Type'] = 'application/json'
+            headers["Content-Type"] = "application/json"
             response = getattr(self._session, method)(
                 "{host}{uri}".format(host=self._host, uri=uri),
                 timeout=timeout,
                 headers=headers,
                 params=rest_helpers.flatten_query_params(query_params, strict=True),
                 data=body,
-                )
+            )
 
             # In case of error, raise the appropriate core_exceptions.GoogleAPICallError exception
             # subclass.
@@ -1097,76 +1219,72 @@ class PublisherRestTransport(PublisherTransport):
             return resp
 
     @property
-    def create_topic(self) -> Callable[
-            [pubsub.Topic],
-            pubsub.Topic]:
+    def create_topic(self) -> Callable[[pubsub.Topic], pubsub.Topic]:
         # The return type is fine, but mypy isn't sophisticated enough to determine what's going on here.
         # In C++ this would require a dynamic_cast
-        return self._CreateTopic(self._session, self._host, self._interceptor) # type: ignore
+        return self._CreateTopic(self._session, self._host, self._interceptor)  # type: ignore
 
     @property
-    def delete_topic(self) -> Callable[
-            [pubsub.DeleteTopicRequest],
-            empty_pb2.Empty]:
+    def delete_topic(self) -> Callable[[pubsub.DeleteTopicRequest], empty_pb2.Empty]:
         # The return type is fine, but mypy isn't sophisticated enough to determine what's going on here.
         # In C++ this would require a dynamic_cast
-        return self._DeleteTopic(self._session, self._host, self._interceptor) # type: ignore
+        return self._DeleteTopic(self._session, self._host, self._interceptor)  # type: ignore
 
     @property
-    def detach_subscription(self) -> Callable[
-            [pubsub.DetachSubscriptionRequest],
-            pubsub.DetachSubscriptionResponse]:
+    def detach_subscription(
+        self,
+    ) -> Callable[
+        [pubsub.DetachSubscriptionRequest], pubsub.DetachSubscriptionResponse
+    ]:
         # The return type is fine, but mypy isn't sophisticated enough to determine what's going on here.
         # In C++ this would require a dynamic_cast
-        return self._DetachSubscription(self._session, self._host, self._interceptor) # type: ignore
+        return self._DetachSubscription(self._session, self._host, self._interceptor)  # type: ignore
 
     @property
-    def get_topic(self) -> Callable[
-            [pubsub.GetTopicRequest],
-            pubsub.Topic]:
+    def get_topic(self) -> Callable[[pubsub.GetTopicRequest], pubsub.Topic]:
         # The return type is fine, but mypy isn't sophisticated enough to determine what's going on here.
         # In C++ this would require a dynamic_cast
-        return self._GetTopic(self._session, self._host, self._interceptor) # type: ignore
+        return self._GetTopic(self._session, self._host, self._interceptor)  # type: ignore
 
     @property
-    def list_topics(self) -> Callable[
-            [pubsub.ListTopicsRequest],
-            pubsub.ListTopicsResponse]:
+    def list_topics(
+        self,
+    ) -> Callable[[pubsub.ListTopicsRequest], pubsub.ListTopicsResponse]:
         # The return type is fine, but mypy isn't sophisticated enough to determine what's going on here.
         # In C++ this would require a dynamic_cast
-        return self._ListTopics(self._session, self._host, self._interceptor) # type: ignore
+        return self._ListTopics(self._session, self._host, self._interceptor)  # type: ignore
 
     @property
-    def list_topic_snapshots(self) -> Callable[
-            [pubsub.ListTopicSnapshotsRequest],
-            pubsub.ListTopicSnapshotsResponse]:
+    def list_topic_snapshots(
+        self,
+    ) -> Callable[
+        [pubsub.ListTopicSnapshotsRequest], pubsub.ListTopicSnapshotsResponse
+    ]:
         # The return type is fine, but mypy isn't sophisticated enough to determine what's going on here.
         # In C++ this would require a dynamic_cast
-        return self._ListTopicSnapshots(self._session, self._host, self._interceptor) # type: ignore
+        return self._ListTopicSnapshots(self._session, self._host, self._interceptor)  # type: ignore
 
     @property
-    def list_topic_subscriptions(self) -> Callable[
-            [pubsub.ListTopicSubscriptionsRequest],
-            pubsub.ListTopicSubscriptionsResponse]:
+    def list_topic_subscriptions(
+        self,
+    ) -> Callable[
+        [pubsub.ListTopicSubscriptionsRequest], pubsub.ListTopicSubscriptionsResponse
+    ]:
         # The return type is fine, but mypy isn't sophisticated enough to determine what's going on here.
         # In C++ this would require a dynamic_cast
-        return self._ListTopicSubscriptions(self._session, self._host, self._interceptor) # type: ignore
+        return self._ListTopicSubscriptions(self._session, self._host, self._interceptor)  # type: ignore
 
     @property
-    def publish(self) -> Callable[
-            [pubsub.PublishRequest],
-            pubsub.PublishResponse]:
+    def publish(self) -> Callable[[pubsub.PublishRequest], pubsub.PublishResponse]:
         # The return type is fine, but mypy isn't sophisticated enough to determine what's going on here.
         # In C++ this would require a dynamic_cast
-        return self._Publish(self._session, self._host, self._interceptor) # type: ignore
+        return self._Publish(self._session, self._host, self._interceptor)  # type: ignore
 
     @property
-    def update_topic(self) -> Callable[
-            [pubsub.UpdateTopicRequest],
-            pubsub.Topic]:
+    def update_topic(self) -> Callable[[pubsub.UpdateTopicRequest], pubsub.Topic]:
         # The return type is fine, but mypy isn't sophisticated enough to determine what's going on here.
         # In C++ this would require a dynamic_cast
-        return self._UpdateTopic(self._session, self._host, self._interceptor) # type: ignore
+        return self._UpdateTopic(self._session, self._host, self._interceptor)  # type: ignore
 
     @property
     def kind(self) -> str:
@@ -1176,6 +1294,4 @@ class PublisherRestTransport(PublisherTransport):
         self._session.close()
 
 
-__all__=(
-    'PublisherRestTransport',
-)
+__all__ = ("PublisherRestTransport",)

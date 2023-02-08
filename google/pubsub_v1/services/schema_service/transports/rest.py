@@ -47,7 +47,10 @@ from google.protobuf import empty_pb2  # type: ignore
 from google.pubsub_v1.types import schema
 from google.pubsub_v1.types import schema as gp_schema
 
-from .base import SchemaServiceTransport, DEFAULT_CLIENT_INFO as BASE_DEFAULT_CLIENT_INFO
+from .base import (
+    SchemaServiceTransport,
+    DEFAULT_CLIENT_INFO as BASE_DEFAULT_CLIENT_INFO,
+)
 
 
 DEFAULT_CLIENT_INFO = gapic_v1.client_info.ClientInfo(
@@ -153,7 +156,12 @@ class SchemaServiceRestInterceptor:
 
 
     """
-    def pre_commit_schema(self, request: gp_schema.CommitSchemaRequest, metadata: Sequence[Tuple[str, str]]) -> Tuple[gp_schema.CommitSchemaRequest, Sequence[Tuple[str, str]]]:
+
+    def pre_commit_schema(
+        self,
+        request: gp_schema.CommitSchemaRequest,
+        metadata: Sequence[Tuple[str, str]],
+    ) -> Tuple[gp_schema.CommitSchemaRequest, Sequence[Tuple[str, str]]]:
         """Pre-rpc interceptor for commit_schema
 
         Override in a subclass to manipulate the request or metadata
@@ -169,7 +177,12 @@ class SchemaServiceRestInterceptor:
         it is returned to user code.
         """
         return response
-    def pre_create_schema(self, request: gp_schema.CreateSchemaRequest, metadata: Sequence[Tuple[str, str]]) -> Tuple[gp_schema.CreateSchemaRequest, Sequence[Tuple[str, str]]]:
+
+    def pre_create_schema(
+        self,
+        request: gp_schema.CreateSchemaRequest,
+        metadata: Sequence[Tuple[str, str]],
+    ) -> Tuple[gp_schema.CreateSchemaRequest, Sequence[Tuple[str, str]]]:
         """Pre-rpc interceptor for create_schema
 
         Override in a subclass to manipulate the request or metadata
@@ -185,7 +198,10 @@ class SchemaServiceRestInterceptor:
         it is returned to user code.
         """
         return response
-    def pre_delete_schema(self, request: schema.DeleteSchemaRequest, metadata: Sequence[Tuple[str, str]]) -> Tuple[schema.DeleteSchemaRequest, Sequence[Tuple[str, str]]]:
+
+    def pre_delete_schema(
+        self, request: schema.DeleteSchemaRequest, metadata: Sequence[Tuple[str, str]]
+    ) -> Tuple[schema.DeleteSchemaRequest, Sequence[Tuple[str, str]]]:
         """Pre-rpc interceptor for delete_schema
 
         Override in a subclass to manipulate the request or metadata
@@ -193,7 +209,11 @@ class SchemaServiceRestInterceptor:
         """
         return request, metadata
 
-    def pre_delete_schema_revision(self, request: schema.DeleteSchemaRevisionRequest, metadata: Sequence[Tuple[str, str]]) -> Tuple[schema.DeleteSchemaRevisionRequest, Sequence[Tuple[str, str]]]:
+    def pre_delete_schema_revision(
+        self,
+        request: schema.DeleteSchemaRevisionRequest,
+        metadata: Sequence[Tuple[str, str]],
+    ) -> Tuple[schema.DeleteSchemaRevisionRequest, Sequence[Tuple[str, str]]]:
         """Pre-rpc interceptor for delete_schema_revision
 
         Override in a subclass to manipulate the request or metadata
@@ -209,7 +229,10 @@ class SchemaServiceRestInterceptor:
         it is returned to user code.
         """
         return response
-    def pre_get_schema(self, request: schema.GetSchemaRequest, metadata: Sequence[Tuple[str, str]]) -> Tuple[schema.GetSchemaRequest, Sequence[Tuple[str, str]]]:
+
+    def pre_get_schema(
+        self, request: schema.GetSchemaRequest, metadata: Sequence[Tuple[str, str]]
+    ) -> Tuple[schema.GetSchemaRequest, Sequence[Tuple[str, str]]]:
         """Pre-rpc interceptor for get_schema
 
         Override in a subclass to manipulate the request or metadata
@@ -225,7 +248,12 @@ class SchemaServiceRestInterceptor:
         it is returned to user code.
         """
         return response
-    def pre_list_schema_revisions(self, request: schema.ListSchemaRevisionsRequest, metadata: Sequence[Tuple[str, str]]) -> Tuple[schema.ListSchemaRevisionsRequest, Sequence[Tuple[str, str]]]:
+
+    def pre_list_schema_revisions(
+        self,
+        request: schema.ListSchemaRevisionsRequest,
+        metadata: Sequence[Tuple[str, str]],
+    ) -> Tuple[schema.ListSchemaRevisionsRequest, Sequence[Tuple[str, str]]]:
         """Pre-rpc interceptor for list_schema_revisions
 
         Override in a subclass to manipulate the request or metadata
@@ -233,7 +261,9 @@ class SchemaServiceRestInterceptor:
         """
         return request, metadata
 
-    def post_list_schema_revisions(self, response: schema.ListSchemaRevisionsResponse) -> schema.ListSchemaRevisionsResponse:
+    def post_list_schema_revisions(
+        self, response: schema.ListSchemaRevisionsResponse
+    ) -> schema.ListSchemaRevisionsResponse:
         """Post-rpc interceptor for list_schema_revisions
 
         Override in a subclass to manipulate the response
@@ -241,7 +271,10 @@ class SchemaServiceRestInterceptor:
         it is returned to user code.
         """
         return response
-    def pre_list_schemas(self, request: schema.ListSchemasRequest, metadata: Sequence[Tuple[str, str]]) -> Tuple[schema.ListSchemasRequest, Sequence[Tuple[str, str]]]:
+
+    def pre_list_schemas(
+        self, request: schema.ListSchemasRequest, metadata: Sequence[Tuple[str, str]]
+    ) -> Tuple[schema.ListSchemasRequest, Sequence[Tuple[str, str]]]:
         """Pre-rpc interceptor for list_schemas
 
         Override in a subclass to manipulate the request or metadata
@@ -249,7 +282,9 @@ class SchemaServiceRestInterceptor:
         """
         return request, metadata
 
-    def post_list_schemas(self, response: schema.ListSchemasResponse) -> schema.ListSchemasResponse:
+    def post_list_schemas(
+        self, response: schema.ListSchemasResponse
+    ) -> schema.ListSchemasResponse:
         """Post-rpc interceptor for list_schemas
 
         Override in a subclass to manipulate the response
@@ -257,7 +292,10 @@ class SchemaServiceRestInterceptor:
         it is returned to user code.
         """
         return response
-    def pre_rollback_schema(self, request: schema.RollbackSchemaRequest, metadata: Sequence[Tuple[str, str]]) -> Tuple[schema.RollbackSchemaRequest, Sequence[Tuple[str, str]]]:
+
+    def pre_rollback_schema(
+        self, request: schema.RollbackSchemaRequest, metadata: Sequence[Tuple[str, str]]
+    ) -> Tuple[schema.RollbackSchemaRequest, Sequence[Tuple[str, str]]]:
         """Pre-rpc interceptor for rollback_schema
 
         Override in a subclass to manipulate the request or metadata
@@ -273,7 +311,12 @@ class SchemaServiceRestInterceptor:
         it is returned to user code.
         """
         return response
-    def pre_validate_message(self, request: schema.ValidateMessageRequest, metadata: Sequence[Tuple[str, str]]) -> Tuple[schema.ValidateMessageRequest, Sequence[Tuple[str, str]]]:
+
+    def pre_validate_message(
+        self,
+        request: schema.ValidateMessageRequest,
+        metadata: Sequence[Tuple[str, str]],
+    ) -> Tuple[schema.ValidateMessageRequest, Sequence[Tuple[str, str]]]:
         """Pre-rpc interceptor for validate_message
 
         Override in a subclass to manipulate the request or metadata
@@ -281,7 +324,9 @@ class SchemaServiceRestInterceptor:
         """
         return request, metadata
 
-    def post_validate_message(self, response: schema.ValidateMessageResponse) -> schema.ValidateMessageResponse:
+    def post_validate_message(
+        self, response: schema.ValidateMessageResponse
+    ) -> schema.ValidateMessageResponse:
         """Post-rpc interceptor for validate_message
 
         Override in a subclass to manipulate the response
@@ -289,7 +334,12 @@ class SchemaServiceRestInterceptor:
         it is returned to user code.
         """
         return response
-    def pre_validate_schema(self, request: gp_schema.ValidateSchemaRequest, metadata: Sequence[Tuple[str, str]]) -> Tuple[gp_schema.ValidateSchemaRequest, Sequence[Tuple[str, str]]]:
+
+    def pre_validate_schema(
+        self,
+        request: gp_schema.ValidateSchemaRequest,
+        metadata: Sequence[Tuple[str, str]],
+    ) -> Tuple[gp_schema.ValidateSchemaRequest, Sequence[Tuple[str, str]]]:
         """Pre-rpc interceptor for validate_schema
 
         Override in a subclass to manipulate the request or metadata
@@ -297,7 +347,9 @@ class SchemaServiceRestInterceptor:
         """
         return request, metadata
 
-    def post_validate_schema(self, response: gp_schema.ValidateSchemaResponse) -> gp_schema.ValidateSchemaResponse:
+    def post_validate_schema(
+        self, response: gp_schema.ValidateSchemaResponse
+    ) -> gp_schema.ValidateSchemaResponse:
         """Post-rpc interceptor for validate_schema
 
         Override in a subclass to manipulate the response
@@ -327,20 +379,21 @@ class SchemaServiceRestTransport(SchemaServiceTransport):
 
     """
 
-    def __init__(self, *,
-            host: str = 'pubsub.googleapis.com',
-            credentials: Optional[ga_credentials.Credentials] = None,
-            credentials_file: Optional[str] = None,
-            scopes: Optional[Sequence[str]] = None,
-            client_cert_source_for_mtls: Optional[Callable[[
-                ], Tuple[bytes, bytes]]] = None,
-            quota_project_id: Optional[str] = None,
-            client_info: gapic_v1.client_info.ClientInfo = DEFAULT_CLIENT_INFO,
-            always_use_jwt_access: Optional[bool] = False,
-            url_scheme: str = 'https',
-            interceptor: Optional[SchemaServiceRestInterceptor] = None,
-            api_audience: Optional[str] = None,
-            ) -> None:
+    def __init__(
+        self,
+        *,
+        host: str = "pubsub.googleapis.com",
+        credentials: Optional[ga_credentials.Credentials] = None,
+        credentials_file: Optional[str] = None,
+        scopes: Optional[Sequence[str]] = None,
+        client_cert_source_for_mtls: Optional[Callable[[], Tuple[bytes, bytes]]] = None,
+        quota_project_id: Optional[str] = None,
+        client_info: gapic_v1.client_info.ClientInfo = DEFAULT_CLIENT_INFO,
+        always_use_jwt_access: Optional[bool] = False,
+        url_scheme: str = "https",
+        interceptor: Optional[SchemaServiceRestInterceptor] = None,
+        api_audience: Optional[str] = None,
+    ) -> None:
         """Instantiate the transport.
 
         Args:
@@ -379,7 +432,9 @@ class SchemaServiceRestTransport(SchemaServiceTransport):
         # credentials object
         maybe_url_match = re.match("^(?P<scheme>http(?:s)?://)?(?P<host>.*)$", host)
         if maybe_url_match is None:
-            raise ValueError(f"Unexpected hostname structure: {host}")  # pragma: NO COVER
+            raise ValueError(
+                f"Unexpected hostname structure: {host}"
+            )  # pragma: NO COVER
 
         url_match_items = maybe_url_match.groupdict()
 
@@ -390,10 +445,11 @@ class SchemaServiceRestTransport(SchemaServiceTransport):
             credentials=credentials,
             client_info=client_info,
             always_use_jwt_access=always_use_jwt_access,
-            api_audience=api_audience
+            api_audience=api_audience,
         )
         self._session = AuthorizedSession(
-            self._credentials, default_host=self.DEFAULT_HOST)
+            self._credentials, default_host=self.DEFAULT_HOST
+        )
         if client_cert_source_for_mtls:
             self._session.configure_mtls_channel(client_cert_source_for_mtls)
         self._interceptor = interceptor or SchemaServiceRestInterceptor()
@@ -403,19 +459,24 @@ class SchemaServiceRestTransport(SchemaServiceTransport):
         def __hash__(self):
             return hash("CommitSchema")
 
-        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, str] =  {
-        }
+        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, str] = {}
 
         @classmethod
         def _get_unset_required_fields(cls, message_dict):
-            return {k: v for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items() if k not in message_dict}
+            return {
+                k: v
+                for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items()
+                if k not in message_dict
+            }
 
-        def __call__(self,
-                request: gp_schema.CommitSchemaRequest, *,
-                retry: OptionalRetry=gapic_v1.method.DEFAULT,
-                timeout: Optional[float]=None,
-                metadata: Sequence[Tuple[str, str]]=(),
-                ) -> gp_schema.Schema:
+        def __call__(
+            self,
+            request: gp_schema.CommitSchemaRequest,
+            *,
+            retry: OptionalRetry = gapic_v1.method.DEFAULT,
+            timeout: Optional[float] = None,
+            metadata: Sequence[Tuple[str, str]] = (),
+        ) -> gp_schema.Schema:
             r"""Call the commit schema method over HTTP.
 
             Args:
@@ -432,11 +493,12 @@ class SchemaServiceRestTransport(SchemaServiceTransport):
                     A schema resource.
             """
 
-            http_options: List[Dict[str, str]] = [{
-                'method': 'post',
-                'uri': '/v1/{name=projects/*/schemas/*}:commit',
-                'body': '*',
-            },
+            http_options: List[Dict[str, str]] = [
+                {
+                    "method": "post",
+                    "uri": "/v1/{name=projects/*/schemas/*}:commit",
+                    "body": "*",
+                },
             ]
             request, metadata = self._interceptor.pre_commit_schema(request, metadata)
             pb_request = gp_schema.CommitSchemaRequest.pb(request)
@@ -445,33 +507,35 @@ class SchemaServiceRestTransport(SchemaServiceTransport):
             # Jsonify the request body
 
             body = json_format.MessageToJson(
-                transcoded_request['body'],
-                including_default_value_fields=False,
-                use_integers_for_enums=True
-            )
-            uri = transcoded_request['uri']
-            method = transcoded_request['method']
-
-            # Jsonify the query params
-            query_params = json.loads(json_format.MessageToJson(
-                transcoded_request['query_params'],
+                transcoded_request["body"],
                 including_default_value_fields=False,
                 use_integers_for_enums=True,
-            ))
+            )
+            uri = transcoded_request["uri"]
+            method = transcoded_request["method"]
+
+            # Jsonify the query params
+            query_params = json.loads(
+                json_format.MessageToJson(
+                    transcoded_request["query_params"],
+                    including_default_value_fields=False,
+                    use_integers_for_enums=True,
+                )
+            )
             query_params.update(self._get_unset_required_fields(query_params))
 
             query_params["$alt"] = "json;enum-encoding=int"
 
             # Send the request
             headers = dict(metadata)
-            headers['Content-Type'] = 'application/json'
+            headers["Content-Type"] = "application/json"
             response = getattr(self._session, method)(
                 "{host}{uri}".format(host=self._host, uri=uri),
                 timeout=timeout,
                 headers=headers,
                 params=rest_helpers.flatten_query_params(query_params, strict=True),
                 data=body,
-                )
+            )
 
             # In case of error, raise the appropriate core_exceptions.GoogleAPICallError exception
             # subclass.
@@ -490,19 +554,24 @@ class SchemaServiceRestTransport(SchemaServiceTransport):
         def __hash__(self):
             return hash("CreateSchema")
 
-        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, str] =  {
-        }
+        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, str] = {}
 
         @classmethod
         def _get_unset_required_fields(cls, message_dict):
-            return {k: v for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items() if k not in message_dict}
+            return {
+                k: v
+                for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items()
+                if k not in message_dict
+            }
 
-        def __call__(self,
-                request: gp_schema.CreateSchemaRequest, *,
-                retry: OptionalRetry=gapic_v1.method.DEFAULT,
-                timeout: Optional[float]=None,
-                metadata: Sequence[Tuple[str, str]]=(),
-                ) -> gp_schema.Schema:
+        def __call__(
+            self,
+            request: gp_schema.CreateSchemaRequest,
+            *,
+            retry: OptionalRetry = gapic_v1.method.DEFAULT,
+            timeout: Optional[float] = None,
+            metadata: Sequence[Tuple[str, str]] = (),
+        ) -> gp_schema.Schema:
             r"""Call the create schema method over HTTP.
 
             Args:
@@ -519,11 +588,12 @@ class SchemaServiceRestTransport(SchemaServiceTransport):
                     A schema resource.
             """
 
-            http_options: List[Dict[str, str]] = [{
-                'method': 'post',
-                'uri': '/v1/{parent=projects/*}/schemas',
-                'body': 'schema',
-            },
+            http_options: List[Dict[str, str]] = [
+                {
+                    "method": "post",
+                    "uri": "/v1/{parent=projects/*}/schemas",
+                    "body": "schema",
+                },
             ]
             request, metadata = self._interceptor.pre_create_schema(request, metadata)
             pb_request = gp_schema.CreateSchemaRequest.pb(request)
@@ -532,33 +602,35 @@ class SchemaServiceRestTransport(SchemaServiceTransport):
             # Jsonify the request body
 
             body = json_format.MessageToJson(
-                transcoded_request['body'],
-                including_default_value_fields=False,
-                use_integers_for_enums=True
-            )
-            uri = transcoded_request['uri']
-            method = transcoded_request['method']
-
-            # Jsonify the query params
-            query_params = json.loads(json_format.MessageToJson(
-                transcoded_request['query_params'],
+                transcoded_request["body"],
                 including_default_value_fields=False,
                 use_integers_for_enums=True,
-            ))
+            )
+            uri = transcoded_request["uri"]
+            method = transcoded_request["method"]
+
+            # Jsonify the query params
+            query_params = json.loads(
+                json_format.MessageToJson(
+                    transcoded_request["query_params"],
+                    including_default_value_fields=False,
+                    use_integers_for_enums=True,
+                )
+            )
             query_params.update(self._get_unset_required_fields(query_params))
 
             query_params["$alt"] = "json;enum-encoding=int"
 
             # Send the request
             headers = dict(metadata)
-            headers['Content-Type'] = 'application/json'
+            headers["Content-Type"] = "application/json"
             response = getattr(self._session, method)(
                 "{host}{uri}".format(host=self._host, uri=uri),
                 timeout=timeout,
                 headers=headers,
                 params=rest_helpers.flatten_query_params(query_params, strict=True),
                 data=body,
-                )
+            )
 
             # In case of error, raise the appropriate core_exceptions.GoogleAPICallError exception
             # subclass.
@@ -577,19 +649,24 @@ class SchemaServiceRestTransport(SchemaServiceTransport):
         def __hash__(self):
             return hash("DeleteSchema")
 
-        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, str] =  {
-        }
+        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, str] = {}
 
         @classmethod
         def _get_unset_required_fields(cls, message_dict):
-            return {k: v for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items() if k not in message_dict}
+            return {
+                k: v
+                for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items()
+                if k not in message_dict
+            }
 
-        def __call__(self,
-                request: schema.DeleteSchemaRequest, *,
-                retry: OptionalRetry=gapic_v1.method.DEFAULT,
-                timeout: Optional[float]=None,
-                metadata: Sequence[Tuple[str, str]]=(),
-                ):
+        def __call__(
+            self,
+            request: schema.DeleteSchemaRequest,
+            *,
+            retry: OptionalRetry = gapic_v1.method.DEFAULT,
+            timeout: Optional[float] = None,
+            metadata: Sequence[Tuple[str, str]] = (),
+        ):
             r"""Call the delete schema method over HTTP.
 
             Args:
@@ -602,37 +679,40 @@ class SchemaServiceRestTransport(SchemaServiceTransport):
                     sent along with the request as metadata.
             """
 
-            http_options: List[Dict[str, str]] = [{
-                'method': 'delete',
-                'uri': '/v1/{name=projects/*/schemas/*}',
-            },
+            http_options: List[Dict[str, str]] = [
+                {
+                    "method": "delete",
+                    "uri": "/v1/{name=projects/*/schemas/*}",
+                },
             ]
             request, metadata = self._interceptor.pre_delete_schema(request, metadata)
             pb_request = schema.DeleteSchemaRequest.pb(request)
             transcoded_request = path_template.transcode(http_options, pb_request)
 
-            uri = transcoded_request['uri']
-            method = transcoded_request['method']
+            uri = transcoded_request["uri"]
+            method = transcoded_request["method"]
 
             # Jsonify the query params
-            query_params = json.loads(json_format.MessageToJson(
-                transcoded_request['query_params'],
-                including_default_value_fields=False,
-                use_integers_for_enums=True,
-            ))
+            query_params = json.loads(
+                json_format.MessageToJson(
+                    transcoded_request["query_params"],
+                    including_default_value_fields=False,
+                    use_integers_for_enums=True,
+                )
+            )
             query_params.update(self._get_unset_required_fields(query_params))
 
             query_params["$alt"] = "json;enum-encoding=int"
 
             # Send the request
             headers = dict(metadata)
-            headers['Content-Type'] = 'application/json'
+            headers["Content-Type"] = "application/json"
             response = getattr(self._session, method)(
                 "{host}{uri}".format(host=self._host, uri=uri),
                 timeout=timeout,
                 headers=headers,
                 params=rest_helpers.flatten_query_params(query_params, strict=True),
-                )
+            )
 
             # In case of error, raise the appropriate core_exceptions.GoogleAPICallError exception
             # subclass.
@@ -643,19 +723,24 @@ class SchemaServiceRestTransport(SchemaServiceTransport):
         def __hash__(self):
             return hash("DeleteSchemaRevision")
 
-        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, str] =  {
-        }
+        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, str] = {}
 
         @classmethod
         def _get_unset_required_fields(cls, message_dict):
-            return {k: v for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items() if k not in message_dict}
+            return {
+                k: v
+                for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items()
+                if k not in message_dict
+            }
 
-        def __call__(self,
-                request: schema.DeleteSchemaRevisionRequest, *,
-                retry: OptionalRetry=gapic_v1.method.DEFAULT,
-                timeout: Optional[float]=None,
-                metadata: Sequence[Tuple[str, str]]=(),
-                ) -> schema.Schema:
+        def __call__(
+            self,
+            request: schema.DeleteSchemaRevisionRequest,
+            *,
+            retry: OptionalRetry = gapic_v1.method.DEFAULT,
+            timeout: Optional[float] = None,
+            metadata: Sequence[Tuple[str, str]] = (),
+        ) -> schema.Schema:
             r"""Call the delete schema revision method over HTTP.
 
             Args:
@@ -672,37 +757,42 @@ class SchemaServiceRestTransport(SchemaServiceTransport):
                     A schema resource.
             """
 
-            http_options: List[Dict[str, str]] = [{
-                'method': 'delete',
-                'uri': '/v1/{name=projects/*/schemas/*}:deleteRevision',
-            },
+            http_options: List[Dict[str, str]] = [
+                {
+                    "method": "delete",
+                    "uri": "/v1/{name=projects/*/schemas/*}:deleteRevision",
+                },
             ]
-            request, metadata = self._interceptor.pre_delete_schema_revision(request, metadata)
+            request, metadata = self._interceptor.pre_delete_schema_revision(
+                request, metadata
+            )
             pb_request = schema.DeleteSchemaRevisionRequest.pb(request)
             transcoded_request = path_template.transcode(http_options, pb_request)
 
-            uri = transcoded_request['uri']
-            method = transcoded_request['method']
+            uri = transcoded_request["uri"]
+            method = transcoded_request["method"]
 
             # Jsonify the query params
-            query_params = json.loads(json_format.MessageToJson(
-                transcoded_request['query_params'],
-                including_default_value_fields=False,
-                use_integers_for_enums=True,
-            ))
+            query_params = json.loads(
+                json_format.MessageToJson(
+                    transcoded_request["query_params"],
+                    including_default_value_fields=False,
+                    use_integers_for_enums=True,
+                )
+            )
             query_params.update(self._get_unset_required_fields(query_params))
 
             query_params["$alt"] = "json;enum-encoding=int"
 
             # Send the request
             headers = dict(metadata)
-            headers['Content-Type'] = 'application/json'
+            headers["Content-Type"] = "application/json"
             response = getattr(self._session, method)(
                 "{host}{uri}".format(host=self._host, uri=uri),
                 timeout=timeout,
                 headers=headers,
                 params=rest_helpers.flatten_query_params(query_params, strict=True),
-                )
+            )
 
             # In case of error, raise the appropriate core_exceptions.GoogleAPICallError exception
             # subclass.
@@ -721,19 +811,24 @@ class SchemaServiceRestTransport(SchemaServiceTransport):
         def __hash__(self):
             return hash("GetSchema")
 
-        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, str] =  {
-        }
+        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, str] = {}
 
         @classmethod
         def _get_unset_required_fields(cls, message_dict):
-            return {k: v for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items() if k not in message_dict}
+            return {
+                k: v
+                for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items()
+                if k not in message_dict
+            }
 
-        def __call__(self,
-                request: schema.GetSchemaRequest, *,
-                retry: OptionalRetry=gapic_v1.method.DEFAULT,
-                timeout: Optional[float]=None,
-                metadata: Sequence[Tuple[str, str]]=(),
-                ) -> schema.Schema:
+        def __call__(
+            self,
+            request: schema.GetSchemaRequest,
+            *,
+            retry: OptionalRetry = gapic_v1.method.DEFAULT,
+            timeout: Optional[float] = None,
+            metadata: Sequence[Tuple[str, str]] = (),
+        ) -> schema.Schema:
             r"""Call the get schema method over HTTP.
 
             Args:
@@ -750,37 +845,40 @@ class SchemaServiceRestTransport(SchemaServiceTransport):
                     A schema resource.
             """
 
-            http_options: List[Dict[str, str]] = [{
-                'method': 'get',
-                'uri': '/v1/{name=projects/*/schemas/*}',
-            },
+            http_options: List[Dict[str, str]] = [
+                {
+                    "method": "get",
+                    "uri": "/v1/{name=projects/*/schemas/*}",
+                },
             ]
             request, metadata = self._interceptor.pre_get_schema(request, metadata)
             pb_request = schema.GetSchemaRequest.pb(request)
             transcoded_request = path_template.transcode(http_options, pb_request)
 
-            uri = transcoded_request['uri']
-            method = transcoded_request['method']
+            uri = transcoded_request["uri"]
+            method = transcoded_request["method"]
 
             # Jsonify the query params
-            query_params = json.loads(json_format.MessageToJson(
-                transcoded_request['query_params'],
-                including_default_value_fields=False,
-                use_integers_for_enums=True,
-            ))
+            query_params = json.loads(
+                json_format.MessageToJson(
+                    transcoded_request["query_params"],
+                    including_default_value_fields=False,
+                    use_integers_for_enums=True,
+                )
+            )
             query_params.update(self._get_unset_required_fields(query_params))
 
             query_params["$alt"] = "json;enum-encoding=int"
 
             # Send the request
             headers = dict(metadata)
-            headers['Content-Type'] = 'application/json'
+            headers["Content-Type"] = "application/json"
             response = getattr(self._session, method)(
                 "{host}{uri}".format(host=self._host, uri=uri),
                 timeout=timeout,
                 headers=headers,
                 params=rest_helpers.flatten_query_params(query_params, strict=True),
-                )
+            )
 
             # In case of error, raise the appropriate core_exceptions.GoogleAPICallError exception
             # subclass.
@@ -799,19 +897,24 @@ class SchemaServiceRestTransport(SchemaServiceTransport):
         def __hash__(self):
             return hash("ListSchemaRevisions")
 
-        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, str] =  {
-        }
+        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, str] = {}
 
         @classmethod
         def _get_unset_required_fields(cls, message_dict):
-            return {k: v for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items() if k not in message_dict}
+            return {
+                k: v
+                for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items()
+                if k not in message_dict
+            }
 
-        def __call__(self,
-                request: schema.ListSchemaRevisionsRequest, *,
-                retry: OptionalRetry=gapic_v1.method.DEFAULT,
-                timeout: Optional[float]=None,
-                metadata: Sequence[Tuple[str, str]]=(),
-                ) -> schema.ListSchemaRevisionsResponse:
+        def __call__(
+            self,
+            request: schema.ListSchemaRevisionsRequest,
+            *,
+            retry: OptionalRetry = gapic_v1.method.DEFAULT,
+            timeout: Optional[float] = None,
+            metadata: Sequence[Tuple[str, str]] = (),
+        ) -> schema.ListSchemaRevisionsResponse:
             r"""Call the list schema revisions method over HTTP.
 
             Args:
@@ -828,37 +931,42 @@ class SchemaServiceRestTransport(SchemaServiceTransport):
                     Response for the ``ListSchemaRevisions`` method.
             """
 
-            http_options: List[Dict[str, str]] = [{
-                'method': 'get',
-                'uri': '/v1/{name=projects/*/schemas/*}:listRevisions',
-            },
+            http_options: List[Dict[str, str]] = [
+                {
+                    "method": "get",
+                    "uri": "/v1/{name=projects/*/schemas/*}:listRevisions",
+                },
             ]
-            request, metadata = self._interceptor.pre_list_schema_revisions(request, metadata)
+            request, metadata = self._interceptor.pre_list_schema_revisions(
+                request, metadata
+            )
             pb_request = schema.ListSchemaRevisionsRequest.pb(request)
             transcoded_request = path_template.transcode(http_options, pb_request)
 
-            uri = transcoded_request['uri']
-            method = transcoded_request['method']
+            uri = transcoded_request["uri"]
+            method = transcoded_request["method"]
 
             # Jsonify the query params
-            query_params = json.loads(json_format.MessageToJson(
-                transcoded_request['query_params'],
-                including_default_value_fields=False,
-                use_integers_for_enums=True,
-            ))
+            query_params = json.loads(
+                json_format.MessageToJson(
+                    transcoded_request["query_params"],
+                    including_default_value_fields=False,
+                    use_integers_for_enums=True,
+                )
+            )
             query_params.update(self._get_unset_required_fields(query_params))
 
             query_params["$alt"] = "json;enum-encoding=int"
 
             # Send the request
             headers = dict(metadata)
-            headers['Content-Type'] = 'application/json'
+            headers["Content-Type"] = "application/json"
             response = getattr(self._session, method)(
                 "{host}{uri}".format(host=self._host, uri=uri),
                 timeout=timeout,
                 headers=headers,
                 params=rest_helpers.flatten_query_params(query_params, strict=True),
-                )
+            )
 
             # In case of error, raise the appropriate core_exceptions.GoogleAPICallError exception
             # subclass.
@@ -877,19 +985,24 @@ class SchemaServiceRestTransport(SchemaServiceTransport):
         def __hash__(self):
             return hash("ListSchemas")
 
-        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, str] =  {
-        }
+        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, str] = {}
 
         @classmethod
         def _get_unset_required_fields(cls, message_dict):
-            return {k: v for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items() if k not in message_dict}
+            return {
+                k: v
+                for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items()
+                if k not in message_dict
+            }
 
-        def __call__(self,
-                request: schema.ListSchemasRequest, *,
-                retry: OptionalRetry=gapic_v1.method.DEFAULT,
-                timeout: Optional[float]=None,
-                metadata: Sequence[Tuple[str, str]]=(),
-                ) -> schema.ListSchemasResponse:
+        def __call__(
+            self,
+            request: schema.ListSchemasRequest,
+            *,
+            retry: OptionalRetry = gapic_v1.method.DEFAULT,
+            timeout: Optional[float] = None,
+            metadata: Sequence[Tuple[str, str]] = (),
+        ) -> schema.ListSchemasResponse:
             r"""Call the list schemas method over HTTP.
 
             Args:
@@ -906,37 +1019,40 @@ class SchemaServiceRestTransport(SchemaServiceTransport):
                     Response for the ``ListSchemas`` method.
             """
 
-            http_options: List[Dict[str, str]] = [{
-                'method': 'get',
-                'uri': '/v1/{parent=projects/*}/schemas',
-            },
+            http_options: List[Dict[str, str]] = [
+                {
+                    "method": "get",
+                    "uri": "/v1/{parent=projects/*}/schemas",
+                },
             ]
             request, metadata = self._interceptor.pre_list_schemas(request, metadata)
             pb_request = schema.ListSchemasRequest.pb(request)
             transcoded_request = path_template.transcode(http_options, pb_request)
 
-            uri = transcoded_request['uri']
-            method = transcoded_request['method']
+            uri = transcoded_request["uri"]
+            method = transcoded_request["method"]
 
             # Jsonify the query params
-            query_params = json.loads(json_format.MessageToJson(
-                transcoded_request['query_params'],
-                including_default_value_fields=False,
-                use_integers_for_enums=True,
-            ))
+            query_params = json.loads(
+                json_format.MessageToJson(
+                    transcoded_request["query_params"],
+                    including_default_value_fields=False,
+                    use_integers_for_enums=True,
+                )
+            )
             query_params.update(self._get_unset_required_fields(query_params))
 
             query_params["$alt"] = "json;enum-encoding=int"
 
             # Send the request
             headers = dict(metadata)
-            headers['Content-Type'] = 'application/json'
+            headers["Content-Type"] = "application/json"
             response = getattr(self._session, method)(
                 "{host}{uri}".format(host=self._host, uri=uri),
                 timeout=timeout,
                 headers=headers,
                 params=rest_helpers.flatten_query_params(query_params, strict=True),
-                )
+            )
 
             # In case of error, raise the appropriate core_exceptions.GoogleAPICallError exception
             # subclass.
@@ -955,19 +1071,24 @@ class SchemaServiceRestTransport(SchemaServiceTransport):
         def __hash__(self):
             return hash("RollbackSchema")
 
-        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, str] =  {
-        }
+        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, str] = {}
 
         @classmethod
         def _get_unset_required_fields(cls, message_dict):
-            return {k: v for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items() if k not in message_dict}
+            return {
+                k: v
+                for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items()
+                if k not in message_dict
+            }
 
-        def __call__(self,
-                request: schema.RollbackSchemaRequest, *,
-                retry: OptionalRetry=gapic_v1.method.DEFAULT,
-                timeout: Optional[float]=None,
-                metadata: Sequence[Tuple[str, str]]=(),
-                ) -> schema.Schema:
+        def __call__(
+            self,
+            request: schema.RollbackSchemaRequest,
+            *,
+            retry: OptionalRetry = gapic_v1.method.DEFAULT,
+            timeout: Optional[float] = None,
+            metadata: Sequence[Tuple[str, str]] = (),
+        ) -> schema.Schema:
             r"""Call the rollback schema method over HTTP.
 
             Args:
@@ -984,11 +1105,12 @@ class SchemaServiceRestTransport(SchemaServiceTransport):
                     A schema resource.
             """
 
-            http_options: List[Dict[str, str]] = [{
-                'method': 'post',
-                'uri': '/v1/{name=projects/*/schemas/*}:rollback',
-                'body': '*',
-            },
+            http_options: List[Dict[str, str]] = [
+                {
+                    "method": "post",
+                    "uri": "/v1/{name=projects/*/schemas/*}:rollback",
+                    "body": "*",
+                },
             ]
             request, metadata = self._interceptor.pre_rollback_schema(request, metadata)
             pb_request = schema.RollbackSchemaRequest.pb(request)
@@ -997,33 +1119,35 @@ class SchemaServiceRestTransport(SchemaServiceTransport):
             # Jsonify the request body
 
             body = json_format.MessageToJson(
-                transcoded_request['body'],
-                including_default_value_fields=False,
-                use_integers_for_enums=True
-            )
-            uri = transcoded_request['uri']
-            method = transcoded_request['method']
-
-            # Jsonify the query params
-            query_params = json.loads(json_format.MessageToJson(
-                transcoded_request['query_params'],
+                transcoded_request["body"],
                 including_default_value_fields=False,
                 use_integers_for_enums=True,
-            ))
+            )
+            uri = transcoded_request["uri"]
+            method = transcoded_request["method"]
+
+            # Jsonify the query params
+            query_params = json.loads(
+                json_format.MessageToJson(
+                    transcoded_request["query_params"],
+                    including_default_value_fields=False,
+                    use_integers_for_enums=True,
+                )
+            )
             query_params.update(self._get_unset_required_fields(query_params))
 
             query_params["$alt"] = "json;enum-encoding=int"
 
             # Send the request
             headers = dict(metadata)
-            headers['Content-Type'] = 'application/json'
+            headers["Content-Type"] = "application/json"
             response = getattr(self._session, method)(
                 "{host}{uri}".format(host=self._host, uri=uri),
                 timeout=timeout,
                 headers=headers,
                 params=rest_helpers.flatten_query_params(query_params, strict=True),
                 data=body,
-                )
+            )
 
             # In case of error, raise the appropriate core_exceptions.GoogleAPICallError exception
             # subclass.
@@ -1042,19 +1166,24 @@ class SchemaServiceRestTransport(SchemaServiceTransport):
         def __hash__(self):
             return hash("ValidateMessage")
 
-        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, str] =  {
-        }
+        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, str] = {}
 
         @classmethod
         def _get_unset_required_fields(cls, message_dict):
-            return {k: v for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items() if k not in message_dict}
+            return {
+                k: v
+                for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items()
+                if k not in message_dict
+            }
 
-        def __call__(self,
-                request: schema.ValidateMessageRequest, *,
-                retry: OptionalRetry=gapic_v1.method.DEFAULT,
-                timeout: Optional[float]=None,
-                metadata: Sequence[Tuple[str, str]]=(),
-                ) -> schema.ValidateMessageResponse:
+        def __call__(
+            self,
+            request: schema.ValidateMessageRequest,
+            *,
+            retry: OptionalRetry = gapic_v1.method.DEFAULT,
+            timeout: Optional[float] = None,
+            metadata: Sequence[Tuple[str, str]] = (),
+        ) -> schema.ValidateMessageResponse:
             r"""Call the validate message method over HTTP.
 
             Args:
@@ -1073,46 +1202,51 @@ class SchemaServiceRestTransport(SchemaServiceTransport):
 
             """
 
-            http_options: List[Dict[str, str]] = [{
-                'method': 'post',
-                'uri': '/v1/{parent=projects/*}/schemas:validateMessage',
-                'body': '*',
-            },
+            http_options: List[Dict[str, str]] = [
+                {
+                    "method": "post",
+                    "uri": "/v1/{parent=projects/*}/schemas:validateMessage",
+                    "body": "*",
+                },
             ]
-            request, metadata = self._interceptor.pre_validate_message(request, metadata)
+            request, metadata = self._interceptor.pre_validate_message(
+                request, metadata
+            )
             pb_request = schema.ValidateMessageRequest.pb(request)
             transcoded_request = path_template.transcode(http_options, pb_request)
 
             # Jsonify the request body
 
             body = json_format.MessageToJson(
-                transcoded_request['body'],
-                including_default_value_fields=False,
-                use_integers_for_enums=True
-            )
-            uri = transcoded_request['uri']
-            method = transcoded_request['method']
-
-            # Jsonify the query params
-            query_params = json.loads(json_format.MessageToJson(
-                transcoded_request['query_params'],
+                transcoded_request["body"],
                 including_default_value_fields=False,
                 use_integers_for_enums=True,
-            ))
+            )
+            uri = transcoded_request["uri"]
+            method = transcoded_request["method"]
+
+            # Jsonify the query params
+            query_params = json.loads(
+                json_format.MessageToJson(
+                    transcoded_request["query_params"],
+                    including_default_value_fields=False,
+                    use_integers_for_enums=True,
+                )
+            )
             query_params.update(self._get_unset_required_fields(query_params))
 
             query_params["$alt"] = "json;enum-encoding=int"
 
             # Send the request
             headers = dict(metadata)
-            headers['Content-Type'] = 'application/json'
+            headers["Content-Type"] = "application/json"
             response = getattr(self._session, method)(
                 "{host}{uri}".format(host=self._host, uri=uri),
                 timeout=timeout,
                 headers=headers,
                 params=rest_helpers.flatten_query_params(query_params, strict=True),
                 data=body,
-                )
+            )
 
             # In case of error, raise the appropriate core_exceptions.GoogleAPICallError exception
             # subclass.
@@ -1131,19 +1265,24 @@ class SchemaServiceRestTransport(SchemaServiceTransport):
         def __hash__(self):
             return hash("ValidateSchema")
 
-        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, str] =  {
-        }
+        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, str] = {}
 
         @classmethod
         def _get_unset_required_fields(cls, message_dict):
-            return {k: v for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items() if k not in message_dict}
+            return {
+                k: v
+                for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items()
+                if k not in message_dict
+            }
 
-        def __call__(self,
-                request: gp_schema.ValidateSchemaRequest, *,
-                retry: OptionalRetry=gapic_v1.method.DEFAULT,
-                timeout: Optional[float]=None,
-                metadata: Sequence[Tuple[str, str]]=(),
-                ) -> gp_schema.ValidateSchemaResponse:
+        def __call__(
+            self,
+            request: gp_schema.ValidateSchemaRequest,
+            *,
+            retry: OptionalRetry = gapic_v1.method.DEFAULT,
+            timeout: Optional[float] = None,
+            metadata: Sequence[Tuple[str, str]] = (),
+        ) -> gp_schema.ValidateSchemaResponse:
             r"""Call the validate schema method over HTTP.
 
             Args:
@@ -1162,11 +1301,12 @@ class SchemaServiceRestTransport(SchemaServiceTransport):
 
             """
 
-            http_options: List[Dict[str, str]] = [{
-                'method': 'post',
-                'uri': '/v1/{parent=projects/*}/schemas:validate',
-                'body': '*',
-            },
+            http_options: List[Dict[str, str]] = [
+                {
+                    "method": "post",
+                    "uri": "/v1/{parent=projects/*}/schemas:validate",
+                    "body": "*",
+                },
             ]
             request, metadata = self._interceptor.pre_validate_schema(request, metadata)
             pb_request = gp_schema.ValidateSchemaRequest.pb(request)
@@ -1175,33 +1315,35 @@ class SchemaServiceRestTransport(SchemaServiceTransport):
             # Jsonify the request body
 
             body = json_format.MessageToJson(
-                transcoded_request['body'],
-                including_default_value_fields=False,
-                use_integers_for_enums=True
-            )
-            uri = transcoded_request['uri']
-            method = transcoded_request['method']
-
-            # Jsonify the query params
-            query_params = json.loads(json_format.MessageToJson(
-                transcoded_request['query_params'],
+                transcoded_request["body"],
                 including_default_value_fields=False,
                 use_integers_for_enums=True,
-            ))
+            )
+            uri = transcoded_request["uri"]
+            method = transcoded_request["method"]
+
+            # Jsonify the query params
+            query_params = json.loads(
+                json_format.MessageToJson(
+                    transcoded_request["query_params"],
+                    including_default_value_fields=False,
+                    use_integers_for_enums=True,
+                )
+            )
             query_params.update(self._get_unset_required_fields(query_params))
 
             query_params["$alt"] = "json;enum-encoding=int"
 
             # Send the request
             headers = dict(metadata)
-            headers['Content-Type'] = 'application/json'
+            headers["Content-Type"] = "application/json"
             response = getattr(self._session, method)(
                 "{host}{uri}".format(host=self._host, uri=uri),
                 timeout=timeout,
                 headers=headers,
                 params=rest_helpers.flatten_query_params(query_params, strict=True),
                 data=body,
-                )
+            )
 
             # In case of error, raise the appropriate core_exceptions.GoogleAPICallError exception
             # subclass.
@@ -1217,84 +1359,82 @@ class SchemaServiceRestTransport(SchemaServiceTransport):
             return resp
 
     @property
-    def commit_schema(self) -> Callable[
-            [gp_schema.CommitSchemaRequest],
-            gp_schema.Schema]:
+    def commit_schema(
+        self,
+    ) -> Callable[[gp_schema.CommitSchemaRequest], gp_schema.Schema]:
         # The return type is fine, but mypy isn't sophisticated enough to determine what's going on here.
         # In C++ this would require a dynamic_cast
-        return self._CommitSchema(self._session, self._host, self._interceptor) # type: ignore
+        return self._CommitSchema(self._session, self._host, self._interceptor)  # type: ignore
 
     @property
-    def create_schema(self) -> Callable[
-            [gp_schema.CreateSchemaRequest],
-            gp_schema.Schema]:
+    def create_schema(
+        self,
+    ) -> Callable[[gp_schema.CreateSchemaRequest], gp_schema.Schema]:
         # The return type is fine, but mypy isn't sophisticated enough to determine what's going on here.
         # In C++ this would require a dynamic_cast
-        return self._CreateSchema(self._session, self._host, self._interceptor) # type: ignore
+        return self._CreateSchema(self._session, self._host, self._interceptor)  # type: ignore
 
     @property
-    def delete_schema(self) -> Callable[
-            [schema.DeleteSchemaRequest],
-            empty_pb2.Empty]:
+    def delete_schema(self) -> Callable[[schema.DeleteSchemaRequest], empty_pb2.Empty]:
         # The return type is fine, but mypy isn't sophisticated enough to determine what's going on here.
         # In C++ this would require a dynamic_cast
-        return self._DeleteSchema(self._session, self._host, self._interceptor) # type: ignore
+        return self._DeleteSchema(self._session, self._host, self._interceptor)  # type: ignore
 
     @property
-    def delete_schema_revision(self) -> Callable[
-            [schema.DeleteSchemaRevisionRequest],
-            schema.Schema]:
+    def delete_schema_revision(
+        self,
+    ) -> Callable[[schema.DeleteSchemaRevisionRequest], schema.Schema]:
         # The return type is fine, but mypy isn't sophisticated enough to determine what's going on here.
         # In C++ this would require a dynamic_cast
-        return self._DeleteSchemaRevision(self._session, self._host, self._interceptor) # type: ignore
+        return self._DeleteSchemaRevision(self._session, self._host, self._interceptor)  # type: ignore
 
     @property
-    def get_schema(self) -> Callable[
-            [schema.GetSchemaRequest],
-            schema.Schema]:
+    def get_schema(self) -> Callable[[schema.GetSchemaRequest], schema.Schema]:
         # The return type is fine, but mypy isn't sophisticated enough to determine what's going on here.
         # In C++ this would require a dynamic_cast
-        return self._GetSchema(self._session, self._host, self._interceptor) # type: ignore
+        return self._GetSchema(self._session, self._host, self._interceptor)  # type: ignore
 
     @property
-    def list_schema_revisions(self) -> Callable[
-            [schema.ListSchemaRevisionsRequest],
-            schema.ListSchemaRevisionsResponse]:
+    def list_schema_revisions(
+        self,
+    ) -> Callable[
+        [schema.ListSchemaRevisionsRequest], schema.ListSchemaRevisionsResponse
+    ]:
         # The return type is fine, but mypy isn't sophisticated enough to determine what's going on here.
         # In C++ this would require a dynamic_cast
-        return self._ListSchemaRevisions(self._session, self._host, self._interceptor) # type: ignore
+        return self._ListSchemaRevisions(self._session, self._host, self._interceptor)  # type: ignore
 
     @property
-    def list_schemas(self) -> Callable[
-            [schema.ListSchemasRequest],
-            schema.ListSchemasResponse]:
+    def list_schemas(
+        self,
+    ) -> Callable[[schema.ListSchemasRequest], schema.ListSchemasResponse]:
         # The return type is fine, but mypy isn't sophisticated enough to determine what's going on here.
         # In C++ this would require a dynamic_cast
-        return self._ListSchemas(self._session, self._host, self._interceptor) # type: ignore
+        return self._ListSchemas(self._session, self._host, self._interceptor)  # type: ignore
 
     @property
-    def rollback_schema(self) -> Callable[
-            [schema.RollbackSchemaRequest],
-            schema.Schema]:
+    def rollback_schema(
+        self,
+    ) -> Callable[[schema.RollbackSchemaRequest], schema.Schema]:
         # The return type is fine, but mypy isn't sophisticated enough to determine what's going on here.
         # In C++ this would require a dynamic_cast
-        return self._RollbackSchema(self._session, self._host, self._interceptor) # type: ignore
+        return self._RollbackSchema(self._session, self._host, self._interceptor)  # type: ignore
 
     @property
-    def validate_message(self) -> Callable[
-            [schema.ValidateMessageRequest],
-            schema.ValidateMessageResponse]:
+    def validate_message(
+        self,
+    ) -> Callable[[schema.ValidateMessageRequest], schema.ValidateMessageResponse]:
         # The return type is fine, but mypy isn't sophisticated enough to determine what's going on here.
         # In C++ this would require a dynamic_cast
-        return self._ValidateMessage(self._session, self._host, self._interceptor) # type: ignore
+        return self._ValidateMessage(self._session, self._host, self._interceptor)  # type: ignore
 
     @property
-    def validate_schema(self) -> Callable[
-            [gp_schema.ValidateSchemaRequest],
-            gp_schema.ValidateSchemaResponse]:
+    def validate_schema(
+        self,
+    ) -> Callable[[gp_schema.ValidateSchemaRequest], gp_schema.ValidateSchemaResponse]:
         # The return type is fine, but mypy isn't sophisticated enough to determine what's going on here.
         # In C++ this would require a dynamic_cast
-        return self._ValidateSchema(self._session, self._host, self._interceptor) # type: ignore
+        return self._ValidateSchema(self._session, self._host, self._interceptor)  # type: ignore
 
     @property
     def kind(self) -> str:
@@ -1304,6 +1444,4 @@ class SchemaServiceRestTransport(SchemaServiceTransport):
         self._session.close()
 
 
-__all__=(
-    'SchemaServiceRestTransport',
-)
+__all__ = ("SchemaServiceRestTransport",)
