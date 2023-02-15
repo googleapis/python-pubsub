@@ -617,7 +617,7 @@ class Subscription(proto.Message):
             Pub/Sub waits for the subscriber to acknowledge receipt
             before resending the message. In the interval after the
             message is delivered and before it is acknowledged, it is
-            considered to be outstanding. During that time period, the
+            considered to be *outstanding*. During that time period, the
             message will not be redelivered (on a best-effort basis).
 
             For pull subscriptions, this value is used as the initial
@@ -652,9 +652,8 @@ class Subscription(proto.Message):
             Defaults to 7 days. Cannot be more than 7 days or less than
             10 minutes.
         labels (MutableMapping[str, str]):
-            See <a
-            href="https://cloud.google.com/pubsub/docs/labels">
-            Creating and managing labels</a>.
+            See `Creating and managing
+            labels <https://cloud.google.com/pubsub/docs/labels>`__.
         enable_message_ordering (bool):
             If true, messages published with the same ``ordering_key``
             in ``PubsubMessage`` will be delivered to the subscribers in
@@ -977,11 +976,7 @@ class PushConfig(proto.Message):
             -  ``v1`` or ``v1beta2``: uses the push format defined in
                the v1 Pub/Sub API.
 
-            For example:
-
-            .. raw:: html
-
-                <pre><code>attributes { "x-goog-version": "v1" } </code></pre>
+            For example: ``attributes { "x-goog-version": "v1" }``
         oidc_token (google.pubsub_v1.types.PushConfig.OidcToken):
             If specified, Pub/Sub will generate and attach an OIDC JWT
             token as an ``Authorization`` header in the HTTP request for
@@ -1347,9 +1342,10 @@ class PullResponse(proto.Message):
     Attributes:
         received_messages (MutableSequence[google.pubsub_v1.types.ReceivedMessage]):
             Received Pub/Sub messages. The list will be empty if there
-            are no more messages available in the backlog. For JSON, the
-            response can be entirely empty. The Pub/Sub system may
-            return fewer than the ``maxMessages`` requested even if
+            are no more messages available in the backlog, or if no
+            messages could be returned before the request timeout. For
+            JSON, the response can be entirely empty. The Pub/Sub system
+            may return fewer than the ``maxMessages`` requested even if
             there are more messages available in the backlog.
     """
 
@@ -1659,8 +1655,9 @@ class CreateSnapshotRequest(proto.Message):
             is not provided in the request, the server will assign a
             random name for this snapshot on the same project as the
             subscription. Note that for REST API requests, you must
-            specify a name. See the resource name rules. Format is
-            ``projects/{project}/snapshots/{snap}``.
+            specify a name. See the `resource name
+            rules <https://cloud.google.com/pubsub/docs/admin#resource_names>`__.
+            Format is ``projects/{project}/snapshots/{snap}``.
         subscription (str):
             Required. The subscription whose backlog the snapshot
             retains. Specifically, the created snapshot is guaranteed to
@@ -1673,9 +1670,8 @@ class CreateSnapshotRequest(proto.Message):
             CreateSnapshot request. Format is
             ``projects/{project}/subscriptions/{sub}``.
         labels (MutableMapping[str, str]):
-            See <a
-            href="https://cloud.google.com/pubsub/docs/labels">
-            Creating and managing labels</a>.
+            See `Creating and managing
+            labels <https://cloud.google.com/pubsub/docs/labels>`__.
     """
 
     name: str = proto.Field(

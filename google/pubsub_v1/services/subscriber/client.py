@@ -600,7 +600,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
                 Pub/Sub waits for the subscriber to acknowledge receipt
                 before resending the message. In the interval after the
                 message is delivered and before it is acknowledged, it
-                is considered to be outstanding. During that time
+                is considered to be *outstanding*. During that time
                 period, the message will not be redelivered (on a
                 best-effort basis).
 
@@ -1362,9 +1362,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
         timeout: Union[float, object] = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pubsub.PullResponse:
-        r"""Pulls messages from the server. The server may return
-        ``UNAVAILABLE`` if there are too many concurrent pull requests
-        pending for the given subscription.
+        r"""Pulls messages from the server.
 
         .. code-block:: python
 
@@ -1709,13 +1707,12 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
         timeout: Union[float, object] = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pubsub.Snapshot:
-        r"""Gets the configuration details of a snapshot.
-        Snapshots are used in <a
-        href="https://cloud.google.com/pubsub/docs/replay-overview">Seek</a>
-        operations, which allow you to manage message
-        acknowledgments in bulk. That is, you can set the
-        acknowledgment state of messages in an existing
-        subscription to the state captured by a snapshot.
+        r"""Gets the configuration details of a snapshot. Snapshots are used
+        in
+        `Seek <https://cloud.google.com/pubsub/docs/replay-overview>`__
+        operations, which allow you to manage message acknowledgments in
+        bulk. That is, you can set the acknowledgment state of messages
+        in an existing subscription to the state captured by a snapshot.
 
         .. code-block:: python
 
@@ -1995,9 +1992,10 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
                 name is not provided in the request, the server will
                 assign a random name for this snapshot on the same
                 project as the subscription. Note that for REST API
-                requests, you must specify a name. See the resource name
-                rules. Format is
-                ``projects/{project}/snapshots/{snap}``.
+                requests, you must specify a name. See the `resource
+                name
+                rules <https://cloud.google.com/pubsub/docs/admin#resource_names>`__.
+                Format is ``projects/{project}/snapshots/{snap}``.
 
                 This corresponds to the ``name`` field
                 on the ``request`` instance; if ``request`` is provided, this
@@ -2088,13 +2086,10 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pubsub.Snapshot:
         r"""Updates an existing snapshot. Snapshots are used in
-        <a
-        href="https://cloud.google.com/pubsub/docs/replay-overview">Seek</a>
-        operations, which allow
-        you to manage message acknowledgments in bulk. That is,
-        you can set the acknowledgment state of messages in an
-        existing subscription to the state captured by a
-        snapshot.
+        `Seek <https://cloud.google.com/pubsub/docs/replay-overview>`__
+        operations, which allow you to manage message acknowledgments in
+        bulk. That is, you can set the acknowledgment state of messages
+        in an existing subscription to the state captured by a snapshot.
 
         .. code-block:: python
 
