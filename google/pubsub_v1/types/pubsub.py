@@ -184,7 +184,7 @@ class Topic(proto.Message):
             timestamp <https://cloud.google.com/pubsub/docs/replay-overview#seek_to_a_time>`__
             that is up to ``message_retention_duration`` in the past. If
             this field is not set, message retention is controlled by
-            settings on individual subscriptions. Cannot be more than 7
+            settings on individual subscriptions. Cannot be more than 31
             days or less than 10 minutes.
     """
 
