@@ -749,7 +749,11 @@ class SubscriberRestTransport(SubscriberTransport):
 
             Args:
                 request (~.pubsub.Subscription):
-                    The request object. A subscription resource.
+                    The request object. A subscription resource. If none of ``push_config`` or
+                ``bigquery_config`` is set, then the subscriber will
+                pull and ack messages using API methods. At most one of
+                these fields may be set.
+
                 retry (google.api_core.retry.Retry): Designation of what errors, if any,
                     should be retried.
                 timeout (float): The timeout for this request.
@@ -758,7 +762,11 @@ class SubscriberRestTransport(SubscriberTransport):
 
             Returns:
                 ~.pubsub.Subscription:
-                    A subscription resource.
+                    A subscription resource. If none of ``push_config`` or
+                ``bigquery_config`` is set, then the subscriber will
+                pull and ack messages using API methods. At most one of
+                these fields may be set.
+
             """
 
             http_options: List[Dict[str, str]] = [
@@ -1101,7 +1109,11 @@ class SubscriberRestTransport(SubscriberTransport):
 
             Returns:
                 ~.pubsub.Subscription:
-                    A subscription resource.
+                    A subscription resource. If none of ``push_config`` or
+                ``bigquery_config`` is set, then the subscriber will
+                pull and ack messages using API methods. At most one of
+                these fields may be set.
+
             """
 
             http_options: List[Dict[str, str]] = [
@@ -1850,7 +1862,11 @@ class SubscriberRestTransport(SubscriberTransport):
 
             Returns:
                 ~.pubsub.Subscription:
-                    A subscription resource.
+                    A subscription resource. If none of ``push_config`` or
+                ``bigquery_config`` is set, then the subscriber will
+                pull and ack messages using API methods. At most one of
+                these fields may be set.
+
             """
 
             http_options: List[Dict[str, str]] = [

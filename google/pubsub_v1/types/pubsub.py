@@ -581,7 +581,9 @@ class DetachSubscriptionResponse(proto.Message):
 
 
 class Subscription(proto.Message):
-    r"""A subscription resource.
+    r"""A subscription resource. If none of ``push_config`` or
+    ``bigquery_config`` is set, then the subscriber will pull and ack
+    messages using API methods. At most one of these fields may be set.
 
     Attributes:
         name (str):
@@ -601,17 +603,13 @@ class Subscription(proto.Message):
             field will be ``_deleted-topic_`` if the topic has been
             deleted.
         push_config (google.pubsub_v1.types.PushConfig):
-            If push delivery is used with this subscription, this field
-            is used to configure it. Either ``pushConfig`` or
-            ``bigQueryConfig`` can be set, but not both. If both are
-            empty, then the subscriber will pull and ack messages using
-            API methods.
+            If push delivery is used with this
+            subscription, this field is used to configure
+            it.
         bigquery_config (google.pubsub_v1.types.BigQueryConfig):
-            If delivery to BigQuery is used with this subscription, this
-            field is used to configure it. Either ``pushConfig`` or
-            ``bigQueryConfig`` can be set, but not both. If both are
-            empty, then the subscriber will pull and ack messages using
-            API methods.
+            If delivery to BigQuery is used with this
+            subscription, this field is used to configure
+            it.
         ack_deadline_seconds (int):
             The approximate amount of time (on a best-effort basis)
             Pub/Sub waits for the subscriber to acknowledge receipt
@@ -1566,6 +1564,9 @@ class StreamingPullResponse(proto.Message):
             unordered_ack_ids (MutableSequence[str]):
                 List of acknowledgement IDs that were out of
                 order.
+            temporary_failed_ack_ids (MutableSequence[str]):
+                List of acknowledgement IDs that failed
+                processing with temporary issues.
         """
 
         ack_ids: MutableSequence[str] = proto.RepeatedField(
@@ -1579,6 +1580,10 @@ class StreamingPullResponse(proto.Message):
         unordered_ack_ids: MutableSequence[str] = proto.RepeatedField(
             proto.STRING,
             number=3,
+        )
+        temporary_failed_ack_ids: MutableSequence[str] = proto.RepeatedField(
+            proto.STRING,
+            number=4,
         )
 
     class ModifyAckDeadlineConfirmation(proto.Message):

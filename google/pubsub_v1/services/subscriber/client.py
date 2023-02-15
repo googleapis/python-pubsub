@@ -560,7 +560,10 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
 
         Args:
             request (Union[google.pubsub_v1.types.Subscription, dict]):
-                The request object. A subscription resource.
+                The request object. A subscription resource. If none of
+                `push_config` or `bigquery_config` is set, then the
+                subscriber will pull and ack messages using API methods.
+                At most one of these fields may be set.
             name (str):
                 Required. The name of the subscription. It must have the
                 format
@@ -586,11 +589,9 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
             push_config (google.pubsub_v1.types.PushConfig):
-                If push delivery is used with this subscription, this
-                field is used to configure it. Either ``pushConfig`` or
-                ``bigQueryConfig`` can be set, but not both. If both are
-                empty, then the subscriber will pull and ack messages
-                using API methods.
+                If push delivery is used with this
+                subscription, this field is used to
+                configure it.
 
                 This corresponds to the ``push_config`` field
                 on the ``request`` instance; if ``request`` is provided, this
@@ -632,7 +633,11 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
 
         Returns:
             google.pubsub_v1.types.Subscription:
-                A subscription resource.
+                A subscription resource. If none of push_config or bigquery_config is
+                   set, then the subscriber will pull and ack messages
+                   using API methods. At most one of these fields may be
+                   set.
+
         """
         # Create or coerce a protobuf request object.
         # Quick check: If we got a request object, we should *not* have
@@ -738,7 +743,11 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
 
         Returns:
             google.pubsub_v1.types.Subscription:
-                A subscription resource.
+                A subscription resource. If none of push_config or bigquery_config is
+                   set, then the subscriber will pull and ack messages
+                   using API methods. At most one of these fields may be
+                   set.
+
         """
         # Create or coerce a protobuf request object.
         # Quick check: If we got a request object, we should *not* have
@@ -855,7 +864,11 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
 
         Returns:
             google.pubsub_v1.types.Subscription:
-                A subscription resource.
+                A subscription resource. If none of push_config or bigquery_config is
+                   set, then the subscriber will pull and ack messages
+                   using API methods. At most one of these fields may be
+                   set.
+
         """
         # Create or coerce a protobuf request object.
         # Quick check: If we got a request object, we should *not* have
