@@ -1040,7 +1040,7 @@ class BigQueryConfig(proto.Message):
     Attributes:
         table (str):
             The name of the table to which to write data,
-            of the form {projectId}:{datasetId}.{tableId}
+            of the form {projectId}.{datasetId}.{tableId}
         use_topic_schema (bool):
             When true, use the topic's schema as the
             columns to write to in BigQuery, if it exists.
@@ -1074,8 +1074,15 @@ class BigQueryConfig(proto.Message):
                 The subscription can actively send messages
                 to BigQuery
             PERMISSION_DENIED (2):
-                Cannot write to the BigQuery table because of
-                permission denied errors.
+                Cannot write to the BigQuery table because of permission
+                denied errors. This can happen if
+
+                -  Pub/Sub SA has not been granted the `appropriate BigQuery
+                   IAM
+                   permissions <https://cloud.google.com/pubsub/docs/create-subscription#assign_bigquery_service_account>`__
+                -  bigquery.googleapis.com API is not enabled for the
+                   project
+                   (`instructions <https://cloud.google.com/service-usage/docs/enable-disable>`__)
             NOT_FOUND (3):
                 Cannot write to the BigQuery table because it
                 does not exist.
