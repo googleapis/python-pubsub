@@ -53,6 +53,7 @@ except AttributeError:  # pragma: NO COVER
 from google.iam.v1 import iam_policy_pb2  # type: ignore
 from google.iam.v1 import policy_pb2  # type: ignore
 from google.protobuf import duration_pb2  # type: ignore
+from google.protobuf import field_mask_pb2  # type: ignore
 from google.protobuf import timestamp_pb2  # type: ignore
 from google.pubsub_v1.services.subscriber import pagers
 from google.pubsub_v1.types import pubsub
@@ -787,6 +788,8 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
         self,
         request: Optional[Union[pubsub.UpdateSubscriptionRequest, dict]] = None,
         *,
+        subscription: Optional[pubsub.Subscription] = None,
+        update_mask: Optional[field_mask_pb2.FieldMask] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: Union[float, object] = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
@@ -829,6 +832,21 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
             request (Union[google.pubsub_v1.types.UpdateSubscriptionRequest, dict]):
                 The request object. Request for the UpdateSubscription
                 method.
+            subscription (google.pubsub_v1.types.Subscription):
+                Required. The updated subscription
+                object.
+
+                This corresponds to the ``subscription`` field
+                on the ``request`` instance; if ``request`` is provided, this
+                should not be set.
+            update_mask (google.protobuf.field_mask_pb2.FieldMask):
+                Required. Indicates which fields in
+                the provided subscription to update.
+                Must be specified and non-empty.
+
+                This corresponds to the ``update_mask`` field
+                on the ``request`` instance; if ``request`` is provided, this
+                should not be set.
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
@@ -840,12 +858,27 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
                 A subscription resource.
         """
         # Create or coerce a protobuf request object.
+        # Quick check: If we got a request object, we should *not* have
+        # gotten any keyword arguments that map to the request.
+        has_flattened_params = any([subscription, update_mask])
+        if request is not None and has_flattened_params:
+            raise ValueError(
+                "If the `request` argument is set, then none of "
+                "the individual field arguments should be set."
+            )
+
         # Minor optimization to avoid making a copy if the user passes
         # in a pubsub.UpdateSubscriptionRequest.
         # There's no risk of modifying the input as we've already verified
         # there are no flattened fields.
         if not isinstance(request, pubsub.UpdateSubscriptionRequest):
             request = pubsub.UpdateSubscriptionRequest(request)
+            # If we have keyword arguments corresponding to fields on the
+            # request, apply these.
+            if subscription is not None:
+                request.subscription = subscription
+            if update_mask is not None:
+                request.update_mask = update_mask
 
         # Wrap the RPC method; this adds retry and timeout information,
         # and friendly error handling.
@@ -2048,6 +2081,8 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
         self,
         request: Optional[Union[pubsub.UpdateSnapshotRequest, dict]] = None,
         *,
+        snapshot: Optional[pubsub.Snapshot] = None,
+        update_mask: Optional[field_mask_pb2.FieldMask] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: Union[float, object] = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
@@ -2090,6 +2125,21 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
             request (Union[google.pubsub_v1.types.UpdateSnapshotRequest, dict]):
                 The request object. Request for the UpdateSnapshot
                 method.
+            snapshot (google.pubsub_v1.types.Snapshot):
+                Required. The updated snapshot
+                object.
+
+                This corresponds to the ``snapshot`` field
+                on the ``request`` instance; if ``request`` is provided, this
+                should not be set.
+            update_mask (google.protobuf.field_mask_pb2.FieldMask):
+                Required. Indicates which fields in
+                the provided snapshot to update. Must be
+                specified and non-empty.
+
+                This corresponds to the ``update_mask`` field
+                on the ``request`` instance; if ``request`` is provided, this
+                should not be set.
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
@@ -2107,12 +2157,27 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
 
         """
         # Create or coerce a protobuf request object.
+        # Quick check: If we got a request object, we should *not* have
+        # gotten any keyword arguments that map to the request.
+        has_flattened_params = any([snapshot, update_mask])
+        if request is not None and has_flattened_params:
+            raise ValueError(
+                "If the `request` argument is set, then none of "
+                "the individual field arguments should be set."
+            )
+
         # Minor optimization to avoid making a copy if the user passes
         # in a pubsub.UpdateSnapshotRequest.
         # There's no risk of modifying the input as we've already verified
         # there are no flattened fields.
         if not isinstance(request, pubsub.UpdateSnapshotRequest):
             request = pubsub.UpdateSnapshotRequest(request)
+            # If we have keyword arguments corresponding to fields on the
+            # request, apply these.
+            if snapshot is not None:
+                request.snapshot = snapshot
+            if update_mask is not None:
+                request.update_mask = update_mask
 
         # Wrap the RPC method; this adds retry and timeout information,
         # and friendly error handling.
