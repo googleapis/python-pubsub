@@ -60,7 +60,6 @@ import grpc
 from .transports.base import PublisherTransport, DEFAULT_CLIENT_INFO
 from .transports.grpc import PublisherGrpcTransport
 from .transports.grpc_asyncio import PublisherGrpcAsyncIOTransport
-from .transports.rest import PublisherRestTransport
 
 
 class PublisherClientMeta(type):
@@ -74,7 +73,6 @@ class PublisherClientMeta(type):
     _transport_registry = OrderedDict()  # type: Dict[str, Type[PublisherTransport]]
     _transport_registry["grpc"] = PublisherGrpcTransport
     _transport_registry["grpc_asyncio"] = PublisherGrpcAsyncIOTransport
-    _transport_registry["rest"] = PublisherRestTransport
 
     def get_transport_class(
         cls,
