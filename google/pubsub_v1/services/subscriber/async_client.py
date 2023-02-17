@@ -1274,6 +1274,7 @@ class SubscriberAsyncClient:
                 multiplier=1.3,
                 predicate=retries.if_exception_type(
                     core_exceptions.Aborted,
+                    core_exceptions.InternalServerError,
                     core_exceptions.ServiceUnavailable,
                     core_exceptions.Unknown,
                 ),
