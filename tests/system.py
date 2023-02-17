@@ -50,12 +50,12 @@ def project():
     yield default_project
 
 
-@pytest.fixture(params=["grpc"])
+@pytest.fixture(params=["grpc", "rest"])
 def publisher(transport):
     yield pubsub_v1.PublisherClient(transport=transport)
 
 
-@pytest.fixture(params=["grpc"])
+@pytest.fixture(params=["grpc", "rest"])
 def subscriber(transport):
     yield pubsub_v1.SubscriberClient(transport=transport)
 
