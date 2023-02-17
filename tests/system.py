@@ -410,7 +410,7 @@ def test_managing_subscription_iam_policy(
 
 
 def test_subscriber_not_leaking_open_sockets(
-    publisher, topic_path, subscription_path, cleanup
+    publisher, topic_path, subscription_path, cleanup, transport
 ):
     # Make sure the topic and the supscription get deleted.
     # NOTE: Since subscriber client will be closed in the test, we should not
