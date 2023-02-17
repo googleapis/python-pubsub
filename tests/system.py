@@ -50,12 +50,12 @@ def project():
     yield default_project
 
 
-@pytest.fixture(params=["grpc"])
+@pytest.fixture(params=["grpc", "rest"])
 def publisher(request):
     yield pubsub_v1.PublisherClient(transport=request.param)
 
 
-@pytest.fixture(params=["grpc"])
+@pytest.fixture(params=["grpc", "rest"])
 def subscriber(request):
     yield pubsub_v1.SubscriberClient(transport=request.param)
 
@@ -409,8 +409,9 @@ def test_managing_subscription_iam_policy(
     assert bindings[1].members == ["group:cloud-logs@google.com"]
 
 
+@pytest.mark.parametrize("transport", ["grpc", "rest"])
 def test_subscriber_not_leaking_open_sockets(
-    publisher, topic_path, subscription_path, cleanup
+    publisher, topic_path, subscription_path, cleanup, transport
 ):
     # Make sure the topic and the supscription get deleted.
     # NOTE: Since subscriber client will be closed in the test, we should not
