@@ -1604,6 +1604,9 @@ class StreamingPullResponse(proto.Message):
                 List of acknowledgement IDs that were
                 malformed or whose acknowledgement deadline has
                 expired.
+            temporary_failed_ack_ids (MutableSequence[str]):
+                List of acknowledgement IDs that failed
+                processing with temporary issues.
         """
 
         ack_ids: MutableSequence[str] = proto.RepeatedField(
@@ -1613,6 +1616,10 @@ class StreamingPullResponse(proto.Message):
         invalid_ack_ids: MutableSequence[str] = proto.RepeatedField(
             proto.STRING,
             number=2,
+        )
+        temporary_failed_ack_ids: MutableSequence[str] = proto.RepeatedField(
+            proto.STRING,
+            number=3,
         )
 
     class SubscriptionProperties(proto.Message):
