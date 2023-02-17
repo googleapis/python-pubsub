@@ -62,7 +62,6 @@ import grpc
 from .transports.base import SubscriberTransport, DEFAULT_CLIENT_INFO
 from .transports.grpc import SubscriberGrpcTransport
 from .transports.grpc_asyncio import SubscriberGrpcAsyncIOTransport
-from .transports.rest import SubscriberRestTransport
 
 
 class SubscriberClientMeta(type):
@@ -76,7 +75,6 @@ class SubscriberClientMeta(type):
     _transport_registry = OrderedDict()  # type: Dict[str, Type[SubscriberTransport]]
     _transport_registry["grpc"] = SubscriberGrpcTransport
     _transport_registry["grpc_asyncio"] = SubscriberGrpcAsyncIOTransport
-    _transport_registry["rest"] = SubscriberRestTransport
 
     def get_transport_class(
         cls,
