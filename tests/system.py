@@ -100,7 +100,7 @@ def test_publish_messages(publisher, topic_path, cleanup):
         result = future.result()
         assert isinstance(result, str)
 
-"""
+
 def test_publish_large_messages(publisher, topic_path, cleanup):
     # Make sure the topic gets deleted.
     cleanup.append((publisher.delete_topic, (), {"topic": topic_path}))
