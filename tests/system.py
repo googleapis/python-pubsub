@@ -101,7 +101,8 @@ def test_publish_messages(publisher, topic_path, cleanup):
         assert isinstance(result, str)
 
 
-def test_publish_large_messages(publisher, topic_path, cleanup):
+def test_publish_large_messages(topic_path, cleanup):
+    publisher = pubsub_v1.PublisherClient(transport="rest")
     # Make sure the topic gets deleted.
     cleanup.append((publisher.delete_topic, (), {"topic": topic_path}))
 
