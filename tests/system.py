@@ -408,6 +408,7 @@ def test_managing_subscription_iam_policy(
     assert bindings[1].role == "roles/pubsub.viewer"
     assert bindings[1].members == ["group:cloud-logs@google.com"]
 
+
 @pytest.mark.parametrize("transport", ["grpc", "rest"])
 def test_subscriber_not_leaking_open_sockets(
     publisher, topic_path, subscription_path, cleanup, transport
@@ -704,7 +705,6 @@ class TestBasicRBAC(object):
     def test_streaming_pull_subscriber_permissions_sufficient(
         self, publisher, topic_path, subscriber, subscription_path, cleanup
     ):
-
         # Make sure the topic and subscription get deleted.
         cleanup.append((publisher.delete_topic, (), {"topic": topic_path}))
         cleanup.append(
@@ -741,7 +741,6 @@ class TestBasicRBAC(object):
     def test_publisher_role_can_publish_messages(
         self, publisher, topic_path, subscriber, subscription_path, cleanup
     ):
-
         # Make sure the topic and subscription get deleted.
         cleanup.append((publisher.delete_topic, (), {"topic": topic_path}))
         cleanup.append(
