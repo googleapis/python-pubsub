@@ -106,6 +106,34 @@ def publish_messages(project_id: str, topic_id: str) -> None:
     # [END pubsub_publish]
 
 
+def publish_message(project_id: str, topic_id: str, nsg: str) -> None:
+    """Publishes multiple messages to a Pub/Sub topic."""
+    # [START pubsub_quickstart_publisher]
+    # [START pubsub_publish]
+    from google.cloud import pubsub_v1
+
+    # TODO(developer)
+    # project_id = "your-project-id"
+    # topic_id = "your-topic-id"
+
+    publisher = pubsub_v1.PublisherClient()
+    # The `topic_path` method creates a fully qualified identifier
+    # in the form `projects/{project_id}/topics/{topic_id}`
+    topic_path = publisher.topic_path(project_id, topic_id)
+
+    
+    data_str = msg
+        # Data must be a bytestring
+    data = data_str.encode("utf-8")
+        # When you publish a message, the client returns a future.
+    future = publisher.publish(topic_path, data)
+    print(future.result())
+
+    print(f"Published message to {topic_path}.")
+    # [END pubsub_quickstart_publisher]
+    # [END pubsub_publish]
+
+
 def publish_messages_with_custom_attributes(project_id: str, topic_id: str) -> None:
     """Publishes multiple messages with custom attributes
     to a Pub/Sub topic."""
@@ -493,6 +521,8 @@ if __name__ == "__main__":
     elif args.command == "delete":
         delete_topic(args.project_id, args.topic_id)
     elif args.command == "publish":
+        publish_message(args.project_id, args.topic_id, args.msg)
+    elif args.command == "publish-random":
         publish_messages(args.project_id, args.topic_id)
     elif args.command == "publish-with-custom-attributes":
         publish_messages_with_custom_attributes(args.project_id, args.topic_id)
