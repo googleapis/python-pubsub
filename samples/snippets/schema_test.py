@@ -275,7 +275,7 @@ def test_rollback_schema_revsion(avro_schema: str, capsys: CaptureFixture[str]) 
         PROJECT_ID, AVRO_SCHEMA_ID, AVSC_REVISION_FILE
     )
     schema.commit_avro_schema(PROJECT_ID, AVRO_SCHEMA_ID, AVSC_REVISION_FILE)
-    schema.rollback_schema_revision(
+    schema.rollback_schema(
         PROJECT_ID, AVRO_SCHEMA_ID, committed_schema.revision_id
     )
     out, _ = capsys.readouterr()
@@ -283,7 +283,7 @@ def test_rollback_schema_revsion(avro_schema: str, capsys: CaptureFixture[str]) 
     # assert f"{avro_schema}" in out
 
 
-def test_rollback_schema_revsion(avro_schema: str, capsys: CaptureFixture[str]) -> None:
+def test_delete_schema_revsion(avro_schema: str, capsys: CaptureFixture[str]) -> None:
     committed_schema = schema.commit_avro_schema(
         PROJECT_ID, AVRO_SCHEMA_ID, AVSC_REVISION_FILE
     )
