@@ -247,7 +247,7 @@ def rollback_schema_revision(
     project_id: str, schema_id: str, schema_revision_id: str
 ) -> None:
     """Roll back a schema revision."""
-    # [START pubsub_rollback_schema_revision]
+    # [START pubsub_rollback_schema]
     from google.api_core.exceptions import NotFound
     from google.cloud.pubsub import SchemaServiceClient
 
@@ -266,7 +266,7 @@ def rollback_schema_revision(
         print(f"Rolled back a schema revision:\n{result}")
     except NotFound:
         print(f"{schema_id} not found.")
-    # [END pubsub_rollback_schema_revision]
+    # [END pubsub_rollback_schema]
 
 
 def delete_schema(project_id: str, schema_id: str) -> None:
