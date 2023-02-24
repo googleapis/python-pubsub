@@ -463,6 +463,10 @@ if __name__ == "__main__":
 
     publish_parser = subparsers.add_parser("publish", help=publish_messages.__doc__)
     publish_parser.add_argument("topic_id")
+    publish_parser.add_argument("msg")
+
+    publish_random_parser = subparsers.add_parser("publish-random")
+    publish_random_parser.add_argument("topic_id")
 
     publish_with_custom_attributes_parser = subparsers.add_parser(
         "publish-with-custom-attributes",
