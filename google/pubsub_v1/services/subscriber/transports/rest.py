@@ -176,7 +176,10 @@ class SubscriberRestInterceptor:
 
 
     """
-    def pre_acknowledge(self, request: pubsub.AcknowledgeRequest, metadata: Sequence[Tuple[str, str]]) -> Tuple[pubsub.AcknowledgeRequest, Sequence[Tuple[str, str]]]:
+
+    def pre_acknowledge(
+        self, request: pubsub.AcknowledgeRequest, metadata: Sequence[Tuple[str, str]]
+    ) -> Tuple[pubsub.AcknowledgeRequest, Sequence[Tuple[str, str]]]:
         """Pre-rpc interceptor for acknowledge
 
         Override in a subclass to manipulate the request or metadata
@@ -184,7 +187,9 @@ class SubscriberRestInterceptor:
         """
         return request, metadata
 
-    def pre_create_snapshot(self, request: pubsub.CreateSnapshotRequest, metadata: Sequence[Tuple[str, str]]) -> Tuple[pubsub.CreateSnapshotRequest, Sequence[Tuple[str, str]]]:
+    def pre_create_snapshot(
+        self, request: pubsub.CreateSnapshotRequest, metadata: Sequence[Tuple[str, str]]
+    ) -> Tuple[pubsub.CreateSnapshotRequest, Sequence[Tuple[str, str]]]:
         """Pre-rpc interceptor for create_snapshot
 
         Override in a subclass to manipulate the request or metadata
@@ -200,7 +205,10 @@ class SubscriberRestInterceptor:
         it is returned to user code.
         """
         return response
-    def pre_create_subscription(self, request: pubsub.Subscription, metadata: Sequence[Tuple[str, str]]) -> Tuple[pubsub.Subscription, Sequence[Tuple[str, str]]]:
+
+    def pre_create_subscription(
+        self, request: pubsub.Subscription, metadata: Sequence[Tuple[str, str]]
+    ) -> Tuple[pubsub.Subscription, Sequence[Tuple[str, str]]]:
         """Pre-rpc interceptor for create_subscription
 
         Override in a subclass to manipulate the request or metadata
@@ -208,7 +216,9 @@ class SubscriberRestInterceptor:
         """
         return request, metadata
 
-    def post_create_subscription(self, response: pubsub.Subscription) -> pubsub.Subscription:
+    def post_create_subscription(
+        self, response: pubsub.Subscription
+    ) -> pubsub.Subscription:
         """Post-rpc interceptor for create_subscription
 
         Override in a subclass to manipulate the response
@@ -216,7 +226,10 @@ class SubscriberRestInterceptor:
         it is returned to user code.
         """
         return response
-    def pre_delete_snapshot(self, request: pubsub.DeleteSnapshotRequest, metadata: Sequence[Tuple[str, str]]) -> Tuple[pubsub.DeleteSnapshotRequest, Sequence[Tuple[str, str]]]:
+
+    def pre_delete_snapshot(
+        self, request: pubsub.DeleteSnapshotRequest, metadata: Sequence[Tuple[str, str]]
+    ) -> Tuple[pubsub.DeleteSnapshotRequest, Sequence[Tuple[str, str]]]:
         """Pre-rpc interceptor for delete_snapshot
 
         Override in a subclass to manipulate the request or metadata
@@ -224,7 +237,11 @@ class SubscriberRestInterceptor:
         """
         return request, metadata
 
-    def pre_delete_subscription(self, request: pubsub.DeleteSubscriptionRequest, metadata: Sequence[Tuple[str, str]]) -> Tuple[pubsub.DeleteSubscriptionRequest, Sequence[Tuple[str, str]]]:
+    def pre_delete_subscription(
+        self,
+        request: pubsub.DeleteSubscriptionRequest,
+        metadata: Sequence[Tuple[str, str]],
+    ) -> Tuple[pubsub.DeleteSubscriptionRequest, Sequence[Tuple[str, str]]]:
         """Pre-rpc interceptor for delete_subscription
 
         Override in a subclass to manipulate the request or metadata
@@ -232,7 +249,9 @@ class SubscriberRestInterceptor:
         """
         return request, metadata
 
-    def pre_get_snapshot(self, request: pubsub.GetSnapshotRequest, metadata: Sequence[Tuple[str, str]]) -> Tuple[pubsub.GetSnapshotRequest, Sequence[Tuple[str, str]]]:
+    def pre_get_snapshot(
+        self, request: pubsub.GetSnapshotRequest, metadata: Sequence[Tuple[str, str]]
+    ) -> Tuple[pubsub.GetSnapshotRequest, Sequence[Tuple[str, str]]]:
         """Pre-rpc interceptor for get_snapshot
 
         Override in a subclass to manipulate the request or metadata
@@ -248,7 +267,12 @@ class SubscriberRestInterceptor:
         it is returned to user code.
         """
         return response
-    def pre_get_subscription(self, request: pubsub.GetSubscriptionRequest, metadata: Sequence[Tuple[str, str]]) -> Tuple[pubsub.GetSubscriptionRequest, Sequence[Tuple[str, str]]]:
+
+    def pre_get_subscription(
+        self,
+        request: pubsub.GetSubscriptionRequest,
+        metadata: Sequence[Tuple[str, str]],
+    ) -> Tuple[pubsub.GetSubscriptionRequest, Sequence[Tuple[str, str]]]:
         """Pre-rpc interceptor for get_subscription
 
         Override in a subclass to manipulate the request or metadata
@@ -256,7 +280,9 @@ class SubscriberRestInterceptor:
         """
         return request, metadata
 
-    def post_get_subscription(self, response: pubsub.Subscription) -> pubsub.Subscription:
+    def post_get_subscription(
+        self, response: pubsub.Subscription
+    ) -> pubsub.Subscription:
         """Post-rpc interceptor for get_subscription
 
         Override in a subclass to manipulate the response
@@ -264,7 +290,10 @@ class SubscriberRestInterceptor:
         it is returned to user code.
         """
         return response
-    def pre_list_snapshots(self, request: pubsub.ListSnapshotsRequest, metadata: Sequence[Tuple[str, str]]) -> Tuple[pubsub.ListSnapshotsRequest, Sequence[Tuple[str, str]]]:
+
+    def pre_list_snapshots(
+        self, request: pubsub.ListSnapshotsRequest, metadata: Sequence[Tuple[str, str]]
+    ) -> Tuple[pubsub.ListSnapshotsRequest, Sequence[Tuple[str, str]]]:
         """Pre-rpc interceptor for list_snapshots
 
         Override in a subclass to manipulate the request or metadata
@@ -272,7 +301,9 @@ class SubscriberRestInterceptor:
         """
         return request, metadata
 
-    def post_list_snapshots(self, response: pubsub.ListSnapshotsResponse) -> pubsub.ListSnapshotsResponse:
+    def post_list_snapshots(
+        self, response: pubsub.ListSnapshotsResponse
+    ) -> pubsub.ListSnapshotsResponse:
         """Post-rpc interceptor for list_snapshots
 
         Override in a subclass to manipulate the response
@@ -280,7 +311,12 @@ class SubscriberRestInterceptor:
         it is returned to user code.
         """
         return response
-    def pre_list_subscriptions(self, request: pubsub.ListSubscriptionsRequest, metadata: Sequence[Tuple[str, str]]) -> Tuple[pubsub.ListSubscriptionsRequest, Sequence[Tuple[str, str]]]:
+
+    def pre_list_subscriptions(
+        self,
+        request: pubsub.ListSubscriptionsRequest,
+        metadata: Sequence[Tuple[str, str]],
+    ) -> Tuple[pubsub.ListSubscriptionsRequest, Sequence[Tuple[str, str]]]:
         """Pre-rpc interceptor for list_subscriptions
 
         Override in a subclass to manipulate the request or metadata
@@ -288,7 +324,9 @@ class SubscriberRestInterceptor:
         """
         return request, metadata
 
-    def post_list_subscriptions(self, response: pubsub.ListSubscriptionsResponse) -> pubsub.ListSubscriptionsResponse:
+    def post_list_subscriptions(
+        self, response: pubsub.ListSubscriptionsResponse
+    ) -> pubsub.ListSubscriptionsResponse:
         """Post-rpc interceptor for list_subscriptions
 
         Override in a subclass to manipulate the response
@@ -296,7 +334,12 @@ class SubscriberRestInterceptor:
         it is returned to user code.
         """
         return response
-    def pre_modify_ack_deadline(self, request: pubsub.ModifyAckDeadlineRequest, metadata: Sequence[Tuple[str, str]]) -> Tuple[pubsub.ModifyAckDeadlineRequest, Sequence[Tuple[str, str]]]:
+
+    def pre_modify_ack_deadline(
+        self,
+        request: pubsub.ModifyAckDeadlineRequest,
+        metadata: Sequence[Tuple[str, str]],
+    ) -> Tuple[pubsub.ModifyAckDeadlineRequest, Sequence[Tuple[str, str]]]:
         """Pre-rpc interceptor for modify_ack_deadline
 
         Override in a subclass to manipulate the request or metadata
@@ -304,7 +347,11 @@ class SubscriberRestInterceptor:
         """
         return request, metadata
 
-    def pre_modify_push_config(self, request: pubsub.ModifyPushConfigRequest, metadata: Sequence[Tuple[str, str]]) -> Tuple[pubsub.ModifyPushConfigRequest, Sequence[Tuple[str, str]]]:
+    def pre_modify_push_config(
+        self,
+        request: pubsub.ModifyPushConfigRequest,
+        metadata: Sequence[Tuple[str, str]],
+    ) -> Tuple[pubsub.ModifyPushConfigRequest, Sequence[Tuple[str, str]]]:
         """Pre-rpc interceptor for modify_push_config
 
         Override in a subclass to manipulate the request or metadata
@@ -312,7 +359,9 @@ class SubscriberRestInterceptor:
         """
         return request, metadata
 
-    def pre_pull(self, request: pubsub.PullRequest, metadata: Sequence[Tuple[str, str]]) -> Tuple[pubsub.PullRequest, Sequence[Tuple[str, str]]]:
+    def pre_pull(
+        self, request: pubsub.PullRequest, metadata: Sequence[Tuple[str, str]]
+    ) -> Tuple[pubsub.PullRequest, Sequence[Tuple[str, str]]]:
         """Pre-rpc interceptor for pull
 
         Override in a subclass to manipulate the request or metadata
@@ -328,7 +377,10 @@ class SubscriberRestInterceptor:
         it is returned to user code.
         """
         return response
-    def pre_seek(self, request: pubsub.SeekRequest, metadata: Sequence[Tuple[str, str]]) -> Tuple[pubsub.SeekRequest, Sequence[Tuple[str, str]]]:
+
+    def pre_seek(
+        self, request: pubsub.SeekRequest, metadata: Sequence[Tuple[str, str]]
+    ) -> Tuple[pubsub.SeekRequest, Sequence[Tuple[str, str]]]:
         """Pre-rpc interceptor for seek
 
         Override in a subclass to manipulate the request or metadata
@@ -344,7 +396,10 @@ class SubscriberRestInterceptor:
         it is returned to user code.
         """
         return response
-    def pre_update_snapshot(self, request: pubsub.UpdateSnapshotRequest, metadata: Sequence[Tuple[str, str]]) -> Tuple[pubsub.UpdateSnapshotRequest, Sequence[Tuple[str, str]]]:
+
+    def pre_update_snapshot(
+        self, request: pubsub.UpdateSnapshotRequest, metadata: Sequence[Tuple[str, str]]
+    ) -> Tuple[pubsub.UpdateSnapshotRequest, Sequence[Tuple[str, str]]]:
         """Pre-rpc interceptor for update_snapshot
 
         Override in a subclass to manipulate the request or metadata
@@ -360,7 +415,12 @@ class SubscriberRestInterceptor:
         it is returned to user code.
         """
         return response
-    def pre_update_subscription(self, request: pubsub.UpdateSubscriptionRequest, metadata: Sequence[Tuple[str, str]]) -> Tuple[pubsub.UpdateSubscriptionRequest, Sequence[Tuple[str, str]]]:
+
+    def pre_update_subscription(
+        self,
+        request: pubsub.UpdateSubscriptionRequest,
+        metadata: Sequence[Tuple[str, str]],
+    ) -> Tuple[pubsub.UpdateSubscriptionRequest, Sequence[Tuple[str, str]]]:
         """Pre-rpc interceptor for update_subscription
 
         Override in a subclass to manipulate the request or metadata
@@ -368,7 +428,9 @@ class SubscriberRestInterceptor:
         """
         return request, metadata
 
-    def post_update_subscription(self, response: pubsub.Subscription) -> pubsub.Subscription:
+    def post_update_subscription(
+        self, response: pubsub.Subscription
+    ) -> pubsub.Subscription:
         """Post-rpc interceptor for update_subscription
 
         Override in a subclass to manipulate the response
@@ -378,7 +440,9 @@ class SubscriberRestInterceptor:
         return response
 
     def pre_get_iam_policy(
-        self, request: iam_policy_pb2.GetIamPolicyRequest, metadata: Sequence[Tuple[str, str]]
+        self,
+        request: iam_policy_pb2.GetIamPolicyRequest,
+        metadata: Sequence[Tuple[str, str]],
     ) -> Tuple[iam_policy_pb2.GetIamPolicyRequest, Sequence[Tuple[str, str]]]:
         """Pre-rpc interceptor for get_iam_policy
 
@@ -387,9 +451,7 @@ class SubscriberRestInterceptor:
         """
         return request, metadata
 
-    def post_get_iam_policy(
-        self, response: policy_pb2.Policy
-    ) -> policy_pb2.Policy:
+    def post_get_iam_policy(self, response: policy_pb2.Policy) -> policy_pb2.Policy:
         """Post-rpc interceptor for get_iam_policy
 
         Override in a subclass to manipulate the response
@@ -397,8 +459,11 @@ class SubscriberRestInterceptor:
         it is returned to user code.
         """
         return response
+
     def pre_set_iam_policy(
-        self, request: iam_policy_pb2.SetIamPolicyRequest, metadata: Sequence[Tuple[str, str]]
+        self,
+        request: iam_policy_pb2.SetIamPolicyRequest,
+        metadata: Sequence[Tuple[str, str]],
     ) -> Tuple[iam_policy_pb2.SetIamPolicyRequest, Sequence[Tuple[str, str]]]:
         """Pre-rpc interceptor for set_iam_policy
 
@@ -407,9 +472,7 @@ class SubscriberRestInterceptor:
         """
         return request, metadata
 
-    def post_set_iam_policy(
-        self, response: policy_pb2.Policy
-    ) -> policy_pb2.Policy:
+    def post_set_iam_policy(self, response: policy_pb2.Policy) -> policy_pb2.Policy:
         """Post-rpc interceptor for set_iam_policy
 
         Override in a subclass to manipulate the response
@@ -417,8 +480,11 @@ class SubscriberRestInterceptor:
         it is returned to user code.
         """
         return response
+
     def pre_test_iam_permissions(
-        self, request: iam_policy_pb2.TestIamPermissionsRequest, metadata: Sequence[Tuple[str, str]]
+        self,
+        request: iam_policy_pb2.TestIamPermissionsRequest,
+        metadata: Sequence[Tuple[str, str]],
     ) -> Tuple[iam_policy_pb2.TestIamPermissionsRequest, Sequence[Tuple[str, str]]]:
         """Pre-rpc interceptor for test_iam_permissions
 
@@ -462,20 +528,21 @@ class SubscriberRestTransport(SubscriberTransport):
 
     """
 
-    def __init__(self, *,
-            host: str = 'pubsub.googleapis.com',
-            credentials: Optional[ga_credentials.Credentials] = None,
-            credentials_file: Optional[str] = None,
-            scopes: Optional[Sequence[str]] = None,
-            client_cert_source_for_mtls: Optional[Callable[[
-                ], Tuple[bytes, bytes]]] = None,
-            quota_project_id: Optional[str] = None,
-            client_info: gapic_v1.client_info.ClientInfo = DEFAULT_CLIENT_INFO,
-            always_use_jwt_access: Optional[bool] = False,
-            url_scheme: str = 'https',
-            interceptor: Optional[SubscriberRestInterceptor] = None,
-            api_audience: Optional[str] = None,
-            ) -> None:
+    def __init__(
+        self,
+        *,
+        host: str = "pubsub.googleapis.com",
+        credentials: Optional[ga_credentials.Credentials] = None,
+        credentials_file: Optional[str] = None,
+        scopes: Optional[Sequence[str]] = None,
+        client_cert_source_for_mtls: Optional[Callable[[], Tuple[bytes, bytes]]] = None,
+        quota_project_id: Optional[str] = None,
+        client_info: gapic_v1.client_info.ClientInfo = DEFAULT_CLIENT_INFO,
+        always_use_jwt_access: Optional[bool] = False,
+        url_scheme: str = "https",
+        interceptor: Optional[SubscriberRestInterceptor] = None,
+        api_audience: Optional[str] = None,
+    ) -> None:
         """Instantiate the transport.
 
         Args:
@@ -514,7 +581,9 @@ class SubscriberRestTransport(SubscriberTransport):
         # credentials object
         maybe_url_match = re.match("^(?P<scheme>http(?:s)?://)?(?P<host>.*)$", host)
         if maybe_url_match is None:
-            raise ValueError(f"Unexpected hostname structure: {host}")  # pragma: NO COVER
+            raise ValueError(
+                f"Unexpected hostname structure: {host}"
+            )  # pragma: NO COVER
 
         url_match_items = maybe_url_match.groupdict()
 
@@ -525,10 +594,11 @@ class SubscriberRestTransport(SubscriberTransport):
             credentials=credentials,
             client_info=client_info,
             always_use_jwt_access=always_use_jwt_access,
-            api_audience=api_audience
+            api_audience=api_audience,
         )
         self._session = AuthorizedSession(
-            self._credentials, default_host=self.DEFAULT_HOST)
+            self._credentials, default_host=self.DEFAULT_HOST
+        )
         if client_cert_source_for_mtls:
             self._session.configure_mtls_channel(client_cert_source_for_mtls)
         self._interceptor = interceptor or SubscriberRestInterceptor()
@@ -538,19 +608,24 @@ class SubscriberRestTransport(SubscriberTransport):
         def __hash__(self):
             return hash("Acknowledge")
 
-        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] =  {
-        }
+        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] = {}
 
         @classmethod
         def _get_unset_required_fields(cls, message_dict):
-            return {k: v for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items() if k not in message_dict}
+            return {
+                k: v
+                for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items()
+                if k not in message_dict
+            }
 
-        def __call__(self,
-                request: pubsub.AcknowledgeRequest, *,
-                retry: OptionalRetry=gapic_v1.method.DEFAULT,
-                timeout: Optional[float]=None,
-                metadata: Sequence[Tuple[str, str]]=(),
-                ):
+        def __call__(
+            self,
+            request: pubsub.AcknowledgeRequest,
+            *,
+            retry: OptionalRetry = gapic_v1.method.DEFAULT,
+            timeout: Optional[float] = None,
+            metadata: Sequence[Tuple[str, str]] = (),
+        ):
             r"""Call the acknowledge method over HTTP.
 
             Args:
@@ -563,11 +638,12 @@ class SubscriberRestTransport(SubscriberTransport):
                     sent along with the request as metadata.
             """
 
-            http_options: List[Dict[str, str]] = [{
-                'method': 'post',
-                'uri': '/v1/{subscription=projects/*/subscriptions/*}:acknowledge',
-                'body': '*',
-            },
+            http_options: List[Dict[str, str]] = [
+                {
+                    "method": "post",
+                    "uri": "/v1/{subscription=projects/*/subscriptions/*}:acknowledge",
+                    "body": "*",
+                },
             ]
             request, metadata = self._interceptor.pre_acknowledge(request, metadata)
             pb_request = pubsub.AcknowledgeRequest.pb(request)
@@ -576,33 +652,35 @@ class SubscriberRestTransport(SubscriberTransport):
             # Jsonify the request body
 
             body = json_format.MessageToJson(
-                transcoded_request['body'],
-                including_default_value_fields=False,
-                use_integers_for_enums=True
-            )
-            uri = transcoded_request['uri']
-            method = transcoded_request['method']
-
-            # Jsonify the query params
-            query_params = json.loads(json_format.MessageToJson(
-                transcoded_request['query_params'],
+                transcoded_request["body"],
                 including_default_value_fields=False,
                 use_integers_for_enums=True,
-            ))
+            )
+            uri = transcoded_request["uri"]
+            method = transcoded_request["method"]
+
+            # Jsonify the query params
+            query_params = json.loads(
+                json_format.MessageToJson(
+                    transcoded_request["query_params"],
+                    including_default_value_fields=False,
+                    use_integers_for_enums=True,
+                )
+            )
             query_params.update(self._get_unset_required_fields(query_params))
 
             query_params["$alt"] = "json;enum-encoding=int"
 
             # Send the request
             headers = dict(metadata)
-            headers['Content-Type'] = 'application/json'
+            headers["Content-Type"] = "application/json"
             response = getattr(self._session, method)(
                 "{host}{uri}".format(host=self._host, uri=uri),
                 timeout=timeout,
                 headers=headers,
                 params=rest_helpers.flatten_query_params(query_params, strict=True),
                 data=body,
-                )
+            )
 
             # In case of error, raise the appropriate core_exceptions.GoogleAPICallError exception
             # subclass.
@@ -613,19 +691,24 @@ class SubscriberRestTransport(SubscriberTransport):
         def __hash__(self):
             return hash("CreateSnapshot")
 
-        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] =  {
-        }
+        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] = {}
 
         @classmethod
         def _get_unset_required_fields(cls, message_dict):
-            return {k: v for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items() if k not in message_dict}
+            return {
+                k: v
+                for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items()
+                if k not in message_dict
+            }
 
-        def __call__(self,
-                request: pubsub.CreateSnapshotRequest, *,
-                retry: OptionalRetry=gapic_v1.method.DEFAULT,
-                timeout: Optional[float]=None,
-                metadata: Sequence[Tuple[str, str]]=(),
-                ) -> pubsub.Snapshot:
+        def __call__(
+            self,
+            request: pubsub.CreateSnapshotRequest,
+            *,
+            retry: OptionalRetry = gapic_v1.method.DEFAULT,
+            timeout: Optional[float] = None,
+            metadata: Sequence[Tuple[str, str]] = (),
+        ) -> pubsub.Snapshot:
             r"""Call the create snapshot method over HTTP.
 
             Args:
@@ -648,11 +731,12 @@ class SubscriberRestTransport(SubscriberTransport):
 
             """
 
-            http_options: List[Dict[str, str]] = [{
-                'method': 'put',
-                'uri': '/v1/{name=projects/*/snapshots/*}',
-                'body': '*',
-            },
+            http_options: List[Dict[str, str]] = [
+                {
+                    "method": "put",
+                    "uri": "/v1/{name=projects/*/snapshots/*}",
+                    "body": "*",
+                },
             ]
             request, metadata = self._interceptor.pre_create_snapshot(request, metadata)
             pb_request = pubsub.CreateSnapshotRequest.pb(request)
@@ -661,33 +745,35 @@ class SubscriberRestTransport(SubscriberTransport):
             # Jsonify the request body
 
             body = json_format.MessageToJson(
-                transcoded_request['body'],
-                including_default_value_fields=False,
-                use_integers_for_enums=True
-            )
-            uri = transcoded_request['uri']
-            method = transcoded_request['method']
-
-            # Jsonify the query params
-            query_params = json.loads(json_format.MessageToJson(
-                transcoded_request['query_params'],
+                transcoded_request["body"],
                 including_default_value_fields=False,
                 use_integers_for_enums=True,
-            ))
+            )
+            uri = transcoded_request["uri"]
+            method = transcoded_request["method"]
+
+            # Jsonify the query params
+            query_params = json.loads(
+                json_format.MessageToJson(
+                    transcoded_request["query_params"],
+                    including_default_value_fields=False,
+                    use_integers_for_enums=True,
+                )
+            )
             query_params.update(self._get_unset_required_fields(query_params))
 
             query_params["$alt"] = "json;enum-encoding=int"
 
             # Send the request
             headers = dict(metadata)
-            headers['Content-Type'] = 'application/json'
+            headers["Content-Type"] = "application/json"
             response = getattr(self._session, method)(
                 "{host}{uri}".format(host=self._host, uri=uri),
                 timeout=timeout,
                 headers=headers,
                 params=rest_helpers.flatten_query_params(query_params, strict=True),
                 data=body,
-                )
+            )
 
             # In case of error, raise the appropriate core_exceptions.GoogleAPICallError exception
             # subclass.
@@ -706,19 +792,24 @@ class SubscriberRestTransport(SubscriberTransport):
         def __hash__(self):
             return hash("CreateSubscription")
 
-        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] =  {
-        }
+        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] = {}
 
         @classmethod
         def _get_unset_required_fields(cls, message_dict):
-            return {k: v for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items() if k not in message_dict}
+            return {
+                k: v
+                for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items()
+                if k not in message_dict
+            }
 
-        def __call__(self,
-                request: pubsub.Subscription, *,
-                retry: OptionalRetry=gapic_v1.method.DEFAULT,
-                timeout: Optional[float]=None,
-                metadata: Sequence[Tuple[str, str]]=(),
-                ) -> pubsub.Subscription:
+        def __call__(
+            self,
+            request: pubsub.Subscription,
+            *,
+            retry: OptionalRetry = gapic_v1.method.DEFAULT,
+            timeout: Optional[float] = None,
+            metadata: Sequence[Tuple[str, str]] = (),
+        ) -> pubsub.Subscription:
             r"""Call the create subscription method over HTTP.
 
             Args:
@@ -743,46 +834,51 @@ class SubscriberRestTransport(SubscriberTransport):
 
             """
 
-            http_options: List[Dict[str, str]] = [{
-                'method': 'put',
-                'uri': '/v1/{name=projects/*/subscriptions/*}',
-                'body': '*',
-            },
+            http_options: List[Dict[str, str]] = [
+                {
+                    "method": "put",
+                    "uri": "/v1/{name=projects/*/subscriptions/*}",
+                    "body": "*",
+                },
             ]
-            request, metadata = self._interceptor.pre_create_subscription(request, metadata)
+            request, metadata = self._interceptor.pre_create_subscription(
+                request, metadata
+            )
             pb_request = pubsub.Subscription.pb(request)
             transcoded_request = path_template.transcode(http_options, pb_request)
 
             # Jsonify the request body
 
             body = json_format.MessageToJson(
-                transcoded_request['body'],
-                including_default_value_fields=False,
-                use_integers_for_enums=True
-            )
-            uri = transcoded_request['uri']
-            method = transcoded_request['method']
-
-            # Jsonify the query params
-            query_params = json.loads(json_format.MessageToJson(
-                transcoded_request['query_params'],
+                transcoded_request["body"],
                 including_default_value_fields=False,
                 use_integers_for_enums=True,
-            ))
+            )
+            uri = transcoded_request["uri"]
+            method = transcoded_request["method"]
+
+            # Jsonify the query params
+            query_params = json.loads(
+                json_format.MessageToJson(
+                    transcoded_request["query_params"],
+                    including_default_value_fields=False,
+                    use_integers_for_enums=True,
+                )
+            )
             query_params.update(self._get_unset_required_fields(query_params))
 
             query_params["$alt"] = "json;enum-encoding=int"
 
             # Send the request
             headers = dict(metadata)
-            headers['Content-Type'] = 'application/json'
+            headers["Content-Type"] = "application/json"
             response = getattr(self._session, method)(
                 "{host}{uri}".format(host=self._host, uri=uri),
                 timeout=timeout,
                 headers=headers,
                 params=rest_helpers.flatten_query_params(query_params, strict=True),
                 data=body,
-                )
+            )
 
             # In case of error, raise the appropriate core_exceptions.GoogleAPICallError exception
             # subclass.
@@ -801,19 +897,24 @@ class SubscriberRestTransport(SubscriberTransport):
         def __hash__(self):
             return hash("DeleteSnapshot")
 
-        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] =  {
-        }
+        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] = {}
 
         @classmethod
         def _get_unset_required_fields(cls, message_dict):
-            return {k: v for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items() if k not in message_dict}
+            return {
+                k: v
+                for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items()
+                if k not in message_dict
+            }
 
-        def __call__(self,
-                request: pubsub.DeleteSnapshotRequest, *,
-                retry: OptionalRetry=gapic_v1.method.DEFAULT,
-                timeout: Optional[float]=None,
-                metadata: Sequence[Tuple[str, str]]=(),
-                ):
+        def __call__(
+            self,
+            request: pubsub.DeleteSnapshotRequest,
+            *,
+            retry: OptionalRetry = gapic_v1.method.DEFAULT,
+            timeout: Optional[float] = None,
+            metadata: Sequence[Tuple[str, str]] = (),
+        ):
             r"""Call the delete snapshot method over HTTP.
 
             Args:
@@ -826,37 +927,40 @@ class SubscriberRestTransport(SubscriberTransport):
                     sent along with the request as metadata.
             """
 
-            http_options: List[Dict[str, str]] = [{
-                'method': 'delete',
-                'uri': '/v1/{snapshot=projects/*/snapshots/*}',
-            },
+            http_options: List[Dict[str, str]] = [
+                {
+                    "method": "delete",
+                    "uri": "/v1/{snapshot=projects/*/snapshots/*}",
+                },
             ]
             request, metadata = self._interceptor.pre_delete_snapshot(request, metadata)
             pb_request = pubsub.DeleteSnapshotRequest.pb(request)
             transcoded_request = path_template.transcode(http_options, pb_request)
 
-            uri = transcoded_request['uri']
-            method = transcoded_request['method']
+            uri = transcoded_request["uri"]
+            method = transcoded_request["method"]
 
             # Jsonify the query params
-            query_params = json.loads(json_format.MessageToJson(
-                transcoded_request['query_params'],
-                including_default_value_fields=False,
-                use_integers_for_enums=True,
-            ))
+            query_params = json.loads(
+                json_format.MessageToJson(
+                    transcoded_request["query_params"],
+                    including_default_value_fields=False,
+                    use_integers_for_enums=True,
+                )
+            )
             query_params.update(self._get_unset_required_fields(query_params))
 
             query_params["$alt"] = "json;enum-encoding=int"
 
             # Send the request
             headers = dict(metadata)
-            headers['Content-Type'] = 'application/json'
+            headers["Content-Type"] = "application/json"
             response = getattr(self._session, method)(
                 "{host}{uri}".format(host=self._host, uri=uri),
                 timeout=timeout,
                 headers=headers,
                 params=rest_helpers.flatten_query_params(query_params, strict=True),
-                )
+            )
 
             # In case of error, raise the appropriate core_exceptions.GoogleAPICallError exception
             # subclass.
@@ -867,19 +971,24 @@ class SubscriberRestTransport(SubscriberTransport):
         def __hash__(self):
             return hash("DeleteSubscription")
 
-        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] =  {
-        }
+        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] = {}
 
         @classmethod
         def _get_unset_required_fields(cls, message_dict):
-            return {k: v for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items() if k not in message_dict}
+            return {
+                k: v
+                for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items()
+                if k not in message_dict
+            }
 
-        def __call__(self,
-                request: pubsub.DeleteSubscriptionRequest, *,
-                retry: OptionalRetry=gapic_v1.method.DEFAULT,
-                timeout: Optional[float]=None,
-                metadata: Sequence[Tuple[str, str]]=(),
-                ):
+        def __call__(
+            self,
+            request: pubsub.DeleteSubscriptionRequest,
+            *,
+            retry: OptionalRetry = gapic_v1.method.DEFAULT,
+            timeout: Optional[float] = None,
+            metadata: Sequence[Tuple[str, str]] = (),
+        ):
             r"""Call the delete subscription method over HTTP.
 
             Args:
@@ -894,37 +1003,42 @@ class SubscriberRestTransport(SubscriberTransport):
                     sent along with the request as metadata.
             """
 
-            http_options: List[Dict[str, str]] = [{
-                'method': 'delete',
-                'uri': '/v1/{subscription=projects/*/subscriptions/*}',
-            },
+            http_options: List[Dict[str, str]] = [
+                {
+                    "method": "delete",
+                    "uri": "/v1/{subscription=projects/*/subscriptions/*}",
+                },
             ]
-            request, metadata = self._interceptor.pre_delete_subscription(request, metadata)
+            request, metadata = self._interceptor.pre_delete_subscription(
+                request, metadata
+            )
             pb_request = pubsub.DeleteSubscriptionRequest.pb(request)
             transcoded_request = path_template.transcode(http_options, pb_request)
 
-            uri = transcoded_request['uri']
-            method = transcoded_request['method']
+            uri = transcoded_request["uri"]
+            method = transcoded_request["method"]
 
             # Jsonify the query params
-            query_params = json.loads(json_format.MessageToJson(
-                transcoded_request['query_params'],
-                including_default_value_fields=False,
-                use_integers_for_enums=True,
-            ))
+            query_params = json.loads(
+                json_format.MessageToJson(
+                    transcoded_request["query_params"],
+                    including_default_value_fields=False,
+                    use_integers_for_enums=True,
+                )
+            )
             query_params.update(self._get_unset_required_fields(query_params))
 
             query_params["$alt"] = "json;enum-encoding=int"
 
             # Send the request
             headers = dict(metadata)
-            headers['Content-Type'] = 'application/json'
+            headers["Content-Type"] = "application/json"
             response = getattr(self._session, method)(
                 "{host}{uri}".format(host=self._host, uri=uri),
                 timeout=timeout,
                 headers=headers,
                 params=rest_helpers.flatten_query_params(query_params, strict=True),
-                )
+            )
 
             # In case of error, raise the appropriate core_exceptions.GoogleAPICallError exception
             # subclass.
@@ -935,19 +1049,24 @@ class SubscriberRestTransport(SubscriberTransport):
         def __hash__(self):
             return hash("GetSnapshot")
 
-        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] =  {
-        }
+        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] = {}
 
         @classmethod
         def _get_unset_required_fields(cls, message_dict):
-            return {k: v for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items() if k not in message_dict}
+            return {
+                k: v
+                for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items()
+                if k not in message_dict
+            }
 
-        def __call__(self,
-                request: pubsub.GetSnapshotRequest, *,
-                retry: OptionalRetry=gapic_v1.method.DEFAULT,
-                timeout: Optional[float]=None,
-                metadata: Sequence[Tuple[str, str]]=(),
-                ) -> pubsub.Snapshot:
+        def __call__(
+            self,
+            request: pubsub.GetSnapshotRequest,
+            *,
+            retry: OptionalRetry = gapic_v1.method.DEFAULT,
+            timeout: Optional[float] = None,
+            metadata: Sequence[Tuple[str, str]] = (),
+        ) -> pubsub.Snapshot:
             r"""Call the get snapshot method over HTTP.
 
             Args:
@@ -970,37 +1089,40 @@ class SubscriberRestTransport(SubscriberTransport):
 
             """
 
-            http_options: List[Dict[str, str]] = [{
-                'method': 'get',
-                'uri': '/v1/{snapshot=projects/*/snapshots/*}',
-            },
+            http_options: List[Dict[str, str]] = [
+                {
+                    "method": "get",
+                    "uri": "/v1/{snapshot=projects/*/snapshots/*}",
+                },
             ]
             request, metadata = self._interceptor.pre_get_snapshot(request, metadata)
             pb_request = pubsub.GetSnapshotRequest.pb(request)
             transcoded_request = path_template.transcode(http_options, pb_request)
 
-            uri = transcoded_request['uri']
-            method = transcoded_request['method']
+            uri = transcoded_request["uri"]
+            method = transcoded_request["method"]
 
             # Jsonify the query params
-            query_params = json.loads(json_format.MessageToJson(
-                transcoded_request['query_params'],
-                including_default_value_fields=False,
-                use_integers_for_enums=True,
-            ))
+            query_params = json.loads(
+                json_format.MessageToJson(
+                    transcoded_request["query_params"],
+                    including_default_value_fields=False,
+                    use_integers_for_enums=True,
+                )
+            )
             query_params.update(self._get_unset_required_fields(query_params))
 
             query_params["$alt"] = "json;enum-encoding=int"
 
             # Send the request
             headers = dict(metadata)
-            headers['Content-Type'] = 'application/json'
+            headers["Content-Type"] = "application/json"
             response = getattr(self._session, method)(
                 "{host}{uri}".format(host=self._host, uri=uri),
                 timeout=timeout,
                 headers=headers,
                 params=rest_helpers.flatten_query_params(query_params, strict=True),
-                )
+            )
 
             # In case of error, raise the appropriate core_exceptions.GoogleAPICallError exception
             # subclass.
@@ -1019,19 +1141,24 @@ class SubscriberRestTransport(SubscriberTransport):
         def __hash__(self):
             return hash("GetSubscription")
 
-        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] =  {
-        }
+        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] = {}
 
         @classmethod
         def _get_unset_required_fields(cls, message_dict):
-            return {k: v for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items() if k not in message_dict}
+            return {
+                k: v
+                for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items()
+                if k not in message_dict
+            }
 
-        def __call__(self,
-                request: pubsub.GetSubscriptionRequest, *,
-                retry: OptionalRetry=gapic_v1.method.DEFAULT,
-                timeout: Optional[float]=None,
-                metadata: Sequence[Tuple[str, str]]=(),
-                ) -> pubsub.Subscription:
+        def __call__(
+            self,
+            request: pubsub.GetSubscriptionRequest,
+            *,
+            retry: OptionalRetry = gapic_v1.method.DEFAULT,
+            timeout: Optional[float] = None,
+            metadata: Sequence[Tuple[str, str]] = (),
+        ) -> pubsub.Subscription:
             r"""Call the get subscription method over HTTP.
 
             Args:
@@ -1054,37 +1181,42 @@ class SubscriberRestTransport(SubscriberTransport):
 
             """
 
-            http_options: List[Dict[str, str]] = [{
-                'method': 'get',
-                'uri': '/v1/{subscription=projects/*/subscriptions/*}',
-            },
+            http_options: List[Dict[str, str]] = [
+                {
+                    "method": "get",
+                    "uri": "/v1/{subscription=projects/*/subscriptions/*}",
+                },
             ]
-            request, metadata = self._interceptor.pre_get_subscription(request, metadata)
+            request, metadata = self._interceptor.pre_get_subscription(
+                request, metadata
+            )
             pb_request = pubsub.GetSubscriptionRequest.pb(request)
             transcoded_request = path_template.transcode(http_options, pb_request)
 
-            uri = transcoded_request['uri']
-            method = transcoded_request['method']
+            uri = transcoded_request["uri"]
+            method = transcoded_request["method"]
 
             # Jsonify the query params
-            query_params = json.loads(json_format.MessageToJson(
-                transcoded_request['query_params'],
-                including_default_value_fields=False,
-                use_integers_for_enums=True,
-            ))
+            query_params = json.loads(
+                json_format.MessageToJson(
+                    transcoded_request["query_params"],
+                    including_default_value_fields=False,
+                    use_integers_for_enums=True,
+                )
+            )
             query_params.update(self._get_unset_required_fields(query_params))
 
             query_params["$alt"] = "json;enum-encoding=int"
 
             # Send the request
             headers = dict(metadata)
-            headers['Content-Type'] = 'application/json'
+            headers["Content-Type"] = "application/json"
             response = getattr(self._session, method)(
                 "{host}{uri}".format(host=self._host, uri=uri),
                 timeout=timeout,
                 headers=headers,
                 params=rest_helpers.flatten_query_params(query_params, strict=True),
-                )
+            )
 
             # In case of error, raise the appropriate core_exceptions.GoogleAPICallError exception
             # subclass.
@@ -1103,19 +1235,24 @@ class SubscriberRestTransport(SubscriberTransport):
         def __hash__(self):
             return hash("ListSnapshots")
 
-        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] =  {
-        }
+        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] = {}
 
         @classmethod
         def _get_unset_required_fields(cls, message_dict):
-            return {k: v for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items() if k not in message_dict}
+            return {
+                k: v
+                for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items()
+                if k not in message_dict
+            }
 
-        def __call__(self,
-                request: pubsub.ListSnapshotsRequest, *,
-                retry: OptionalRetry=gapic_v1.method.DEFAULT,
-                timeout: Optional[float]=None,
-                metadata: Sequence[Tuple[str, str]]=(),
-                ) -> pubsub.ListSnapshotsResponse:
+        def __call__(
+            self,
+            request: pubsub.ListSnapshotsRequest,
+            *,
+            retry: OptionalRetry = gapic_v1.method.DEFAULT,
+            timeout: Optional[float] = None,
+            metadata: Sequence[Tuple[str, str]] = (),
+        ) -> pubsub.ListSnapshotsResponse:
             r"""Call the list snapshots method over HTTP.
 
             Args:
@@ -1132,37 +1269,40 @@ class SubscriberRestTransport(SubscriberTransport):
                     Response for the ``ListSnapshots`` method.
             """
 
-            http_options: List[Dict[str, str]] = [{
-                'method': 'get',
-                'uri': '/v1/{project=projects/*}/snapshots',
-            },
+            http_options: List[Dict[str, str]] = [
+                {
+                    "method": "get",
+                    "uri": "/v1/{project=projects/*}/snapshots",
+                },
             ]
             request, metadata = self._interceptor.pre_list_snapshots(request, metadata)
             pb_request = pubsub.ListSnapshotsRequest.pb(request)
             transcoded_request = path_template.transcode(http_options, pb_request)
 
-            uri = transcoded_request['uri']
-            method = transcoded_request['method']
+            uri = transcoded_request["uri"]
+            method = transcoded_request["method"]
 
             # Jsonify the query params
-            query_params = json.loads(json_format.MessageToJson(
-                transcoded_request['query_params'],
-                including_default_value_fields=False,
-                use_integers_for_enums=True,
-            ))
+            query_params = json.loads(
+                json_format.MessageToJson(
+                    transcoded_request["query_params"],
+                    including_default_value_fields=False,
+                    use_integers_for_enums=True,
+                )
+            )
             query_params.update(self._get_unset_required_fields(query_params))
 
             query_params["$alt"] = "json;enum-encoding=int"
 
             # Send the request
             headers = dict(metadata)
-            headers['Content-Type'] = 'application/json'
+            headers["Content-Type"] = "application/json"
             response = getattr(self._session, method)(
                 "{host}{uri}".format(host=self._host, uri=uri),
                 timeout=timeout,
                 headers=headers,
                 params=rest_helpers.flatten_query_params(query_params, strict=True),
-                )
+            )
 
             # In case of error, raise the appropriate core_exceptions.GoogleAPICallError exception
             # subclass.
@@ -1181,19 +1321,24 @@ class SubscriberRestTransport(SubscriberTransport):
         def __hash__(self):
             return hash("ListSubscriptions")
 
-        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] =  {
-        }
+        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] = {}
 
         @classmethod
         def _get_unset_required_fields(cls, message_dict):
-            return {k: v for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items() if k not in message_dict}
+            return {
+                k: v
+                for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items()
+                if k not in message_dict
+            }
 
-        def __call__(self,
-                request: pubsub.ListSubscriptionsRequest, *,
-                retry: OptionalRetry=gapic_v1.method.DEFAULT,
-                timeout: Optional[float]=None,
-                metadata: Sequence[Tuple[str, str]]=(),
-                ) -> pubsub.ListSubscriptionsResponse:
+        def __call__(
+            self,
+            request: pubsub.ListSubscriptionsRequest,
+            *,
+            retry: OptionalRetry = gapic_v1.method.DEFAULT,
+            timeout: Optional[float] = None,
+            metadata: Sequence[Tuple[str, str]] = (),
+        ) -> pubsub.ListSubscriptionsResponse:
             r"""Call the list subscriptions method over HTTP.
 
             Args:
@@ -1210,37 +1355,42 @@ class SubscriberRestTransport(SubscriberTransport):
                     Response for the ``ListSubscriptions`` method.
             """
 
-            http_options: List[Dict[str, str]] = [{
-                'method': 'get',
-                'uri': '/v1/{project=projects/*}/subscriptions',
-            },
+            http_options: List[Dict[str, str]] = [
+                {
+                    "method": "get",
+                    "uri": "/v1/{project=projects/*}/subscriptions",
+                },
             ]
-            request, metadata = self._interceptor.pre_list_subscriptions(request, metadata)
+            request, metadata = self._interceptor.pre_list_subscriptions(
+                request, metadata
+            )
             pb_request = pubsub.ListSubscriptionsRequest.pb(request)
             transcoded_request = path_template.transcode(http_options, pb_request)
 
-            uri = transcoded_request['uri']
-            method = transcoded_request['method']
+            uri = transcoded_request["uri"]
+            method = transcoded_request["method"]
 
             # Jsonify the query params
-            query_params = json.loads(json_format.MessageToJson(
-                transcoded_request['query_params'],
-                including_default_value_fields=False,
-                use_integers_for_enums=True,
-            ))
+            query_params = json.loads(
+                json_format.MessageToJson(
+                    transcoded_request["query_params"],
+                    including_default_value_fields=False,
+                    use_integers_for_enums=True,
+                )
+            )
             query_params.update(self._get_unset_required_fields(query_params))
 
             query_params["$alt"] = "json;enum-encoding=int"
 
             # Send the request
             headers = dict(metadata)
-            headers['Content-Type'] = 'application/json'
+            headers["Content-Type"] = "application/json"
             response = getattr(self._session, method)(
                 "{host}{uri}".format(host=self._host, uri=uri),
                 timeout=timeout,
                 headers=headers,
                 params=rest_helpers.flatten_query_params(query_params, strict=True),
-                )
+            )
 
             # In case of error, raise the appropriate core_exceptions.GoogleAPICallError exception
             # subclass.
@@ -1259,19 +1409,24 @@ class SubscriberRestTransport(SubscriberTransport):
         def __hash__(self):
             return hash("ModifyAckDeadline")
 
-        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] =  {
-        }
+        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] = {}
 
         @classmethod
         def _get_unset_required_fields(cls, message_dict):
-            return {k: v for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items() if k not in message_dict}
+            return {
+                k: v
+                for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items()
+                if k not in message_dict
+            }
 
-        def __call__(self,
-                request: pubsub.ModifyAckDeadlineRequest, *,
-                retry: OptionalRetry=gapic_v1.method.DEFAULT,
-                timeout: Optional[float]=None,
-                metadata: Sequence[Tuple[str, str]]=(),
-                ):
+        def __call__(
+            self,
+            request: pubsub.ModifyAckDeadlineRequest,
+            *,
+            retry: OptionalRetry = gapic_v1.method.DEFAULT,
+            timeout: Optional[float] = None,
+            metadata: Sequence[Tuple[str, str]] = (),
+        ):
             r"""Call the modify ack deadline method over HTTP.
 
             Args:
@@ -1286,46 +1441,51 @@ class SubscriberRestTransport(SubscriberTransport):
                     sent along with the request as metadata.
             """
 
-            http_options: List[Dict[str, str]] = [{
-                'method': 'post',
-                'uri': '/v1/{subscription=projects/*/subscriptions/*}:modifyAckDeadline',
-                'body': '*',
-            },
+            http_options: List[Dict[str, str]] = [
+                {
+                    "method": "post",
+                    "uri": "/v1/{subscription=projects/*/subscriptions/*}:modifyAckDeadline",
+                    "body": "*",
+                },
             ]
-            request, metadata = self._interceptor.pre_modify_ack_deadline(request, metadata)
+            request, metadata = self._interceptor.pre_modify_ack_deadline(
+                request, metadata
+            )
             pb_request = pubsub.ModifyAckDeadlineRequest.pb(request)
             transcoded_request = path_template.transcode(http_options, pb_request)
 
             # Jsonify the request body
 
             body = json_format.MessageToJson(
-                transcoded_request['body'],
-                including_default_value_fields=False,
-                use_integers_for_enums=True
-            )
-            uri = transcoded_request['uri']
-            method = transcoded_request['method']
-
-            # Jsonify the query params
-            query_params = json.loads(json_format.MessageToJson(
-                transcoded_request['query_params'],
+                transcoded_request["body"],
                 including_default_value_fields=False,
                 use_integers_for_enums=True,
-            ))
+            )
+            uri = transcoded_request["uri"]
+            method = transcoded_request["method"]
+
+            # Jsonify the query params
+            query_params = json.loads(
+                json_format.MessageToJson(
+                    transcoded_request["query_params"],
+                    including_default_value_fields=False,
+                    use_integers_for_enums=True,
+                )
+            )
             query_params.update(self._get_unset_required_fields(query_params))
 
             query_params["$alt"] = "json;enum-encoding=int"
 
             # Send the request
             headers = dict(metadata)
-            headers['Content-Type'] = 'application/json'
+            headers["Content-Type"] = "application/json"
             response = getattr(self._session, method)(
                 "{host}{uri}".format(host=self._host, uri=uri),
                 timeout=timeout,
                 headers=headers,
                 params=rest_helpers.flatten_query_params(query_params, strict=True),
                 data=body,
-                )
+            )
 
             # In case of error, raise the appropriate core_exceptions.GoogleAPICallError exception
             # subclass.
@@ -1336,19 +1496,24 @@ class SubscriberRestTransport(SubscriberTransport):
         def __hash__(self):
             return hash("ModifyPushConfig")
 
-        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] =  {
-        }
+        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] = {}
 
         @classmethod
         def _get_unset_required_fields(cls, message_dict):
-            return {k: v for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items() if k not in message_dict}
+            return {
+                k: v
+                for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items()
+                if k not in message_dict
+            }
 
-        def __call__(self,
-                request: pubsub.ModifyPushConfigRequest, *,
-                retry: OptionalRetry=gapic_v1.method.DEFAULT,
-                timeout: Optional[float]=None,
-                metadata: Sequence[Tuple[str, str]]=(),
-                ):
+        def __call__(
+            self,
+            request: pubsub.ModifyPushConfigRequest,
+            *,
+            retry: OptionalRetry = gapic_v1.method.DEFAULT,
+            timeout: Optional[float] = None,
+            metadata: Sequence[Tuple[str, str]] = (),
+        ):
             r"""Call the modify push config method over HTTP.
 
             Args:
@@ -1363,46 +1528,51 @@ class SubscriberRestTransport(SubscriberTransport):
                     sent along with the request as metadata.
             """
 
-            http_options: List[Dict[str, str]] = [{
-                'method': 'post',
-                'uri': '/v1/{subscription=projects/*/subscriptions/*}:modifyPushConfig',
-                'body': '*',
-            },
+            http_options: List[Dict[str, str]] = [
+                {
+                    "method": "post",
+                    "uri": "/v1/{subscription=projects/*/subscriptions/*}:modifyPushConfig",
+                    "body": "*",
+                },
             ]
-            request, metadata = self._interceptor.pre_modify_push_config(request, metadata)
+            request, metadata = self._interceptor.pre_modify_push_config(
+                request, metadata
+            )
             pb_request = pubsub.ModifyPushConfigRequest.pb(request)
             transcoded_request = path_template.transcode(http_options, pb_request)
 
             # Jsonify the request body
 
             body = json_format.MessageToJson(
-                transcoded_request['body'],
-                including_default_value_fields=False,
-                use_integers_for_enums=True
-            )
-            uri = transcoded_request['uri']
-            method = transcoded_request['method']
-
-            # Jsonify the query params
-            query_params = json.loads(json_format.MessageToJson(
-                transcoded_request['query_params'],
+                transcoded_request["body"],
                 including_default_value_fields=False,
                 use_integers_for_enums=True,
-            ))
+            )
+            uri = transcoded_request["uri"]
+            method = transcoded_request["method"]
+
+            # Jsonify the query params
+            query_params = json.loads(
+                json_format.MessageToJson(
+                    transcoded_request["query_params"],
+                    including_default_value_fields=False,
+                    use_integers_for_enums=True,
+                )
+            )
             query_params.update(self._get_unset_required_fields(query_params))
 
             query_params["$alt"] = "json;enum-encoding=int"
 
             # Send the request
             headers = dict(metadata)
-            headers['Content-Type'] = 'application/json'
+            headers["Content-Type"] = "application/json"
             response = getattr(self._session, method)(
                 "{host}{uri}".format(host=self._host, uri=uri),
                 timeout=timeout,
                 headers=headers,
                 params=rest_helpers.flatten_query_params(query_params, strict=True),
                 data=body,
-                )
+            )
 
             # In case of error, raise the appropriate core_exceptions.GoogleAPICallError exception
             # subclass.
@@ -1413,19 +1583,24 @@ class SubscriberRestTransport(SubscriberTransport):
         def __hash__(self):
             return hash("Pull")
 
-        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] =  {
-        }
+        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] = {}
 
         @classmethod
         def _get_unset_required_fields(cls, message_dict):
-            return {k: v for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items() if k not in message_dict}
+            return {
+                k: v
+                for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items()
+                if k not in message_dict
+            }
 
-        def __call__(self,
-                request: pubsub.PullRequest, *,
-                retry: OptionalRetry=gapic_v1.method.DEFAULT,
-                timeout: Optional[float]=None,
-                metadata: Sequence[Tuple[str, str]]=(),
-                ) -> pubsub.PullResponse:
+        def __call__(
+            self,
+            request: pubsub.PullRequest,
+            *,
+            retry: OptionalRetry = gapic_v1.method.DEFAULT,
+            timeout: Optional[float] = None,
+            metadata: Sequence[Tuple[str, str]] = (),
+        ) -> pubsub.PullResponse:
             r"""Call the pull method over HTTP.
 
             Args:
@@ -1442,11 +1617,12 @@ class SubscriberRestTransport(SubscriberTransport):
                     Response for the ``Pull`` method.
             """
 
-            http_options: List[Dict[str, str]] = [{
-                'method': 'post',
-                'uri': '/v1/{subscription=projects/*/subscriptions/*}:pull',
-                'body': '*',
-            },
+            http_options: List[Dict[str, str]] = [
+                {
+                    "method": "post",
+                    "uri": "/v1/{subscription=projects/*/subscriptions/*}:pull",
+                    "body": "*",
+                },
             ]
             request, metadata = self._interceptor.pre_pull(request, metadata)
             pb_request = pubsub.PullRequest.pb(request)
@@ -1455,33 +1631,35 @@ class SubscriberRestTransport(SubscriberTransport):
             # Jsonify the request body
 
             body = json_format.MessageToJson(
-                transcoded_request['body'],
-                including_default_value_fields=False,
-                use_integers_for_enums=True
-            )
-            uri = transcoded_request['uri']
-            method = transcoded_request['method']
-
-            # Jsonify the query params
-            query_params = json.loads(json_format.MessageToJson(
-                transcoded_request['query_params'],
+                transcoded_request["body"],
                 including_default_value_fields=False,
                 use_integers_for_enums=True,
-            ))
+            )
+            uri = transcoded_request["uri"]
+            method = transcoded_request["method"]
+
+            # Jsonify the query params
+            query_params = json.loads(
+                json_format.MessageToJson(
+                    transcoded_request["query_params"],
+                    including_default_value_fields=False,
+                    use_integers_for_enums=True,
+                )
+            )
             query_params.update(self._get_unset_required_fields(query_params))
 
             query_params["$alt"] = "json;enum-encoding=int"
 
             # Send the request
             headers = dict(metadata)
-            headers['Content-Type'] = 'application/json'
+            headers["Content-Type"] = "application/json"
             response = getattr(self._session, method)(
                 "{host}{uri}".format(host=self._host, uri=uri),
                 timeout=timeout,
                 headers=headers,
                 params=rest_helpers.flatten_query_params(query_params, strict=True),
                 data=body,
-                )
+            )
 
             # In case of error, raise the appropriate core_exceptions.GoogleAPICallError exception
             # subclass.
@@ -1500,19 +1678,24 @@ class SubscriberRestTransport(SubscriberTransport):
         def __hash__(self):
             return hash("Seek")
 
-        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] =  {
-        }
+        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] = {}
 
         @classmethod
         def _get_unset_required_fields(cls, message_dict):
-            return {k: v for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items() if k not in message_dict}
+            return {
+                k: v
+                for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items()
+                if k not in message_dict
+            }
 
-        def __call__(self,
-                request: pubsub.SeekRequest, *,
-                retry: OptionalRetry=gapic_v1.method.DEFAULT,
-                timeout: Optional[float]=None,
-                metadata: Sequence[Tuple[str, str]]=(),
-                ) -> pubsub.SeekResponse:
+        def __call__(
+            self,
+            request: pubsub.SeekRequest,
+            *,
+            retry: OptionalRetry = gapic_v1.method.DEFAULT,
+            timeout: Optional[float] = None,
+            metadata: Sequence[Tuple[str, str]] = (),
+        ) -> pubsub.SeekResponse:
             r"""Call the seek method over HTTP.
 
             Args:
@@ -1531,11 +1714,12 @@ class SubscriberRestTransport(SubscriberTransport):
 
             """
 
-            http_options: List[Dict[str, str]] = [{
-                'method': 'post',
-                'uri': '/v1/{subscription=projects/*/subscriptions/*}:seek',
-                'body': '*',
-            },
+            http_options: List[Dict[str, str]] = [
+                {
+                    "method": "post",
+                    "uri": "/v1/{subscription=projects/*/subscriptions/*}:seek",
+                    "body": "*",
+                },
             ]
             request, metadata = self._interceptor.pre_seek(request, metadata)
             pb_request = pubsub.SeekRequest.pb(request)
@@ -1544,33 +1728,35 @@ class SubscriberRestTransport(SubscriberTransport):
             # Jsonify the request body
 
             body = json_format.MessageToJson(
-                transcoded_request['body'],
-                including_default_value_fields=False,
-                use_integers_for_enums=True
-            )
-            uri = transcoded_request['uri']
-            method = transcoded_request['method']
-
-            # Jsonify the query params
-            query_params = json.loads(json_format.MessageToJson(
-                transcoded_request['query_params'],
+                transcoded_request["body"],
                 including_default_value_fields=False,
                 use_integers_for_enums=True,
-            ))
+            )
+            uri = transcoded_request["uri"]
+            method = transcoded_request["method"]
+
+            # Jsonify the query params
+            query_params = json.loads(
+                json_format.MessageToJson(
+                    transcoded_request["query_params"],
+                    including_default_value_fields=False,
+                    use_integers_for_enums=True,
+                )
+            )
             query_params.update(self._get_unset_required_fields(query_params))
 
             query_params["$alt"] = "json;enum-encoding=int"
 
             # Send the request
             headers = dict(metadata)
-            headers['Content-Type'] = 'application/json'
+            headers["Content-Type"] = "application/json"
             response = getattr(self._session, method)(
                 "{host}{uri}".format(host=self._host, uri=uri),
                 timeout=timeout,
                 headers=headers,
                 params=rest_helpers.flatten_query_params(query_params, strict=True),
                 data=body,
-                )
+            )
 
             # In case of error, raise the appropriate core_exceptions.GoogleAPICallError exception
             # subclass.
@@ -1589,32 +1775,40 @@ class SubscriberRestTransport(SubscriberTransport):
         def __hash__(self):
             return hash("StreamingPull")
 
-        def __call__(self,
-                request: pubsub.StreamingPullRequest, *,
-                retry: OptionalRetry=gapic_v1.method.DEFAULT,
-                timeout: Optional[float]=None,
-                metadata: Sequence[Tuple[str, str]]=(),
-                ) -> rest_streaming.ResponseIterator:
+        def __call__(
+            self,
+            request: pubsub.StreamingPullRequest,
+            *,
+            retry: OptionalRetry = gapic_v1.method.DEFAULT,
+            timeout: Optional[float] = None,
+            metadata: Sequence[Tuple[str, str]] = (),
+        ) -> rest_streaming.ResponseIterator:
             raise NotImplementedError(
                 "Method StreamingPull is not available over REST transport"
             )
+
     class _UpdateSnapshot(SubscriberRestStub):
         def __hash__(self):
             return hash("UpdateSnapshot")
 
-        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] =  {
-        }
+        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] = {}
 
         @classmethod
         def _get_unset_required_fields(cls, message_dict):
-            return {k: v for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items() if k not in message_dict}
+            return {
+                k: v
+                for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items()
+                if k not in message_dict
+            }
 
-        def __call__(self,
-                request: pubsub.UpdateSnapshotRequest, *,
-                retry: OptionalRetry=gapic_v1.method.DEFAULT,
-                timeout: Optional[float]=None,
-                metadata: Sequence[Tuple[str, str]]=(),
-                ) -> pubsub.Snapshot:
+        def __call__(
+            self,
+            request: pubsub.UpdateSnapshotRequest,
+            *,
+            retry: OptionalRetry = gapic_v1.method.DEFAULT,
+            timeout: Optional[float] = None,
+            metadata: Sequence[Tuple[str, str]] = (),
+        ) -> pubsub.Snapshot:
             r"""Call the update snapshot method over HTTP.
 
             Args:
@@ -1639,11 +1833,12 @@ class SubscriberRestTransport(SubscriberTransport):
 
             """
 
-            http_options: List[Dict[str, str]] = [{
-                'method': 'patch',
-                'uri': '/v1/{snapshot.name=projects/*/snapshots/*}',
-                'body': '*',
-            },
+            http_options: List[Dict[str, str]] = [
+                {
+                    "method": "patch",
+                    "uri": "/v1/{snapshot.name=projects/*/snapshots/*}",
+                    "body": "*",
+                },
             ]
             request, metadata = self._interceptor.pre_update_snapshot(request, metadata)
             pb_request = pubsub.UpdateSnapshotRequest.pb(request)
@@ -1652,33 +1847,35 @@ class SubscriberRestTransport(SubscriberTransport):
             # Jsonify the request body
 
             body = json_format.MessageToJson(
-                transcoded_request['body'],
-                including_default_value_fields=False,
-                use_integers_for_enums=True
-            )
-            uri = transcoded_request['uri']
-            method = transcoded_request['method']
-
-            # Jsonify the query params
-            query_params = json.loads(json_format.MessageToJson(
-                transcoded_request['query_params'],
+                transcoded_request["body"],
                 including_default_value_fields=False,
                 use_integers_for_enums=True,
-            ))
+            )
+            uri = transcoded_request["uri"]
+            method = transcoded_request["method"]
+
+            # Jsonify the query params
+            query_params = json.loads(
+                json_format.MessageToJson(
+                    transcoded_request["query_params"],
+                    including_default_value_fields=False,
+                    use_integers_for_enums=True,
+                )
+            )
             query_params.update(self._get_unset_required_fields(query_params))
 
             query_params["$alt"] = "json;enum-encoding=int"
 
             # Send the request
             headers = dict(metadata)
-            headers['Content-Type'] = 'application/json'
+            headers["Content-Type"] = "application/json"
             response = getattr(self._session, method)(
                 "{host}{uri}".format(host=self._host, uri=uri),
                 timeout=timeout,
                 headers=headers,
                 params=rest_helpers.flatten_query_params(query_params, strict=True),
                 data=body,
-                )
+            )
 
             # In case of error, raise the appropriate core_exceptions.GoogleAPICallError exception
             # subclass.
@@ -1697,19 +1894,24 @@ class SubscriberRestTransport(SubscriberTransport):
         def __hash__(self):
             return hash("UpdateSubscription")
 
-        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] =  {
-        }
+        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] = {}
 
         @classmethod
         def _get_unset_required_fields(cls, message_dict):
-            return {k: v for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items() if k not in message_dict}
+            return {
+                k: v
+                for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items()
+                if k not in message_dict
+            }
 
-        def __call__(self,
-                request: pubsub.UpdateSubscriptionRequest, *,
-                retry: OptionalRetry=gapic_v1.method.DEFAULT,
-                timeout: Optional[float]=None,
-                metadata: Sequence[Tuple[str, str]]=(),
-                ) -> pubsub.Subscription:
+        def __call__(
+            self,
+            request: pubsub.UpdateSubscriptionRequest,
+            *,
+            retry: OptionalRetry = gapic_v1.method.DEFAULT,
+            timeout: Optional[float] = None,
+            metadata: Sequence[Tuple[str, str]] = (),
+        ) -> pubsub.Subscription:
             r"""Call the update subscription method over HTTP.
 
             Args:
@@ -1732,46 +1934,51 @@ class SubscriberRestTransport(SubscriberTransport):
 
             """
 
-            http_options: List[Dict[str, str]] = [{
-                'method': 'patch',
-                'uri': '/v1/{subscription.name=projects/*/subscriptions/*}',
-                'body': '*',
-            },
+            http_options: List[Dict[str, str]] = [
+                {
+                    "method": "patch",
+                    "uri": "/v1/{subscription.name=projects/*/subscriptions/*}",
+                    "body": "*",
+                },
             ]
-            request, metadata = self._interceptor.pre_update_subscription(request, metadata)
+            request, metadata = self._interceptor.pre_update_subscription(
+                request, metadata
+            )
             pb_request = pubsub.UpdateSubscriptionRequest.pb(request)
             transcoded_request = path_template.transcode(http_options, pb_request)
 
             # Jsonify the request body
 
             body = json_format.MessageToJson(
-                transcoded_request['body'],
-                including_default_value_fields=False,
-                use_integers_for_enums=True
-            )
-            uri = transcoded_request['uri']
-            method = transcoded_request['method']
-
-            # Jsonify the query params
-            query_params = json.loads(json_format.MessageToJson(
-                transcoded_request['query_params'],
+                transcoded_request["body"],
                 including_default_value_fields=False,
                 use_integers_for_enums=True,
-            ))
+            )
+            uri = transcoded_request["uri"]
+            method = transcoded_request["method"]
+
+            # Jsonify the query params
+            query_params = json.loads(
+                json_format.MessageToJson(
+                    transcoded_request["query_params"],
+                    including_default_value_fields=False,
+                    use_integers_for_enums=True,
+                )
+            )
             query_params.update(self._get_unset_required_fields(query_params))
 
             query_params["$alt"] = "json;enum-encoding=int"
 
             # Send the request
             headers = dict(metadata)
-            headers['Content-Type'] = 'application/json'
+            headers["Content-Type"] = "application/json"
             response = getattr(self._session, method)(
                 "{host}{uri}".format(host=self._host, uri=uri),
                 timeout=timeout,
                 headers=headers,
                 params=rest_helpers.flatten_query_params(query_params, strict=True),
                 data=body,
-                )
+            )
 
             # In case of error, raise the appropriate core_exceptions.GoogleAPICallError exception
             # subclass.
@@ -1787,144 +1994,138 @@ class SubscriberRestTransport(SubscriberTransport):
             return resp
 
     @property
-    def acknowledge(self) -> Callable[
-            [pubsub.AcknowledgeRequest],
-            empty_pb2.Empty]:
+    def acknowledge(self) -> Callable[[pubsub.AcknowledgeRequest], empty_pb2.Empty]:
         # The return type is fine, but mypy isn't sophisticated enough to determine what's going on here.
         # In C++ this would require a dynamic_cast
-        return self._Acknowledge(self._session, self._host, self._interceptor) # type: ignore
+        return self._Acknowledge(self._session, self._host, self._interceptor)  # type: ignore
 
     @property
-    def create_snapshot(self) -> Callable[
-            [pubsub.CreateSnapshotRequest],
-            pubsub.Snapshot]:
+    def create_snapshot(
+        self,
+    ) -> Callable[[pubsub.CreateSnapshotRequest], pubsub.Snapshot]:
         # The return type is fine, but mypy isn't sophisticated enough to determine what's going on here.
         # In C++ this would require a dynamic_cast
-        return self._CreateSnapshot(self._session, self._host, self._interceptor) # type: ignore
+        return self._CreateSnapshot(self._session, self._host, self._interceptor)  # type: ignore
 
     @property
-    def create_subscription(self) -> Callable[
-            [pubsub.Subscription],
-            pubsub.Subscription]:
+    def create_subscription(
+        self,
+    ) -> Callable[[pubsub.Subscription], pubsub.Subscription]:
         # The return type is fine, but mypy isn't sophisticated enough to determine what's going on here.
         # In C++ this would require a dynamic_cast
-        return self._CreateSubscription(self._session, self._host, self._interceptor) # type: ignore
+        return self._CreateSubscription(self._session, self._host, self._interceptor)  # type: ignore
 
     @property
-    def delete_snapshot(self) -> Callable[
-            [pubsub.DeleteSnapshotRequest],
-            empty_pb2.Empty]:
+    def delete_snapshot(
+        self,
+    ) -> Callable[[pubsub.DeleteSnapshotRequest], empty_pb2.Empty]:
         # The return type is fine, but mypy isn't sophisticated enough to determine what's going on here.
         # In C++ this would require a dynamic_cast
-        return self._DeleteSnapshot(self._session, self._host, self._interceptor) # type: ignore
+        return self._DeleteSnapshot(self._session, self._host, self._interceptor)  # type: ignore
 
     @property
-    def delete_subscription(self) -> Callable[
-            [pubsub.DeleteSubscriptionRequest],
-            empty_pb2.Empty]:
+    def delete_subscription(
+        self,
+    ) -> Callable[[pubsub.DeleteSubscriptionRequest], empty_pb2.Empty]:
         # The return type is fine, but mypy isn't sophisticated enough to determine what's going on here.
         # In C++ this would require a dynamic_cast
-        return self._DeleteSubscription(self._session, self._host, self._interceptor) # type: ignore
+        return self._DeleteSubscription(self._session, self._host, self._interceptor)  # type: ignore
 
     @property
-    def get_snapshot(self) -> Callable[
-            [pubsub.GetSnapshotRequest],
-            pubsub.Snapshot]:
+    def get_snapshot(self) -> Callable[[pubsub.GetSnapshotRequest], pubsub.Snapshot]:
         # The return type is fine, but mypy isn't sophisticated enough to determine what's going on here.
         # In C++ this would require a dynamic_cast
-        return self._GetSnapshot(self._session, self._host, self._interceptor) # type: ignore
+        return self._GetSnapshot(self._session, self._host, self._interceptor)  # type: ignore
 
     @property
-    def get_subscription(self) -> Callable[
-            [pubsub.GetSubscriptionRequest],
-            pubsub.Subscription]:
+    def get_subscription(
+        self,
+    ) -> Callable[[pubsub.GetSubscriptionRequest], pubsub.Subscription]:
         # The return type is fine, but mypy isn't sophisticated enough to determine what's going on here.
         # In C++ this would require a dynamic_cast
-        return self._GetSubscription(self._session, self._host, self._interceptor) # type: ignore
+        return self._GetSubscription(self._session, self._host, self._interceptor)  # type: ignore
 
     @property
-    def list_snapshots(self) -> Callable[
-            [pubsub.ListSnapshotsRequest],
-            pubsub.ListSnapshotsResponse]:
+    def list_snapshots(
+        self,
+    ) -> Callable[[pubsub.ListSnapshotsRequest], pubsub.ListSnapshotsResponse]:
         # The return type is fine, but mypy isn't sophisticated enough to determine what's going on here.
         # In C++ this would require a dynamic_cast
-        return self._ListSnapshots(self._session, self._host, self._interceptor) # type: ignore
+        return self._ListSnapshots(self._session, self._host, self._interceptor)  # type: ignore
 
     @property
-    def list_subscriptions(self) -> Callable[
-            [pubsub.ListSubscriptionsRequest],
-            pubsub.ListSubscriptionsResponse]:
+    def list_subscriptions(
+        self,
+    ) -> Callable[[pubsub.ListSubscriptionsRequest], pubsub.ListSubscriptionsResponse]:
         # The return type is fine, but mypy isn't sophisticated enough to determine what's going on here.
         # In C++ this would require a dynamic_cast
-        return self._ListSubscriptions(self._session, self._host, self._interceptor) # type: ignore
+        return self._ListSubscriptions(self._session, self._host, self._interceptor)  # type: ignore
 
     @property
-    def modify_ack_deadline(self) -> Callable[
-            [pubsub.ModifyAckDeadlineRequest],
-            empty_pb2.Empty]:
+    def modify_ack_deadline(
+        self,
+    ) -> Callable[[pubsub.ModifyAckDeadlineRequest], empty_pb2.Empty]:
         # The return type is fine, but mypy isn't sophisticated enough to determine what's going on here.
         # In C++ this would require a dynamic_cast
-        return self._ModifyAckDeadline(self._session, self._host, self._interceptor) # type: ignore
+        return self._ModifyAckDeadline(self._session, self._host, self._interceptor)  # type: ignore
 
     @property
-    def modify_push_config(self) -> Callable[
-            [pubsub.ModifyPushConfigRequest],
-            empty_pb2.Empty]:
+    def modify_push_config(
+        self,
+    ) -> Callable[[pubsub.ModifyPushConfigRequest], empty_pb2.Empty]:
         # The return type is fine, but mypy isn't sophisticated enough to determine what's going on here.
         # In C++ this would require a dynamic_cast
-        return self._ModifyPushConfig(self._session, self._host, self._interceptor) # type: ignore
+        return self._ModifyPushConfig(self._session, self._host, self._interceptor)  # type: ignore
 
     @property
-    def pull(self) -> Callable[
-            [pubsub.PullRequest],
-            pubsub.PullResponse]:
+    def pull(self) -> Callable[[pubsub.PullRequest], pubsub.PullResponse]:
         # The return type is fine, but mypy isn't sophisticated enough to determine what's going on here.
         # In C++ this would require a dynamic_cast
-        return self._Pull(self._session, self._host, self._interceptor) # type: ignore
+        return self._Pull(self._session, self._host, self._interceptor)  # type: ignore
 
     @property
-    def seek(self) -> Callable[
-            [pubsub.SeekRequest],
-            pubsub.SeekResponse]:
+    def seek(self) -> Callable[[pubsub.SeekRequest], pubsub.SeekResponse]:
         # The return type is fine, but mypy isn't sophisticated enough to determine what's going on here.
         # In C++ this would require a dynamic_cast
-        return self._Seek(self._session, self._host, self._interceptor) # type: ignore
+        return self._Seek(self._session, self._host, self._interceptor)  # type: ignore
 
     @property
-    def streaming_pull(self) -> Callable[
-            [pubsub.StreamingPullRequest],
-            pubsub.StreamingPullResponse]:
+    def streaming_pull(
+        self,
+    ) -> Callable[[pubsub.StreamingPullRequest], pubsub.StreamingPullResponse]:
         # The return type is fine, but mypy isn't sophisticated enough to determine what's going on here.
         # In C++ this would require a dynamic_cast
-        return self._StreamingPull(self._session, self._host, self._interceptor) # type: ignore
+        return self._StreamingPull(self._session, self._host, self._interceptor)  # type: ignore
 
     @property
-    def update_snapshot(self) -> Callable[
-            [pubsub.UpdateSnapshotRequest],
-            pubsub.Snapshot]:
+    def update_snapshot(
+        self,
+    ) -> Callable[[pubsub.UpdateSnapshotRequest], pubsub.Snapshot]:
         # The return type is fine, but mypy isn't sophisticated enough to determine what's going on here.
         # In C++ this would require a dynamic_cast
-        return self._UpdateSnapshot(self._session, self._host, self._interceptor) # type: ignore
+        return self._UpdateSnapshot(self._session, self._host, self._interceptor)  # type: ignore
 
     @property
-    def update_subscription(self) -> Callable[
-            [pubsub.UpdateSubscriptionRequest],
-            pubsub.Subscription]:
+    def update_subscription(
+        self,
+    ) -> Callable[[pubsub.UpdateSubscriptionRequest], pubsub.Subscription]:
         # The return type is fine, but mypy isn't sophisticated enough to determine what's going on here.
         # In C++ this would require a dynamic_cast
-        return self._UpdateSubscription(self._session, self._host, self._interceptor) # type: ignore
+        return self._UpdateSubscription(self._session, self._host, self._interceptor)  # type: ignore
 
     @property
     def get_iam_policy(self):
-        return self._GetIamPolicy(self._session, self._host, self._interceptor) # type: ignore
+        return self._GetIamPolicy(self._session, self._host, self._interceptor)  # type: ignore
 
     class _GetIamPolicy(SubscriberRestStub):
-        def __call__(self,
-            request: iam_policy_pb2.GetIamPolicyRequest, *,
-            retry: OptionalRetry=gapic_v1.method.DEFAULT,
-            timeout: Optional[float]=None,
-            metadata: Sequence[Tuple[str, str]]=(),
-            ) -> policy_pb2.Policy:
+        def __call__(
+            self,
+            request: iam_policy_pb2.GetIamPolicyRequest,
+            *,
+            retry: OptionalRetry = gapic_v1.method.DEFAULT,
+            timeout: Optional[float] = None,
+            metadata: Sequence[Tuple[str, str]] = (),
+        ) -> policy_pb2.Policy:
 
             r"""Call the get iam policy method over HTTP.
 
@@ -1941,38 +2142,38 @@ class SubscriberRestTransport(SubscriberTransport):
                 policy_pb2.Policy: Response from GetIamPolicy method.
             """
 
-            http_options: List[Dict[str, str]] = [{
-                'method': 'get',
-                'uri': '/v1/{resource=projects/*/topics/*}:getIamPolicy',
-            },
-{
-                'method': 'get',
-                'uri': '/v1/{resource=projects/*/subscriptions/*}:getIamPolicy',
-            },
-{
-                'method': 'get',
-                'uri': '/v1/{resource=projects/*/snapshots/*}:getIamPolicy',
-            },
-{
-                'method': 'get',
-                'uri': '/v1/{resource=projects/*/schemas/*}:getIamPolicy',
-            },
+            http_options: List[Dict[str, str]] = [
+                {
+                    "method": "get",
+                    "uri": "/v1/{resource=projects/*/topics/*}:getIamPolicy",
+                },
+                {
+                    "method": "get",
+                    "uri": "/v1/{resource=projects/*/subscriptions/*}:getIamPolicy",
+                },
+                {
+                    "method": "get",
+                    "uri": "/v1/{resource=projects/*/snapshots/*}:getIamPolicy",
+                },
+                {
+                    "method": "get",
+                    "uri": "/v1/{resource=projects/*/schemas/*}:getIamPolicy",
+                },
             ]
 
             request, metadata = self._interceptor.pre_get_iam_policy(request, metadata)
             request_kwargs = json_format.MessageToDict(request)
-            transcoded_request = path_template.transcode(
-                http_options, **request_kwargs)
+            transcoded_request = path_template.transcode(http_options, **request_kwargs)
 
-            uri = transcoded_request['uri']
-            method = transcoded_request['method']
+            uri = transcoded_request["uri"]
+            method = transcoded_request["method"]
 
             # Jsonify the query params
-            query_params = json.loads(json.dumps(transcoded_request['query_params']))
+            query_params = json.loads(json.dumps(transcoded_request["query_params"]))
 
             # Send the request
             headers = dict(metadata)
-            headers['Content-Type'] = 'application/json'
+            headers["Content-Type"] = "application/json"
 
             response = getattr(self._session, method)(
                 "{host}{uri}".format(host=self._host, uri=uri),
@@ -1993,15 +2194,17 @@ class SubscriberRestTransport(SubscriberTransport):
 
     @property
     def set_iam_policy(self):
-        return self._SetIamPolicy(self._session, self._host, self._interceptor) # type: ignore
+        return self._SetIamPolicy(self._session, self._host, self._interceptor)  # type: ignore
 
     class _SetIamPolicy(SubscriberRestStub):
-        def __call__(self,
-            request: iam_policy_pb2.SetIamPolicyRequest, *,
-            retry: OptionalRetry=gapic_v1.method.DEFAULT,
-            timeout: Optional[float]=None,
-            metadata: Sequence[Tuple[str, str]]=(),
-            ) -> policy_pb2.Policy:
+        def __call__(
+            self,
+            request: iam_policy_pb2.SetIamPolicyRequest,
+            *,
+            retry: OptionalRetry = gapic_v1.method.DEFAULT,
+            timeout: Optional[float] = None,
+            metadata: Sequence[Tuple[str, str]] = (),
+        ) -> policy_pb2.Policy:
 
             r"""Call the set iam policy method over HTTP.
 
@@ -2018,43 +2221,43 @@ class SubscriberRestTransport(SubscriberTransport):
                 policy_pb2.Policy: Response from SetIamPolicy method.
             """
 
-            http_options: List[Dict[str, str]] = [{
-                'method': 'post',
-                'uri': '/v1/{resource=projects/*/topics/*}:setIamPolicy',
-                'body': '*',
-            },
-{
-                'method': 'post',
-                'uri': '/v1/{resource=projects/*/subscriptions/*}:setIamPolicy',
-                'body': '*',
-            },
-{
-                'method': 'post',
-                'uri': '/v1/{resource=projects/*/snapshots/*}:setIamPolicy',
-                'body': '*',
-            },
-{
-                'method': 'post',
-                'uri': '/v1/{resource=projects/*/schemas/*}:setIamPolicy',
-                'body': '*',
-            },
+            http_options: List[Dict[str, str]] = [
+                {
+                    "method": "post",
+                    "uri": "/v1/{resource=projects/*/topics/*}:setIamPolicy",
+                    "body": "*",
+                },
+                {
+                    "method": "post",
+                    "uri": "/v1/{resource=projects/*/subscriptions/*}:setIamPolicy",
+                    "body": "*",
+                },
+                {
+                    "method": "post",
+                    "uri": "/v1/{resource=projects/*/snapshots/*}:setIamPolicy",
+                    "body": "*",
+                },
+                {
+                    "method": "post",
+                    "uri": "/v1/{resource=projects/*/schemas/*}:setIamPolicy",
+                    "body": "*",
+                },
             ]
 
             request, metadata = self._interceptor.pre_set_iam_policy(request, metadata)
             request_kwargs = json_format.MessageToDict(request)
-            transcoded_request = path_template.transcode(
-                http_options, **request_kwargs)
+            transcoded_request = path_template.transcode(http_options, **request_kwargs)
 
-            body = json.loads(json.dumps(transcoded_request['body']))
-            uri = transcoded_request['uri']
-            method = transcoded_request['method']
+            body = json.loads(json.dumps(transcoded_request["body"]))
+            uri = transcoded_request["uri"]
+            method = transcoded_request["method"]
 
             # Jsonify the query params
-            query_params = json.loads(json.dumps(transcoded_request['query_params']))
+            query_params = json.loads(json.dumps(transcoded_request["query_params"]))
 
             # Send the request
             headers = dict(metadata)
-            headers['Content-Type'] = 'application/json'
+            headers["Content-Type"] = "application/json"
 
             response = getattr(self._session, method)(
                 "{host}{uri}".format(host=self._host, uri=uri),
@@ -2076,15 +2279,17 @@ class SubscriberRestTransport(SubscriberTransport):
 
     @property
     def test_iam_permissions(self):
-        return self._TestIamPermissions(self._session, self._host, self._interceptor) # type: ignore
+        return self._TestIamPermissions(self._session, self._host, self._interceptor)  # type: ignore
 
     class _TestIamPermissions(SubscriberRestStub):
-        def __call__(self,
-            request: iam_policy_pb2.TestIamPermissionsRequest, *,
-            retry: OptionalRetry=gapic_v1.method.DEFAULT,
-            timeout: Optional[float]=None,
-            metadata: Sequence[Tuple[str, str]]=(),
-            ) -> iam_policy_pb2.TestIamPermissionsResponse:
+        def __call__(
+            self,
+            request: iam_policy_pb2.TestIamPermissionsRequest,
+            *,
+            retry: OptionalRetry = gapic_v1.method.DEFAULT,
+            timeout: Optional[float] = None,
+            metadata: Sequence[Tuple[str, str]] = (),
+        ) -> iam_policy_pb2.TestIamPermissionsResponse:
 
             r"""Call the test iam permissions method over HTTP.
 
@@ -2101,43 +2306,45 @@ class SubscriberRestTransport(SubscriberTransport):
                 iam_policy_pb2.TestIamPermissionsResponse: Response from TestIamPermissions method.
             """
 
-            http_options: List[Dict[str, str]] = [{
-                'method': 'post',
-                'uri': '/v1/{resource=projects/*/subscriptions/*}:testIamPermissions',
-                'body': '*',
-            },
-{
-                'method': 'post',
-                'uri': '/v1/{resource=projects/*/topics/*}:testIamPermissions',
-                'body': '*',
-            },
-{
-                'method': 'post',
-                'uri': '/v1/{resource=projects/*/snapshots/*}:testIamPermissions',
-                'body': '*',
-            },
-{
-                'method': 'post',
-                'uri': '/v1/{resource=projects/*/schemas/*}:testIamPermissions',
-                'body': '*',
-            },
+            http_options: List[Dict[str, str]] = [
+                {
+                    "method": "post",
+                    "uri": "/v1/{resource=projects/*/subscriptions/*}:testIamPermissions",
+                    "body": "*",
+                },
+                {
+                    "method": "post",
+                    "uri": "/v1/{resource=projects/*/topics/*}:testIamPermissions",
+                    "body": "*",
+                },
+                {
+                    "method": "post",
+                    "uri": "/v1/{resource=projects/*/snapshots/*}:testIamPermissions",
+                    "body": "*",
+                },
+                {
+                    "method": "post",
+                    "uri": "/v1/{resource=projects/*/schemas/*}:testIamPermissions",
+                    "body": "*",
+                },
             ]
 
-            request, metadata = self._interceptor.pre_test_iam_permissions(request, metadata)
+            request, metadata = self._interceptor.pre_test_iam_permissions(
+                request, metadata
+            )
             request_kwargs = json_format.MessageToDict(request)
-            transcoded_request = path_template.transcode(
-                http_options, **request_kwargs)
+            transcoded_request = path_template.transcode(http_options, **request_kwargs)
 
-            body = json.loads(json.dumps(transcoded_request['body']))
-            uri = transcoded_request['uri']
-            method = transcoded_request['method']
+            body = json.loads(json.dumps(transcoded_request["body"]))
+            uri = transcoded_request["uri"]
+            method = transcoded_request["method"]
 
             # Jsonify the query params
-            query_params = json.loads(json.dumps(transcoded_request['query_params']))
+            query_params = json.loads(json.dumps(transcoded_request["query_params"]))
 
             # Send the request
             headers = dict(metadata)
-            headers['Content-Type'] = 'application/json'
+            headers["Content-Type"] = "application/json"
 
             response = getattr(self._session, method)(
                 "{host}{uri}".format(host=self._host, uri=uri),
@@ -2165,6 +2372,4 @@ class SubscriberRestTransport(SubscriberTransport):
         self._session.close()
 
 
-__all__=(
-    'SubscriberRestTransport',
-)
+__all__ = ("SubscriberRestTransport",)
