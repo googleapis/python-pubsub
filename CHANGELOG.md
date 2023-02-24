@@ -5,6 +5,44 @@
 [1]: https://pypi.org/project/google-cloud-pubsub/#history
 
 
+## [2.15.0](https://github.com/googleapis/python-pubsub/compare/v2.14.1...v2.15.0) (2023-02-22)
+
+
+### Features
+
+* Add google.api.method.signature to update methods ([3dd43d6](https://github.com/googleapis/python-pubsub/commit/3dd43d6c9facc59c7c4913cac605aa95176cc857))
+* Add temporary_failed_ack_ids to ModifyAckDeadlineConfirmation ([3dd43d6](https://github.com/googleapis/python-pubsub/commit/3dd43d6c9facc59c7c4913cac605aa95176cc857))
+
+
+### Bug Fixes
+
+* Add service_yaml_parameters to py_gapic_library BUILD.bazel targets ([3dd43d6](https://github.com/googleapis/python-pubsub/commit/3dd43d6c9facc59c7c4913cac605aa95176cc857))
+* Move global import in publisher sample ([#866](https://github.com/googleapis/python-pubsub/issues/866)) ([271a46d](https://github.com/googleapis/python-pubsub/commit/271a46d4da0c668674a36c0f58bbe0fe70985b75))
+* Port proto changes ([#871](https://github.com/googleapis/python-pubsub/issues/871)) ([3dd43d6](https://github.com/googleapis/python-pubsub/commit/3dd43d6c9facc59c7c4913cac605aa95176cc857))
+
+
+### Documentation
+
+* Clarify BigQueryConfig PERMISSION_DENIED state ([3dd43d6](https://github.com/googleapis/python-pubsub/commit/3dd43d6c9facc59c7c4913cac605aa95176cc857))
+* Clarify subscription description ([3dd43d6](https://github.com/googleapis/python-pubsub/commit/3dd43d6c9facc59c7c4913cac605aa95176cc857))
+* Fix Pull description ([3dd43d6](https://github.com/googleapis/python-pubsub/commit/3dd43d6c9facc59c7c4913cac605aa95176cc857))
+* Fix PullResponse description ([3dd43d6](https://github.com/googleapis/python-pubsub/commit/3dd43d6c9facc59c7c4913cac605aa95176cc857))
+* Replacing HTML code with Markdown ([3dd43d6](https://github.com/googleapis/python-pubsub/commit/3dd43d6c9facc59c7c4913cac605aa95176cc857))
+* Update Pub/Sub topic retention limit from 7 days to 31 days ([3dd43d6](https://github.com/googleapis/python-pubsub/commit/3dd43d6c9facc59c7c4913cac605aa95176cc857))
+
+## [2.14.1](https://github.com/googleapis/python-pubsub/compare/v2.14.0...v2.14.1) (2023-02-08)
+
+
+### Bug Fixes
+
+* Add context manager return types ([4f690b9](https://github.com/googleapis/python-pubsub/commit/4f690b9287beefbca6505cf88637f4a8c5077152))
+
+
+### Documentation
+
+* Add documentation for enums ([4f690b9](https://github.com/googleapis/python-pubsub/commit/4f690b9287beefbca6505cf88637f4a8c5077152))
+* Mark revision_id in CommitSchemaRevisionRequest as deprecated ([#861](https://github.com/googleapis/python-pubsub/issues/861)) ([09b846d](https://github.com/googleapis/python-pubsub/commit/09b846ddd066519c0570522b8525ec5705714b0a))
+
 ## [2.14.0](https://github.com/googleapis/python-pubsub/compare/v2.13.12...v2.14.0) (2023-01-18)
 
 
