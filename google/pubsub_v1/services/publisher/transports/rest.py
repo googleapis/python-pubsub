@@ -32,7 +32,7 @@ from google.iam.v1 import policy_pb2  # type: ignore
 from requests import __version__ as requests_version
 import dataclasses
 import re
-from typing import Callable, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union
 import warnings
 
 try:
@@ -325,7 +325,7 @@ class PublisherRestInterceptor:
         self,
         request: iam_policy_pb2.GetIamPolicyRequest,
         metadata: Sequence[Tuple[str, str]],
-    ) -> policy_pb2.Policy:
+    ) -> Tuple[iam_policy_pb2.GetIamPolicyRequest, Sequence[Tuple[str, str]]]:
         """Pre-rpc interceptor for get_iam_policy
 
         Override in a subclass to manipulate the request or metadata
@@ -333,9 +333,7 @@ class PublisherRestInterceptor:
         """
         return request, metadata
 
-    def post_get_iam_policy(
-        self, response: iam_policy_pb2.GetIamPolicyRequest
-    ) -> policy_pb2.Policy:
+    def post_get_iam_policy(self, response: policy_pb2.Policy) -> policy_pb2.Policy:
         """Post-rpc interceptor for get_iam_policy
 
         Override in a subclass to manipulate the response
@@ -348,7 +346,7 @@ class PublisherRestInterceptor:
         self,
         request: iam_policy_pb2.SetIamPolicyRequest,
         metadata: Sequence[Tuple[str, str]],
-    ) -> policy_pb2.Policy:
+    ) -> Tuple[iam_policy_pb2.SetIamPolicyRequest, Sequence[Tuple[str, str]]]:
         """Pre-rpc interceptor for set_iam_policy
 
         Override in a subclass to manipulate the request or metadata
@@ -356,9 +354,7 @@ class PublisherRestInterceptor:
         """
         return request, metadata
 
-    def post_set_iam_policy(
-        self, response: iam_policy_pb2.SetIamPolicyRequest
-    ) -> policy_pb2.Policy:
+    def post_set_iam_policy(self, response: policy_pb2.Policy) -> policy_pb2.Policy:
         """Post-rpc interceptor for set_iam_policy
 
         Override in a subclass to manipulate the response
@@ -371,7 +367,7 @@ class PublisherRestInterceptor:
         self,
         request: iam_policy_pb2.TestIamPermissionsRequest,
         metadata: Sequence[Tuple[str, str]],
-    ) -> iam_policy_pb2.TestIamPermissionsResponse:
+    ) -> Tuple[iam_policy_pb2.TestIamPermissionsRequest, Sequence[Tuple[str, str]]]:
         """Pre-rpc interceptor for test_iam_permissions
 
         Override in a subclass to manipulate the request or metadata
@@ -380,7 +376,7 @@ class PublisherRestInterceptor:
         return request, metadata
 
     def post_test_iam_permissions(
-        self, response: iam_policy_pb2.TestIamPermissionsRequest
+        self, response: iam_policy_pb2.TestIamPermissionsResponse
     ) -> iam_policy_pb2.TestIamPermissionsResponse:
         """Post-rpc interceptor for test_iam_permissions
 
@@ -492,7 +488,7 @@ class PublisherRestTransport(PublisherTransport):
         def __hash__(self):
             return hash("CreateTopic")
 
-        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, str] = {}
+        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] = {}
 
         @classmethod
         def _get_unset_required_fields(cls, message_dict):
@@ -587,7 +583,7 @@ class PublisherRestTransport(PublisherTransport):
         def __hash__(self):
             return hash("DeleteTopic")
 
-        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, str] = {}
+        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] = {}
 
         @classmethod
         def _get_unset_required_fields(cls, message_dict):
@@ -661,7 +657,7 @@ class PublisherRestTransport(PublisherTransport):
         def __hash__(self):
             return hash("DetachSubscription")
 
-        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, str] = {}
+        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] = {}
 
         @classmethod
         def _get_unset_required_fields(cls, message_dict):
@@ -753,7 +749,7 @@ class PublisherRestTransport(PublisherTransport):
         def __hash__(self):
             return hash("GetTopic")
 
-        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, str] = {}
+        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] = {}
 
         @classmethod
         def _get_unset_required_fields(cls, message_dict):
@@ -839,7 +835,7 @@ class PublisherRestTransport(PublisherTransport):
         def __hash__(self):
             return hash("ListTopics")
 
-        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, str] = {}
+        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] = {}
 
         @classmethod
         def _get_unset_required_fields(cls, message_dict):
@@ -925,7 +921,7 @@ class PublisherRestTransport(PublisherTransport):
         def __hash__(self):
             return hash("ListTopicSnapshots")
 
-        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, str] = {}
+        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] = {}
 
         @classmethod
         def _get_unset_required_fields(cls, message_dict):
@@ -1013,7 +1009,7 @@ class PublisherRestTransport(PublisherTransport):
         def __hash__(self):
             return hash("ListTopicSubscriptions")
 
-        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, str] = {}
+        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] = {}
 
         @classmethod
         def _get_unset_required_fields(cls, message_dict):
@@ -1101,7 +1097,7 @@ class PublisherRestTransport(PublisherTransport):
         def __hash__(self):
             return hash("Publish")
 
-        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, str] = {}
+        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] = {}
 
         @classmethod
         def _get_unset_required_fields(cls, message_dict):
@@ -1196,7 +1192,7 @@ class PublisherRestTransport(PublisherTransport):
         def __hash__(self):
             return hash("UpdateTopic")
 
-        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, str] = {}
+        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] = {}
 
         @classmethod
         def _get_unset_required_fields(cls, message_dict):
