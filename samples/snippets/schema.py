@@ -243,7 +243,7 @@ def list_schema_revisions(project_id: str, schema_id: str) -> None:
     # [END pubsub_list_schema_revisions]
 
 
-def rollback_schema_revision(
+def rollback_schema(
     project_id: str, schema_id: str, schema_revision_id: str
 ) -> None:
     """Roll back a schema revision."""
