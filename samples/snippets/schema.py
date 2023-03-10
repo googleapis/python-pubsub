@@ -257,12 +257,12 @@ def rollback_schema_revision(
     # schema_revision_id = "your-schema-revision-id"
 
     schema_client = SchemaServiceClient()
-    schema_path = schema_client.schema_path(
-        project_id, schema_id + "@" + schema_revision_id
-    )
+    schema_path = schema_client.schema_path(project_id, schema_id)
 
     try:
-        result = schema_client.rollback_schema(request={"name": schema_path})
+        result = schema_client.rollback_schema(
+            request={"name": schema_path, "revision_id": schema_revision_id}
+        )
         print(f"Rolled back a schema revision:\n{result}")
     except NotFound:
         print(f"{schema_id} not found.")
@@ -363,8 +363,7 @@ def update_topic_schema(
     """Update a topic resource's first schema revision."""
     # [START pubsub_update_topic_schema]
     from google.api_core.exceptions import InvalidArgument, NotFound
-    from google.cloud.pubsub import PublisherClient, SchemaServiceClient
-    from google.pubsub_v1.types import Encoding
+    from google.cloud.pubsub import PublisherClient
 
     # TODO(developer): Replace these variables before running the sample.
     # project_id = "your-project-id"
@@ -392,6 +391,8 @@ def update_topic_schema(
 
     except NotFound:
         print(f"{topic_id} not found.")
+    except InvalidArgument:
+        print("Schema settings are not valid.")
     # [END pubsub_update_topic_schema]
 
 
@@ -651,7 +652,7 @@ def subscribe_with_avro_schema_with_revisions(
         schema_revision_id = message.attributes.get("googclient_schemarevisionid")
         encoding = message.attributes.get("googclient_schemaencoding")
 
-        if not schema_revision_id in revisions_to_readers:
+        if schema_revision_id not in revisions_to_readers:
             schema_path = schema_name + "@" + schema_revision_id
             try:
                 received_avro_schema = schema_client.get_schema(
