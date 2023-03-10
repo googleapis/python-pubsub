@@ -346,9 +346,14 @@ def test_update_topic_schema(
     committed_schema = schema.commit_proto_schema(
         PROJECT_ID, PROTO_SCHEMA_ID, PROTO_REVISION_FILE
     )
-    schema.update_topic_schema(PROJECT_ID, PROTO_TOPIC_ID, committed_schema.revision_id)
+    schema.update_topic_schema(
+        PROJECT_ID,
+        PROTO_WITH_REVISIONS_TOPIC_ID,
+        committed_schema.revision_id,
+        committed_schema.revision_id,
+    )
     out, _ = capsys.readouterr()
-    assert "Update a topic schema " in out
+    assert "Updated a topic schema" in out
     assert f"{PROTO_WITH_REVISIONS_TOPIC_ID}" in out
     assert f"{proto_schema}" in out
 

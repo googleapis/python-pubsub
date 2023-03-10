@@ -357,10 +357,12 @@ def create_topic_with_schema(
     # [END pubsub_create_topic_with_schema]
 
 
-def update_topic_schema(project_id: str, topic_id: str, first_revision_id: str) -> None:
+def update_topic_schema(
+    project_id: str, topic_id: str, first_revision_id: str, last_revision_id: str
+) -> None:
     """Update a topic resource's first schema revision."""
     # [START pubsub_update_topic_schema]
-    from google.api_core.exceptions import AlreadyExists, InvalidArgument
+    from google.api_core.exceptions import InvalidArgument, NotFound
     from google.cloud.pubsub import PublisherClient, SchemaServiceClient
     from google.pubsub_v1.types import Encoding
 
@@ -368,6 +370,7 @@ def update_topic_schema(project_id: str, topic_id: str, first_revision_id: str) 
     # project_id = "your-project-id"
     # topic_id = "your-topic-id"
     # first_revision_id = "your-revision-id"
+    # last_revision_id = "your-revision-id"
 
     publisher_client = PublisherClient()
     topic_path = publisher_client.topic_path(project_id, topic_id)
@@ -377,17 +380,18 @@ def update_topic_schema(project_id: str, topic_id: str, first_revision_id: str) 
             request={
                 "topic": {
                     "name": topic_path,
-                    "schema_settings": {"first_revision_id": first_revision_id},
+                    "schema_settings": {
+                        "first_revision_id": first_revision_id,
+                        "last_revision_id": last_revision_id,
+                    },
                 },
-                "update_mask": "schemaSettings.firstRevisionId",
+                "update_mask": "schemaSettings.firstRevisionId,schemaSettings.lastRevisionId",
             }
         )
         print(f"Updated a topic schema:\n{response}")
 
-    except AlreadyExists:
-        print(f"{topic_id} already exists.")
-    except InvalidArgument:
-        print("Please choose either BINARY or JSON as a valid message encoding type.")
+    except NotFound:
+        print(f"{topic_id} not found.")
     # [END pubsub_update_topic_schema]
 
 
@@ -647,21 +651,21 @@ def subscribe_with_avro_schema_with_revisions(
         schema_revision_id = message.attributes.get("googclient_schemarevisionid")
         encoding = message.attributes.get("googclient_schemaencoding")
 
-        reader = revisions_to_readers[schema_revision_id]
-        if reader is None:
-            schema_path = schema_client.schema_path(
-                schema_name + "@" + schema_revision_id
-            )
+        if not schema_revision_id in revisions_to_readers:
+            schema_path = schema_name + "@" + schema_revision_id
             try:
-                reader_avro_schema = schema_client.get_schema(
+                received_avro_schema = schema_client.get_schema(
                     request={"name": schema_path}
                 )
             except NotFound:
                 print(f"{schema_path} not found.")
                 message.nack()
                 return
-            reader = DatumReader(writer_avro_schema, reader_avro_schema.definition)
-            revisions_to_readers[schema_revision_id] = reader
+            reader_avro_schema = avro.schema.parse(received_avro_schema.definition)
+            revisions_to_readers[schema_revision_id] = DatumReader(
+                writer_avro_schema, reader_avro_schema
+            )
+        reader = revisions_to_readers[schema_revision_id]
 
         # Deserialize the message data accordingly.
         if encoding == "BINARY":
