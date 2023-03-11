@@ -98,7 +98,7 @@ def create_proto_schema(project_id: str, schema_id: str, proto_file: str) -> Non
 def commit_avro_schema(project_id: str, schema_id: str, avsc_file: str) -> None:
     """Commit a schema resource from a JSON-formatted Avro schema file."""
     # [START pubsub_commit_avro_schema]
-    from google.api_core.exceptions import AlreadyExists
+    from google.api_core.exceptions import NotFound
     from google.cloud.pubsub import SchemaServiceClient
     from google.pubsub_v1.types import Schema
 
@@ -121,15 +121,15 @@ def commit_avro_schema(project_id: str, schema_id: str, avsc_file: str) -> None:
         )
         print(f"Committed a schema revision using an Avro schema file:\n{result}")
         return result
-    except AlreadyExists:
-        print(f"{schema_id} already exists.")
+    except NotFound:
+        print(f"{schema_id} does not exist.")
     # [END pubsub_commit_avro_schema]
 
 
 def commit_proto_schema(project_id: str, schema_id: str, proto_file: str) -> None:
     """Commit a schema revision from a protobuf schema file."""
     # [START pubsub_commit_proto_schema]
-    from google.api_core.exceptions import AlreadyExists
+    from google.api_core.exceptions import NotFound
     from google.cloud.pubsub import SchemaServiceClient
     from google.pubsub_v1.types import Schema
 
@@ -154,8 +154,8 @@ def commit_proto_schema(project_id: str, schema_id: str, proto_file: str) -> Non
         )
         print(f"Committed a schema revision using a protobuf schema file:\n{result}")
         return result
-    except AlreadyExists:
-        print(f"{schema_id} already exists.")
+    except NotFound:
+        print(f"{schema_id} does not exist.")
     # [END pubsub_commit_proto_schema]
 
 
@@ -353,7 +353,7 @@ def create_topic_with_schema(
     except AlreadyExists:
         print(f"{topic_id} already exists.")
     except InvalidArgument:
-        print("Please choose either BINARY or JSON as a valid message encoding type.")
+        print("Schema settings are not valid.")
     # [END pubsub_create_topic_with_schema]
 
 
@@ -679,6 +679,7 @@ def subscribe_with_avro_schema_with_revisions(
             print(f"Received a JSON-encoded message:\n{message_data}")
         else:
             print(f"Received a message with no encoding:\n{message}")
+            message.nack()
 
         message.ack()
 
