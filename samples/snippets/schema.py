@@ -473,7 +473,7 @@ def publish_avro_records(project_id: str, topic_id: str, avsc_file: str) -> None
     topic_path = publisher_client.topic_path(project_id, topic_id)
 
     # Prepare to write Avro records to the binary output stream.
-    avro_schema = avro.schema.parse(open(avsc_file, "rb").read())
+    avro_schema = avro.schema.Parse(open(avsc_file, "rb").read())
     writer = DatumWriter(avro_schema)
     bout = io.BytesIO()
 
