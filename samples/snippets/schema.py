@@ -579,7 +579,7 @@ def subscribe_with_avro_schema(
     subscriber = SubscriberClient()
     subscription_path = subscriber.subscription_path(project_id, subscription_id)
 
-    avro_schema = avro.schema.parse(open(avsc_file, "rb").read())
+    avro_schema = avro.schema.Parse(open(avsc_file, "rb").read())
 
     def callback(message: pubsub_v1.subscriber.message.Message) -> None:
         # Get the message serialization type.
@@ -642,7 +642,7 @@ def subscribe_with_avro_schema_with_revisions(
     subscriber = SubscriberClient()
     subscription_path = subscriber.subscription_path(project_id, subscription_id)
 
-    writer_avro_schema = avro.schema.parse(open(avsc_file, "rb").read())
+    writer_avro_schema = avro.schema.Parse(open(avsc_file, "rb").read())
     # Dict to keep readers for different schema revisions.
     revisions_to_readers = {}
 
@@ -662,7 +662,7 @@ def subscribe_with_avro_schema_with_revisions(
                 print(f"{schema_path} not found.")
                 message.nack()
                 return
-            reader_avro_schema = avro.schema.parse(received_avro_schema.definition)
+            reader_avro_schema = avro.schema.Parse(received_avro_schema.definition)
             revisions_to_readers[schema_revision_id] = DatumReader(
                 writer_avro_schema, reader_avro_schema
             )
