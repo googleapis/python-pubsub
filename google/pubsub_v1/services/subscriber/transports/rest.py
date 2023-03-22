@@ -818,7 +818,6 @@ class SubscriberRestTransport(SubscriberTransport):
                 ``bigquery_config`` is set, then the subscriber will
                 pull and ack messages using API methods. At most one of
                 these fields may be set.
-
                 retry (google.api_core.retry.Retry): Designation of what errors, if any,
                     should be retried.
                 timeout (float): The timeout for this request.
@@ -995,7 +994,6 @@ class SubscriberRestTransport(SubscriberTransport):
                 request (~.pubsub.DeleteSubscriptionRequest):
                     The request object. Request for the DeleteSubscription
                 method.
-
                 retry (google.api_core.retry.Retry): Designation of what errors, if any,
                     should be retried.
                 timeout (float): The timeout for this request.
@@ -1165,7 +1163,6 @@ class SubscriberRestTransport(SubscriberTransport):
                 request (~.pubsub.GetSubscriptionRequest):
                     The request object. Request for the GetSubscription
                 method.
-
                 retry (google.api_core.retry.Retry): Designation of what errors, if any,
                     should be retried.
                 timeout (float): The timeout for this request.
@@ -1433,7 +1430,6 @@ class SubscriberRestTransport(SubscriberTransport):
                 request (~.pubsub.ModifyAckDeadlineRequest):
                     The request object. Request for the ModifyAckDeadline
                 method.
-
                 retry (google.api_core.retry.Retry): Designation of what errors, if any,
                     should be retried.
                 timeout (float): The timeout for this request.
@@ -1520,7 +1516,6 @@ class SubscriberRestTransport(SubscriberTransport):
                 request (~.pubsub.ModifyPushConfigRequest):
                     The request object. Request for the ModifyPushConfig
                 method.
-
                 retry (google.api_core.retry.Retry): Designation of what errors, if any,
                     should be retried.
                 timeout (float): The timeout for this request.
@@ -1815,7 +1810,6 @@ class SubscriberRestTransport(SubscriberTransport):
                 request (~.pubsub.UpdateSnapshotRequest):
                     The request object. Request for the UpdateSnapshot
                 method.
-
                 retry (google.api_core.retry.Retry): Designation of what errors, if any,
                     should be retried.
                 timeout (float): The timeout for this request.
@@ -1918,7 +1912,6 @@ class SubscriberRestTransport(SubscriberTransport):
                 request (~.pubsub.UpdateSubscriptionRequest):
                     The request object. Request for the UpdateSubscription
                 method.
-
                 retry (google.api_core.retry.Retry): Designation of what errors, if any,
                     should be retried.
                 timeout (float): The timeout for this request.
