@@ -35,18 +35,26 @@ try:
 except KeyError:
     raise KeyError("Need to set GOOGLE_CLOUD_PROJECT as an environment variable.")
 AVRO_TOPIC_ID = f"schema-test-avro-topic-{UUID}"
+AVRO_TOPIC_ID_TO_CREATE = f"schema-test-avro-topic-to-create-{UUID}"
 PROTO_TOPIC_ID = f"schema-test-proto-topic-{UUID}"
 PROTO_WITH_REVISIONS_TOPIC_ID = f"schema-test-proto-with-revisions-topic-{UUID}"
+PROTO_WITH_REVISIONS_TOPIC_ID_TO_CREATE = (
+    f"schema-test-proto-with-revisions-topic-to-create-{UUID}"
+)
 AVRO_SUBSCRIPTION_ID = f"schema-test-avro-subscription-{UUID}"
 PROTO_SUBSCRIPTION_ID = f"schema-test-proto-subscription-{UUID}"
 AVRO_SCHEMA_ID = f"schema-test-avro-schema-{UUID}"
+AVRO_SCHEMA_ID_TO_CREATE = f"schema-test-avro-schema-to-create-{UUID}"
 PROTO_SCHEMA_ID = f"schema-test-proto-schema-{UUID}"
+PROTO_SCHEMA_ID_TO_CREATE = f"schema-test-proto-schema-to-create-{UUID}"
+PROTO_SCHEMA_ID_TO_DELETE = f"schema-test-proto-schema-to-delete-{UUID}"
 AVSC_FILE = "resources/us-states.avsc"
 AVSC_REVISION_FILE = "resources/us-states.avsc"
 PROTO_FILE = "resources/us-states.proto"
 PROTO_REVISION_FILE = "resources/us-states.proto"
 
-# These tests run in parallel if pytest-parallel is installed.
+# These tests run in parallel in continuous integration,
+# with the same UUID.
 # Avoid modifying resources that are shared across tests,
 # as this results in test flake.
 
@@ -89,6 +97,20 @@ def avro_schema(
 
 
 @pytest.fixture(scope="module")
+def avro_schema_to_create(
+    schema_client: pubsub_v1.SchemaServiceClient,
+) -> Generator[str, None, None]:
+    avro_schema_path = schema_client.schema_path(PROJECT_ID, AVRO_SCHEMA_ID_TO_CREATE)
+
+    yield avro_schema_path
+
+    try:
+        schema_client.delete_schema(request={"name": avro_schema_path})
+    except (NotFound, InternalServerError):
+        pass
+
+
+@pytest.fixture(scope="module")
 def proto_schema(
     schema_client: pubsub_v1.SchemaServiceClient,
 ) -> Generator[str, None, None]:
@@ -100,6 +122,36 @@ def proto_schema(
 
     try:
         schema_client.delete_schema(request={"name": proto_schema.name})
+    except (NotFound, InternalServerError):
+        pass
+
+
+@pytest.fixture(scope="module")
+def proto_schema_to_delete(
+    schema_client: pubsub_v1.SchemaServiceClient,
+) -> Generator[str, None, None]:
+    proto_schema = ensure_schema_exists(
+        PROTO_SCHEMA_ID_TO_DELETE, Schema.Type.PROTOCOL_BUFFER, schema_client
+    )
+
+    yield proto_schema.name
+
+    try:
+        schema_client.delete_schema(request={"name": proto_schema.name})
+    except (NotFound, InternalServerError):
+        pass
+
+
+@pytest.fixture(scope="module")
+def proto_schema_to_create(
+    schema_client: pubsub_v1.SchemaServiceClient,
+) -> Generator[str, None, None]:
+    proto_schema_path = schema_client.schema_path(PROJECT_ID, PROTO_SCHEMA_ID_TO_CREATE)
+
+    yield proto_schema_path
+
+    try:
+        schema_client.delete_schema(request={"name": proto_schema_path})
     except (NotFound, InternalServerError):
         pass
 
@@ -144,6 +196,16 @@ def avro_topic(
 
 
 @pytest.fixture(scope="module")
+def avro_topic_to_create(
+    publisher_client: pubsub_v1.PublisherClient, avro_schema: str
+) -> Generator[str, None, None]:
+    avro_topic_path = publisher_client.topic_path(PROJECT_ID, AVRO_TOPIC_ID_TO_CREATE)
+
+    yield avro_topic_path
+    publisher_client.delete_topic(request={"topic": avro_topic_path})
+
+
+@pytest.fixture(scope="module")
 def proto_topic(
     publisher_client: pubsub_v1.PublisherClient, proto_schema: str
 ) -> Generator[str, None, None]:
@@ -167,6 +229,19 @@ def proto_with_revisions_topic(
     yield proto_topic.name
 
     publisher_client.delete_topic(request={"topic": proto_topic.name})
+
+
+@pytest.fixture(scope="module")
+def proto_with_revisions_topic_to_create(
+    publisher_client: pubsub_v1.PublisherClient, proto_schema: str
+) -> Generator[str, None, None]:
+    topic_path = publisher_client.topic_path(
+        PROJECT_ID, PROTO_WITH_REVISIONS_TOPIC_ID_TO_CREATE
+    )
+
+    yield topic_path
+
+    publisher_client.delete_topic(request={"topic": topic_path})
 
 
 @pytest.fixture(scope="module")
@@ -226,36 +301,36 @@ def proto_subscription(
 
 def test_create_avro_schema(
     schema_client: pubsub_v1.SchemaServiceClient,
-    avro_schema: str,
+    avro_schema_to_create: str,
     capsys: CaptureFixture[str],
 ) -> None:
     try:
-        schema_client.delete_schema(request={"name": avro_schema})
+        schema_client.delete_schema(request={"name": avro_schema_to_create})
     except NotFound:
         pass
 
-    schema.create_avro_schema(PROJECT_ID, AVRO_SCHEMA_ID, AVSC_FILE)
+    schema.create_avro_schema(PROJECT_ID, AVRO_SCHEMA_ID_TO_CREATE, AVSC_FILE)
 
     out, _ = capsys.readouterr()
     assert "Created a schema using an Avro schema file:" in out
-    assert f"{avro_schema}" in out
+    assert f"{avro_schema_to_create}" in out
 
 
 def test_create_proto_schema(
     schema_client: pubsub_v1.SchemaServiceClient,
-    proto_schema: str,
+    proto_schema_to_create: str,
     capsys: CaptureFixture[str],
 ) -> None:
     try:
-        schema_client.delete_schema(request={"name": proto_schema})
+        schema_client.delete_schema(request={"name": proto_schema_to_create})
     except NotFound:
         pass
 
-    schema.create_proto_schema(PROJECT_ID, PROTO_SCHEMA_ID, PROTO_FILE)
+    schema.create_proto_schema(PROJECT_ID, PROTO_SCHEMA_ID_TO_CREATE, PROTO_FILE)
 
     out, _ = capsys.readouterr()
     assert "Created a schema using a protobuf schema file:" in out
-    assert f"{proto_schema}" in out
+    assert f"{proto_schema_to_create}" in out
 
 
 def test_commit_avro_schema(
@@ -339,22 +414,26 @@ def test_list_schema_revisions(capsys: CaptureFixture[str]) -> None:
 
 def test_create_topic_with_schema(
     avro_schema: str,
+    avro_topic_to_create: str,
     publisher_client: pubsub_v1.PublisherClient,
     capsys: CaptureFixture[str],
 ) -> None:
-    schema.create_topic_with_schema(PROJECT_ID, AVRO_TOPIC_ID, AVRO_SCHEMA_ID, "BINARY")
+    schema.create_topic_with_schema(
+        PROJECT_ID, AVRO_TOPIC_ID_TO_CREATE, AVRO_SCHEMA_ID, "BINARY"
+    )
     out, _ = capsys.readouterr()
     assert "Created a topic" in out
-    assert f"{AVRO_TOPIC_ID}" in out
+    assert f"{AVRO_TOPIC_ID_TO_CREATE}" in out
     assert f"{avro_schema}" in out
     assert "BINARY" in out or "2" in out
 
-    topic_path = publisher_client.topic_path(PROJECT_ID, AVRO_TOPIC_ID)
+    topic_path = publisher_client.topic_path(PROJECT_ID, AVRO_TOPIC_ID_TO_CREATE)
     publisher_client.delete_topic(request={"topic": topic_path})
 
 
 def test_create_topic_with_schema_revisions(
     proto_schema: str,
+    proto_with_revisions_topic_to_create: str,
     publisher_client: pubsub_v1.PublisherClient,
     capsys: CaptureFixture[str],
 ) -> None:
@@ -364,7 +443,7 @@ def test_create_topic_with_schema_revisions(
 
     schema.create_topic_with_schema_revisions(
         PROJECT_ID,
-        PROTO_WITH_REVISIONS_TOPIC_ID,
+        PROTO_WITH_REVISIONS_TOPIC_ID_TO_CREATE,
         PROTO_SCHEMA_ID,
         committed_schema.revision_id,
         committed_schema.revision_id,
@@ -372,13 +451,9 @@ def test_create_topic_with_schema_revisions(
     )
     out, _ = capsys.readouterr()
     assert "Created a topic" in out
-    assert f"{PROTO_WITH_REVISIONS_TOPIC_ID}" in out
+    assert f"{PROTO_WITH_REVISIONS_TOPIC_ID_TO_CREATE}" in out
     assert f"{proto_schema}" in out
     assert "BINARY" in out or "2" in out
-
-    # Cleanup
-    topic_path = publisher_client.topic_path(PROJECT_ID, PROTO_WITH_REVISIONS_TOPIC_ID)
-    publisher_client.delete_topic(request={"topic": topic_path})
 
 
 def test_update_topic_schema(
@@ -462,8 +537,10 @@ typed_flaky = cast(Callable[[C], C], flaky(max_runs=3, min_passes=1))
 
 
 @typed_flaky
-def test_delete_schema(proto_schema: str, capsys: CaptureFixture[str]) -> None:
-    schema.delete_schema(PROJECT_ID, PROTO_SCHEMA_ID)
+def test_delete_schema(
+    proto_schema_to_delete: str, capsys: CaptureFixture[str]
+) -> None:
+    schema.delete_schema(PROJECT_ID, PROTO_SCHEMA_ID_TO_DELETE)
     out, _ = capsys.readouterr()
     assert "Deleted a schema" in out
-    assert f"{proto_schema}" in out
+    assert f"{proto_schema_to_delete}" in out
