@@ -19,7 +19,6 @@ from typing import Any, Callable, Generator, TypeVar, cast
 import uuid
 
 from _pytest.capture import CaptureFixture
-import logging
 from flaky import flaky
 from google.api_core.exceptions import InternalServerError, NotFound
 from google.cloud import pubsub_v1
@@ -86,7 +85,6 @@ def avro_schema(
     try:
         schema_client.delete_schema(request={"name": avro_schema.name})
     except (NotFound, InternalServerError):
-        logging.info("could not delete schema %s", avro_schema.name)
         pass
 
 
@@ -352,7 +350,6 @@ def test_create_topic_with_schema(
     assert "BINARY" in out or "2" in out
 
     topic_path = publisher_client.topic_path(PROJECT_ID, AVRO_TOPIC_ID)
-    logging.info("deleting topic %s", topic_path)
     publisher_client.delete_topic(request={"topic": topic_path})
 
 
@@ -361,7 +358,6 @@ def test_create_topic_with_schema_revisions(
     publisher_client: pubsub_v1.PublisherClient,
     capsys: CaptureFixture[str],
 ) -> None:
-    logging.info("commiting schema %s", PROTO_SCHEMA_ID)
     committed_schema = schema.commit_proto_schema(
         PROJECT_ID, PROTO_SCHEMA_ID, PROTO_REVISION_FILE
     )
@@ -382,14 +378,12 @@ def test_create_topic_with_schema_revisions(
 
     # Cleanup
     topic_path = publisher_client.topic_path(PROJECT_ID, PROTO_WITH_REVISIONS_TOPIC_ID)
-    logging.info("deleting topic %s", topic_path)
     publisher_client.delete_topic(request={"topic": topic_path})
 
 
 def test_update_topic_schema(
     proto_schema: str, proto_with_revisions_topic: str, capsys: CaptureFixture[str]
 ) -> None:
-    logging.info("commiting schema %s", PROTO_SCHEMA_ID)
     committed_schema = schema.commit_proto_schema(
         PROJECT_ID, PROTO_SCHEMA_ID, PROTO_REVISION_FILE
     )
