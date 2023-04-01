@@ -192,7 +192,10 @@ def avro_topic(
     )
 
     yield avro_topic.name
-    publisher_client.delete_topic(request={"topic": avro_topic.name})
+    try:
+        publisher_client.delete_topic(request={"topic": avro_topic.name})
+    except NotFound:
+        pass
 
 
 @pytest.fixture(scope="module")
@@ -202,7 +205,10 @@ def avro_topic_to_create(
     avro_topic_path = publisher_client.topic_path(PROJECT_ID, AVRO_TOPIC_ID_TO_CREATE)
 
     yield avro_topic_path
-    publisher_client.delete_topic(request={"topic": avro_topic_path})
+    try:
+        publisher_client.delete_topic(request={"topic": avro_topic_path})
+    except NotFound:
+        pass
 
 
 @pytest.fixture(scope="module")
@@ -214,8 +220,10 @@ def proto_topic(
     )
 
     yield proto_topic.name
-
-    publisher_client.delete_topic(request={"topic": proto_topic.name})
+    try:
+        publisher_client.delete_topic(request={"topic": proto_topic.name})
+    except NotFound:
+        pass
 
 
 @pytest.fixture(scope="module")
@@ -227,8 +235,10 @@ def proto_with_revisions_topic(
     )
 
     yield proto_topic.name
-
-    publisher_client.delete_topic(request={"topic": proto_topic.name})
+    try:
+        publisher_client.delete_topic(request={"topic": proto_topic.name})
+    except NotFound:
+        pass
 
 
 @pytest.fixture(scope="module")
@@ -240,8 +250,10 @@ def proto_with_revisions_topic_to_create(
     )
 
     yield topic_path
-
-    publisher_client.delete_topic(request={"topic": topic_path})
+    try:
+        publisher_client.delete_topic(request={"topic": topic_path})
+    except NotFound:
+        pass
 
 
 @pytest.fixture(scope="module")
@@ -270,9 +282,12 @@ def avro_subscription(
 
     yield avro_subscription.name
 
-    subscriber_client.delete_subscription(
-        request={"subscription": avro_subscription.name}
-    )
+    try:
+        subscriber_client.delete_subscription(
+            request={"subscription": avro_subscription.name}
+        )
+    except NotFound:
+        pass
 
 
 @pytest.fixture(scope="module")
@@ -294,9 +309,12 @@ def proto_subscription(
 
     yield proto_subscription.name
 
-    subscriber_client.delete_subscription(
-        request={"subscription": proto_subscription.name}
-    )
+    try:
+        subscriber_client.delete_subscription(
+            request={"subscription": proto_subscription.name}
+        )
+    except NotFound:
+        pass
 
 
 def test_create_avro_schema(
@@ -374,7 +392,7 @@ def test_get_schema_revision(avro_schema: str, capsys: CaptureFixture[str]) -> N
     assert f"{avro_schema}" in out
 
 
-def test_rollback_schema_revsion(avro_schema: str, capsys: CaptureFixture[str]) -> None:
+def test_rollback_schema_revision(avro_schema: str, capsys: CaptureFixture[str]) -> None:
     committed_schema = schema.commit_avro_schema(
         PROJECT_ID, AVRO_SCHEMA_ID, AVSC_REVISION_FILE
     )
@@ -427,8 +445,6 @@ def test_create_topic_with_schema(
     assert f"{avro_schema}" in out
     assert "BINARY" in out or "2" in out
 
-    topic_path = publisher_client.topic_path(PROJECT_ID, AVRO_TOPIC_ID_TO_CREATE)
-    publisher_client.delete_topic(request={"topic": topic_path})
 
 
 def test_create_topic_with_schema_revisions(
