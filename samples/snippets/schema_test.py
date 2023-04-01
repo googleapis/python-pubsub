@@ -392,7 +392,9 @@ def test_get_schema_revision(avro_schema: str, capsys: CaptureFixture[str]) -> N
     assert f"{avro_schema}" in out
 
 
-def test_rollback_schema_revision(avro_schema: str, capsys: CaptureFixture[str]) -> None:
+def test_rollback_schema_revision(
+    avro_schema: str, capsys: CaptureFixture[str]
+) -> None:
     committed_schema = schema.commit_avro_schema(
         PROJECT_ID, AVRO_SCHEMA_ID, AVSC_REVISION_FILE
     )
@@ -444,7 +446,6 @@ def test_create_topic_with_schema(
     assert f"{AVRO_TOPIC_ID_TO_CREATE}" in out
     assert f"{avro_schema}" in out
     assert "BINARY" in out or "2" in out
-
 
 
 def test_create_topic_with_schema_revisions(
