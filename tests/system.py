@@ -23,6 +23,7 @@ import psutil
 import sys
 import threading
 import time
+from typing import Any, Callable, cast, TypeVar
 
 # special case python < 3.8
 if sys.version_info.major == 3 and sys.version_info.minor < 8:
@@ -30,6 +31,7 @@ if sys.version_info.major == 3 and sys.version_info.minor < 8:
 else:
     from unittest import mock
 
+from flaky import flaky
 import pytest
 
 import google.auth
@@ -42,6 +44,9 @@ from google.pubsub_v1 import types as gapic_types
 
 
 from test_utils.system import unique_resource_id
+
+C = TypeVar("C", bound=Callable[..., Any])
+typed_flaky = cast(Callable[[C], C], flaky(max_runs=3, min_passes=1))
 
 
 @pytest.fixture(scope="module")
@@ -512,6 +517,7 @@ class TestStreamingPull(object):
         with pytest.raises(CallbackError):
             future.result(timeout=30)
 
+    @typed_flaky
     def test_streaming_pull_ack_deadline(
         self, publisher, subscriber, project, topic_path, subscription_path, cleanup
     ):
@@ -563,6 +569,7 @@ class TestStreamingPull(object):
         finally:
             subscription_future.cancel()
 
+    @typed_flaky
     def test_streaming_pull_max_messages(
         self, publisher, topic_path, subscriber, subscription_path, cleanup
     ):
@@ -619,6 +626,7 @@ class TestStreamingPull(object):
         finally:
             subscription_future.cancel()  # trigger clean shutdown
 
+    @typed_flaky
     def test_streaming_pull_blocking_shutdown(
         self, publisher, topic_path, subscriber, subscription_path, cleanup
     ):
