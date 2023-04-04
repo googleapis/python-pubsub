@@ -607,7 +607,6 @@ class TestStreamingPull(object):
         finally:
             subscription_future.cancel()
 
-    @typed_flaky
     def test_streaming_pull_max_messages(
         self, publisher, topic_path_base, subscriber, subscription_path_base, cleanup
     ):
