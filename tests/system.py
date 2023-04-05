@@ -100,7 +100,8 @@ def test_publish_messages(publisher, topic_path, cleanup):
         assert isinstance(result, str)
 
 
-def test_publish_large_messages(publisher, topic_path, cleanup):
+def test_publish_large_messages(topic_path, cleanup):
+    publisher = pubsub_v1.PublisherClient(transport="grpc")
     # Make sure the topic gets deleted.
     cleanup.append((publisher.delete_topic, (), {"topic": topic_path}))
 
@@ -347,9 +348,9 @@ def test_listing_topic_subscriptions(publisher, subscriber, project, cleanup):
     assert subscriptions == {subscription_paths[0], subscription_paths[2]}
 
 
-def test_managing_topic_iam_policy(publisher, topic_path, cleanup):
+def test_managing_topic_iam_policy(topic_path, cleanup):
+    publisher = pubsub_v1.PublisherClient(transport="grpc")
     cleanup.append((publisher.delete_topic, (), {"topic": topic_path}))
-
     # create a topic and customize its policy
     publisher.create_topic(name=topic_path)
     topic_policy = publisher.get_iam_policy(request={"resource": topic_path})
@@ -376,8 +377,9 @@ def test_managing_topic_iam_policy(publisher, topic_path, cleanup):
 
 
 def test_managing_subscription_iam_policy(
-    publisher, subscriber, topic_path, subscription_path, cleanup
+    publisher, topic_path, subscription_path, cleanup
 ):
+    subscriber = pubsub_v1.SubscriberClient(transport="grpc")
     # Make sure the topic and subscription get deleted.
     cleanup.append((publisher.delete_topic, (), {"topic": topic_path}))
     cleanup.append(
