@@ -54,7 +54,6 @@ SYSTEM_TEST_STANDARD_DEPENDENCIES = [
     "google-cloud-testutils",
 ]
 SYSTEM_TEST_EXTERNAL_DEPENDENCIES = [
-    "flaky",
     "psutil",
 ]
 SYSTEM_TEST_LOCAL_DEPENDENCIES = []
