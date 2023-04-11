@@ -75,8 +75,8 @@ for file in python-pubsublite/samples/**/requirements.txt; do
     echo "- testing $file"
     echo "------------------------------------------------------------"
 
-    # Use pytest to execute tests for py-3.7
-    python3.7 -m venv py-3.8
+    # Use pytest to execute tests for py-3.8
+    python3.8 -m venv py-3.8
     source py-3.8/bin/activate
     # Install python-pubsublite samples tests requirements.
     python -m pip install --upgrade pip
