@@ -514,7 +514,8 @@ def publish_proto_messages(project_id: str, topic_id: str) -> None:
     from google.cloud.pubsub import PublisherClient
     from google.protobuf.json_format import MessageToJson
     from google.pubsub_v1.types import Encoding
-
+    
+    # TODO(developer): Replace with protocol buffer schema file 
     from utilities import us_states_pb2  # type: ignore
 
     # TODO(developer): Replace these variables before running the sample.
