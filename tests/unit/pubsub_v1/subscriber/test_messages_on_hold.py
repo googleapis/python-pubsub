@@ -12,12 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import logging
 import queue
 
 from google.cloud.pubsub_v1.subscriber import message
 from google.cloud.pubsub_v1.subscriber._protocol import messages_on_hold
 from google.pubsub_v1 import types as gapic_types
-from _pytest.capture import CaptureFixture
 
 
 def make_message(ack_id, ordering_key):
@@ -321,14 +321,17 @@ def test_ordered_and_unordered_messages_interleaved():
     assert moh.size == 0
 
 
-def test_cleanup_nonexistent_key(capsys: CaptureFixture[str]):
+def test_cleanup_nonexistent_key(caplog):
     moh = messages_on_hold.MessagesOnHold()
     moh._clean_up_ordering_key("non-existent-key")
     _, err = capsys.readouterr()
-    assert "Tried to clean up ordering key that does not exist: non-existent-key" in err
+    assert (
+        "Tried to clean up ordering key that does not exist: non-existent-key"
+        in caplog.text
+    )
 
 
-def test_cleanup_key_with_messages(capsys: CaptureFixture[str]):
+def test_cleanup_key_with_messages(caplog):
     moh = messages_on_hold.MessagesOnHold()
 
     # Put message with "key1".
@@ -338,5 +341,6 @@ def test_cleanup_key_with_messages(capsys: CaptureFixture[str]):
 
     moh._clean_up_ordering_key("key1")
     assert moh.size == 1
-    _, err = capsys.readouterr()
-    assert "Tried to clean up ordering key: key1 with 1 messages remaining." in err
+    assert (
+        "Tried to clean up ordering key: key1 with 1 messages remaining." in caplog.text
+    )
