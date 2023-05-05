@@ -318,3 +318,19 @@ def test_ordered_and_unordered_messages_interleaved():
     # No messages left.
     assert moh.get() is None
     assert moh.size == 0
+
+def test_cleanup_nonexistent_key():
+    moh = messages_on_hold.MessagesOnHold()
+    moh._clean_up_ordering_key("non-existent key")
+
+def test_cleanup_key_with_messages():
+    moh = messages_on_hold.MessagesOnHold()
+
+    # Put message with "key1".
+    msg1 = make_message(ack_id="ack1", ordering_key="key1")
+    moh.put(msg1)
+    assert moh.size == 1
+
+    moh._clean_up_ordering_key("key1")
+    assert moh.size == 1
+
