@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
 import queue
 
 from google.cloud.pubsub_v1.subscriber import message
@@ -374,7 +373,7 @@ def test_cleanup_key_with_messages(caplog):
     assert moh.size == 1
 
     # Get first message for "key1"
-    assert moh.get() == None
+    assert moh.get() is None
     assert moh.size == 1
 
     moh._clean_up_ordering_key("key1")
