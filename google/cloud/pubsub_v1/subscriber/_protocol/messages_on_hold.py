@@ -13,12 +13,15 @@
 # limitations under the License.
 
 import collections
+import logging
 import typing
 from typing import Any, Callable, Iterable, Optional
 
 if typing.TYPE_CHECKING:  # pragma: NO COVER
     from google.cloud.pubsub_v1 import subscriber
 
+
+_LOGGER = logging.getLogger(__name__)
 
 class MessagesOnHold(object):
     """Tracks messages on hold by ordering key. Not thread-safe."""
@@ -71,12 +74,14 @@ class MessagesOnHold(object):
             if msg.ordering_key:
                 pending_queue = self._pending_ordered_messages.get(msg.ordering_key)
                 if pending_queue is None:
+                    _LOGGER.info("pending_queue is None for ordering key: %s", msg.ordering_key)
                     # Create empty queue to indicate a message with the
                     # ordering key is in flight.
                     self._pending_ordered_messages[
                         msg.ordering_key
                     ] = collections.deque()
                     self._size = self._size - 1
+                    _LOGGER.info("Created pending_queue for ordering key: %s", msg.ordering_key)
                     return msg
                 else:
                     # Another message is in flight so add message to end of
@@ -113,23 +118,27 @@ class MessagesOnHold(object):
 
         Args:
             ordering_keys:
-                The ordering keys to activate. May be empty.
+                The ordering keys to activate. May be empty, or contain duplicates.
             schedule_message_callback:
                 The callback to call to schedule a message to be sent to the user.
         """
+        activated_keys = set()
         for key in ordering_keys:
-            assert (
-                self._pending_ordered_messages.get(key) is not None
-            ), "A message queue should exist for every ordered message in flight."
-            next_msg = self._get_next_for_ordering_key(key)
-            if next_msg:
-                # Schedule the next message because the previous was dropped.
-                # Note that this may overload the user's `max_bytes` limit, but
-                # not their `max_messages` limit.
-                schedule_message_callback(next_msg)
-            else:
-                # No more messages for this ordering key, so do clean-up.
-                self._clean_up_ordering_key(key)
+            if key not in activated_keys:
+                activated_keys.add(key)
+                pending_ordered_messages = self._pending_ordered_messages.get(key)
+                if pending_ordered_messages is None:
+                    _LOGGER.warning("No message queue exists for message ordering key: %s.", key)
+                    continue
+                next_msg = self._get_next_for_ordering_key(key)
+                if next_msg:
+                    # Schedule the next message because the previous was dropped.
+                    # Note that this may overload the user's `max_bytes` limit, but
+                    # not their `max_messages` limit.
+                    schedule_message_callback(next_msg)
+                else:
+                    # No more messages for this ordering key, so do clean-up.
+                    self._clean_up_ordering_key(key)
 
     def _get_next_for_ordering_key(
         self, ordering_key: str
@@ -157,12 +166,12 @@ class MessagesOnHold(object):
         Args:
             ordering_key: The ordering key to clean up.
         """
+        _LOGGER.debug("Cleaning up ordering key queue for key %s:", ordering_key)
         message_queue = self._pending_ordered_messages.get(ordering_key)
-        assert (
-            message_queue is not None
-        ), "Cleaning up ordering key that does not exist."
-        assert not len(message_queue), (
-            "Ordering key must only be removed if there are no messages "
-            "left for that key."
-        )
+        if message_queue is None:
+            _LOGGER.warning("Tried to clean up ordering key that does not exist %s", ordering_key)
+            return
+        if len(message_queue) > 0:
+            _LOGGER.warning("Tried to clean up ordering key: %s with %d messages remaining.", ordering_key, len(message_queue))
+            return
         del self._pending_ordered_messages[ordering_key]
