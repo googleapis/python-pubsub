@@ -324,7 +324,6 @@ def test_ordered_and_unordered_messages_interleaved():
 def test_cleanup_nonexistent_key(caplog):
     moh = messages_on_hold.MessagesOnHold()
     moh._clean_up_ordering_key("non-existent-key")
-    _, err = capsys.readouterr()
     assert (
         "Tried to clean up ordering key that does not exist: non-existent-key"
         in caplog.text
