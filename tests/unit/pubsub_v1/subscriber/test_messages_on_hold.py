@@ -148,7 +148,7 @@ def test_ordered_messages_drop_duplicate_keys(caplog):
     callback_tracker = ScheduleMessageCallbackTracker()
     moh.activate_ordering_keys(["key1"], callback_tracker)
     assert not callback_tracker.called
-    assert "No message queue exists for message ordering key: \"key1\""
+    assert 'No message queue exists for message ordering key: "key1"'
 
 
 def test_ordered_messages_two_keys():
@@ -347,7 +347,6 @@ def test_cleanup_key_with_messages(caplog):
     # Get first message for "key1"
     assert moh.get() == msg1
     assert moh.size == 1
-
 
     # Get first message for "key1"
     assert moh.get() == None
