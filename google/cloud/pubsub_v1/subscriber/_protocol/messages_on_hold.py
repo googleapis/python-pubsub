@@ -127,25 +127,22 @@ class MessagesOnHold(object):
             schedule_message_callback:
                 The callback to call to schedule a message to be sent to the user.
         """
-        activated_keys = set()
         for key in ordering_keys:
-            if key not in activated_keys:
-                activated_keys.add(key)
-                pending_ordered_messages = self._pending_ordered_messages.get(key)
-                if pending_ordered_messages is None:
-                    _LOGGER.warning(
-                        "No message queue exists for message ordering key: %s.", key
-                    )
-                    continue
-                next_msg = self._get_next_for_ordering_key(key)
-                if next_msg:
-                    # Schedule the next message because the previous was dropped.
-                    # Note that this may overload the user's `max_bytes` limit, but
-                    # not their `max_messages` limit.
-                    schedule_message_callback(next_msg)
-                else:
-                    # No more messages for this ordering key, so do clean-up.
-                    self._clean_up_ordering_key(key)
+            pending_ordered_messages = self._pending_ordered_messages.get(key)
+            if pending_ordered_messages is None:
+                _LOGGER.warning(
+                    "No message queue exists for message ordering key: %s.", key
+                )
+                continue
+            next_msg = self._get_next_for_ordering_key(key)
+            if next_msg:
+                # Schedule the next message because the previous was dropped.
+                # Note that this may overload the user's `max_bytes` limit, but
+                # not their `max_messages` limit.
+                schedule_message_callback(next_msg)
+            else:
+                # No more messages for this ordering key, so do clean-up.
+                self._clean_up_ordering_key(key)
 
     def _get_next_for_ordering_key(
         self, ordering_key: str
@@ -170,14 +167,14 @@ class MessagesOnHold(object):
     def _clean_up_ordering_key(self, ordering_key: str) -> None:
         """Clean up state for an ordering key with no pending messages.
 
-        Args:
+        Args
             ordering_key: The ordering key to clean up.
         """
         _LOGGER.debug("Cleaning up ordering key queue for key %s:", ordering_key)
         message_queue = self._pending_ordered_messages.get(ordering_key)
         if message_queue is None:
             _LOGGER.warning(
-                "Tried to clean up ordering key that does not exist %s", ordering_key
+                "Tried to clean up ordering key that does not exist: %s", ordering_key
             )
             return
         if len(message_queue) > 0:
