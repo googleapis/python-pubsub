@@ -324,9 +324,9 @@ def test_ordered_and_unordered_messages_interleaved():
 def test_cleanup_nonexistent_key(capsys: CaptureFixture[str]):
     moh = messages_on_hold.MessagesOnHold()
     moh._clean_up_ordering_key("non-existent-key")
-    out, _ = capsys.readouterr()
+    _, err = capsys.readouterr()
     assert (
-        "Tried to clean up ordering key that does not exist: non-existent-key" in out
+        "Tried to clean up ordering key that does not exist: non-existent-key" in err
     )
 
 
@@ -340,5 +340,5 @@ def test_cleanup_key_with_messages(capsys: CaptureFixture[str]):
 
     moh._clean_up_ordering_key("key1")
     assert moh.size == 1
-    out, _ = capsys.readouterr()
-    assert "Tried to clean up ordering key: key1 with 1 messages remaining." in out
+    _ err = capsys.readouterr()
+    assert "Tried to clean up ordering key: key1 with 1 messages remaining." in err
