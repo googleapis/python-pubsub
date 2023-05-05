@@ -75,18 +75,12 @@ class MessagesOnHold(object):
             if msg.ordering_key:
                 pending_queue = self._pending_ordered_messages.get(msg.ordering_key)
                 if pending_queue is None:
-                    _LOGGER.info(
-                        "pending_queue is None for ordering key: %s", msg.ordering_key
-                    )
                     # Create empty queue to indicate a message with the
                     # ordering key is in flight.
                     self._pending_ordered_messages[
                         msg.ordering_key
                     ] = collections.deque()
                     self._size = self._size - 1
-                    _LOGGER.info(
-                        "Created pending_queue for ordering key: %s", msg.ordering_key
-                    )
                     return msg
                 else:
                     # Another message is in flight so add message to end of
@@ -170,7 +164,6 @@ class MessagesOnHold(object):
         Args
             ordering_key: The ordering key to clean up.
         """
-        _LOGGER.debug("Cleaning up ordering key queue for key %s:", ordering_key)
         message_queue = self._pending_ordered_messages.get(ordering_key)
         if message_queue is None:
             _LOGGER.warning(

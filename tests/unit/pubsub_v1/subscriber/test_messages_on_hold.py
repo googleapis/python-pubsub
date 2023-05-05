@@ -112,7 +112,7 @@ def test_ordered_messages_one_key():
 
 def test_ordered_messages_drop_duplicate_keys(caplog):
     moh = messages_on_hold.MessagesOnHold()
-    # comment
+
     msg1 = make_message(ack_id="ack1", ordering_key="key1")
     moh.put(msg1)
     assert moh.size == 1
@@ -136,7 +136,12 @@ def test_ordered_messages_drop_duplicate_keys(caplog):
     assert callback_tracker.called
     assert callback_tracker.message == msg2
     assert moh.size == 0
-    assert len(moh._pending_ordered_messages) == 1
+    assert len(moh._pending_ordered_messages) == 0
+
+    # Activate "key1" again
+    callback_tracker = ScheduleMessageCallbackTracker()
+    moh.activate_ordering_keys(["key1"], callback_tracker)
+    assert not callback_tracker.called
 
     # Activate "key1" again. There are no other messages for that key, so clean
     # up state for that key.
@@ -144,11 +149,31 @@ def test_ordered_messages_drop_duplicate_keys(caplog):
     moh.activate_ordering_keys(["key1"], callback_tracker)
     assert not callback_tracker.called
 
-    # Activate "key1" again (dropping a message we already dropped)
+    msg3 = make_message(ack_id="ack3", ordering_key="key1")
+    moh.put(msg3)
+    assert moh.size == 1
+
+    # Get next message for "key1"
+    assert moh.get() == msg3
+    assert moh.size == 0
+
+    # Activate "key1".
     callback_tracker = ScheduleMessageCallbackTracker()
     moh.activate_ordering_keys(["key1"], callback_tracker)
     assert not callback_tracker.called
-    assert 'No message queue exists for message ordering key: "key1"'
+
+     # Activate "key1" again. There are no other messages for that key, so clean
+    # up state for that key.
+    callback_tracker = ScheduleMessageCallbackTracker()
+    moh.activate_ordering_keys(["key1"], callback_tracker)
+    assert not callback_tracker.called
+
+     # Activate "key1" again after being cleaned up. There are no other messages for that key, so clean
+    # up state for that key.
+    callback_tracker = ScheduleMessageCallbackTracker()
+    moh.activate_ordering_keys(["key1"], callback_tracker)
+    assert not callback_tracker.called
+    assert 'No message queue exists for message ordering key: key1' in caplog.text
 
 
 def test_ordered_messages_two_keys():
