@@ -325,9 +325,7 @@ def test_cleanup_nonexistent_key(capsys: CaptureFixture[str]):
     moh = messages_on_hold.MessagesOnHold()
     moh._clean_up_ordering_key("non-existent-key")
     _, err = capsys.readouterr()
-    assert (
-        "Tried to clean up ordering key that does not exist: non-existent-key" in err
-    )
+    assert "Tried to clean up ordering key that does not exist: non-existent-key" in err
 
 
 def test_cleanup_key_with_messages(capsys: CaptureFixture[str]):
