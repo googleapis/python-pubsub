@@ -17,6 +17,7 @@ import queue
 from google.cloud.pubsub_v1.subscriber import message
 from google.cloud.pubsub_v1.subscriber._protocol import messages_on_hold
 from google.pubsub_v1 import types as gapic_types
+from _pytest.capture import CaptureFixture
 
 
 def make_message(ack_id, ordering_key):
@@ -108,9 +109,10 @@ def test_ordered_messages_one_key():
     assert moh.get() is None
     assert moh.size == 0
 
+
 def test_ordered_messages_drop_duplicate_keys():
     moh = messages_on_hold.MessagesOnHold()
-# comment
+    # comment
     msg1 = make_message(ack_id="ack1", ordering_key="key1")
     moh.put(msg1)
     assert moh.size == 1
@@ -146,7 +148,6 @@ def test_ordered_messages_drop_duplicate_keys():
     callback_tracker = ScheduleMessageCallbackTracker()
     moh.activate_ordering_keys(["key1"], callback_tracker)
     assert not callback_tracker.called
-
 
 
 def test_ordered_messages_two_keys():
@@ -319,11 +320,17 @@ def test_ordered_and_unordered_messages_interleaved():
     assert moh.get() is None
     assert moh.size == 0
 
-def test_cleanup_nonexistent_key():
-    moh = messages_on_hold.MessagesOnHold()
-    moh._clean_up_ordering_key("non-existent key")
 
-def test_cleanup_key_with_messages():
+def test_cleanup_nonexistent_key(capsys: CaptureFixture[str]):
+    moh = messages_on_hold.MessagesOnHold()
+    moh._clean_up_ordering_key("non-existent-key")
+    out, _ = capsys.readouterr()
+    assert (
+        f"Tried to clean up ordering key that does not exist: non-existent-key" in out
+    )
+
+
+def test_cleanup_key_with_messages(capsys: CaptureFixture[str]):
     moh = messages_on_hold.MessagesOnHold()
 
     # Put message with "key1".
@@ -333,4 +340,5 @@ def test_cleanup_key_with_messages():
 
     moh._clean_up_ordering_key("key1")
     assert moh.size == 1
-
+    out, _ = capsys.readouterr()
+    assert f"Tried to clean up ordering key: key1 with 1 messages remaining." in out

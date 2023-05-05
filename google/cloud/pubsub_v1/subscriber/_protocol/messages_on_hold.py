@@ -23,6 +23,7 @@ if typing.TYPE_CHECKING:  # pragma: NO COVER
 
 _LOGGER = logging.getLogger(__name__)
 
+
 class MessagesOnHold(object):
     """Tracks messages on hold by ordering key. Not thread-safe."""
 
@@ -74,14 +75,18 @@ class MessagesOnHold(object):
             if msg.ordering_key:
                 pending_queue = self._pending_ordered_messages.get(msg.ordering_key)
                 if pending_queue is None:
-                    _LOGGER.info("pending_queue is None for ordering key: %s", msg.ordering_key)
+                    _LOGGER.info(
+                        "pending_queue is None for ordering key: %s", msg.ordering_key
+                    )
                     # Create empty queue to indicate a message with the
                     # ordering key is in flight.
                     self._pending_ordered_messages[
                         msg.ordering_key
                     ] = collections.deque()
                     self._size = self._size - 1
-                    _LOGGER.info("Created pending_queue for ordering key: %s", msg.ordering_key)
+                    _LOGGER.info(
+                        "Created pending_queue for ordering key: %s", msg.ordering_key
+                    )
                     return msg
                 else:
                     # Another message is in flight so add message to end of
@@ -128,7 +133,9 @@ class MessagesOnHold(object):
                 activated_keys.add(key)
                 pending_ordered_messages = self._pending_ordered_messages.get(key)
                 if pending_ordered_messages is None:
-                    _LOGGER.warning("No message queue exists for message ordering key: %s.", key)
+                    _LOGGER.warning(
+                        "No message queue exists for message ordering key: %s.", key
+                    )
                     continue
                 next_msg = self._get_next_for_ordering_key(key)
                 if next_msg:
@@ -169,9 +176,15 @@ class MessagesOnHold(object):
         _LOGGER.debug("Cleaning up ordering key queue for key %s:", ordering_key)
         message_queue = self._pending_ordered_messages.get(ordering_key)
         if message_queue is None:
-            _LOGGER.warning("Tried to clean up ordering key that does not exist %s", ordering_key)
+            _LOGGER.warning(
+                "Tried to clean up ordering key that does not exist %s", ordering_key
+            )
             return
         if len(message_queue) > 0:
-            _LOGGER.warning("Tried to clean up ordering key: %s with %d messages remaining.", ordering_key, len(message_queue))
+            _LOGGER.warning(
+                "Tried to clean up ordering key: %s with %d messages remaining.",
+                ordering_key,
+                len(message_queue),
+            )
             return
         del self._pending_ordered_messages[ordering_key]
