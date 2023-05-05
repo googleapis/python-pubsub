@@ -340,5 +340,5 @@ def test_cleanup_key_with_messages(capsys: CaptureFixture[str]):
 
     moh._clean_up_ordering_key("key1")
     assert moh.size == 1
-    _ err = capsys.readouterr()
+    _, err = capsys.readouterr()
     assert "Tried to clean up ordering key: key1 with 1 messages remaining." in err
