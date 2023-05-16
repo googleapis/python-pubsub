@@ -13,6 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+from google.pubsub import gapic_version as package_version
+
+__version__ = package_version.__version__
+
 
 from google.pubsub_v1.services.publisher.client import PublisherClient
 from google.pubsub_v1.services.publisher.async_client import PublisherAsyncClient
@@ -25,6 +29,7 @@ from google.pubsub_v1.services.subscriber.async_client import SubscriberAsyncCli
 
 from google.pubsub_v1.types.pubsub import AcknowledgeRequest
 from google.pubsub_v1.types.pubsub import BigQueryConfig
+from google.pubsub_v1.types.pubsub import CloudStorageConfig
 from google.pubsub_v1.types.pubsub import CreateSnapshotRequest
 from google.pubsub_v1.types.pubsub import DeadLetterPolicy
 from google.pubsub_v1.types.pubsub import DeleteSnapshotRequest
@@ -68,11 +73,16 @@ from google.pubsub_v1.types.pubsub import Topic
 from google.pubsub_v1.types.pubsub import UpdateSnapshotRequest
 from google.pubsub_v1.types.pubsub import UpdateSubscriptionRequest
 from google.pubsub_v1.types.pubsub import UpdateTopicRequest
+from google.pubsub_v1.types.schema import CommitSchemaRequest
 from google.pubsub_v1.types.schema import CreateSchemaRequest
 from google.pubsub_v1.types.schema import DeleteSchemaRequest
+from google.pubsub_v1.types.schema import DeleteSchemaRevisionRequest
 from google.pubsub_v1.types.schema import GetSchemaRequest
+from google.pubsub_v1.types.schema import ListSchemaRevisionsRequest
+from google.pubsub_v1.types.schema import ListSchemaRevisionsResponse
 from google.pubsub_v1.types.schema import ListSchemasRequest
 from google.pubsub_v1.types.schema import ListSchemasResponse
+from google.pubsub_v1.types.schema import RollbackSchemaRequest
 from google.pubsub_v1.types.schema import Schema
 from google.pubsub_v1.types.schema import ValidateMessageRequest
 from google.pubsub_v1.types.schema import ValidateMessageResponse
@@ -90,6 +100,7 @@ __all__ = (
     "SubscriberAsyncClient",
     "AcknowledgeRequest",
     "BigQueryConfig",
+    "CloudStorageConfig",
     "CreateSnapshotRequest",
     "DeadLetterPolicy",
     "DeleteSnapshotRequest",
@@ -133,11 +144,16 @@ __all__ = (
     "UpdateSnapshotRequest",
     "UpdateSubscriptionRequest",
     "UpdateTopicRequest",
+    "CommitSchemaRequest",
     "CreateSchemaRequest",
     "DeleteSchemaRequest",
+    "DeleteSchemaRevisionRequest",
     "GetSchemaRequest",
+    "ListSchemaRevisionsRequest",
+    "ListSchemaRevisionsResponse",
     "ListSchemasRequest",
     "ListSchemasResponse",
+    "RollbackSchemaRequest",
     "Schema",
     "ValidateMessageRequest",
     "ValidateMessageResponse",

@@ -13,6 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+from google.pubsub_v1 import gapic_version as package_version
+
+__version__ = package_version.__version__
+
 
 from .services.publisher import PublisherClient
 from .services.publisher import PublisherAsyncClient
@@ -23,6 +27,7 @@ from .services.subscriber import SubscriberAsyncClient
 
 from .types.pubsub import AcknowledgeRequest
 from .types.pubsub import BigQueryConfig
+from .types.pubsub import CloudStorageConfig
 from .types.pubsub import CreateSnapshotRequest
 from .types.pubsub import DeadLetterPolicy
 from .types.pubsub import DeleteSnapshotRequest
@@ -66,11 +71,16 @@ from .types.pubsub import Topic
 from .types.pubsub import UpdateSnapshotRequest
 from .types.pubsub import UpdateSubscriptionRequest
 from .types.pubsub import UpdateTopicRequest
+from .types.schema import CommitSchemaRequest
 from .types.schema import CreateSchemaRequest
 from .types.schema import DeleteSchemaRequest
+from .types.schema import DeleteSchemaRevisionRequest
 from .types.schema import GetSchemaRequest
+from .types.schema import ListSchemaRevisionsRequest
+from .types.schema import ListSchemaRevisionsResponse
 from .types.schema import ListSchemasRequest
 from .types.schema import ListSchemasResponse
+from .types.schema import RollbackSchemaRequest
 from .types.schema import Schema
 from .types.schema import ValidateMessageRequest
 from .types.schema import ValidateMessageResponse
@@ -85,10 +95,13 @@ __all__ = (
     "SubscriberAsyncClient",
     "AcknowledgeRequest",
     "BigQueryConfig",
+    "CloudStorageConfig",
+    "CommitSchemaRequest",
     "CreateSchemaRequest",
     "CreateSnapshotRequest",
     "DeadLetterPolicy",
     "DeleteSchemaRequest",
+    "DeleteSchemaRevisionRequest",
     "DeleteSnapshotRequest",
     "DeleteSubscriptionRequest",
     "DeleteTopicRequest",
@@ -100,6 +113,8 @@ __all__ = (
     "GetSnapshotRequest",
     "GetSubscriptionRequest",
     "GetTopicRequest",
+    "ListSchemaRevisionsRequest",
+    "ListSchemaRevisionsResponse",
     "ListSchemasRequest",
     "ListSchemasResponse",
     "ListSnapshotsRequest",
@@ -124,6 +139,7 @@ __all__ = (
     "PushConfig",
     "ReceivedMessage",
     "RetryPolicy",
+    "RollbackSchemaRequest",
     "Schema",
     "SchemaServiceClient",
     "SchemaSettings",

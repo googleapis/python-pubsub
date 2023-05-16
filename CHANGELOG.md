@@ -5,6 +5,146 @@
 [1]: https://pypi.org/project/google-cloud-pubsub/#history
 
 
+## [2.17.0](https://github.com/googleapis/python-pubsub/compare/v2.16.1...v2.17.0) (2023-05-12)
+
+
+### Features
+
+* Add cloud storage subscription fields ([#918](https://github.com/googleapis/python-pubsub/issues/918)) ([6e262da](https://github.com/googleapis/python-pubsub/commit/6e262da9810f58f3f34b352e4771e084381ed0aa))
+
+## [2.16.1](https://github.com/googleapis/python-pubsub/compare/v2.16.0...v2.16.1) (2023-05-05)
+
+
+### Bug Fixes
+
+* Allow dropping cleaned-up keys ([#911](https://github.com/googleapis/python-pubsub/issues/911)) ([4b3157c](https://github.com/googleapis/python-pubsub/commit/4b3157ccb83771a2e613fc3475035f24d358ccf6))
+
+
+### Documentation
+
+* Add comment to setup.py ([#905](https://github.com/googleapis/python-pubsub/issues/905)) ([9825109](https://github.com/googleapis/python-pubsub/commit/9825109a826e63cd076c21367157be7a3c01c45b))
+
+## [2.16.0](https://github.com/googleapis/python-pubsub/compare/v2.15.2...v2.16.0) (2023-04-06)
+
+
+### Features
+
+* Enable "rest" transport in Python for services supporting numeric enums ([#863](https://github.com/googleapis/python-pubsub/issues/863)) ([a80c1d1](https://github.com/googleapis/python-pubsub/commit/a80c1d1f6f880cd13c247231bdc86c824edab8cb))
+
+
+### Documentation
+
+* Fix formatting of request arg in docstring ([#894](https://github.com/googleapis/python-pubsub/issues/894)) ([ee2ea73](https://github.com/googleapis/python-pubsub/commit/ee2ea7341268fd5428d98208b8af2fc96efe8d03))
+
+## [2.15.2](https://github.com/googleapis/python-pubsub/compare/v2.15.1...v2.15.2) (2023-03-20)
+
+
+### Documentation
+
+* Update missing docstrings ([#890](https://github.com/googleapis/python-pubsub/issues/890)) ([5849e04](https://github.com/googleapis/python-pubsub/commit/5849e048f48074e3a8ecddbe3bfbcfc9da094a28))
+
+## [2.15.1](https://github.com/googleapis/python-pubsub/compare/v2.15.0...v2.15.1) (2023-03-14)
+
+
+### Bug Fixes
+
+* Set x-goog-request-params for streaming pull request ([#884](https://github.com/googleapis/python-pubsub/issues/884)) ([0d247e6](https://github.com/googleapis/python-pubsub/commit/0d247e6b189409b4d57c95dbbbf3df3e0fac0fa2))
+
+## [2.15.0](https://github.com/googleapis/python-pubsub/compare/v2.14.1...v2.15.0) (2023-02-22)
+
+
+### Features
+
+* Add google.api.method.signature to update methods ([3dd43d6](https://github.com/googleapis/python-pubsub/commit/3dd43d6c9facc59c7c4913cac605aa95176cc857))
+* Add temporary_failed_ack_ids to ModifyAckDeadlineConfirmation ([3dd43d6](https://github.com/googleapis/python-pubsub/commit/3dd43d6c9facc59c7c4913cac605aa95176cc857))
+
+
+### Bug Fixes
+
+* Add service_yaml_parameters to py_gapic_library BUILD.bazel targets ([3dd43d6](https://github.com/googleapis/python-pubsub/commit/3dd43d6c9facc59c7c4913cac605aa95176cc857))
+* Move global import in publisher sample ([#866](https://github.com/googleapis/python-pubsub/issues/866)) ([271a46d](https://github.com/googleapis/python-pubsub/commit/271a46d4da0c668674a36c0f58bbe0fe70985b75))
+* Port proto changes ([#871](https://github.com/googleapis/python-pubsub/issues/871)) ([3dd43d6](https://github.com/googleapis/python-pubsub/commit/3dd43d6c9facc59c7c4913cac605aa95176cc857))
+
+
+### Documentation
+
+* Clarify BigQueryConfig PERMISSION_DENIED state ([3dd43d6](https://github.com/googleapis/python-pubsub/commit/3dd43d6c9facc59c7c4913cac605aa95176cc857))
+* Clarify subscription description ([3dd43d6](https://github.com/googleapis/python-pubsub/commit/3dd43d6c9facc59c7c4913cac605aa95176cc857))
+* Fix Pull description ([3dd43d6](https://github.com/googleapis/python-pubsub/commit/3dd43d6c9facc59c7c4913cac605aa95176cc857))
+* Fix PullResponse description ([3dd43d6](https://github.com/googleapis/python-pubsub/commit/3dd43d6c9facc59c7c4913cac605aa95176cc857))
+* Replacing HTML code with Markdown ([3dd43d6](https://github.com/googleapis/python-pubsub/commit/3dd43d6c9facc59c7c4913cac605aa95176cc857))
+* Update Pub/Sub topic retention limit from 7 days to 31 days ([3dd43d6](https://github.com/googleapis/python-pubsub/commit/3dd43d6c9facc59c7c4913cac605aa95176cc857))
+
+## [2.14.1](https://github.com/googleapis/python-pubsub/compare/v2.14.0...v2.14.1) (2023-02-08)
+
+
+### Bug Fixes
+
+* Add context manager return types ([4f690b9](https://github.com/googleapis/python-pubsub/commit/4f690b9287beefbca6505cf88637f4a8c5077152))
+
+
+### Documentation
+
+* Add documentation for enums ([4f690b9](https://github.com/googleapis/python-pubsub/commit/4f690b9287beefbca6505cf88637f4a8c5077152))
+* Mark revision_id in CommitSchemaRevisionRequest as deprecated ([#861](https://github.com/googleapis/python-pubsub/issues/861)) ([09b846d](https://github.com/googleapis/python-pubsub/commit/09b846ddd066519c0570522b8525ec5705714b0a))
+
+## [2.14.0](https://github.com/googleapis/python-pubsub/compare/v2.13.12...v2.14.0) (2023-01-18)
+
+
+### Features
+
+* Add schema evolution methods and fields ([9479356](https://github.com/googleapis/python-pubsub/commit/9479356029f28c565a06ab759330c6e430a47c51))
+* Add support for python 3.11 ([9479356](https://github.com/googleapis/python-pubsub/commit/9479356029f28c565a06ab759330c6e430a47c51))
+
+## [2.13.12](https://github.com/googleapis/python-pubsub/compare/v2.13.11...v2.13.12) (2023-01-06)
+
+
+### Bug Fixes
+
+* **deps:** Require google-api-core &gt;=1.34.0, >=2.11.0  ([060f00b](https://github.com/googleapis/python-pubsub/commit/060f00bcea5cd129be3a2d37078535cc97b4f5e8))
+* Drop usage of pkg_resources ([060f00b](https://github.com/googleapis/python-pubsub/commit/060f00bcea5cd129be3a2d37078535cc97b4f5e8))
+* Fix timeout default values ([060f00b](https://github.com/googleapis/python-pubsub/commit/060f00bcea5cd129be3a2d37078535cc97b4f5e8))
+
+
+### Documentation
+
+* **samples:** Snippetgen should call await on the operation coroutine before calling result ([060f00b](https://github.com/googleapis/python-pubsub/commit/060f00bcea5cd129be3a2d37078535cc97b4f5e8))
+
+## [2.13.11](https://github.com/googleapis/python-pubsub/compare/v2.13.10...v2.13.11) (2022-11-11)
+
+
+### Bug Fixes
+
+* Remove suboptimal logic in leasing behavior ([#816](https://github.com/googleapis/python-pubsub/issues/816)) ([f067af3](https://github.com/googleapis/python-pubsub/commit/f067af348b8d3deb72981c58d942e887c0efb5ff))
+
+## [2.13.10](https://github.com/googleapis/python-pubsub/compare/v2.13.8...v2.13.10) (2022-10-14)
+
+
+### Bug Fixes
+
+* Batch at most 1,000 ack ids per request ([#802](https://github.com/googleapis/python-pubsub/issues/802)) ([4361e67](https://github.com/googleapis/python-pubsub/commit/4361e6735004a5600ee73979b99e6b9dd587c49b))
+* **deps:** Allow protobuf 3.19.5 ([#801](https://github.com/googleapis/python-pubsub/issues/801)) ([fa23503](https://github.com/googleapis/python-pubsub/commit/fa235033481783c2ec378b2a26b223bdff206461))
+* Silence invalid_ack_id warnings for receipt modacks ([#798](https://github.com/googleapis/python-pubsub/issues/798)) ([17feea5](https://github.com/googleapis/python-pubsub/commit/17feea5783f3a878b4dcfb3a8570585f7637378f))
+
+
+### Miscellaneous Chores
+
+* release as 2.13.10 ([34f022b](https://github.com/googleapis/python-pubsub/commit/34f022b4ee62d53a193bc2babafad508e2f2540b))
+
+## [2.13.8](https://github.com/googleapis/python-pubsub/compare/v2.13.7...v2.13.8) (2022-10-03)
+
+
+### Bug Fixes
+
+* **deps:** Require protobuf >= 3.20.2 ([#792](https://github.com/googleapis/python-pubsub/issues/792)) ([1a54f7c](https://github.com/googleapis/python-pubsub/commit/1a54f7cd3d997270e0a5d70f7caea32d8753be76))
+
+## [2.13.7](https://github.com/googleapis/python-pubsub/compare/v2.13.6...v2.13.7) (2022-09-22)
+
+
+### Bug Fixes
+
+* Remove expired ack_ids ([#787](https://github.com/googleapis/python-pubsub/issues/787)) ([b4b809d](https://github.com/googleapis/python-pubsub/commit/b4b809d616cf93881815d6baadf2dd322ab566d1))
+
 ## [2.13.6](https://github.com/googleapis/python-pubsub/compare/v2.13.5...v2.13.6) (2022-08-11)
 
 

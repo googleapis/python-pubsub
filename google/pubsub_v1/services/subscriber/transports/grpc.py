@@ -53,14 +53,14 @@ class SubscriberGrpcTransport(SubscriberTransport):
         self,
         *,
         host: str = "pubsub.googleapis.com",
-        credentials: ga_credentials.Credentials = None,
-        credentials_file: str = None,
-        scopes: Sequence[str] = None,
-        channel: grpc.Channel = None,
-        api_mtls_endpoint: str = None,
-        client_cert_source: Callable[[], Tuple[bytes, bytes]] = None,
-        ssl_channel_credentials: grpc.ChannelCredentials = None,
-        client_cert_source_for_mtls: Callable[[], Tuple[bytes, bytes]] = None,
+        credentials: Optional[ga_credentials.Credentials] = None,
+        credentials_file: Optional[str] = None,
+        scopes: Optional[Sequence[str]] = None,
+        channel: Optional[grpc.Channel] = None,
+        api_mtls_endpoint: Optional[str] = None,
+        client_cert_source: Optional[Callable[[], Tuple[bytes, bytes]]] = None,
+        ssl_channel_credentials: Optional[grpc.ChannelCredentials] = None,
+        client_cert_source_for_mtls: Optional[Callable[[], Tuple[bytes, bytes]]] = None,
         quota_project_id: Optional[str] = None,
         client_info: gapic_v1.client_info.ClientInfo = DEFAULT_CLIENT_INFO,
         always_use_jwt_access: Optional[bool] = False,
@@ -189,8 +189,8 @@ class SubscriberGrpcTransport(SubscriberTransport):
     def create_channel(
         cls,
         host: str = "pubsub.googleapis.com",
-        credentials: ga_credentials.Credentials = None,
-        credentials_file: str = None,
+        credentials: Optional[ga_credentials.Credentials] = None,
+        credentials_file: Optional[str] = None,
         scopes: Optional[Sequence[str]] = None,
         quota_project_id: Optional[str] = None,
         **kwargs,
@@ -452,9 +452,7 @@ class SubscriberGrpcTransport(SubscriberTransport):
     def pull(self) -> Callable[[pubsub.PullRequest], pubsub.PullResponse]:
         r"""Return a callable for the pull method over gRPC.
 
-        Pulls messages from the server. The server may return
-        ``UNAVAILABLE`` if there are too many concurrent pull requests
-        pending for the given subscription.
+        Pulls messages from the server.
 
         Returns:
             Callable[[~.PullRequest],
@@ -543,13 +541,12 @@ class SubscriberGrpcTransport(SubscriberTransport):
     def get_snapshot(self) -> Callable[[pubsub.GetSnapshotRequest], pubsub.Snapshot]:
         r"""Return a callable for the get snapshot method over gRPC.
 
-        Gets the configuration details of a snapshot.
-        Snapshots are used in <a
-        href="https://cloud.google.com/pubsub/docs/replay-overview">Seek</a>
-        operations, which allow you to manage message
-        acknowledgments in bulk. That is, you can set the
-        acknowledgment state of messages in an existing
-        subscription to the state captured by a snapshot.
+        Gets the configuration details of a snapshot. Snapshots are used
+        in
+        `Seek <https://cloud.google.com/pubsub/docs/replay-overview>`__
+        operations, which allow you to manage message acknowledgments in
+        bulk. That is, you can set the acknowledgment state of messages
+        in an existing subscription to the state captured by a snapshot.
 
         Returns:
             Callable[[~.GetSnapshotRequest],
@@ -650,13 +647,10 @@ class SubscriberGrpcTransport(SubscriberTransport):
         r"""Return a callable for the update snapshot method over gRPC.
 
         Updates an existing snapshot. Snapshots are used in
-        <a
-        href="https://cloud.google.com/pubsub/docs/replay-overview">Seek</a>
-        operations, which allow
-        you to manage message acknowledgments in bulk. That is,
-        you can set the acknowledgment state of messages in an
-        existing subscription to the state captured by a
-        snapshot.
+        `Seek <https://cloud.google.com/pubsub/docs/replay-overview>`__
+        operations, which allow you to manage message acknowledgments in
+        bulk. That is, you can set the acknowledgment state of messages
+        in an existing subscription to the state captured by a snapshot.
 
         Returns:
             Callable[[~.UpdateSnapshotRequest],

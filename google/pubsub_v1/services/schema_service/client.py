@@ -17,8 +17,20 @@ from collections import OrderedDict
 import functools
 import os
 import re
-from typing import Dict, Mapping, Optional, Sequence, Tuple, Type, Union
-import pkg_resources
+from typing import (
+    Dict,
+    Mapping,
+    MutableMapping,
+    MutableSequence,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    Union,
+    cast,
+)
+
+from google.pubsub_v1 import gapic_version as package_version
 
 from google.api_core import client_options as client_options_lib
 from google.api_core import exceptions as core_exceptions
@@ -37,6 +49,7 @@ except AttributeError:  # pragma: NO COVER
 
 from google.iam.v1 import iam_policy_pb2  # type: ignore
 from google.iam.v1 import policy_pb2  # type: ignore
+from google.protobuf import timestamp_pb2  # type: ignore
 from google.pubsub_v1.services.schema_service import pagers
 from google.pubsub_v1.types import schema
 from google.pubsub_v1.types import schema as gp_schema
@@ -45,6 +58,7 @@ import grpc
 from .transports.base import SchemaServiceTransport, DEFAULT_CLIENT_INFO
 from .transports.grpc import SchemaServiceGrpcTransport
 from .transports.grpc_asyncio import SchemaServiceGrpcAsyncIOTransport
+from .transports.rest import SchemaServiceRestTransport
 
 
 class SchemaServiceClientMeta(type):
@@ -58,10 +72,11 @@ class SchemaServiceClientMeta(type):
     _transport_registry = OrderedDict()  # type: Dict[str, Type[SchemaServiceTransport]]
     _transport_registry["grpc"] = SchemaServiceGrpcTransport
     _transport_registry["grpc_asyncio"] = SchemaServiceGrpcAsyncIOTransport
+    _transport_registry["rest"] = SchemaServiceRestTransport
 
     def get_transport_class(
         cls,
-        label: str = None,
+        label: Optional[str] = None,
     ) -> Type[SchemaServiceTransport]:
         """Returns an appropriate transport class.
 
@@ -276,7 +291,7 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
         The API endpoint is determined in the following order:
         (1) if `client_options.api_endpoint` if provided, use the provided one.
         (2) if `GOOGLE_API_USE_CLIENT_CERTIFICATE` environment variable is "always", use the
-        default mTLS endpoint; if the environment variabel is "never", use the default API
+        default mTLS endpoint; if the environment variable is "never", use the default API
         endpoint; otherwise if client cert source exists, use the default mTLS endpoint, otherwise
         use the default API endpoint.
 
@@ -331,8 +346,8 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
         self,
         *,
         credentials: Optional[ga_credentials.Credentials] = None,
-        transport: Union[str, SchemaServiceTransport, None] = None,
-        client_options: Optional[client_options_lib.ClientOptions] = None,
+        transport: Optional[Union[str, SchemaServiceTransport]] = None,
+        client_options: Optional[Union[client_options_lib.ClientOptions, dict]] = None,
         client_info: gapic_v1.client_info.ClientInfo = DEFAULT_CLIENT_INFO,
     ) -> None:
         """Instantiates the schema service client.
@@ -346,7 +361,7 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
             transport (Union[str, SchemaServiceTransport]): The
                 transport to use. If set to None, a transport is chosen
                 automatically.
-            client_options (google.api_core.client_options.ClientOptions): Custom options for the
+            client_options (Optional[Union[google.api_core.client_options.ClientOptions, dict]]): Custom options for the
                 client. It won't take effect if a ``transport`` instance is provided.
                 (1) The ``api_endpoint`` property can be used to override the
                 default endpoint provided by the client. GOOGLE_API_USE_MTLS_ENDPOINT
@@ -376,6 +391,7 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
             client_options = client_options_lib.from_dict(client_options)
         if client_options is None:
             client_options = client_options_lib.ClientOptions()
+        client_options = cast(client_options_lib.ClientOptions, client_options)
 
         api_endpoint, client_cert_source_func = self.get_mtls_endpoint_and_cert_source(
             client_options
@@ -437,19 +453,26 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
 
     def create_schema(
         self,
-        request: Union[gp_schema.CreateSchemaRequest, dict] = None,
+        request: Optional[Union[gp_schema.CreateSchemaRequest, dict]] = None,
         *,
-        parent: str = None,
-        schema: gp_schema.Schema = None,
-        schema_id: str = None,
+        parent: Optional[str] = None,
+        schema: Optional[gp_schema.Schema] = None,
+        schema_id: Optional[str] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        timeout: Union[float, object] = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> gp_schema.Schema:
         r"""Creates a schema.
 
         .. code-block:: python
 
+            # This snippet has been automatically generated and should be regarded as a
+            # code template only.
+            # It will require modifications to work:
+            # - It may require correct/in-range values for request initialization.
+            # - It may require specifying regional endpoints when creating the service
+            #   client as shown in:
+            #   https://googleapis.dev/python/google-api-core/latest/client_options.html
             from google import pubsub_v1
 
             def sample_create_schema():
@@ -560,17 +583,24 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
 
     def get_schema(
         self,
-        request: Union[schema.GetSchemaRequest, dict] = None,
+        request: Optional[Union[schema.GetSchemaRequest, dict]] = None,
         *,
-        name: str = None,
+        name: Optional[str] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        timeout: Union[float, object] = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> schema.Schema:
         r"""Gets a schema.
 
         .. code-block:: python
 
+            # This snippet has been automatically generated and should be regarded as a
+            # code template only.
+            # It will require modifications to work:
+            # - It may require correct/in-range values for request initialization.
+            # - It may require specifying regional endpoints when creating the service
+            #   client as shown in:
+            #   https://googleapis.dev/python/google-api-core/latest/client_options.html
             from google import pubsub_v1
 
             def sample_get_schema():
@@ -652,17 +682,24 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
 
     def list_schemas(
         self,
-        request: Union[schema.ListSchemasRequest, dict] = None,
+        request: Optional[Union[schema.ListSchemasRequest, dict]] = None,
         *,
-        parent: str = None,
+        parent: Optional[str] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        timeout: Union[float, object] = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pagers.ListSchemasPager:
         r"""Lists schemas in a project.
 
         .. code-block:: python
 
+            # This snippet has been automatically generated and should be regarded as a
+            # code template only.
+            # It will require modifications to work:
+            # - It may require correct/in-range values for request initialization.
+            # - It may require specifying regional endpoints when creating the service
+            #   client as shown in:
+            #   https://googleapis.dev/python/google-api-core/latest/client_options.html
             from google import pubsub_v1
 
             def sample_list_schemas():
@@ -683,8 +720,7 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
 
         Args:
             request (Union[google.pubsub_v1.types.ListSchemasRequest, dict]):
-                The request object. Request for the `ListSchemas`
-                method.
+                The request object. Request for the ``ListSchemas`` method.
             parent (str):
                 Required. The name of the project in which to list
                 schemas. Format is ``projects/{project-id}``.
@@ -757,19 +793,477 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
         # Done; return the response.
         return response
 
+    def list_schema_revisions(
+        self,
+        request: Optional[Union[schema.ListSchemaRevisionsRequest, dict]] = None,
+        *,
+        name: Optional[str] = None,
+        retry: OptionalRetry = gapic_v1.method.DEFAULT,
+        timeout: Union[float, object] = gapic_v1.method.DEFAULT,
+        metadata: Sequence[Tuple[str, str]] = (),
+    ) -> pagers.ListSchemaRevisionsPager:
+        r"""Lists all schema revisions for the named schema.
+
+        .. code-block:: python
+
+            # This snippet has been automatically generated and should be regarded as a
+            # code template only.
+            # It will require modifications to work:
+            # - It may require correct/in-range values for request initialization.
+            # - It may require specifying regional endpoints when creating the service
+            #   client as shown in:
+            #   https://googleapis.dev/python/google-api-core/latest/client_options.html
+            from google import pubsub_v1
+
+            def sample_list_schema_revisions():
+                # Create a client
+                client = pubsub_v1.SchemaServiceClient()
+
+                # Initialize request argument(s)
+                request = pubsub_v1.ListSchemaRevisionsRequest(
+                    name="name_value",
+                )
+
+                # Make the request
+                page_result = client.list_schema_revisions(request=request)
+
+                # Handle the response
+                for response in page_result:
+                    print(response)
+
+        Args:
+            request (Union[google.pubsub_v1.types.ListSchemaRevisionsRequest, dict]):
+                The request object. Request for the ``ListSchemaRevisions`` method.
+            name (str):
+                Required. The name of the schema to
+                list revisions for.
+
+                This corresponds to the ``name`` field
+                on the ``request`` instance; if ``request`` is provided, this
+                should not be set.
+            retry (google.api_core.retry.Retry): Designation of what errors, if any,
+                should be retried.
+            timeout (float): The timeout for this request.
+            metadata (Sequence[Tuple[str, str]]): Strings which should be
+                sent along with the request as metadata.
+
+        Returns:
+            google.pubsub_v1.services.schema_service.pagers.ListSchemaRevisionsPager:
+                Response for the ListSchemaRevisions method.
+
+                Iterating over this object will yield results and
+                resolve additional pages automatically.
+
+        """
+        # Create or coerce a protobuf request object.
+        # Quick check: If we got a request object, we should *not* have
+        # gotten any keyword arguments that map to the request.
+        has_flattened_params = any([name])
+        if request is not None and has_flattened_params:
+            raise ValueError(
+                "If the `request` argument is set, then none of "
+                "the individual field arguments should be set."
+            )
+
+        # Minor optimization to avoid making a copy if the user passes
+        # in a schema.ListSchemaRevisionsRequest.
+        # There's no risk of modifying the input as we've already verified
+        # there are no flattened fields.
+        if not isinstance(request, schema.ListSchemaRevisionsRequest):
+            request = schema.ListSchemaRevisionsRequest(request)
+            # If we have keyword arguments corresponding to fields on the
+            # request, apply these.
+            if name is not None:
+                request.name = name
+
+        # Wrap the RPC method; this adds retry and timeout information,
+        # and friendly error handling.
+        rpc = self._transport._wrapped_methods[self._transport.list_schema_revisions]
+
+        # Certain fields should be provided within the metadata header;
+        # add these here.
+        metadata = tuple(metadata) + (
+            gapic_v1.routing_header.to_grpc_metadata((("name", request.name),)),
+        )
+
+        # Send the request.
+        response = rpc(
+            request,
+            retry=retry,
+            timeout=timeout,
+            metadata=metadata,
+        )
+
+        # This method is paged; wrap the response in a pager, which provides
+        # an `__iter__` convenience method.
+        response = pagers.ListSchemaRevisionsPager(
+            method=rpc,
+            request=request,
+            response=response,
+            metadata=metadata,
+        )
+
+        # Done; return the response.
+        return response
+
+    def commit_schema(
+        self,
+        request: Optional[Union[gp_schema.CommitSchemaRequest, dict]] = None,
+        *,
+        name: Optional[str] = None,
+        schema: Optional[gp_schema.Schema] = None,
+        retry: OptionalRetry = gapic_v1.method.DEFAULT,
+        timeout: Union[float, object] = gapic_v1.method.DEFAULT,
+        metadata: Sequence[Tuple[str, str]] = (),
+    ) -> gp_schema.Schema:
+        r"""Commits a new schema revision to an existing schema.
+
+        .. code-block:: python
+
+            # This snippet has been automatically generated and should be regarded as a
+            # code template only.
+            # It will require modifications to work:
+            # - It may require correct/in-range values for request initialization.
+            # - It may require specifying regional endpoints when creating the service
+            #   client as shown in:
+            #   https://googleapis.dev/python/google-api-core/latest/client_options.html
+            from google import pubsub_v1
+
+            def sample_commit_schema():
+                # Create a client
+                client = pubsub_v1.SchemaServiceClient()
+
+                # Initialize request argument(s)
+                schema = pubsub_v1.Schema()
+                schema.name = "name_value"
+
+                request = pubsub_v1.CommitSchemaRequest(
+                    name="name_value",
+                    schema=schema,
+                )
+
+                # Make the request
+                response = client.commit_schema(request=request)
+
+                # Handle the response
+                print(response)
+
+        Args:
+            request (Union[google.pubsub_v1.types.CommitSchemaRequest, dict]):
+                The request object. Request for CommitSchema method.
+            name (str):
+                Required. The name of the schema we are revising. Format
+                is ``projects/{project}/schemas/{schema}``.
+
+                This corresponds to the ``name`` field
+                on the ``request`` instance; if ``request`` is provided, this
+                should not be set.
+            schema (google.pubsub_v1.types.Schema):
+                Required. The schema revision to
+                commit.
+
+                This corresponds to the ``schema`` field
+                on the ``request`` instance; if ``request`` is provided, this
+                should not be set.
+            retry (google.api_core.retry.Retry): Designation of what errors, if any,
+                should be retried.
+            timeout (float): The timeout for this request.
+            metadata (Sequence[Tuple[str, str]]): Strings which should be
+                sent along with the request as metadata.
+
+        Returns:
+            google.pubsub_v1.types.Schema:
+                A schema resource.
+        """
+        # Create or coerce a protobuf request object.
+        # Quick check: If we got a request object, we should *not* have
+        # gotten any keyword arguments that map to the request.
+        has_flattened_params = any([name, schema])
+        if request is not None and has_flattened_params:
+            raise ValueError(
+                "If the `request` argument is set, then none of "
+                "the individual field arguments should be set."
+            )
+
+        # Minor optimization to avoid making a copy if the user passes
+        # in a gp_schema.CommitSchemaRequest.
+        # There's no risk of modifying the input as we've already verified
+        # there are no flattened fields.
+        if not isinstance(request, gp_schema.CommitSchemaRequest):
+            request = gp_schema.CommitSchemaRequest(request)
+            # If we have keyword arguments corresponding to fields on the
+            # request, apply these.
+            if name is not None:
+                request.name = name
+            if schema is not None:
+                request.schema = schema
+
+        # Wrap the RPC method; this adds retry and timeout information,
+        # and friendly error handling.
+        rpc = self._transport._wrapped_methods[self._transport.commit_schema]
+
+        # Certain fields should be provided within the metadata header;
+        # add these here.
+        metadata = tuple(metadata) + (
+            gapic_v1.routing_header.to_grpc_metadata((("name", request.name),)),
+        )
+
+        # Send the request.
+        response = rpc(
+            request,
+            retry=retry,
+            timeout=timeout,
+            metadata=metadata,
+        )
+
+        # Done; return the response.
+        return response
+
+    def rollback_schema(
+        self,
+        request: Optional[Union[schema.RollbackSchemaRequest, dict]] = None,
+        *,
+        name: Optional[str] = None,
+        revision_id: Optional[str] = None,
+        retry: OptionalRetry = gapic_v1.method.DEFAULT,
+        timeout: Union[float, object] = gapic_v1.method.DEFAULT,
+        metadata: Sequence[Tuple[str, str]] = (),
+    ) -> schema.Schema:
+        r"""Creates a new schema revision that is a copy of the provided
+        revision_id.
+
+        .. code-block:: python
+
+            # This snippet has been automatically generated and should be regarded as a
+            # code template only.
+            # It will require modifications to work:
+            # - It may require correct/in-range values for request initialization.
+            # - It may require specifying regional endpoints when creating the service
+            #   client as shown in:
+            #   https://googleapis.dev/python/google-api-core/latest/client_options.html
+            from google import pubsub_v1
+
+            def sample_rollback_schema():
+                # Create a client
+                client = pubsub_v1.SchemaServiceClient()
+
+                # Initialize request argument(s)
+                request = pubsub_v1.RollbackSchemaRequest(
+                    name="name_value",
+                    revision_id="revision_id_value",
+                )
+
+                # Make the request
+                response = client.rollback_schema(request=request)
+
+                # Handle the response
+                print(response)
+
+        Args:
+            request (Union[google.pubsub_v1.types.RollbackSchemaRequest, dict]):
+                The request object. Request for the ``RollbackSchema`` method.
+            name (str):
+                Required. The schema being rolled
+                back with revision id.
+
+                This corresponds to the ``name`` field
+                on the ``request`` instance; if ``request`` is provided, this
+                should not be set.
+            revision_id (str):
+                Required. The revision ID to roll
+                back to. It must be a revision of the
+                same schema.
+                  Example: c7cfa2a8
+
+                This corresponds to the ``revision_id`` field
+                on the ``request`` instance; if ``request`` is provided, this
+                should not be set.
+            retry (google.api_core.retry.Retry): Designation of what errors, if any,
+                should be retried.
+            timeout (float): The timeout for this request.
+            metadata (Sequence[Tuple[str, str]]): Strings which should be
+                sent along with the request as metadata.
+
+        Returns:
+            google.pubsub_v1.types.Schema:
+                A schema resource.
+        """
+        # Create or coerce a protobuf request object.
+        # Quick check: If we got a request object, we should *not* have
+        # gotten any keyword arguments that map to the request.
+        has_flattened_params = any([name, revision_id])
+        if request is not None and has_flattened_params:
+            raise ValueError(
+                "If the `request` argument is set, then none of "
+                "the individual field arguments should be set."
+            )
+
+        # Minor optimization to avoid making a copy if the user passes
+        # in a schema.RollbackSchemaRequest.
+        # There's no risk of modifying the input as we've already verified
+        # there are no flattened fields.
+        if not isinstance(request, schema.RollbackSchemaRequest):
+            request = schema.RollbackSchemaRequest(request)
+            # If we have keyword arguments corresponding to fields on the
+            # request, apply these.
+            if name is not None:
+                request.name = name
+            if revision_id is not None:
+                request.revision_id = revision_id
+
+        # Wrap the RPC method; this adds retry and timeout information,
+        # and friendly error handling.
+        rpc = self._transport._wrapped_methods[self._transport.rollback_schema]
+
+        # Certain fields should be provided within the metadata header;
+        # add these here.
+        metadata = tuple(metadata) + (
+            gapic_v1.routing_header.to_grpc_metadata((("name", request.name),)),
+        )
+
+        # Send the request.
+        response = rpc(
+            request,
+            retry=retry,
+            timeout=timeout,
+            metadata=metadata,
+        )
+
+        # Done; return the response.
+        return response
+
+    def delete_schema_revision(
+        self,
+        request: Optional[Union[schema.DeleteSchemaRevisionRequest, dict]] = None,
+        *,
+        name: Optional[str] = None,
+        revision_id: Optional[str] = None,
+        retry: OptionalRetry = gapic_v1.method.DEFAULT,
+        timeout: Union[float, object] = gapic_v1.method.DEFAULT,
+        metadata: Sequence[Tuple[str, str]] = (),
+    ) -> schema.Schema:
+        r"""Deletes a specific schema revision.
+
+        .. code-block:: python
+
+            # This snippet has been automatically generated and should be regarded as a
+            # code template only.
+            # It will require modifications to work:
+            # - It may require correct/in-range values for request initialization.
+            # - It may require specifying regional endpoints when creating the service
+            #   client as shown in:
+            #   https://googleapis.dev/python/google-api-core/latest/client_options.html
+            from google import pubsub_v1
+
+            def sample_delete_schema_revision():
+                # Create a client
+                client = pubsub_v1.SchemaServiceClient()
+
+                # Initialize request argument(s)
+                request = pubsub_v1.DeleteSchemaRevisionRequest(
+                    name="name_value",
+                )
+
+                # Make the request
+                response = client.delete_schema_revision(request=request)
+
+                # Handle the response
+                print(response)
+
+        Args:
+            request (Union[google.pubsub_v1.types.DeleteSchemaRevisionRequest, dict]):
+                The request object. Request for the ``DeleteSchemaRevision`` method.
+            name (str):
+                Required. The name of the schema revision to be deleted,
+                with a revision ID explicitly included.
+
+                Example: ``projects/123/schemas/my-schema@c7cfa2a8``
+
+                This corresponds to the ``name`` field
+                on the ``request`` instance; if ``request`` is provided, this
+                should not be set.
+            revision_id (str):
+                Optional. This field is deprecated and should not be
+                used for specifying the revision ID. The revision ID
+                should be specified via the ``name`` parameter.
+
+                This corresponds to the ``revision_id`` field
+                on the ``request`` instance; if ``request`` is provided, this
+                should not be set.
+            retry (google.api_core.retry.Retry): Designation of what errors, if any,
+                should be retried.
+            timeout (float): The timeout for this request.
+            metadata (Sequence[Tuple[str, str]]): Strings which should be
+                sent along with the request as metadata.
+
+        Returns:
+            google.pubsub_v1.types.Schema:
+                A schema resource.
+        """
+        # Create or coerce a protobuf request object.
+        # Quick check: If we got a request object, we should *not* have
+        # gotten any keyword arguments that map to the request.
+        has_flattened_params = any([name, revision_id])
+        if request is not None and has_flattened_params:
+            raise ValueError(
+                "If the `request` argument is set, then none of "
+                "the individual field arguments should be set."
+            )
+
+        # Minor optimization to avoid making a copy if the user passes
+        # in a schema.DeleteSchemaRevisionRequest.
+        # There's no risk of modifying the input as we've already verified
+        # there are no flattened fields.
+        if not isinstance(request, schema.DeleteSchemaRevisionRequest):
+            request = schema.DeleteSchemaRevisionRequest(request)
+            # If we have keyword arguments corresponding to fields on the
+            # request, apply these.
+            if name is not None:
+                request.name = name
+            if revision_id is not None:
+                request.revision_id = revision_id
+
+        # Wrap the RPC method; this adds retry and timeout information,
+        # and friendly error handling.
+        rpc = self._transport._wrapped_methods[self._transport.delete_schema_revision]
+
+        # Certain fields should be provided within the metadata header;
+        # add these here.
+        metadata = tuple(metadata) + (
+            gapic_v1.routing_header.to_grpc_metadata((("name", request.name),)),
+        )
+
+        # Send the request.
+        response = rpc(
+            request,
+            retry=retry,
+            timeout=timeout,
+            metadata=metadata,
+        )
+
+        # Done; return the response.
+        return response
+
     def delete_schema(
         self,
-        request: Union[schema.DeleteSchemaRequest, dict] = None,
+        request: Optional[Union[schema.DeleteSchemaRequest, dict]] = None,
         *,
-        name: str = None,
+        name: Optional[str] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        timeout: Union[float, object] = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> None:
         r"""Deletes a schema.
 
         .. code-block:: python
 
+            # This snippet has been automatically generated and should be regarded as a
+            # code template only.
+            # It will require modifications to work:
+            # - It may require correct/in-range values for request initialization.
+            # - It may require specifying regional endpoints when creating the service
+            #   client as shown in:
+            #   https://googleapis.dev/python/google-api-core/latest/client_options.html
             from google import pubsub_v1
 
             def sample_delete_schema():
@@ -786,8 +1280,7 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
 
         Args:
             request (Union[google.pubsub_v1.types.DeleteSchemaRequest, dict]):
-                The request object. Request for the `DeleteSchema`
-                method.
+                The request object. Request for the ``DeleteSchema`` method.
             name (str):
                 Required. Name of the schema to delete. Format is
                 ``projects/{project}/schemas/{schema}``.
@@ -842,18 +1335,25 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
 
     def validate_schema(
         self,
-        request: Union[gp_schema.ValidateSchemaRequest, dict] = None,
+        request: Optional[Union[gp_schema.ValidateSchemaRequest, dict]] = None,
         *,
-        parent: str = None,
-        schema: gp_schema.Schema = None,
+        parent: Optional[str] = None,
+        schema: Optional[gp_schema.Schema] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        timeout: Union[float, object] = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> gp_schema.ValidateSchemaResponse:
         r"""Validates a schema.
 
         .. code-block:: python
 
+            # This snippet has been automatically generated and should be regarded as a
+            # code template only.
+            # It will require modifications to work:
+            # - It may require correct/in-range values for request initialization.
+            # - It may require specifying regional endpoints when creating the service
+            #   client as shown in:
+            #   https://googleapis.dev/python/google-api-core/latest/client_options.html
             from google import pubsub_v1
 
             def sample_validate_schema():
@@ -877,8 +1377,7 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
 
         Args:
             request (Union[google.pubsub_v1.types.ValidateSchemaRequest, dict]):
-                The request object. Request for the `ValidateSchema`
-                method.
+                The request object. Request for the ``ValidateSchema`` method.
             parent (str):
                 Required. The name of the project in which to validate
                 schemas. Format is ``projects/{project-id}``.
@@ -951,16 +1450,23 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
 
     def validate_message(
         self,
-        request: Union[schema.ValidateMessageRequest, dict] = None,
+        request: Optional[Union[schema.ValidateMessageRequest, dict]] = None,
         *,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        timeout: Union[float, object] = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> schema.ValidateMessageResponse:
         r"""Validates a message against a schema.
 
         .. code-block:: python
 
+            # This snippet has been automatically generated and should be regarded as a
+            # code template only.
+            # It will require modifications to work:
+            # - It may require correct/in-range values for request initialization.
+            # - It may require specifying regional endpoints when creating the service
+            #   client as shown in:
+            #   https://googleapis.dev/python/google-api-core/latest/client_options.html
             from google import pubsub_v1
 
             def sample_validate_message():
@@ -981,8 +1487,7 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
 
         Args:
             request (Union[google.pubsub_v1.types.ValidateMessageRequest, dict]):
-                The request object. Request for the `ValidateMessage`
-                method.
+                The request object. Request for the ``ValidateMessage`` method.
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
@@ -1024,7 +1529,7 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
         # Done; return the response.
         return response
 
-    def __enter__(self):
+    def __enter__(self) -> "SchemaServiceClient":
         return self
 
     def __exit__(self, type, value, traceback):
@@ -1039,10 +1544,10 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
 
     def set_iam_policy(
         self,
-        request: iam_policy_pb2.SetIamPolicyRequest = None,
+        request: Optional[iam_policy_pb2.SetIamPolicyRequest] = None,
         *,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        timeout: Union[float, object] = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> policy_pb2.Policy:
         r"""Sets the IAM access control policy on the specified function.
@@ -1159,10 +1664,10 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
 
     def get_iam_policy(
         self,
-        request: iam_policy_pb2.GetIamPolicyRequest = None,
+        request: Optional[iam_policy_pb2.GetIamPolicyRequest] = None,
         *,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        timeout: Union[float, object] = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> policy_pb2.Policy:
         r"""Gets the IAM access control policy for a function.
@@ -1280,10 +1785,10 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
 
     def test_iam_permissions(
         self,
-        request: iam_policy_pb2.TestIamPermissionsRequest = None,
+        request: Optional[iam_policy_pb2.TestIamPermissionsRequest] = None,
         *,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        timeout: Union[float, object] = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> iam_policy_pb2.TestIamPermissionsResponse:
         r"""Tests the specified IAM permissions against the IAM access control
@@ -1338,14 +1843,9 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
         return response
 
 
-try:
-    DEFAULT_CLIENT_INFO = gapic_v1.client_info.ClientInfo(
-        client_library_version=pkg_resources.get_distribution(
-            "google-cloud-pubsub",
-        ).version,
-    )
-except pkg_resources.DistributionNotFound:
-    DEFAULT_CLIENT_INFO = gapic_v1.client_info.ClientInfo()
+DEFAULT_CLIENT_INFO = gapic_v1.client_info.ClientInfo(
+    client_library_version=package_version.__version__
+)
 
 
 __all__ = ("SchemaServiceClient",)

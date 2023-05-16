@@ -22,7 +22,6 @@ at https://cloud.google.com/pubsub/docs.
 """
 
 import argparse
-from typing import Callable
 
 
 def list_topics(project_id: str) -> None:
@@ -139,6 +138,7 @@ def publish_messages_with_error_handler(project_id: str, topic_id: str) -> None:
     """Publishes multiple messages to a Pub/Sub topic with an error handler."""
     from concurrent import futures
     from google.cloud import pubsub_v1
+    from typing import Callable
 
     # TODO(developer)
     # project_id = "your-project-id"
@@ -489,7 +489,8 @@ def detach_subscription(project_id: str, subscription_id: str) -> None:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter,
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument("project_id", help="Your Google Cloud project ID")
 
@@ -512,7 +513,8 @@ if __name__ == "__main__":
     publish_with_custom_attributes_parser.add_argument("topic_id")
 
     publish_with_error_handler_parser = subparsers.add_parser(
-        "publish-with-error-handler", help=publish_messages_with_error_handler.__doc__,
+        "publish-with-error-handler",
+        help=publish_messages_with_error_handler.__doc__,
     )
     publish_with_error_handler_parser.add_argument("topic_id")
 
@@ -535,7 +537,8 @@ if __name__ == "__main__":
     publish_with_retry_settings_parser.add_argument("topic_id")
 
     publish_with_ordering_keys_parser = subparsers.add_parser(
-        "publish-with-ordering-keys", help=publish_with_ordering_keys.__doc__,
+        "publish-with-ordering-keys",
+        help=publish_with_ordering_keys.__doc__,
     )
     publish_with_ordering_keys_parser.add_argument("topic_id")
 
@@ -546,7 +549,8 @@ if __name__ == "__main__":
     resume_publish_with_ordering_keys_parser.add_argument("topic_id")
 
     detach_subscription_parser = subparsers.add_parser(
-        "detach-subscription", help=detach_subscription.__doc__,
+        "detach-subscription",
+        help=detach_subscription.__doc__,
     )
     detach_subscription_parser.add_argument("subscription_id")
 

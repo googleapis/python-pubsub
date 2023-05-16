@@ -14,11 +14,17 @@
 
 
 import datetime
+import sys
 import threading
 import time
 from typing import Sequence, Union
 
-import mock
+# special case python < 3.8
+if sys.version_info.major == 3 and sys.version_info.minor < 8:
+    import mock
+else:
+    from unittest import mock
+
 import pytest
 
 import google.api_core.exceptions

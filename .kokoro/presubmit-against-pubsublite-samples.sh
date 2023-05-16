@@ -27,7 +27,7 @@ export PYTHONUNBUFFERED=1
 env | grep KOKORO
 
 # Install nox
-python3.6 -m pip install --upgrade --quiet nox
+python3.9 -m pip install --upgrade --quiet nox
 
 # Use secrets acessor service account to get secrets
 if [[ -f "${KOKORO_GFILE_DIR}/secrets_viewer_service_account.json" ]]; then
@@ -75,9 +75,9 @@ for file in python-pubsublite/samples/**/requirements.txt; do
     echo "- testing $file"
     echo "------------------------------------------------------------"
 
-    # Use pytest to execute tests for py-3.7
-    python3.7 -m venv py-3.7
-    source py-3.7/bin/activate
+    # Use pytest to execute tests for py-3.8
+    python3.8 -m venv py-3.8
+    source py-3.8/bin/activate
     # Install python-pubsublite samples tests requirements.
     python -m pip install --upgrade pip
     python -m pip install -r requirements.txt -q
@@ -87,8 +87,8 @@ for file in python-pubsublite/samples/**/requirements.txt; do
     python -m pytest quickstart_test.py
     EXIT=$?
     
-    deactivate py-3.7
-    rm -rf py-3.7/
+    deactivate py-3.8
+    rm -rf py-3.8/
 
     if [[ $EXIT -ne 0 ]]; then
       RTN=1

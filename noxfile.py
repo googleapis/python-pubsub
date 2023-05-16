@@ -33,9 +33,9 @@ MYPY_VERSION = "mypy==0.910"
 
 DEFAULT_PYTHON_VERSION = "3.8"
 
-UNIT_TEST_PYTHON_VERSIONS = ["3.7", "3.8", "3.9", "3.10"]
+UNIT_TEST_PYTHON_VERSIONS = ["3.7", "3.8", "3.9", "3.10", "3.11"]
 UNIT_TEST_STANDARD_DEPENDENCIES = [
-    "mock",
+    "mock==5.0.0",
     "asyncmock",
     "pytest",
     "pytest-cov",
@@ -49,12 +49,13 @@ UNIT_TEST_EXTRAS_BY_PYTHON = {}
 
 SYSTEM_TEST_PYTHON_VERSIONS = ["3.10"]
 SYSTEM_TEST_STANDARD_DEPENDENCIES = [
-    "mock",
+    "mock==5.0.0",
     "pytest",
     "google-cloud-testutils",
 ]
 SYSTEM_TEST_EXTERNAL_DEPENDENCIES = [
     "psutil",
+    "flaky",
 ]
 SYSTEM_TEST_LOCAL_DEPENDENCIES = []
 SYSTEM_TEST_DEPENDENCIES = []
@@ -240,7 +241,9 @@ def unit(session):
 def install_systemtest_dependencies(session, *constraints):
 
     # Use pre-release gRPC for system tests.
-    session.install("--pre", "grpcio")
+    # Exclude version 1.52.0rc1 which has a known issue.
+    # See https://github.com/grpc/grpc/issues/32163
+    session.install("--pre", "grpcio!=1.52.0rc1")
 
     session.install(*SYSTEM_TEST_STANDARD_DEPENDENCIES, *constraints)
 
@@ -322,12 +325,16 @@ def cover(session):
     session.run("coverage", "erase")
 
 
-@nox.session(python=DEFAULT_PYTHON_VERSION)
+@nox.session(python="3.9")
 def docs(session):
     """Build the docs for this library."""
 
     session.install("-e", ".")
-    session.install("sphinx==4.0.1", "alabaster", "recommonmark")
+    session.install(
+        "sphinx==4.0.1",
+        "alabaster",
+        "recommonmark",
+    )
 
     shutil.rmtree(os.path.join("docs", "_build"), ignore_errors=True)
     session.run(
@@ -344,13 +351,16 @@ def docs(session):
     )
 
 
-@nox.session(python=DEFAULT_PYTHON_VERSION)
+@nox.session(python="3.9")
 def docfx(session):
     """Build the docfx yaml files for this library."""
 
     session.install("-e", ".")
     session.install(
-        "sphinx==4.0.1", "alabaster", "recommonmark", "gcp-sphinx-docfx-yaml"
+        "sphinx==4.0.1",
+        "alabaster",
+        "recommonmark",
+        "gcp-sphinx-docfx-yaml",
     )
 
     shutil.rmtree(os.path.join("docs", "_build"), ignore_errors=True)
@@ -388,9 +398,7 @@ def prerelease_deps(session):
     unit_deps_all = UNIT_TEST_STANDARD_DEPENDENCIES + UNIT_TEST_EXTERNAL_DEPENDENCIES
     session.install(*unit_deps_all)
     system_deps_all = (
-        SYSTEM_TEST_STANDARD_DEPENDENCIES
-        + SYSTEM_TEST_EXTERNAL_DEPENDENCIES
-        + SYSTEM_TEST_EXTRAS
+        SYSTEM_TEST_STANDARD_DEPENDENCIES + SYSTEM_TEST_EXTERNAL_DEPENDENCIES
     )
     session.install(*system_deps_all)
 
@@ -420,7 +428,8 @@ def prerelease_deps(session):
         # dependency of grpc
         "six",
         "googleapis-common-protos",
-        "grpcio",
+        # Exclude version 1.52.0rc1 which has a known issue. See https://github.com/grpc/grpc/issues/32163
+        "grpcio!=1.52.0rc1",
         "grpcio-status",
         "google-api-core",
         "proto-plus",

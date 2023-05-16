@@ -17,8 +17,20 @@ from collections import OrderedDict
 import functools
 import os
 import re
-from typing import Dict, Mapping, Optional, Sequence, Tuple, Type, Union
-import pkg_resources
+from typing import (
+    Dict,
+    Mapping,
+    MutableMapping,
+    MutableSequence,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    Union,
+    cast,
+)
+
+from google.pubsub_v1 import gapic_version as package_version
 
 from google.api_core import client_options as client_options_lib
 from google.api_core import exceptions as core_exceptions
@@ -39,6 +51,7 @@ except AttributeError:  # pragma: NO COVER
 from google.iam.v1 import iam_policy_pb2  # type: ignore
 from google.iam.v1 import policy_pb2  # type: ignore
 from google.protobuf import duration_pb2  # type: ignore
+from google.protobuf import field_mask_pb2  # type: ignore
 from google.pubsub_v1.services.publisher import pagers
 from google.pubsub_v1.types import pubsub
 from google.pubsub_v1.types import TimeoutType
@@ -47,6 +60,7 @@ import grpc
 from .transports.base import PublisherTransport, DEFAULT_CLIENT_INFO
 from .transports.grpc import PublisherGrpcTransport
 from .transports.grpc_asyncio import PublisherGrpcAsyncIOTransport
+from .transports.rest import PublisherRestTransport
 
 
 class PublisherClientMeta(type):
@@ -60,10 +74,11 @@ class PublisherClientMeta(type):
     _transport_registry = OrderedDict()  # type: Dict[str, Type[PublisherTransport]]
     _transport_registry["grpc"] = PublisherGrpcTransport
     _transport_registry["grpc_asyncio"] = PublisherGrpcAsyncIOTransport
+    _transport_registry["rest"] = PublisherRestTransport
 
     def get_transport_class(
         cls,
-        label: str = None,
+        label: Optional[str] = None,
     ) -> Type[PublisherTransport]:
         """Returns an appropriate transport class.
 
@@ -326,7 +341,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
         The API endpoint is determined in the following order:
         (1) if `client_options.api_endpoint` if provided, use the provided one.
         (2) if `GOOGLE_API_USE_CLIENT_CERTIFICATE` environment variable is "always", use the
-        default mTLS endpoint; if the environment variabel is "never", use the default API
+        default mTLS endpoint; if the environment variable is "never", use the default API
         endpoint; otherwise if client cert source exists, use the default mTLS endpoint, otherwise
         use the default API endpoint.
 
@@ -381,8 +396,8 @@ class PublisherClient(metaclass=PublisherClientMeta):
         self,
         *,
         credentials: Optional[ga_credentials.Credentials] = None,
-        transport: Union[str, PublisherTransport, None] = None,
-        client_options: Optional[client_options_lib.ClientOptions] = None,
+        transport: Optional[Union[str, PublisherTransport]] = None,
+        client_options: Optional[Union[client_options_lib.ClientOptions, dict]] = None,
         client_info: gapic_v1.client_info.ClientInfo = DEFAULT_CLIENT_INFO,
     ) -> None:
         """Instantiates the publisher client.
@@ -396,7 +411,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
             transport (Union[str, PublisherTransport]): The
                 transport to use. If set to None, a transport is chosen
                 automatically.
-            client_options (google.api_core.client_options.ClientOptions): Custom options for the
+            client_options (Optional[Union[google.api_core.client_options.ClientOptions, dict]]): Custom options for the
                 client. It won't take effect if a ``transport`` instance is provided.
                 (1) The ``api_endpoint`` property can be used to override the
                 default endpoint provided by the client. GOOGLE_API_USE_MTLS_ENDPOINT
@@ -426,6 +441,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
             client_options = client_options_lib.from_dict(client_options)
         if client_options is None:
             client_options = client_options_lib.ClientOptions()
+        client_options = cast(client_options_lib.ClientOptions, client_options)
 
         api_endpoint, client_cert_source_func = self.get_mtls_endpoint_and_cert_source(
             client_options
@@ -487,9 +503,9 @@ class PublisherClient(metaclass=PublisherClientMeta):
 
     def create_topic(
         self,
-        request: Union[pubsub.Topic, dict] = None,
+        request: Optional[Union[pubsub.Topic, dict]] = None,
         *,
-        name: str = None,
+        name: Optional[str] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: TimeoutType = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
@@ -500,6 +516,13 @@ class PublisherClient(metaclass=PublisherClientMeta):
 
         .. code-block:: python
 
+            # This snippet has been automatically generated and should be regarded as a
+            # code template only.
+            # It will require modifications to work:
+            # - It may require correct/in-range values for request initialization.
+            # - It may require specifying regional endpoints when creating the service
+            #   client as shown in:
+            #   https://googleapis.dev/python/google-api-core/latest/client_options.html
             from google import pubsub_v1
 
             def sample_create_topic():
@@ -588,8 +611,10 @@ class PublisherClient(metaclass=PublisherClientMeta):
 
     def update_topic(
         self,
-        request: Union[pubsub.UpdateTopicRequest, dict] = None,
+        request: Optional[Union[pubsub.UpdateTopicRequest, dict]] = None,
         *,
+        topic: Optional[pubsub.Topic] = None,
+        update_mask: Optional[field_mask_pb2.FieldMask] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: TimeoutType = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
@@ -599,6 +624,13 @@ class PublisherClient(metaclass=PublisherClientMeta):
 
         .. code-block:: python
 
+            # This snippet has been automatically generated and should be regarded as a
+            # code template only.
+            # It will require modifications to work:
+            # - It may require correct/in-range values for request initialization.
+            # - It may require specifying regional endpoints when creating the service
+            #   client as shown in:
+            #   https://googleapis.dev/python/google-api-core/latest/client_options.html
             from google import pubsub_v1
 
             def sample_update_topic():
@@ -622,6 +654,23 @@ class PublisherClient(metaclass=PublisherClientMeta):
         Args:
             request (Union[google.pubsub_v1.types.UpdateTopicRequest, dict]):
                 The request object. Request for the UpdateTopic method.
+            topic (google.pubsub_v1.types.Topic):
+                Required. The updated topic object.
+                This corresponds to the ``topic`` field
+                on the ``request`` instance; if ``request`` is provided, this
+                should not be set.
+            update_mask (google.protobuf.field_mask_pb2.FieldMask):
+                Required. Indicates which fields in the provided topic
+                to update. Must be specified and non-empty. Note that if
+                ``update_mask`` contains "message_storage_policy" but
+                the ``message_storage_policy`` is not set in the
+                ``topic`` provided above, then the updated value is
+                determined by the policy configured at the project or
+                organization level.
+
+                This corresponds to the ``update_mask`` field
+                on the ``request`` instance; if ``request`` is provided, this
+                should not be set.
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (TimeoutType):
@@ -634,12 +683,27 @@ class PublisherClient(metaclass=PublisherClientMeta):
                 A topic resource.
         """
         # Create or coerce a protobuf request object.
+        # Quick check: If we got a request object, we should *not* have
+        # gotten any keyword arguments that map to the request.
+        has_flattened_params = any([topic, update_mask])
+        if request is not None and has_flattened_params:
+            raise ValueError(
+                "If the `request` argument is set, then none of "
+                "the individual field arguments should be set."
+            )
+
         # Minor optimization to avoid making a copy if the user passes
         # in a pubsub.UpdateTopicRequest.
         # There's no risk of modifying the input as we've already verified
         # there are no flattened fields.
         if not isinstance(request, pubsub.UpdateTopicRequest):
             request = pubsub.UpdateTopicRequest(request)
+            # If we have keyword arguments corresponding to fields on the
+            # request, apply these.
+            if topic is not None:
+                request.topic = topic
+            if update_mask is not None:
+                request.update_mask = update_mask
 
         # Wrap the RPC method; this adds retry and timeout information,
         # and friendly error handling.
@@ -666,10 +730,10 @@ class PublisherClient(metaclass=PublisherClientMeta):
 
     def publish(
         self,
-        request: Union[pubsub.PublishRequest, dict] = None,
+        request: Optional[Union[pubsub.PublishRequest, dict]] = None,
         *,
-        topic: str = None,
-        messages: Sequence[pubsub.PubsubMessage] = None,
+        topic: Optional[str] = None,
+        messages: Optional[MutableSequence[pubsub.PubsubMessage]] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: TimeoutType = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
@@ -680,6 +744,13 @@ class PublisherClient(metaclass=PublisherClientMeta):
 
         .. code-block:: python
 
+            # This snippet has been automatically generated and should be regarded as a
+            # code template only.
+            # It will require modifications to work:
+            # - It may require correct/in-range values for request initialization.
+            # - It may require specifying regional endpoints when creating the service
+            #   client as shown in:
+            #   https://googleapis.dev/python/google-api-core/latest/client_options.html
             from google import pubsub_v1
 
             def sample_publish():
@@ -708,7 +779,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
                 This corresponds to the ``topic`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
-            messages (Sequence[google.pubsub_v1.types.PubsubMessage]):
+            messages (MutableSequence[google.pubsub_v1.types.PubsubMessage]):
                 Required. The messages to publish.
                 This corresponds to the ``messages`` field
                 on the ``request`` instance; if ``request`` is provided, this
@@ -771,9 +842,9 @@ class PublisherClient(metaclass=PublisherClientMeta):
 
     def get_topic(
         self,
-        request: Union[pubsub.GetTopicRequest, dict] = None,
+        request: Optional[Union[pubsub.GetTopicRequest, dict]] = None,
         *,
-        topic: str = None,
+        topic: Optional[str] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: TimeoutType = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
@@ -782,6 +853,13 @@ class PublisherClient(metaclass=PublisherClientMeta):
 
         .. code-block:: python
 
+            # This snippet has been automatically generated and should be regarded as a
+            # code template only.
+            # It will require modifications to work:
+            # - It may require correct/in-range values for request initialization.
+            # - It may require specifying regional endpoints when creating the service
+            #   client as shown in:
+            #   https://googleapis.dev/python/google-api-core/latest/client_options.html
             from google import pubsub_v1
 
             def sample_get_topic():
@@ -864,9 +942,9 @@ class PublisherClient(metaclass=PublisherClientMeta):
 
     def list_topics(
         self,
-        request: Union[pubsub.ListTopicsRequest, dict] = None,
+        request: Optional[Union[pubsub.ListTopicsRequest, dict]] = None,
         *,
-        project: str = None,
+        project: Optional[str] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: TimeoutType = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
@@ -875,6 +953,13 @@ class PublisherClient(metaclass=PublisherClientMeta):
 
         .. code-block:: python
 
+            # This snippet has been automatically generated and should be regarded as a
+            # code template only.
+            # It will require modifications to work:
+            # - It may require correct/in-range values for request initialization.
+            # - It may require specifying regional endpoints when creating the service
+            #   client as shown in:
+            #   https://googleapis.dev/python/google-api-core/latest/client_options.html
             from google import pubsub_v1
 
             def sample_list_topics():
@@ -895,7 +980,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
 
         Args:
             request (Union[google.pubsub_v1.types.ListTopicsRequest, dict]):
-                The request object. Request for the `ListTopics` method.
+                The request object. Request for the ``ListTopics`` method.
             project (str):
                 Required. The name of the project in which to list
                 topics. Format is ``projects/{project-id}``.
@@ -971,9 +1056,9 @@ class PublisherClient(metaclass=PublisherClientMeta):
 
     def list_topic_subscriptions(
         self,
-        request: Union[pubsub.ListTopicSubscriptionsRequest, dict] = None,
+        request: Optional[Union[pubsub.ListTopicSubscriptionsRequest, dict]] = None,
         *,
-        topic: str = None,
+        topic: Optional[str] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: TimeoutType = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
@@ -983,6 +1068,13 @@ class PublisherClient(metaclass=PublisherClientMeta):
 
         .. code-block:: python
 
+            # This snippet has been automatically generated and should be regarded as a
+            # code template only.
+            # It will require modifications to work:
+            # - It may require correct/in-range values for request initialization.
+            # - It may require specifying regional endpoints when creating the service
+            #   client as shown in:
+            #   https://googleapis.dev/python/google-api-core/latest/client_options.html
             from google import pubsub_v1
 
             def sample_list_topic_subscriptions():
@@ -1003,8 +1095,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
 
         Args:
             request (Union[google.pubsub_v1.types.ListTopicSubscriptionsRequest, dict]):
-                The request object. Request for the
-                `ListTopicSubscriptions` method.
+                The request object. Request for the ``ListTopicSubscriptions`` method.
             topic (str):
                 Required. The name of the topic that subscriptions are
                 attached to. Format is
@@ -1081,9 +1172,9 @@ class PublisherClient(metaclass=PublisherClientMeta):
 
     def list_topic_snapshots(
         self,
-        request: Union[pubsub.ListTopicSnapshotsRequest, dict] = None,
+        request: Optional[Union[pubsub.ListTopicSnapshotsRequest, dict]] = None,
         *,
-        topic: str = None,
+        topic: Optional[str] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: TimeoutType = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
@@ -1097,6 +1188,13 @@ class PublisherClient(metaclass=PublisherClientMeta):
 
         .. code-block:: python
 
+            # This snippet has been automatically generated and should be regarded as a
+            # code template only.
+            # It will require modifications to work:
+            # - It may require correct/in-range values for request initialization.
+            # - It may require specifying regional endpoints when creating the service
+            #   client as shown in:
+            #   https://googleapis.dev/python/google-api-core/latest/client_options.html
             from google import pubsub_v1
 
             def sample_list_topic_snapshots():
@@ -1117,8 +1215,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
 
         Args:
             request (Union[google.pubsub_v1.types.ListTopicSnapshotsRequest, dict]):
-                The request object. Request for the `ListTopicSnapshots`
-                method.
+                The request object. Request for the ``ListTopicSnapshots`` method.
             topic (str):
                 Required. The name of the topic that snapshots are
                 attached to. Format is
@@ -1195,9 +1292,9 @@ class PublisherClient(metaclass=PublisherClientMeta):
 
     def delete_topic(
         self,
-        request: Union[pubsub.DeleteTopicRequest, dict] = None,
+        request: Optional[Union[pubsub.DeleteTopicRequest, dict]] = None,
         *,
-        topic: str = None,
+        topic: Optional[str] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: TimeoutType = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
@@ -1211,6 +1308,13 @@ class PublisherClient(metaclass=PublisherClientMeta):
 
         .. code-block:: python
 
+            # This snippet has been automatically generated and should be regarded as a
+            # code template only.
+            # It will require modifications to work:
+            # - It may require correct/in-range values for request initialization.
+            # - It may require specifying regional endpoints when creating the service
+            #   client as shown in:
+            #   https://googleapis.dev/python/google-api-core/latest/client_options.html
             from google import pubsub_v1
 
             def sample_delete_topic():
@@ -1227,8 +1331,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
 
         Args:
             request (Union[google.pubsub_v1.types.DeleteTopicRequest, dict]):
-                The request object. Request for the `DeleteTopic`
-                method.
+                The request object. Request for the ``DeleteTopic`` method.
             topic (str):
                 Required. Name of the topic to delete. Format is
                 ``projects/{project}/topics/{topic}``.
@@ -1284,7 +1387,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
 
     def detach_subscription(
         self,
-        request: Union[pubsub.DetachSubscriptionRequest, dict] = None,
+        request: Optional[Union[pubsub.DetachSubscriptionRequest, dict]] = None,
         *,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: TimeoutType = gapic_v1.method.DEFAULT,
@@ -1298,6 +1401,13 @@ class PublisherClient(metaclass=PublisherClientMeta):
 
         .. code-block:: python
 
+            # This snippet has been automatically generated and should be regarded as a
+            # code template only.
+            # It will require modifications to work:
+            # - It may require correct/in-range values for request initialization.
+            # - It may require specifying regional endpoints when creating the service
+            #   client as shown in:
+            #   https://googleapis.dev/python/google-api-core/latest/client_options.html
             from google import pubsub_v1
 
             def sample_detach_subscription():
@@ -1363,7 +1473,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
         # Done; return the response.
         return response
 
-    def __enter__(self):
+    def __enter__(self) -> "PublisherClient":
         return self
 
     def __exit__(self, type, value, traceback):
@@ -1378,7 +1488,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
 
     def set_iam_policy(
         self,
-        request: iam_policy_pb2.SetIamPolicyRequest = None,
+        request: Optional[iam_policy_pb2.SetIamPolicyRequest] = None,
         *,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: TimeoutType = gapic_v1.method.DEFAULT,
@@ -1499,7 +1609,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
 
     def get_iam_policy(
         self,
-        request: iam_policy_pb2.GetIamPolicyRequest = None,
+        request: Optional[iam_policy_pb2.GetIamPolicyRequest] = None,
         *,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: TimeoutType = gapic_v1.method.DEFAULT,
@@ -1621,7 +1731,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
 
     def test_iam_permissions(
         self,
-        request: iam_policy_pb2.TestIamPermissionsRequest = None,
+        request: Optional[iam_policy_pb2.TestIamPermissionsRequest] = None,
         *,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: TimeoutType = gapic_v1.method.DEFAULT,
@@ -1680,14 +1790,9 @@ class PublisherClient(metaclass=PublisherClientMeta):
         return response
 
 
-try:
-    DEFAULT_CLIENT_INFO = gapic_v1.client_info.ClientInfo(
-        client_library_version=pkg_resources.get_distribution(
-            "google-cloud-pubsub",
-        ).version,
-    )
-except pkg_resources.DistributionNotFound:
-    DEFAULT_CLIENT_INFO = gapic_v1.client_info.ClientInfo()
+DEFAULT_CLIENT_INFO = gapic_v1.client_info.ClientInfo(
+    client_library_version=package_version.__version__
+)
 
 
 __all__ = ("PublisherClient",)

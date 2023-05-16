@@ -18,16 +18,23 @@ import os
 # try/except added for compatibility with python < 3.8
 try:
     from unittest import mock
-    from unittest.mock import AsyncMock
-except ImportError:
+    from unittest.mock import AsyncMock  # pragma: NO COVER
+except ImportError:  # pragma: NO COVER
     import mock
 
 import grpc
 from grpc.experimental import aio
+from collections.abc import Iterable
+from google.protobuf import json_format
+import json
 import math
 import pytest
 from proto.marshal.rules.dates import DurationRule, TimestampRule
-
+from proto.marshal.rules import wrappers
+from requests import Response
+from requests import Request, PreparedRequest
+from requests.sessions import Session
+from google.protobuf import json_format
 
 from google.api_core import client_options
 from google.api_core import exceptions as core_exceptions
@@ -41,6 +48,7 @@ from google.iam.v1 import iam_policy_pb2  # type: ignore
 from google.iam.v1 import options_pb2  # type: ignore
 from google.iam.v1 import policy_pb2  # type: ignore
 from google.oauth2 import service_account
+from google.protobuf import timestamp_pb2  # type: ignore
 from google.pubsub_v1.services.schema_service import SchemaServiceAsyncClient
 from google.pubsub_v1.services.schema_service import SchemaServiceClient
 from google.pubsub_v1.services.schema_service import pagers
@@ -99,6 +107,7 @@ def test__get_default_mtls_endpoint():
     [
         (SchemaServiceClient, "grpc"),
         (SchemaServiceAsyncClient, "grpc_asyncio"),
+        (SchemaServiceClient, "rest"),
     ],
 )
 def test_schema_service_client_from_service_account_info(client_class, transport_name):
@@ -112,7 +121,11 @@ def test_schema_service_client_from_service_account_info(client_class, transport
         assert client.transport._credentials == creds
         assert isinstance(client, client_class)
 
-        assert client.transport._host == ("pubsub.googleapis.com:443")
+        assert client.transport._host == (
+            "pubsub.googleapis.com:443"
+            if transport_name in ["grpc", "grpc_asyncio"]
+            else "https://pubsub.googleapis.com"
+        )
 
 
 @pytest.mark.parametrize(
@@ -120,6 +133,7 @@ def test_schema_service_client_from_service_account_info(client_class, transport
     [
         (transports.SchemaServiceGrpcTransport, "grpc"),
         (transports.SchemaServiceGrpcAsyncIOTransport, "grpc_asyncio"),
+        (transports.SchemaServiceRestTransport, "rest"),
     ],
 )
 def test_schema_service_client_service_account_always_use_jwt(
@@ -145,6 +159,7 @@ def test_schema_service_client_service_account_always_use_jwt(
     [
         (SchemaServiceClient, "grpc"),
         (SchemaServiceAsyncClient, "grpc_asyncio"),
+        (SchemaServiceClient, "rest"),
     ],
 )
 def test_schema_service_client_from_service_account_file(client_class, transport_name):
@@ -165,13 +180,18 @@ def test_schema_service_client_from_service_account_file(client_class, transport
         assert client.transport._credentials == creds
         assert isinstance(client, client_class)
 
-        assert client.transport._host == ("pubsub.googleapis.com:443")
+        assert client.transport._host == (
+            "pubsub.googleapis.com:443"
+            if transport_name in ["grpc", "grpc_asyncio"]
+            else "https://pubsub.googleapis.com"
+        )
 
 
 def test_schema_service_client_get_transport_class():
     transport = SchemaServiceClient.get_transport_class()
     available_transports = [
         transports.SchemaServiceGrpcTransport,
+        transports.SchemaServiceRestTransport,
     ]
     assert transport in available_transports
 
@@ -188,6 +208,7 @@ def test_schema_service_client_get_transport_class():
             transports.SchemaServiceGrpcAsyncIOTransport,
             "grpc_asyncio",
         ),
+        (SchemaServiceClient, transports.SchemaServiceRestTransport, "rest"),
     ],
 )
 @mock.patch.object(
@@ -333,6 +354,8 @@ def test_schema_service_client_client_options(
             "grpc_asyncio",
             "false",
         ),
+        (SchemaServiceClient, transports.SchemaServiceRestTransport, "rest", "true"),
+        (SchemaServiceClient, transports.SchemaServiceRestTransport, "rest", "false"),
     ],
 )
 @mock.patch.object(
@@ -532,6 +555,7 @@ def test_schema_service_client_get_mtls_endpoint_and_cert_source(client_class):
             transports.SchemaServiceGrpcAsyncIOTransport,
             "grpc_asyncio",
         ),
+        (SchemaServiceClient, transports.SchemaServiceRestTransport, "rest"),
     ],
 )
 def test_schema_service_client_client_options_scopes(
@@ -572,6 +596,7 @@ def test_schema_service_client_client_options_scopes(
             "grpc_asyncio",
             grpc_helpers_async,
         ),
+        (SchemaServiceClient, transports.SchemaServiceRestTransport, "rest", None),
     ],
 )
 def test_schema_service_client_client_options_credentials_file(
@@ -713,6 +738,7 @@ def test_create_schema(request_type, transport: str = "grpc"):
             name="name_value",
             type_=gp_schema.Schema.Type.PROTOCOL_BUFFER,
             definition="definition_value",
+            revision_id="revision_id_value",
         )
         response = client.create_schema(request)
 
@@ -726,6 +752,7 @@ def test_create_schema(request_type, transport: str = "grpc"):
     assert response.name == "name_value"
     assert response.type_ == gp_schema.Schema.Type.PROTOCOL_BUFFER
     assert response.definition == "definition_value"
+    assert response.revision_id == "revision_id_value"
 
 
 def test_create_schema_empty_call():
@@ -765,6 +792,7 @@ async def test_create_schema_async(
                 name="name_value",
                 type_=gp_schema.Schema.Type.PROTOCOL_BUFFER,
                 definition="definition_value",
+                revision_id="revision_id_value",
             )
         )
         response = await client.create_schema(request)
@@ -779,6 +807,7 @@ async def test_create_schema_async(
     assert response.name == "name_value"
     assert response.type_ == gp_schema.Schema.Type.PROTOCOL_BUFFER
     assert response.definition == "definition_value"
+    assert response.revision_id == "revision_id_value"
 
 
 @pytest.mark.asyncio
@@ -969,6 +998,7 @@ def test_get_schema(request_type, transport: str = "grpc"):
             name="name_value",
             type_=schema.Schema.Type.PROTOCOL_BUFFER,
             definition="definition_value",
+            revision_id="revision_id_value",
         )
         response = client.get_schema(request)
 
@@ -982,6 +1012,7 @@ def test_get_schema(request_type, transport: str = "grpc"):
     assert response.name == "name_value"
     assert response.type_ == schema.Schema.Type.PROTOCOL_BUFFER
     assert response.definition == "definition_value"
+    assert response.revision_id == "revision_id_value"
 
 
 def test_get_schema_empty_call():
@@ -1021,6 +1052,7 @@ async def test_get_schema_async(
                 name="name_value",
                 type_=schema.Schema.Type.PROTOCOL_BUFFER,
                 definition="definition_value",
+                revision_id="revision_id_value",
             )
         )
         response = await client.get_schema(request)
@@ -1035,6 +1067,7 @@ async def test_get_schema_async(
     assert response.name == "name_value"
     assert response.type_ == schema.Schema.Type.PROTOCOL_BUFFER
     assert response.definition == "definition_value"
+    assert response.revision_id == "revision_id_value"
 
 
 @pytest.mark.asyncio
@@ -1599,6 +1632,1212 @@ async def test_list_schemas_async_pages():
             pages.append(page_)
         for page_, token in zip(pages, ["abc", "def", "ghi", ""]):
             assert page_.raw_page.next_page_token == token
+
+
+@pytest.mark.parametrize(
+    "request_type",
+    [
+        schema.ListSchemaRevisionsRequest,
+        dict,
+    ],
+)
+def test_list_schema_revisions(request_type, transport: str = "grpc"):
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport=transport,
+    )
+
+    # Everything is optional in proto3 as far as the runtime is concerned,
+    # and we are mocking out the actual API, so just send an empty request.
+    request = request_type()
+
+    # Mock the actual call within the gRPC stub, and fake the request.
+    with mock.patch.object(
+        type(client.transport.list_schema_revisions), "__call__"
+    ) as call:
+        # Designate an appropriate return value for the call.
+        call.return_value = schema.ListSchemaRevisionsResponse(
+            next_page_token="next_page_token_value",
+        )
+        response = client.list_schema_revisions(request)
+
+        # Establish that the underlying gRPC stub method was called.
+        assert len(call.mock_calls) == 1
+        _, args, _ = call.mock_calls[0]
+        assert args[0] == schema.ListSchemaRevisionsRequest()
+
+    # Establish that the response is the type that we expect.
+    assert isinstance(response, pagers.ListSchemaRevisionsPager)
+    assert response.next_page_token == "next_page_token_value"
+
+
+def test_list_schema_revisions_empty_call():
+    # This test is a coverage failsafe to make sure that totally empty calls,
+    # i.e. request == None and no flattened fields passed, work.
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="grpc",
+    )
+
+    # Mock the actual call within the gRPC stub, and fake the request.
+    with mock.patch.object(
+        type(client.transport.list_schema_revisions), "__call__"
+    ) as call:
+        client.list_schema_revisions()
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        assert args[0] == schema.ListSchemaRevisionsRequest()
+
+
+@pytest.mark.asyncio
+async def test_list_schema_revisions_async(
+    transport: str = "grpc_asyncio", request_type=schema.ListSchemaRevisionsRequest
+):
+    client = SchemaServiceAsyncClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport=transport,
+    )
+
+    # Everything is optional in proto3 as far as the runtime is concerned,
+    # and we are mocking out the actual API, so just send an empty request.
+    request = request_type()
+
+    # Mock the actual call within the gRPC stub, and fake the request.
+    with mock.patch.object(
+        type(client.transport.list_schema_revisions), "__call__"
+    ) as call:
+        # Designate an appropriate return value for the call.
+        call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(
+            schema.ListSchemaRevisionsResponse(
+                next_page_token="next_page_token_value",
+            )
+        )
+        response = await client.list_schema_revisions(request)
+
+        # Establish that the underlying gRPC stub method was called.
+        assert len(call.mock_calls)
+        _, args, _ = call.mock_calls[0]
+        assert args[0] == schema.ListSchemaRevisionsRequest()
+
+    # Establish that the response is the type that we expect.
+    assert isinstance(response, pagers.ListSchemaRevisionsAsyncPager)
+    assert response.next_page_token == "next_page_token_value"
+
+
+@pytest.mark.asyncio
+async def test_list_schema_revisions_async_from_dict():
+    await test_list_schema_revisions_async(request_type=dict)
+
+
+def test_list_schema_revisions_field_headers():
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
+
+    # Any value that is part of the HTTP/1.1 URI should be sent as
+    # a field header. Set these to a non-empty value.
+    request = schema.ListSchemaRevisionsRequest()
+
+    request.name = "name_value"
+
+    # Mock the actual call within the gRPC stub, and fake the request.
+    with mock.patch.object(
+        type(client.transport.list_schema_revisions), "__call__"
+    ) as call:
+        call.return_value = schema.ListSchemaRevisionsResponse()
+        client.list_schema_revisions(request)
+
+        # Establish that the underlying gRPC stub method was called.
+        assert len(call.mock_calls) == 1
+        _, args, _ = call.mock_calls[0]
+        assert args[0] == request
+
+    # Establish that the field header was sent.
+    _, _, kw = call.mock_calls[0]
+    assert (
+        "x-goog-request-params",
+        "name=name_value",
+    ) in kw["metadata"]
+
+
+@pytest.mark.asyncio
+async def test_list_schema_revisions_field_headers_async():
+    client = SchemaServiceAsyncClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
+
+    # Any value that is part of the HTTP/1.1 URI should be sent as
+    # a field header. Set these to a non-empty value.
+    request = schema.ListSchemaRevisionsRequest()
+
+    request.name = "name_value"
+
+    # Mock the actual call within the gRPC stub, and fake the request.
+    with mock.patch.object(
+        type(client.transport.list_schema_revisions), "__call__"
+    ) as call:
+        call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(
+            schema.ListSchemaRevisionsResponse()
+        )
+        await client.list_schema_revisions(request)
+
+        # Establish that the underlying gRPC stub method was called.
+        assert len(call.mock_calls)
+        _, args, _ = call.mock_calls[0]
+        assert args[0] == request
+
+    # Establish that the field header was sent.
+    _, _, kw = call.mock_calls[0]
+    assert (
+        "x-goog-request-params",
+        "name=name_value",
+    ) in kw["metadata"]
+
+
+def test_list_schema_revisions_flattened():
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
+
+    # Mock the actual call within the gRPC stub, and fake the request.
+    with mock.patch.object(
+        type(client.transport.list_schema_revisions), "__call__"
+    ) as call:
+        # Designate an appropriate return value for the call.
+        call.return_value = schema.ListSchemaRevisionsResponse()
+        # Call the method with a truthy value for each flattened field,
+        # using the keyword arguments to the method.
+        client.list_schema_revisions(
+            name="name_value",
+        )
+
+        # Establish that the underlying call was made with the expected
+        # request object values.
+        assert len(call.mock_calls) == 1
+        _, args, _ = call.mock_calls[0]
+        arg = args[0].name
+        mock_val = "name_value"
+        assert arg == mock_val
+
+
+def test_list_schema_revisions_flattened_error():
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
+
+    # Attempting to call a method with both a request object and flattened
+    # fields is an error.
+    with pytest.raises(ValueError):
+        client.list_schema_revisions(
+            schema.ListSchemaRevisionsRequest(),
+            name="name_value",
+        )
+
+
+@pytest.mark.asyncio
+async def test_list_schema_revisions_flattened_async():
+    client = SchemaServiceAsyncClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
+
+    # Mock the actual call within the gRPC stub, and fake the request.
+    with mock.patch.object(
+        type(client.transport.list_schema_revisions), "__call__"
+    ) as call:
+        # Designate an appropriate return value for the call.
+        call.return_value = schema.ListSchemaRevisionsResponse()
+
+        call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(
+            schema.ListSchemaRevisionsResponse()
+        )
+        # Call the method with a truthy value for each flattened field,
+        # using the keyword arguments to the method.
+        response = await client.list_schema_revisions(
+            name="name_value",
+        )
+
+        # Establish that the underlying call was made with the expected
+        # request object values.
+        assert len(call.mock_calls)
+        _, args, _ = call.mock_calls[0]
+        arg = args[0].name
+        mock_val = "name_value"
+        assert arg == mock_val
+
+
+@pytest.mark.asyncio
+async def test_list_schema_revisions_flattened_error_async():
+    client = SchemaServiceAsyncClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
+
+    # Attempting to call a method with both a request object and flattened
+    # fields is an error.
+    with pytest.raises(ValueError):
+        await client.list_schema_revisions(
+            schema.ListSchemaRevisionsRequest(),
+            name="name_value",
+        )
+
+
+def test_list_schema_revisions_pager(transport_name: str = "grpc"):
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials,
+        transport=transport_name,
+    )
+
+    # Mock the actual call within the gRPC stub, and fake the request.
+    with mock.patch.object(
+        type(client.transport.list_schema_revisions), "__call__"
+    ) as call:
+        # Set the response to a series of pages.
+        call.side_effect = (
+            schema.ListSchemaRevisionsResponse(
+                schemas=[
+                    schema.Schema(),
+                    schema.Schema(),
+                    schema.Schema(),
+                ],
+                next_page_token="abc",
+            ),
+            schema.ListSchemaRevisionsResponse(
+                schemas=[],
+                next_page_token="def",
+            ),
+            schema.ListSchemaRevisionsResponse(
+                schemas=[
+                    schema.Schema(),
+                ],
+                next_page_token="ghi",
+            ),
+            schema.ListSchemaRevisionsResponse(
+                schemas=[
+                    schema.Schema(),
+                    schema.Schema(),
+                ],
+            ),
+            RuntimeError,
+        )
+
+        metadata = ()
+        metadata = tuple(metadata) + (
+            gapic_v1.routing_header.to_grpc_metadata((("name", ""),)),
+        )
+        pager = client.list_schema_revisions(request={})
+
+        assert pager._metadata == metadata
+
+        results = list(pager)
+        assert len(results) == 6
+        assert all(isinstance(i, schema.Schema) for i in results)
+
+
+def test_list_schema_revisions_pages(transport_name: str = "grpc"):
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials,
+        transport=transport_name,
+    )
+
+    # Mock the actual call within the gRPC stub, and fake the request.
+    with mock.patch.object(
+        type(client.transport.list_schema_revisions), "__call__"
+    ) as call:
+        # Set the response to a series of pages.
+        call.side_effect = (
+            schema.ListSchemaRevisionsResponse(
+                schemas=[
+                    schema.Schema(),
+                    schema.Schema(),
+                    schema.Schema(),
+                ],
+                next_page_token="abc",
+            ),
+            schema.ListSchemaRevisionsResponse(
+                schemas=[],
+                next_page_token="def",
+            ),
+            schema.ListSchemaRevisionsResponse(
+                schemas=[
+                    schema.Schema(),
+                ],
+                next_page_token="ghi",
+            ),
+            schema.ListSchemaRevisionsResponse(
+                schemas=[
+                    schema.Schema(),
+                    schema.Schema(),
+                ],
+            ),
+            RuntimeError,
+        )
+        pages = list(client.list_schema_revisions(request={}).pages)
+        for page_, token in zip(pages, ["abc", "def", "ghi", ""]):
+            assert page_.raw_page.next_page_token == token
+
+
+@pytest.mark.asyncio
+async def test_list_schema_revisions_async_pager():
+    client = SchemaServiceAsyncClient(
+        credentials=ga_credentials.AnonymousCredentials,
+    )
+
+    # Mock the actual call within the gRPC stub, and fake the request.
+    with mock.patch.object(
+        type(client.transport.list_schema_revisions),
+        "__call__",
+        new_callable=mock.AsyncMock,
+    ) as call:
+        # Set the response to a series of pages.
+        call.side_effect = (
+            schema.ListSchemaRevisionsResponse(
+                schemas=[
+                    schema.Schema(),
+                    schema.Schema(),
+                    schema.Schema(),
+                ],
+                next_page_token="abc",
+            ),
+            schema.ListSchemaRevisionsResponse(
+                schemas=[],
+                next_page_token="def",
+            ),
+            schema.ListSchemaRevisionsResponse(
+                schemas=[
+                    schema.Schema(),
+                ],
+                next_page_token="ghi",
+            ),
+            schema.ListSchemaRevisionsResponse(
+                schemas=[
+                    schema.Schema(),
+                    schema.Schema(),
+                ],
+            ),
+            RuntimeError,
+        )
+        async_pager = await client.list_schema_revisions(
+            request={},
+        )
+        assert async_pager.next_page_token == "abc"
+        responses = []
+        async for response in async_pager:  # pragma: no branch
+            responses.append(response)
+
+        assert len(responses) == 6
+        assert all(isinstance(i, schema.Schema) for i in responses)
+
+
+@pytest.mark.asyncio
+async def test_list_schema_revisions_async_pages():
+    client = SchemaServiceAsyncClient(
+        credentials=ga_credentials.AnonymousCredentials,
+    )
+
+    # Mock the actual call within the gRPC stub, and fake the request.
+    with mock.patch.object(
+        type(client.transport.list_schema_revisions),
+        "__call__",
+        new_callable=mock.AsyncMock,
+    ) as call:
+        # Set the response to a series of pages.
+        call.side_effect = (
+            schema.ListSchemaRevisionsResponse(
+                schemas=[
+                    schema.Schema(),
+                    schema.Schema(),
+                    schema.Schema(),
+                ],
+                next_page_token="abc",
+            ),
+            schema.ListSchemaRevisionsResponse(
+                schemas=[],
+                next_page_token="def",
+            ),
+            schema.ListSchemaRevisionsResponse(
+                schemas=[
+                    schema.Schema(),
+                ],
+                next_page_token="ghi",
+            ),
+            schema.ListSchemaRevisionsResponse(
+                schemas=[
+                    schema.Schema(),
+                    schema.Schema(),
+                ],
+            ),
+            RuntimeError,
+        )
+        pages = []
+        async for page_ in (
+            await client.list_schema_revisions(request={})
+        ).pages:  # pragma: no branch
+            pages.append(page_)
+        for page_, token in zip(pages, ["abc", "def", "ghi", ""]):
+            assert page_.raw_page.next_page_token == token
+
+
+@pytest.mark.parametrize(
+    "request_type",
+    [
+        gp_schema.CommitSchemaRequest,
+        dict,
+    ],
+)
+def test_commit_schema(request_type, transport: str = "grpc"):
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport=transport,
+    )
+
+    # Everything is optional in proto3 as far as the runtime is concerned,
+    # and we are mocking out the actual API, so just send an empty request.
+    request = request_type()
+
+    # Mock the actual call within the gRPC stub, and fake the request.
+    with mock.patch.object(type(client.transport.commit_schema), "__call__") as call:
+        # Designate an appropriate return value for the call.
+        call.return_value = gp_schema.Schema(
+            name="name_value",
+            type_=gp_schema.Schema.Type.PROTOCOL_BUFFER,
+            definition="definition_value",
+            revision_id="revision_id_value",
+        )
+        response = client.commit_schema(request)
+
+        # Establish that the underlying gRPC stub method was called.
+        assert len(call.mock_calls) == 1
+        _, args, _ = call.mock_calls[0]
+        assert args[0] == gp_schema.CommitSchemaRequest()
+
+    # Establish that the response is the type that we expect.
+    assert isinstance(response, gp_schema.Schema)
+    assert response.name == "name_value"
+    assert response.type_ == gp_schema.Schema.Type.PROTOCOL_BUFFER
+    assert response.definition == "definition_value"
+    assert response.revision_id == "revision_id_value"
+
+
+def test_commit_schema_empty_call():
+    # This test is a coverage failsafe to make sure that totally empty calls,
+    # i.e. request == None and no flattened fields passed, work.
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="grpc",
+    )
+
+    # Mock the actual call within the gRPC stub, and fake the request.
+    with mock.patch.object(type(client.transport.commit_schema), "__call__") as call:
+        client.commit_schema()
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        assert args[0] == gp_schema.CommitSchemaRequest()
+
+
+@pytest.mark.asyncio
+async def test_commit_schema_async(
+    transport: str = "grpc_asyncio", request_type=gp_schema.CommitSchemaRequest
+):
+    client = SchemaServiceAsyncClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport=transport,
+    )
+
+    # Everything is optional in proto3 as far as the runtime is concerned,
+    # and we are mocking out the actual API, so just send an empty request.
+    request = request_type()
+
+    # Mock the actual call within the gRPC stub, and fake the request.
+    with mock.patch.object(type(client.transport.commit_schema), "__call__") as call:
+        # Designate an appropriate return value for the call.
+        call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(
+            gp_schema.Schema(
+                name="name_value",
+                type_=gp_schema.Schema.Type.PROTOCOL_BUFFER,
+                definition="definition_value",
+                revision_id="revision_id_value",
+            )
+        )
+        response = await client.commit_schema(request)
+
+        # Establish that the underlying gRPC stub method was called.
+        assert len(call.mock_calls)
+        _, args, _ = call.mock_calls[0]
+        assert args[0] == gp_schema.CommitSchemaRequest()
+
+    # Establish that the response is the type that we expect.
+    assert isinstance(response, gp_schema.Schema)
+    assert response.name == "name_value"
+    assert response.type_ == gp_schema.Schema.Type.PROTOCOL_BUFFER
+    assert response.definition == "definition_value"
+    assert response.revision_id == "revision_id_value"
+
+
+@pytest.mark.asyncio
+async def test_commit_schema_async_from_dict():
+    await test_commit_schema_async(request_type=dict)
+
+
+def test_commit_schema_field_headers():
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
+
+    # Any value that is part of the HTTP/1.1 URI should be sent as
+    # a field header. Set these to a non-empty value.
+    request = gp_schema.CommitSchemaRequest()
+
+    request.name = "name_value"
+
+    # Mock the actual call within the gRPC stub, and fake the request.
+    with mock.patch.object(type(client.transport.commit_schema), "__call__") as call:
+        call.return_value = gp_schema.Schema()
+        client.commit_schema(request)
+
+        # Establish that the underlying gRPC stub method was called.
+        assert len(call.mock_calls) == 1
+        _, args, _ = call.mock_calls[0]
+        assert args[0] == request
+
+    # Establish that the field header was sent.
+    _, _, kw = call.mock_calls[0]
+    assert (
+        "x-goog-request-params",
+        "name=name_value",
+    ) in kw["metadata"]
+
+
+@pytest.mark.asyncio
+async def test_commit_schema_field_headers_async():
+    client = SchemaServiceAsyncClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
+
+    # Any value that is part of the HTTP/1.1 URI should be sent as
+    # a field header. Set these to a non-empty value.
+    request = gp_schema.CommitSchemaRequest()
+
+    request.name = "name_value"
+
+    # Mock the actual call within the gRPC stub, and fake the request.
+    with mock.patch.object(type(client.transport.commit_schema), "__call__") as call:
+        call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(gp_schema.Schema())
+        await client.commit_schema(request)
+
+        # Establish that the underlying gRPC stub method was called.
+        assert len(call.mock_calls)
+        _, args, _ = call.mock_calls[0]
+        assert args[0] == request
+
+    # Establish that the field header was sent.
+    _, _, kw = call.mock_calls[0]
+    assert (
+        "x-goog-request-params",
+        "name=name_value",
+    ) in kw["metadata"]
+
+
+def test_commit_schema_flattened():
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
+
+    # Mock the actual call within the gRPC stub, and fake the request.
+    with mock.patch.object(type(client.transport.commit_schema), "__call__") as call:
+        # Designate an appropriate return value for the call.
+        call.return_value = gp_schema.Schema()
+        # Call the method with a truthy value for each flattened field,
+        # using the keyword arguments to the method.
+        client.commit_schema(
+            name="name_value",
+            schema=gp_schema.Schema(name="name_value"),
+        )
+
+        # Establish that the underlying call was made with the expected
+        # request object values.
+        assert len(call.mock_calls) == 1
+        _, args, _ = call.mock_calls[0]
+        arg = args[0].name
+        mock_val = "name_value"
+        assert arg == mock_val
+        arg = args[0].schema
+        mock_val = gp_schema.Schema(name="name_value")
+        assert arg == mock_val
+
+
+def test_commit_schema_flattened_error():
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
+
+    # Attempting to call a method with both a request object and flattened
+    # fields is an error.
+    with pytest.raises(ValueError):
+        client.commit_schema(
+            gp_schema.CommitSchemaRequest(),
+            name="name_value",
+            schema=gp_schema.Schema(name="name_value"),
+        )
+
+
+@pytest.mark.asyncio
+async def test_commit_schema_flattened_async():
+    client = SchemaServiceAsyncClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
+
+    # Mock the actual call within the gRPC stub, and fake the request.
+    with mock.patch.object(type(client.transport.commit_schema), "__call__") as call:
+        # Designate an appropriate return value for the call.
+        call.return_value = gp_schema.Schema()
+
+        call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(gp_schema.Schema())
+        # Call the method with a truthy value for each flattened field,
+        # using the keyword arguments to the method.
+        response = await client.commit_schema(
+            name="name_value",
+            schema=gp_schema.Schema(name="name_value"),
+        )
+
+        # Establish that the underlying call was made with the expected
+        # request object values.
+        assert len(call.mock_calls)
+        _, args, _ = call.mock_calls[0]
+        arg = args[0].name
+        mock_val = "name_value"
+        assert arg == mock_val
+        arg = args[0].schema
+        mock_val = gp_schema.Schema(name="name_value")
+        assert arg == mock_val
+
+
+@pytest.mark.asyncio
+async def test_commit_schema_flattened_error_async():
+    client = SchemaServiceAsyncClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
+
+    # Attempting to call a method with both a request object and flattened
+    # fields is an error.
+    with pytest.raises(ValueError):
+        await client.commit_schema(
+            gp_schema.CommitSchemaRequest(),
+            name="name_value",
+            schema=gp_schema.Schema(name="name_value"),
+        )
+
+
+@pytest.mark.parametrize(
+    "request_type",
+    [
+        schema.RollbackSchemaRequest,
+        dict,
+    ],
+)
+def test_rollback_schema(request_type, transport: str = "grpc"):
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport=transport,
+    )
+
+    # Everything is optional in proto3 as far as the runtime is concerned,
+    # and we are mocking out the actual API, so just send an empty request.
+    request = request_type()
+
+    # Mock the actual call within the gRPC stub, and fake the request.
+    with mock.patch.object(type(client.transport.rollback_schema), "__call__") as call:
+        # Designate an appropriate return value for the call.
+        call.return_value = schema.Schema(
+            name="name_value",
+            type_=schema.Schema.Type.PROTOCOL_BUFFER,
+            definition="definition_value",
+            revision_id="revision_id_value",
+        )
+        response = client.rollback_schema(request)
+
+        # Establish that the underlying gRPC stub method was called.
+        assert len(call.mock_calls) == 1
+        _, args, _ = call.mock_calls[0]
+        assert args[0] == schema.RollbackSchemaRequest()
+
+    # Establish that the response is the type that we expect.
+    assert isinstance(response, schema.Schema)
+    assert response.name == "name_value"
+    assert response.type_ == schema.Schema.Type.PROTOCOL_BUFFER
+    assert response.definition == "definition_value"
+    assert response.revision_id == "revision_id_value"
+
+
+def test_rollback_schema_empty_call():
+    # This test is a coverage failsafe to make sure that totally empty calls,
+    # i.e. request == None and no flattened fields passed, work.
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="grpc",
+    )
+
+    # Mock the actual call within the gRPC stub, and fake the request.
+    with mock.patch.object(type(client.transport.rollback_schema), "__call__") as call:
+        client.rollback_schema()
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        assert args[0] == schema.RollbackSchemaRequest()
+
+
+@pytest.mark.asyncio
+async def test_rollback_schema_async(
+    transport: str = "grpc_asyncio", request_type=schema.RollbackSchemaRequest
+):
+    client = SchemaServiceAsyncClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport=transport,
+    )
+
+    # Everything is optional in proto3 as far as the runtime is concerned,
+    # and we are mocking out the actual API, so just send an empty request.
+    request = request_type()
+
+    # Mock the actual call within the gRPC stub, and fake the request.
+    with mock.patch.object(type(client.transport.rollback_schema), "__call__") as call:
+        # Designate an appropriate return value for the call.
+        call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(
+            schema.Schema(
+                name="name_value",
+                type_=schema.Schema.Type.PROTOCOL_BUFFER,
+                definition="definition_value",
+                revision_id="revision_id_value",
+            )
+        )
+        response = await client.rollback_schema(request)
+
+        # Establish that the underlying gRPC stub method was called.
+        assert len(call.mock_calls)
+        _, args, _ = call.mock_calls[0]
+        assert args[0] == schema.RollbackSchemaRequest()
+
+    # Establish that the response is the type that we expect.
+    assert isinstance(response, schema.Schema)
+    assert response.name == "name_value"
+    assert response.type_ == schema.Schema.Type.PROTOCOL_BUFFER
+    assert response.definition == "definition_value"
+    assert response.revision_id == "revision_id_value"
+
+
+@pytest.mark.asyncio
+async def test_rollback_schema_async_from_dict():
+    await test_rollback_schema_async(request_type=dict)
+
+
+def test_rollback_schema_field_headers():
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
+
+    # Any value that is part of the HTTP/1.1 URI should be sent as
+    # a field header. Set these to a non-empty value.
+    request = schema.RollbackSchemaRequest()
+
+    request.name = "name_value"
+
+    # Mock the actual call within the gRPC stub, and fake the request.
+    with mock.patch.object(type(client.transport.rollback_schema), "__call__") as call:
+        call.return_value = schema.Schema()
+        client.rollback_schema(request)
+
+        # Establish that the underlying gRPC stub method was called.
+        assert len(call.mock_calls) == 1
+        _, args, _ = call.mock_calls[0]
+        assert args[0] == request
+
+    # Establish that the field header was sent.
+    _, _, kw = call.mock_calls[0]
+    assert (
+        "x-goog-request-params",
+        "name=name_value",
+    ) in kw["metadata"]
+
+
+@pytest.mark.asyncio
+async def test_rollback_schema_field_headers_async():
+    client = SchemaServiceAsyncClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
+
+    # Any value that is part of the HTTP/1.1 URI should be sent as
+    # a field header. Set these to a non-empty value.
+    request = schema.RollbackSchemaRequest()
+
+    request.name = "name_value"
+
+    # Mock the actual call within the gRPC stub, and fake the request.
+    with mock.patch.object(type(client.transport.rollback_schema), "__call__") as call:
+        call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(schema.Schema())
+        await client.rollback_schema(request)
+
+        # Establish that the underlying gRPC stub method was called.
+        assert len(call.mock_calls)
+        _, args, _ = call.mock_calls[0]
+        assert args[0] == request
+
+    # Establish that the field header was sent.
+    _, _, kw = call.mock_calls[0]
+    assert (
+        "x-goog-request-params",
+        "name=name_value",
+    ) in kw["metadata"]
+
+
+def test_rollback_schema_flattened():
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
+
+    # Mock the actual call within the gRPC stub, and fake the request.
+    with mock.patch.object(type(client.transport.rollback_schema), "__call__") as call:
+        # Designate an appropriate return value for the call.
+        call.return_value = schema.Schema()
+        # Call the method with a truthy value for each flattened field,
+        # using the keyword arguments to the method.
+        client.rollback_schema(
+            name="name_value",
+            revision_id="revision_id_value",
+        )
+
+        # Establish that the underlying call was made with the expected
+        # request object values.
+        assert len(call.mock_calls) == 1
+        _, args, _ = call.mock_calls[0]
+        arg = args[0].name
+        mock_val = "name_value"
+        assert arg == mock_val
+        arg = args[0].revision_id
+        mock_val = "revision_id_value"
+        assert arg == mock_val
+
+
+def test_rollback_schema_flattened_error():
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
+
+    # Attempting to call a method with both a request object and flattened
+    # fields is an error.
+    with pytest.raises(ValueError):
+        client.rollback_schema(
+            schema.RollbackSchemaRequest(),
+            name="name_value",
+            revision_id="revision_id_value",
+        )
+
+
+@pytest.mark.asyncio
+async def test_rollback_schema_flattened_async():
+    client = SchemaServiceAsyncClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
+
+    # Mock the actual call within the gRPC stub, and fake the request.
+    with mock.patch.object(type(client.transport.rollback_schema), "__call__") as call:
+        # Designate an appropriate return value for the call.
+        call.return_value = schema.Schema()
+
+        call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(schema.Schema())
+        # Call the method with a truthy value for each flattened field,
+        # using the keyword arguments to the method.
+        response = await client.rollback_schema(
+            name="name_value",
+            revision_id="revision_id_value",
+        )
+
+        # Establish that the underlying call was made with the expected
+        # request object values.
+        assert len(call.mock_calls)
+        _, args, _ = call.mock_calls[0]
+        arg = args[0].name
+        mock_val = "name_value"
+        assert arg == mock_val
+        arg = args[0].revision_id
+        mock_val = "revision_id_value"
+        assert arg == mock_val
+
+
+@pytest.mark.asyncio
+async def test_rollback_schema_flattened_error_async():
+    client = SchemaServiceAsyncClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
+
+    # Attempting to call a method with both a request object and flattened
+    # fields is an error.
+    with pytest.raises(ValueError):
+        await client.rollback_schema(
+            schema.RollbackSchemaRequest(),
+            name="name_value",
+            revision_id="revision_id_value",
+        )
+
+
+@pytest.mark.parametrize(
+    "request_type",
+    [
+        schema.DeleteSchemaRevisionRequest,
+        dict,
+    ],
+)
+def test_delete_schema_revision(request_type, transport: str = "grpc"):
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport=transport,
+    )
+
+    # Everything is optional in proto3 as far as the runtime is concerned,
+    # and we are mocking out the actual API, so just send an empty request.
+    request = request_type()
+
+    # Mock the actual call within the gRPC stub, and fake the request.
+    with mock.patch.object(
+        type(client.transport.delete_schema_revision), "__call__"
+    ) as call:
+        # Designate an appropriate return value for the call.
+        call.return_value = schema.Schema(
+            name="name_value",
+            type_=schema.Schema.Type.PROTOCOL_BUFFER,
+            definition="definition_value",
+            revision_id="revision_id_value",
+        )
+        response = client.delete_schema_revision(request)
+
+        # Establish that the underlying gRPC stub method was called.
+        assert len(call.mock_calls) == 1
+        _, args, _ = call.mock_calls[0]
+        assert args[0] == schema.DeleteSchemaRevisionRequest()
+
+    # Establish that the response is the type that we expect.
+    assert isinstance(response, schema.Schema)
+    assert response.name == "name_value"
+    assert response.type_ == schema.Schema.Type.PROTOCOL_BUFFER
+    assert response.definition == "definition_value"
+    assert response.revision_id == "revision_id_value"
+
+
+def test_delete_schema_revision_empty_call():
+    # This test is a coverage failsafe to make sure that totally empty calls,
+    # i.e. request == None and no flattened fields passed, work.
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="grpc",
+    )
+
+    # Mock the actual call within the gRPC stub, and fake the request.
+    with mock.patch.object(
+        type(client.transport.delete_schema_revision), "__call__"
+    ) as call:
+        client.delete_schema_revision()
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        assert args[0] == schema.DeleteSchemaRevisionRequest()
+
+
+@pytest.mark.asyncio
+async def test_delete_schema_revision_async(
+    transport: str = "grpc_asyncio", request_type=schema.DeleteSchemaRevisionRequest
+):
+    client = SchemaServiceAsyncClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport=transport,
+    )
+
+    # Everything is optional in proto3 as far as the runtime is concerned,
+    # and we are mocking out the actual API, so just send an empty request.
+    request = request_type()
+
+    # Mock the actual call within the gRPC stub, and fake the request.
+    with mock.patch.object(
+        type(client.transport.delete_schema_revision), "__call__"
+    ) as call:
+        # Designate an appropriate return value for the call.
+        call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(
+            schema.Schema(
+                name="name_value",
+                type_=schema.Schema.Type.PROTOCOL_BUFFER,
+                definition="definition_value",
+                revision_id="revision_id_value",
+            )
+        )
+        response = await client.delete_schema_revision(request)
+
+        # Establish that the underlying gRPC stub method was called.
+        assert len(call.mock_calls)
+        _, args, _ = call.mock_calls[0]
+        assert args[0] == schema.DeleteSchemaRevisionRequest()
+
+    # Establish that the response is the type that we expect.
+    assert isinstance(response, schema.Schema)
+    assert response.name == "name_value"
+    assert response.type_ == schema.Schema.Type.PROTOCOL_BUFFER
+    assert response.definition == "definition_value"
+    assert response.revision_id == "revision_id_value"
+
+
+@pytest.mark.asyncio
+async def test_delete_schema_revision_async_from_dict():
+    await test_delete_schema_revision_async(request_type=dict)
+
+
+def test_delete_schema_revision_field_headers():
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
+
+    # Any value that is part of the HTTP/1.1 URI should be sent as
+    # a field header. Set these to a non-empty value.
+    request = schema.DeleteSchemaRevisionRequest()
+
+    request.name = "name_value"
+
+    # Mock the actual call within the gRPC stub, and fake the request.
+    with mock.patch.object(
+        type(client.transport.delete_schema_revision), "__call__"
+    ) as call:
+        call.return_value = schema.Schema()
+        client.delete_schema_revision(request)
+
+        # Establish that the underlying gRPC stub method was called.
+        assert len(call.mock_calls) == 1
+        _, args, _ = call.mock_calls[0]
+        assert args[0] == request
+
+    # Establish that the field header was sent.
+    _, _, kw = call.mock_calls[0]
+    assert (
+        "x-goog-request-params",
+        "name=name_value",
+    ) in kw["metadata"]
+
+
+@pytest.mark.asyncio
+async def test_delete_schema_revision_field_headers_async():
+    client = SchemaServiceAsyncClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
+
+    # Any value that is part of the HTTP/1.1 URI should be sent as
+    # a field header. Set these to a non-empty value.
+    request = schema.DeleteSchemaRevisionRequest()
+
+    request.name = "name_value"
+
+    # Mock the actual call within the gRPC stub, and fake the request.
+    with mock.patch.object(
+        type(client.transport.delete_schema_revision), "__call__"
+    ) as call:
+        call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(schema.Schema())
+        await client.delete_schema_revision(request)
+
+        # Establish that the underlying gRPC stub method was called.
+        assert len(call.mock_calls)
+        _, args, _ = call.mock_calls[0]
+        assert args[0] == request
+
+    # Establish that the field header was sent.
+    _, _, kw = call.mock_calls[0]
+    assert (
+        "x-goog-request-params",
+        "name=name_value",
+    ) in kw["metadata"]
+
+
+def test_delete_schema_revision_flattened():
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
+
+    # Mock the actual call within the gRPC stub, and fake the request.
+    with mock.patch.object(
+        type(client.transport.delete_schema_revision), "__call__"
+    ) as call:
+        # Designate an appropriate return value for the call.
+        call.return_value = schema.Schema()
+        # Call the method with a truthy value for each flattened field,
+        # using the keyword arguments to the method.
+        client.delete_schema_revision(
+            name="name_value",
+            revision_id="revision_id_value",
+        )
+
+        # Establish that the underlying call was made with the expected
+        # request object values.
+        assert len(call.mock_calls) == 1
+        _, args, _ = call.mock_calls[0]
+        arg = args[0].name
+        mock_val = "name_value"
+        assert arg == mock_val
+        arg = args[0].revision_id
+        mock_val = "revision_id_value"
+        assert arg == mock_val
+
+
+def test_delete_schema_revision_flattened_error():
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
+
+    # Attempting to call a method with both a request object and flattened
+    # fields is an error.
+    with pytest.raises(ValueError):
+        client.delete_schema_revision(
+            schema.DeleteSchemaRevisionRequest(),
+            name="name_value",
+            revision_id="revision_id_value",
+        )
+
+
+@pytest.mark.asyncio
+async def test_delete_schema_revision_flattened_async():
+    client = SchemaServiceAsyncClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
+
+    # Mock the actual call within the gRPC stub, and fake the request.
+    with mock.patch.object(
+        type(client.transport.delete_schema_revision), "__call__"
+    ) as call:
+        # Designate an appropriate return value for the call.
+        call.return_value = schema.Schema()
+
+        call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(schema.Schema())
+        # Call the method with a truthy value for each flattened field,
+        # using the keyword arguments to the method.
+        response = await client.delete_schema_revision(
+            name="name_value",
+            revision_id="revision_id_value",
+        )
+
+        # Establish that the underlying call was made with the expected
+        # request object values.
+        assert len(call.mock_calls)
+        _, args, _ = call.mock_calls[0]
+        arg = args[0].name
+        mock_val = "name_value"
+        assert arg == mock_val
+        arg = args[0].revision_id
+        mock_val = "revision_id_value"
+        assert arg == mock_val
+
+
+@pytest.mark.asyncio
+async def test_delete_schema_revision_flattened_error_async():
+    client = SchemaServiceAsyncClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+    )
+
+    # Attempting to call a method with both a request object and flattened
+    # fields is an error.
+    with pytest.raises(ValueError):
+        await client.delete_schema_revision(
+            schema.DeleteSchemaRevisionRequest(),
+            name="name_value",
+            revision_id="revision_id_value",
+        )
 
 
 @pytest.mark.parametrize(
@@ -2201,6 +3440,2810 @@ async def test_validate_message_field_headers_async():
     ) in kw["metadata"]
 
 
+@pytest.mark.parametrize(
+    "request_type",
+    [
+        gp_schema.CreateSchemaRequest,
+        dict,
+    ],
+)
+def test_create_schema_rest(request_type):
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="rest",
+    )
+
+    # send a request that will satisfy transcoding
+    request_init = {"parent": "projects/sample1"}
+    request_init["schema"] = {
+        "name": "name_value",
+        "type_": 1,
+        "definition": "definition_value",
+        "revision_id": "revision_id_value",
+        "revision_create_time": {"seconds": 751, "nanos": 543},
+    }
+    request = request_type(**request_init)
+
+    # Mock the http request call within the method and fake a response.
+    with mock.patch.object(type(client.transport._session), "request") as req:
+        # Designate an appropriate value for the returned response.
+        return_value = gp_schema.Schema(
+            name="name_value",
+            type_=gp_schema.Schema.Type.PROTOCOL_BUFFER,
+            definition="definition_value",
+            revision_id="revision_id_value",
+        )
+
+        # Wrap the value into a proper Response obj
+        response_value = Response()
+        response_value.status_code = 200
+        pb_return_value = gp_schema.Schema.pb(return_value)
+        json_return_value = json_format.MessageToJson(pb_return_value)
+
+        response_value._content = json_return_value.encode("UTF-8")
+        req.return_value = response_value
+        response = client.create_schema(request)
+
+    # Establish that the response is the type that we expect.
+    assert isinstance(response, gp_schema.Schema)
+    assert response.name == "name_value"
+    assert response.type_ == gp_schema.Schema.Type.PROTOCOL_BUFFER
+    assert response.definition == "definition_value"
+    assert response.revision_id == "revision_id_value"
+
+
+def test_create_schema_rest_required_fields(request_type=gp_schema.CreateSchemaRequest):
+    transport_class = transports.SchemaServiceRestTransport
+
+    request_init = {}
+    request_init["parent"] = ""
+    request = request_type(**request_init)
+    pb_request = request_type.pb(request)
+    jsonified_request = json.loads(
+        json_format.MessageToJson(
+            pb_request,
+            including_default_value_fields=False,
+            use_integers_for_enums=False,
+        )
+    )
+
+    # verify fields with default values are dropped
+
+    unset_fields = transport_class(
+        credentials=ga_credentials.AnonymousCredentials()
+    ).create_schema._get_unset_required_fields(jsonified_request)
+    jsonified_request.update(unset_fields)
+
+    # verify required fields with default values are now present
+
+    jsonified_request["parent"] = "parent_value"
+
+    unset_fields = transport_class(
+        credentials=ga_credentials.AnonymousCredentials()
+    ).create_schema._get_unset_required_fields(jsonified_request)
+    # Check that path parameters and body parameters are not mixing in.
+    assert not set(unset_fields) - set(("schema_id",))
+    jsonified_request.update(unset_fields)
+
+    # verify required fields with non-default values are left alone
+    assert "parent" in jsonified_request
+    assert jsonified_request["parent"] == "parent_value"
+
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="rest",
+    )
+    request = request_type(**request_init)
+
+    # Designate an appropriate value for the returned response.
+    return_value = gp_schema.Schema()
+    # Mock the http request call within the method and fake a response.
+    with mock.patch.object(Session, "request") as req:
+        # We need to mock transcode() because providing default values
+        # for required fields will fail the real version if the http_options
+        # expect actual values for those fields.
+        with mock.patch.object(path_template, "transcode") as transcode:
+            # A uri without fields and an empty body will force all the
+            # request fields to show up in the query_params.
+            pb_request = request_type.pb(request)
+            transcode_result = {
+                "uri": "v1/sample_method",
+                "method": "post",
+                "query_params": pb_request,
+            }
+            transcode_result["body"] = pb_request
+            transcode.return_value = transcode_result
+
+            response_value = Response()
+            response_value.status_code = 200
+
+            pb_return_value = gp_schema.Schema.pb(return_value)
+            json_return_value = json_format.MessageToJson(pb_return_value)
+
+            response_value._content = json_return_value.encode("UTF-8")
+            req.return_value = response_value
+
+            response = client.create_schema(request)
+
+            expected_params = [("$alt", "json;enum-encoding=int")]
+            actual_params = req.call_args.kwargs["params"]
+            assert expected_params == actual_params
+
+
+def test_create_schema_rest_unset_required_fields():
+    transport = transports.SchemaServiceRestTransport(
+        credentials=ga_credentials.AnonymousCredentials
+    )
+
+    unset_fields = transport.create_schema._get_unset_required_fields({})
+    assert set(unset_fields) == (
+        set(("schemaId",))
+        & set(
+            (
+                "parent",
+                "schema",
+            )
+        )
+    )
+
+
+@pytest.mark.parametrize("null_interceptor", [True, False])
+def test_create_schema_rest_interceptors(null_interceptor):
+    transport = transports.SchemaServiceRestTransport(
+        credentials=ga_credentials.AnonymousCredentials(),
+        interceptor=None
+        if null_interceptor
+        else transports.SchemaServiceRestInterceptor(),
+    )
+    client = SchemaServiceClient(transport=transport)
+    with mock.patch.object(
+        type(client.transport._session), "request"
+    ) as req, mock.patch.object(
+        path_template, "transcode"
+    ) as transcode, mock.patch.object(
+        transports.SchemaServiceRestInterceptor, "post_create_schema"
+    ) as post, mock.patch.object(
+        transports.SchemaServiceRestInterceptor, "pre_create_schema"
+    ) as pre:
+        pre.assert_not_called()
+        post.assert_not_called()
+        pb_message = gp_schema.CreateSchemaRequest.pb(gp_schema.CreateSchemaRequest())
+        transcode.return_value = {
+            "method": "post",
+            "uri": "my_uri",
+            "body": pb_message,
+            "query_params": pb_message,
+        }
+
+        req.return_value = Response()
+        req.return_value.status_code = 200
+        req.return_value.request = PreparedRequest()
+        req.return_value._content = gp_schema.Schema.to_json(gp_schema.Schema())
+
+        request = gp_schema.CreateSchemaRequest()
+        metadata = [
+            ("key", "val"),
+            ("cephalopod", "squid"),
+        ]
+        pre.return_value = request, metadata
+        post.return_value = gp_schema.Schema()
+
+        client.create_schema(
+            request,
+            metadata=[
+                ("key", "val"),
+                ("cephalopod", "squid"),
+            ],
+        )
+
+        pre.assert_called_once()
+        post.assert_called_once()
+
+
+def test_create_schema_rest_bad_request(
+    transport: str = "rest", request_type=gp_schema.CreateSchemaRequest
+):
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport=transport,
+    )
+
+    # send a request that will satisfy transcoding
+    request_init = {"parent": "projects/sample1"}
+    request_init["schema"] = {
+        "name": "name_value",
+        "type_": 1,
+        "definition": "definition_value",
+        "revision_id": "revision_id_value",
+        "revision_create_time": {"seconds": 751, "nanos": 543},
+    }
+    request = request_type(**request_init)
+
+    # Mock the http request call within the method and fake a BadRequest error.
+    with mock.patch.object(Session, "request") as req, pytest.raises(
+        core_exceptions.BadRequest
+    ):
+        # Wrap the value into a proper Response obj
+        response_value = Response()
+        response_value.status_code = 400
+        response_value.request = Request()
+        req.return_value = response_value
+        client.create_schema(request)
+
+
+def test_create_schema_rest_flattened():
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="rest",
+    )
+
+    # Mock the http request call within the method and fake a response.
+    with mock.patch.object(type(client.transport._session), "request") as req:
+        # Designate an appropriate value for the returned response.
+        return_value = gp_schema.Schema()
+
+        # get arguments that satisfy an http rule for this method
+        sample_request = {"parent": "projects/sample1"}
+
+        # get truthy value for each flattened field
+        mock_args = dict(
+            parent="parent_value",
+            schema=gp_schema.Schema(name="name_value"),
+            schema_id="schema_id_value",
+        )
+        mock_args.update(sample_request)
+
+        # Wrap the value into a proper Response obj
+        response_value = Response()
+        response_value.status_code = 200
+        pb_return_value = gp_schema.Schema.pb(return_value)
+        json_return_value = json_format.MessageToJson(pb_return_value)
+        response_value._content = json_return_value.encode("UTF-8")
+        req.return_value = response_value
+
+        client.create_schema(**mock_args)
+
+        # Establish that the underlying call was made with the expected
+        # request object values.
+        assert len(req.mock_calls) == 1
+        _, args, _ = req.mock_calls[0]
+        assert path_template.validate(
+            "%s/v1/{parent=projects/*}/schemas" % client.transport._host, args[1]
+        )
+
+
+def test_create_schema_rest_flattened_error(transport: str = "rest"):
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport=transport,
+    )
+
+    # Attempting to call a method with both a request object and flattened
+    # fields is an error.
+    with pytest.raises(ValueError):
+        client.create_schema(
+            gp_schema.CreateSchemaRequest(),
+            parent="parent_value",
+            schema=gp_schema.Schema(name="name_value"),
+            schema_id="schema_id_value",
+        )
+
+
+def test_create_schema_rest_error():
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(), transport="rest"
+    )
+
+
+@pytest.mark.parametrize(
+    "request_type",
+    [
+        schema.GetSchemaRequest,
+        dict,
+    ],
+)
+def test_get_schema_rest(request_type):
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="rest",
+    )
+
+    # send a request that will satisfy transcoding
+    request_init = {"name": "projects/sample1/schemas/sample2"}
+    request = request_type(**request_init)
+
+    # Mock the http request call within the method and fake a response.
+    with mock.patch.object(type(client.transport._session), "request") as req:
+        # Designate an appropriate value for the returned response.
+        return_value = schema.Schema(
+            name="name_value",
+            type_=schema.Schema.Type.PROTOCOL_BUFFER,
+            definition="definition_value",
+            revision_id="revision_id_value",
+        )
+
+        # Wrap the value into a proper Response obj
+        response_value = Response()
+        response_value.status_code = 200
+        pb_return_value = schema.Schema.pb(return_value)
+        json_return_value = json_format.MessageToJson(pb_return_value)
+
+        response_value._content = json_return_value.encode("UTF-8")
+        req.return_value = response_value
+        response = client.get_schema(request)
+
+    # Establish that the response is the type that we expect.
+    assert isinstance(response, schema.Schema)
+    assert response.name == "name_value"
+    assert response.type_ == schema.Schema.Type.PROTOCOL_BUFFER
+    assert response.definition == "definition_value"
+    assert response.revision_id == "revision_id_value"
+
+
+def test_get_schema_rest_required_fields(request_type=schema.GetSchemaRequest):
+    transport_class = transports.SchemaServiceRestTransport
+
+    request_init = {}
+    request_init["name"] = ""
+    request = request_type(**request_init)
+    pb_request = request_type.pb(request)
+    jsonified_request = json.loads(
+        json_format.MessageToJson(
+            pb_request,
+            including_default_value_fields=False,
+            use_integers_for_enums=False,
+        )
+    )
+
+    # verify fields with default values are dropped
+
+    unset_fields = transport_class(
+        credentials=ga_credentials.AnonymousCredentials()
+    ).get_schema._get_unset_required_fields(jsonified_request)
+    jsonified_request.update(unset_fields)
+
+    # verify required fields with default values are now present
+
+    jsonified_request["name"] = "name_value"
+
+    unset_fields = transport_class(
+        credentials=ga_credentials.AnonymousCredentials()
+    ).get_schema._get_unset_required_fields(jsonified_request)
+    # Check that path parameters and body parameters are not mixing in.
+    assert not set(unset_fields) - set(("view",))
+    jsonified_request.update(unset_fields)
+
+    # verify required fields with non-default values are left alone
+    assert "name" in jsonified_request
+    assert jsonified_request["name"] == "name_value"
+
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="rest",
+    )
+    request = request_type(**request_init)
+
+    # Designate an appropriate value for the returned response.
+    return_value = schema.Schema()
+    # Mock the http request call within the method and fake a response.
+    with mock.patch.object(Session, "request") as req:
+        # We need to mock transcode() because providing default values
+        # for required fields will fail the real version if the http_options
+        # expect actual values for those fields.
+        with mock.patch.object(path_template, "transcode") as transcode:
+            # A uri without fields and an empty body will force all the
+            # request fields to show up in the query_params.
+            pb_request = request_type.pb(request)
+            transcode_result = {
+                "uri": "v1/sample_method",
+                "method": "get",
+                "query_params": pb_request,
+            }
+            transcode.return_value = transcode_result
+
+            response_value = Response()
+            response_value.status_code = 200
+
+            pb_return_value = schema.Schema.pb(return_value)
+            json_return_value = json_format.MessageToJson(pb_return_value)
+
+            response_value._content = json_return_value.encode("UTF-8")
+            req.return_value = response_value
+
+            response = client.get_schema(request)
+
+            expected_params = [("$alt", "json;enum-encoding=int")]
+            actual_params = req.call_args.kwargs["params"]
+            assert expected_params == actual_params
+
+
+def test_get_schema_rest_unset_required_fields():
+    transport = transports.SchemaServiceRestTransport(
+        credentials=ga_credentials.AnonymousCredentials
+    )
+
+    unset_fields = transport.get_schema._get_unset_required_fields({})
+    assert set(unset_fields) == (set(("view",)) & set(("name",)))
+
+
+@pytest.mark.parametrize("null_interceptor", [True, False])
+def test_get_schema_rest_interceptors(null_interceptor):
+    transport = transports.SchemaServiceRestTransport(
+        credentials=ga_credentials.AnonymousCredentials(),
+        interceptor=None
+        if null_interceptor
+        else transports.SchemaServiceRestInterceptor(),
+    )
+    client = SchemaServiceClient(transport=transport)
+    with mock.patch.object(
+        type(client.transport._session), "request"
+    ) as req, mock.patch.object(
+        path_template, "transcode"
+    ) as transcode, mock.patch.object(
+        transports.SchemaServiceRestInterceptor, "post_get_schema"
+    ) as post, mock.patch.object(
+        transports.SchemaServiceRestInterceptor, "pre_get_schema"
+    ) as pre:
+        pre.assert_not_called()
+        post.assert_not_called()
+        pb_message = schema.GetSchemaRequest.pb(schema.GetSchemaRequest())
+        transcode.return_value = {
+            "method": "post",
+            "uri": "my_uri",
+            "body": pb_message,
+            "query_params": pb_message,
+        }
+
+        req.return_value = Response()
+        req.return_value.status_code = 200
+        req.return_value.request = PreparedRequest()
+        req.return_value._content = schema.Schema.to_json(schema.Schema())
+
+        request = schema.GetSchemaRequest()
+        metadata = [
+            ("key", "val"),
+            ("cephalopod", "squid"),
+        ]
+        pre.return_value = request, metadata
+        post.return_value = schema.Schema()
+
+        client.get_schema(
+            request,
+            metadata=[
+                ("key", "val"),
+                ("cephalopod", "squid"),
+            ],
+        )
+
+        pre.assert_called_once()
+        post.assert_called_once()
+
+
+def test_get_schema_rest_bad_request(
+    transport: str = "rest", request_type=schema.GetSchemaRequest
+):
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport=transport,
+    )
+
+    # send a request that will satisfy transcoding
+    request_init = {"name": "projects/sample1/schemas/sample2"}
+    request = request_type(**request_init)
+
+    # Mock the http request call within the method and fake a BadRequest error.
+    with mock.patch.object(Session, "request") as req, pytest.raises(
+        core_exceptions.BadRequest
+    ):
+        # Wrap the value into a proper Response obj
+        response_value = Response()
+        response_value.status_code = 400
+        response_value.request = Request()
+        req.return_value = response_value
+        client.get_schema(request)
+
+
+def test_get_schema_rest_flattened():
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="rest",
+    )
+
+    # Mock the http request call within the method and fake a response.
+    with mock.patch.object(type(client.transport._session), "request") as req:
+        # Designate an appropriate value for the returned response.
+        return_value = schema.Schema()
+
+        # get arguments that satisfy an http rule for this method
+        sample_request = {"name": "projects/sample1/schemas/sample2"}
+
+        # get truthy value for each flattened field
+        mock_args = dict(
+            name="name_value",
+        )
+        mock_args.update(sample_request)
+
+        # Wrap the value into a proper Response obj
+        response_value = Response()
+        response_value.status_code = 200
+        pb_return_value = schema.Schema.pb(return_value)
+        json_return_value = json_format.MessageToJson(pb_return_value)
+        response_value._content = json_return_value.encode("UTF-8")
+        req.return_value = response_value
+
+        client.get_schema(**mock_args)
+
+        # Establish that the underlying call was made with the expected
+        # request object values.
+        assert len(req.mock_calls) == 1
+        _, args, _ = req.mock_calls[0]
+        assert path_template.validate(
+            "%s/v1/{name=projects/*/schemas/*}" % client.transport._host, args[1]
+        )
+
+
+def test_get_schema_rest_flattened_error(transport: str = "rest"):
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport=transport,
+    )
+
+    # Attempting to call a method with both a request object and flattened
+    # fields is an error.
+    with pytest.raises(ValueError):
+        client.get_schema(
+            schema.GetSchemaRequest(),
+            name="name_value",
+        )
+
+
+def test_get_schema_rest_error():
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(), transport="rest"
+    )
+
+
+@pytest.mark.parametrize(
+    "request_type",
+    [
+        schema.ListSchemasRequest,
+        dict,
+    ],
+)
+def test_list_schemas_rest(request_type):
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="rest",
+    )
+
+    # send a request that will satisfy transcoding
+    request_init = {"parent": "projects/sample1"}
+    request = request_type(**request_init)
+
+    # Mock the http request call within the method and fake a response.
+    with mock.patch.object(type(client.transport._session), "request") as req:
+        # Designate an appropriate value for the returned response.
+        return_value = schema.ListSchemasResponse(
+            next_page_token="next_page_token_value",
+        )
+
+        # Wrap the value into a proper Response obj
+        response_value = Response()
+        response_value.status_code = 200
+        pb_return_value = schema.ListSchemasResponse.pb(return_value)
+        json_return_value = json_format.MessageToJson(pb_return_value)
+
+        response_value._content = json_return_value.encode("UTF-8")
+        req.return_value = response_value
+        response = client.list_schemas(request)
+
+    # Establish that the response is the type that we expect.
+    assert isinstance(response, pagers.ListSchemasPager)
+    assert response.next_page_token == "next_page_token_value"
+
+
+def test_list_schemas_rest_required_fields(request_type=schema.ListSchemasRequest):
+    transport_class = transports.SchemaServiceRestTransport
+
+    request_init = {}
+    request_init["parent"] = ""
+    request = request_type(**request_init)
+    pb_request = request_type.pb(request)
+    jsonified_request = json.loads(
+        json_format.MessageToJson(
+            pb_request,
+            including_default_value_fields=False,
+            use_integers_for_enums=False,
+        )
+    )
+
+    # verify fields with default values are dropped
+
+    unset_fields = transport_class(
+        credentials=ga_credentials.AnonymousCredentials()
+    ).list_schemas._get_unset_required_fields(jsonified_request)
+    jsonified_request.update(unset_fields)
+
+    # verify required fields with default values are now present
+
+    jsonified_request["parent"] = "parent_value"
+
+    unset_fields = transport_class(
+        credentials=ga_credentials.AnonymousCredentials()
+    ).list_schemas._get_unset_required_fields(jsonified_request)
+    # Check that path parameters and body parameters are not mixing in.
+    assert not set(unset_fields) - set(
+        (
+            "page_size",
+            "page_token",
+            "view",
+        )
+    )
+    jsonified_request.update(unset_fields)
+
+    # verify required fields with non-default values are left alone
+    assert "parent" in jsonified_request
+    assert jsonified_request["parent"] == "parent_value"
+
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="rest",
+    )
+    request = request_type(**request_init)
+
+    # Designate an appropriate value for the returned response.
+    return_value = schema.ListSchemasResponse()
+    # Mock the http request call within the method and fake a response.
+    with mock.patch.object(Session, "request") as req:
+        # We need to mock transcode() because providing default values
+        # for required fields will fail the real version if the http_options
+        # expect actual values for those fields.
+        with mock.patch.object(path_template, "transcode") as transcode:
+            # A uri without fields and an empty body will force all the
+            # request fields to show up in the query_params.
+            pb_request = request_type.pb(request)
+            transcode_result = {
+                "uri": "v1/sample_method",
+                "method": "get",
+                "query_params": pb_request,
+            }
+            transcode.return_value = transcode_result
+
+            response_value = Response()
+            response_value.status_code = 200
+
+            pb_return_value = schema.ListSchemasResponse.pb(return_value)
+            json_return_value = json_format.MessageToJson(pb_return_value)
+
+            response_value._content = json_return_value.encode("UTF-8")
+            req.return_value = response_value
+
+            response = client.list_schemas(request)
+
+            expected_params = [("$alt", "json;enum-encoding=int")]
+            actual_params = req.call_args.kwargs["params"]
+            assert expected_params == actual_params
+
+
+def test_list_schemas_rest_unset_required_fields():
+    transport = transports.SchemaServiceRestTransport(
+        credentials=ga_credentials.AnonymousCredentials
+    )
+
+    unset_fields = transport.list_schemas._get_unset_required_fields({})
+    assert set(unset_fields) == (
+        set(
+            (
+                "pageSize",
+                "pageToken",
+                "view",
+            )
+        )
+        & set(("parent",))
+    )
+
+
+@pytest.mark.parametrize("null_interceptor", [True, False])
+def test_list_schemas_rest_interceptors(null_interceptor):
+    transport = transports.SchemaServiceRestTransport(
+        credentials=ga_credentials.AnonymousCredentials(),
+        interceptor=None
+        if null_interceptor
+        else transports.SchemaServiceRestInterceptor(),
+    )
+    client = SchemaServiceClient(transport=transport)
+    with mock.patch.object(
+        type(client.transport._session), "request"
+    ) as req, mock.patch.object(
+        path_template, "transcode"
+    ) as transcode, mock.patch.object(
+        transports.SchemaServiceRestInterceptor, "post_list_schemas"
+    ) as post, mock.patch.object(
+        transports.SchemaServiceRestInterceptor, "pre_list_schemas"
+    ) as pre:
+        pre.assert_not_called()
+        post.assert_not_called()
+        pb_message = schema.ListSchemasRequest.pb(schema.ListSchemasRequest())
+        transcode.return_value = {
+            "method": "post",
+            "uri": "my_uri",
+            "body": pb_message,
+            "query_params": pb_message,
+        }
+
+        req.return_value = Response()
+        req.return_value.status_code = 200
+        req.return_value.request = PreparedRequest()
+        req.return_value._content = schema.ListSchemasResponse.to_json(
+            schema.ListSchemasResponse()
+        )
+
+        request = schema.ListSchemasRequest()
+        metadata = [
+            ("key", "val"),
+            ("cephalopod", "squid"),
+        ]
+        pre.return_value = request, metadata
+        post.return_value = schema.ListSchemasResponse()
+
+        client.list_schemas(
+            request,
+            metadata=[
+                ("key", "val"),
+                ("cephalopod", "squid"),
+            ],
+        )
+
+        pre.assert_called_once()
+        post.assert_called_once()
+
+
+def test_list_schemas_rest_bad_request(
+    transport: str = "rest", request_type=schema.ListSchemasRequest
+):
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport=transport,
+    )
+
+    # send a request that will satisfy transcoding
+    request_init = {"parent": "projects/sample1"}
+    request = request_type(**request_init)
+
+    # Mock the http request call within the method and fake a BadRequest error.
+    with mock.patch.object(Session, "request") as req, pytest.raises(
+        core_exceptions.BadRequest
+    ):
+        # Wrap the value into a proper Response obj
+        response_value = Response()
+        response_value.status_code = 400
+        response_value.request = Request()
+        req.return_value = response_value
+        client.list_schemas(request)
+
+
+def test_list_schemas_rest_flattened():
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="rest",
+    )
+
+    # Mock the http request call within the method and fake a response.
+    with mock.patch.object(type(client.transport._session), "request") as req:
+        # Designate an appropriate value for the returned response.
+        return_value = schema.ListSchemasResponse()
+
+        # get arguments that satisfy an http rule for this method
+        sample_request = {"parent": "projects/sample1"}
+
+        # get truthy value for each flattened field
+        mock_args = dict(
+            parent="parent_value",
+        )
+        mock_args.update(sample_request)
+
+        # Wrap the value into a proper Response obj
+        response_value = Response()
+        response_value.status_code = 200
+        pb_return_value = schema.ListSchemasResponse.pb(return_value)
+        json_return_value = json_format.MessageToJson(pb_return_value)
+        response_value._content = json_return_value.encode("UTF-8")
+        req.return_value = response_value
+
+        client.list_schemas(**mock_args)
+
+        # Establish that the underlying call was made with the expected
+        # request object values.
+        assert len(req.mock_calls) == 1
+        _, args, _ = req.mock_calls[0]
+        assert path_template.validate(
+            "%s/v1/{parent=projects/*}/schemas" % client.transport._host, args[1]
+        )
+
+
+def test_list_schemas_rest_flattened_error(transport: str = "rest"):
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport=transport,
+    )
+
+    # Attempting to call a method with both a request object and flattened
+    # fields is an error.
+    with pytest.raises(ValueError):
+        client.list_schemas(
+            schema.ListSchemasRequest(),
+            parent="parent_value",
+        )
+
+
+def test_list_schemas_rest_pager(transport: str = "rest"):
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport=transport,
+    )
+
+    # Mock the http request call within the method and fake a response.
+    with mock.patch.object(Session, "request") as req:
+        # TODO(kbandes): remove this mock unless there's a good reason for it.
+        # with mock.patch.object(path_template, 'transcode') as transcode:
+        # Set the response as a series of pages
+        response = (
+            schema.ListSchemasResponse(
+                schemas=[
+                    schema.Schema(),
+                    schema.Schema(),
+                    schema.Schema(),
+                ],
+                next_page_token="abc",
+            ),
+            schema.ListSchemasResponse(
+                schemas=[],
+                next_page_token="def",
+            ),
+            schema.ListSchemasResponse(
+                schemas=[
+                    schema.Schema(),
+                ],
+                next_page_token="ghi",
+            ),
+            schema.ListSchemasResponse(
+                schemas=[
+                    schema.Schema(),
+                    schema.Schema(),
+                ],
+            ),
+        )
+        # Two responses for two calls
+        response = response + response
+
+        # Wrap the values into proper Response objs
+        response = tuple(schema.ListSchemasResponse.to_json(x) for x in response)
+        return_values = tuple(Response() for i in response)
+        for return_val, response_val in zip(return_values, response):
+            return_val._content = response_val.encode("UTF-8")
+            return_val.status_code = 200
+        req.side_effect = return_values
+
+        sample_request = {"parent": "projects/sample1"}
+
+        pager = client.list_schemas(request=sample_request)
+
+        results = list(pager)
+        assert len(results) == 6
+        assert all(isinstance(i, schema.Schema) for i in results)
+
+        pages = list(client.list_schemas(request=sample_request).pages)
+        for page_, token in zip(pages, ["abc", "def", "ghi", ""]):
+            assert page_.raw_page.next_page_token == token
+
+
+@pytest.mark.parametrize(
+    "request_type",
+    [
+        schema.ListSchemaRevisionsRequest,
+        dict,
+    ],
+)
+def test_list_schema_revisions_rest(request_type):
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="rest",
+    )
+
+    # send a request that will satisfy transcoding
+    request_init = {"name": "projects/sample1/schemas/sample2"}
+    request = request_type(**request_init)
+
+    # Mock the http request call within the method and fake a response.
+    with mock.patch.object(type(client.transport._session), "request") as req:
+        # Designate an appropriate value for the returned response.
+        return_value = schema.ListSchemaRevisionsResponse(
+            next_page_token="next_page_token_value",
+        )
+
+        # Wrap the value into a proper Response obj
+        response_value = Response()
+        response_value.status_code = 200
+        pb_return_value = schema.ListSchemaRevisionsResponse.pb(return_value)
+        json_return_value = json_format.MessageToJson(pb_return_value)
+
+        response_value._content = json_return_value.encode("UTF-8")
+        req.return_value = response_value
+        response = client.list_schema_revisions(request)
+
+    # Establish that the response is the type that we expect.
+    assert isinstance(response, pagers.ListSchemaRevisionsPager)
+    assert response.next_page_token == "next_page_token_value"
+
+
+def test_list_schema_revisions_rest_required_fields(
+    request_type=schema.ListSchemaRevisionsRequest,
+):
+    transport_class = transports.SchemaServiceRestTransport
+
+    request_init = {}
+    request_init["name"] = ""
+    request = request_type(**request_init)
+    pb_request = request_type.pb(request)
+    jsonified_request = json.loads(
+        json_format.MessageToJson(
+            pb_request,
+            including_default_value_fields=False,
+            use_integers_for_enums=False,
+        )
+    )
+
+    # verify fields with default values are dropped
+
+    unset_fields = transport_class(
+        credentials=ga_credentials.AnonymousCredentials()
+    ).list_schema_revisions._get_unset_required_fields(jsonified_request)
+    jsonified_request.update(unset_fields)
+
+    # verify required fields with default values are now present
+
+    jsonified_request["name"] = "name_value"
+
+    unset_fields = transport_class(
+        credentials=ga_credentials.AnonymousCredentials()
+    ).list_schema_revisions._get_unset_required_fields(jsonified_request)
+    # Check that path parameters and body parameters are not mixing in.
+    assert not set(unset_fields) - set(
+        (
+            "page_size",
+            "page_token",
+            "view",
+        )
+    )
+    jsonified_request.update(unset_fields)
+
+    # verify required fields with non-default values are left alone
+    assert "name" in jsonified_request
+    assert jsonified_request["name"] == "name_value"
+
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="rest",
+    )
+    request = request_type(**request_init)
+
+    # Designate an appropriate value for the returned response.
+    return_value = schema.ListSchemaRevisionsResponse()
+    # Mock the http request call within the method and fake a response.
+    with mock.patch.object(Session, "request") as req:
+        # We need to mock transcode() because providing default values
+        # for required fields will fail the real version if the http_options
+        # expect actual values for those fields.
+        with mock.patch.object(path_template, "transcode") as transcode:
+            # A uri without fields and an empty body will force all the
+            # request fields to show up in the query_params.
+            pb_request = request_type.pb(request)
+            transcode_result = {
+                "uri": "v1/sample_method",
+                "method": "get",
+                "query_params": pb_request,
+            }
+            transcode.return_value = transcode_result
+
+            response_value = Response()
+            response_value.status_code = 200
+
+            pb_return_value = schema.ListSchemaRevisionsResponse.pb(return_value)
+            json_return_value = json_format.MessageToJson(pb_return_value)
+
+            response_value._content = json_return_value.encode("UTF-8")
+            req.return_value = response_value
+
+            response = client.list_schema_revisions(request)
+
+            expected_params = [("$alt", "json;enum-encoding=int")]
+            actual_params = req.call_args.kwargs["params"]
+            assert expected_params == actual_params
+
+
+def test_list_schema_revisions_rest_unset_required_fields():
+    transport = transports.SchemaServiceRestTransport(
+        credentials=ga_credentials.AnonymousCredentials
+    )
+
+    unset_fields = transport.list_schema_revisions._get_unset_required_fields({})
+    assert set(unset_fields) == (
+        set(
+            (
+                "pageSize",
+                "pageToken",
+                "view",
+            )
+        )
+        & set(("name",))
+    )
+
+
+@pytest.mark.parametrize("null_interceptor", [True, False])
+def test_list_schema_revisions_rest_interceptors(null_interceptor):
+    transport = transports.SchemaServiceRestTransport(
+        credentials=ga_credentials.AnonymousCredentials(),
+        interceptor=None
+        if null_interceptor
+        else transports.SchemaServiceRestInterceptor(),
+    )
+    client = SchemaServiceClient(transport=transport)
+    with mock.patch.object(
+        type(client.transport._session), "request"
+    ) as req, mock.patch.object(
+        path_template, "transcode"
+    ) as transcode, mock.patch.object(
+        transports.SchemaServiceRestInterceptor, "post_list_schema_revisions"
+    ) as post, mock.patch.object(
+        transports.SchemaServiceRestInterceptor, "pre_list_schema_revisions"
+    ) as pre:
+        pre.assert_not_called()
+        post.assert_not_called()
+        pb_message = schema.ListSchemaRevisionsRequest.pb(
+            schema.ListSchemaRevisionsRequest()
+        )
+        transcode.return_value = {
+            "method": "post",
+            "uri": "my_uri",
+            "body": pb_message,
+            "query_params": pb_message,
+        }
+
+        req.return_value = Response()
+        req.return_value.status_code = 200
+        req.return_value.request = PreparedRequest()
+        req.return_value._content = schema.ListSchemaRevisionsResponse.to_json(
+            schema.ListSchemaRevisionsResponse()
+        )
+
+        request = schema.ListSchemaRevisionsRequest()
+        metadata = [
+            ("key", "val"),
+            ("cephalopod", "squid"),
+        ]
+        pre.return_value = request, metadata
+        post.return_value = schema.ListSchemaRevisionsResponse()
+
+        client.list_schema_revisions(
+            request,
+            metadata=[
+                ("key", "val"),
+                ("cephalopod", "squid"),
+            ],
+        )
+
+        pre.assert_called_once()
+        post.assert_called_once()
+
+
+def test_list_schema_revisions_rest_bad_request(
+    transport: str = "rest", request_type=schema.ListSchemaRevisionsRequest
+):
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport=transport,
+    )
+
+    # send a request that will satisfy transcoding
+    request_init = {"name": "projects/sample1/schemas/sample2"}
+    request = request_type(**request_init)
+
+    # Mock the http request call within the method and fake a BadRequest error.
+    with mock.patch.object(Session, "request") as req, pytest.raises(
+        core_exceptions.BadRequest
+    ):
+        # Wrap the value into a proper Response obj
+        response_value = Response()
+        response_value.status_code = 400
+        response_value.request = Request()
+        req.return_value = response_value
+        client.list_schema_revisions(request)
+
+
+def test_list_schema_revisions_rest_flattened():
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="rest",
+    )
+
+    # Mock the http request call within the method and fake a response.
+    with mock.patch.object(type(client.transport._session), "request") as req:
+        # Designate an appropriate value for the returned response.
+        return_value = schema.ListSchemaRevisionsResponse()
+
+        # get arguments that satisfy an http rule for this method
+        sample_request = {"name": "projects/sample1/schemas/sample2"}
+
+        # get truthy value for each flattened field
+        mock_args = dict(
+            name="name_value",
+        )
+        mock_args.update(sample_request)
+
+        # Wrap the value into a proper Response obj
+        response_value = Response()
+        response_value.status_code = 200
+        pb_return_value = schema.ListSchemaRevisionsResponse.pb(return_value)
+        json_return_value = json_format.MessageToJson(pb_return_value)
+        response_value._content = json_return_value.encode("UTF-8")
+        req.return_value = response_value
+
+        client.list_schema_revisions(**mock_args)
+
+        # Establish that the underlying call was made with the expected
+        # request object values.
+        assert len(req.mock_calls) == 1
+        _, args, _ = req.mock_calls[0]
+        assert path_template.validate(
+            "%s/v1/{name=projects/*/schemas/*}:listRevisions" % client.transport._host,
+            args[1],
+        )
+
+
+def test_list_schema_revisions_rest_flattened_error(transport: str = "rest"):
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport=transport,
+    )
+
+    # Attempting to call a method with both a request object and flattened
+    # fields is an error.
+    with pytest.raises(ValueError):
+        client.list_schema_revisions(
+            schema.ListSchemaRevisionsRequest(),
+            name="name_value",
+        )
+
+
+def test_list_schema_revisions_rest_pager(transport: str = "rest"):
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport=transport,
+    )
+
+    # Mock the http request call within the method and fake a response.
+    with mock.patch.object(Session, "request") as req:
+        # TODO(kbandes): remove this mock unless there's a good reason for it.
+        # with mock.patch.object(path_template, 'transcode') as transcode:
+        # Set the response as a series of pages
+        response = (
+            schema.ListSchemaRevisionsResponse(
+                schemas=[
+                    schema.Schema(),
+                    schema.Schema(),
+                    schema.Schema(),
+                ],
+                next_page_token="abc",
+            ),
+            schema.ListSchemaRevisionsResponse(
+                schemas=[],
+                next_page_token="def",
+            ),
+            schema.ListSchemaRevisionsResponse(
+                schemas=[
+                    schema.Schema(),
+                ],
+                next_page_token="ghi",
+            ),
+            schema.ListSchemaRevisionsResponse(
+                schemas=[
+                    schema.Schema(),
+                    schema.Schema(),
+                ],
+            ),
+        )
+        # Two responses for two calls
+        response = response + response
+
+        # Wrap the values into proper Response objs
+        response = tuple(
+            schema.ListSchemaRevisionsResponse.to_json(x) for x in response
+        )
+        return_values = tuple(Response() for i in response)
+        for return_val, response_val in zip(return_values, response):
+            return_val._content = response_val.encode("UTF-8")
+            return_val.status_code = 200
+        req.side_effect = return_values
+
+        sample_request = {"name": "projects/sample1/schemas/sample2"}
+
+        pager = client.list_schema_revisions(request=sample_request)
+
+        results = list(pager)
+        assert len(results) == 6
+        assert all(isinstance(i, schema.Schema) for i in results)
+
+        pages = list(client.list_schema_revisions(request=sample_request).pages)
+        for page_, token in zip(pages, ["abc", "def", "ghi", ""]):
+            assert page_.raw_page.next_page_token == token
+
+
+@pytest.mark.parametrize(
+    "request_type",
+    [
+        gp_schema.CommitSchemaRequest,
+        dict,
+    ],
+)
+def test_commit_schema_rest(request_type):
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="rest",
+    )
+
+    # send a request that will satisfy transcoding
+    request_init = {"name": "projects/sample1/schemas/sample2"}
+    request = request_type(**request_init)
+
+    # Mock the http request call within the method and fake a response.
+    with mock.patch.object(type(client.transport._session), "request") as req:
+        # Designate an appropriate value for the returned response.
+        return_value = gp_schema.Schema(
+            name="name_value",
+            type_=gp_schema.Schema.Type.PROTOCOL_BUFFER,
+            definition="definition_value",
+            revision_id="revision_id_value",
+        )
+
+        # Wrap the value into a proper Response obj
+        response_value = Response()
+        response_value.status_code = 200
+        pb_return_value = gp_schema.Schema.pb(return_value)
+        json_return_value = json_format.MessageToJson(pb_return_value)
+
+        response_value._content = json_return_value.encode("UTF-8")
+        req.return_value = response_value
+        response = client.commit_schema(request)
+
+    # Establish that the response is the type that we expect.
+    assert isinstance(response, gp_schema.Schema)
+    assert response.name == "name_value"
+    assert response.type_ == gp_schema.Schema.Type.PROTOCOL_BUFFER
+    assert response.definition == "definition_value"
+    assert response.revision_id == "revision_id_value"
+
+
+def test_commit_schema_rest_required_fields(request_type=gp_schema.CommitSchemaRequest):
+    transport_class = transports.SchemaServiceRestTransport
+
+    request_init = {}
+    request_init["name"] = ""
+    request = request_type(**request_init)
+    pb_request = request_type.pb(request)
+    jsonified_request = json.loads(
+        json_format.MessageToJson(
+            pb_request,
+            including_default_value_fields=False,
+            use_integers_for_enums=False,
+        )
+    )
+
+    # verify fields with default values are dropped
+
+    unset_fields = transport_class(
+        credentials=ga_credentials.AnonymousCredentials()
+    ).commit_schema._get_unset_required_fields(jsonified_request)
+    jsonified_request.update(unset_fields)
+
+    # verify required fields with default values are now present
+
+    jsonified_request["name"] = "name_value"
+
+    unset_fields = transport_class(
+        credentials=ga_credentials.AnonymousCredentials()
+    ).commit_schema._get_unset_required_fields(jsonified_request)
+    jsonified_request.update(unset_fields)
+
+    # verify required fields with non-default values are left alone
+    assert "name" in jsonified_request
+    assert jsonified_request["name"] == "name_value"
+
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="rest",
+    )
+    request = request_type(**request_init)
+
+    # Designate an appropriate value for the returned response.
+    return_value = gp_schema.Schema()
+    # Mock the http request call within the method and fake a response.
+    with mock.patch.object(Session, "request") as req:
+        # We need to mock transcode() because providing default values
+        # for required fields will fail the real version if the http_options
+        # expect actual values for those fields.
+        with mock.patch.object(path_template, "transcode") as transcode:
+            # A uri without fields and an empty body will force all the
+            # request fields to show up in the query_params.
+            pb_request = request_type.pb(request)
+            transcode_result = {
+                "uri": "v1/sample_method",
+                "method": "post",
+                "query_params": pb_request,
+            }
+            transcode_result["body"] = pb_request
+            transcode.return_value = transcode_result
+
+            response_value = Response()
+            response_value.status_code = 200
+
+            pb_return_value = gp_schema.Schema.pb(return_value)
+            json_return_value = json_format.MessageToJson(pb_return_value)
+
+            response_value._content = json_return_value.encode("UTF-8")
+            req.return_value = response_value
+
+            response = client.commit_schema(request)
+
+            expected_params = [("$alt", "json;enum-encoding=int")]
+            actual_params = req.call_args.kwargs["params"]
+            assert expected_params == actual_params
+
+
+def test_commit_schema_rest_unset_required_fields():
+    transport = transports.SchemaServiceRestTransport(
+        credentials=ga_credentials.AnonymousCredentials
+    )
+
+    unset_fields = transport.commit_schema._get_unset_required_fields({})
+    assert set(unset_fields) == (
+        set(())
+        & set(
+            (
+                "name",
+                "schema",
+            )
+        )
+    )
+
+
+@pytest.mark.parametrize("null_interceptor", [True, False])
+def test_commit_schema_rest_interceptors(null_interceptor):
+    transport = transports.SchemaServiceRestTransport(
+        credentials=ga_credentials.AnonymousCredentials(),
+        interceptor=None
+        if null_interceptor
+        else transports.SchemaServiceRestInterceptor(),
+    )
+    client = SchemaServiceClient(transport=transport)
+    with mock.patch.object(
+        type(client.transport._session), "request"
+    ) as req, mock.patch.object(
+        path_template, "transcode"
+    ) as transcode, mock.patch.object(
+        transports.SchemaServiceRestInterceptor, "post_commit_schema"
+    ) as post, mock.patch.object(
+        transports.SchemaServiceRestInterceptor, "pre_commit_schema"
+    ) as pre:
+        pre.assert_not_called()
+        post.assert_not_called()
+        pb_message = gp_schema.CommitSchemaRequest.pb(gp_schema.CommitSchemaRequest())
+        transcode.return_value = {
+            "method": "post",
+            "uri": "my_uri",
+            "body": pb_message,
+            "query_params": pb_message,
+        }
+
+        req.return_value = Response()
+        req.return_value.status_code = 200
+        req.return_value.request = PreparedRequest()
+        req.return_value._content = gp_schema.Schema.to_json(gp_schema.Schema())
+
+        request = gp_schema.CommitSchemaRequest()
+        metadata = [
+            ("key", "val"),
+            ("cephalopod", "squid"),
+        ]
+        pre.return_value = request, metadata
+        post.return_value = gp_schema.Schema()
+
+        client.commit_schema(
+            request,
+            metadata=[
+                ("key", "val"),
+                ("cephalopod", "squid"),
+            ],
+        )
+
+        pre.assert_called_once()
+        post.assert_called_once()
+
+
+def test_commit_schema_rest_bad_request(
+    transport: str = "rest", request_type=gp_schema.CommitSchemaRequest
+):
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport=transport,
+    )
+
+    # send a request that will satisfy transcoding
+    request_init = {"name": "projects/sample1/schemas/sample2"}
+    request = request_type(**request_init)
+
+    # Mock the http request call within the method and fake a BadRequest error.
+    with mock.patch.object(Session, "request") as req, pytest.raises(
+        core_exceptions.BadRequest
+    ):
+        # Wrap the value into a proper Response obj
+        response_value = Response()
+        response_value.status_code = 400
+        response_value.request = Request()
+        req.return_value = response_value
+        client.commit_schema(request)
+
+
+def test_commit_schema_rest_flattened():
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="rest",
+    )
+
+    # Mock the http request call within the method and fake a response.
+    with mock.patch.object(type(client.transport._session), "request") as req:
+        # Designate an appropriate value for the returned response.
+        return_value = gp_schema.Schema()
+
+        # get arguments that satisfy an http rule for this method
+        sample_request = {"name": "projects/sample1/schemas/sample2"}
+
+        # get truthy value for each flattened field
+        mock_args = dict(
+            name="name_value",
+            schema=gp_schema.Schema(name="name_value"),
+        )
+        mock_args.update(sample_request)
+
+        # Wrap the value into a proper Response obj
+        response_value = Response()
+        response_value.status_code = 200
+        pb_return_value = gp_schema.Schema.pb(return_value)
+        json_return_value = json_format.MessageToJson(pb_return_value)
+        response_value._content = json_return_value.encode("UTF-8")
+        req.return_value = response_value
+
+        client.commit_schema(**mock_args)
+
+        # Establish that the underlying call was made with the expected
+        # request object values.
+        assert len(req.mock_calls) == 1
+        _, args, _ = req.mock_calls[0]
+        assert path_template.validate(
+            "%s/v1/{name=projects/*/schemas/*}:commit" % client.transport._host, args[1]
+        )
+
+
+def test_commit_schema_rest_flattened_error(transport: str = "rest"):
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport=transport,
+    )
+
+    # Attempting to call a method with both a request object and flattened
+    # fields is an error.
+    with pytest.raises(ValueError):
+        client.commit_schema(
+            gp_schema.CommitSchemaRequest(),
+            name="name_value",
+            schema=gp_schema.Schema(name="name_value"),
+        )
+
+
+def test_commit_schema_rest_error():
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(), transport="rest"
+    )
+
+
+@pytest.mark.parametrize(
+    "request_type",
+    [
+        schema.RollbackSchemaRequest,
+        dict,
+    ],
+)
+def test_rollback_schema_rest(request_type):
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="rest",
+    )
+
+    # send a request that will satisfy transcoding
+    request_init = {"name": "projects/sample1/schemas/sample2"}
+    request = request_type(**request_init)
+
+    # Mock the http request call within the method and fake a response.
+    with mock.patch.object(type(client.transport._session), "request") as req:
+        # Designate an appropriate value for the returned response.
+        return_value = schema.Schema(
+            name="name_value",
+            type_=schema.Schema.Type.PROTOCOL_BUFFER,
+            definition="definition_value",
+            revision_id="revision_id_value",
+        )
+
+        # Wrap the value into a proper Response obj
+        response_value = Response()
+        response_value.status_code = 200
+        pb_return_value = schema.Schema.pb(return_value)
+        json_return_value = json_format.MessageToJson(pb_return_value)
+
+        response_value._content = json_return_value.encode("UTF-8")
+        req.return_value = response_value
+        response = client.rollback_schema(request)
+
+    # Establish that the response is the type that we expect.
+    assert isinstance(response, schema.Schema)
+    assert response.name == "name_value"
+    assert response.type_ == schema.Schema.Type.PROTOCOL_BUFFER
+    assert response.definition == "definition_value"
+    assert response.revision_id == "revision_id_value"
+
+
+def test_rollback_schema_rest_required_fields(
+    request_type=schema.RollbackSchemaRequest,
+):
+    transport_class = transports.SchemaServiceRestTransport
+
+    request_init = {}
+    request_init["name"] = ""
+    request_init["revision_id"] = ""
+    request = request_type(**request_init)
+    pb_request = request_type.pb(request)
+    jsonified_request = json.loads(
+        json_format.MessageToJson(
+            pb_request,
+            including_default_value_fields=False,
+            use_integers_for_enums=False,
+        )
+    )
+
+    # verify fields with default values are dropped
+
+    unset_fields = transport_class(
+        credentials=ga_credentials.AnonymousCredentials()
+    ).rollback_schema._get_unset_required_fields(jsonified_request)
+    jsonified_request.update(unset_fields)
+
+    # verify required fields with default values are now present
+
+    jsonified_request["name"] = "name_value"
+    jsonified_request["revisionId"] = "revision_id_value"
+
+    unset_fields = transport_class(
+        credentials=ga_credentials.AnonymousCredentials()
+    ).rollback_schema._get_unset_required_fields(jsonified_request)
+    jsonified_request.update(unset_fields)
+
+    # verify required fields with non-default values are left alone
+    assert "name" in jsonified_request
+    assert jsonified_request["name"] == "name_value"
+    assert "revisionId" in jsonified_request
+    assert jsonified_request["revisionId"] == "revision_id_value"
+
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="rest",
+    )
+    request = request_type(**request_init)
+
+    # Designate an appropriate value for the returned response.
+    return_value = schema.Schema()
+    # Mock the http request call within the method and fake a response.
+    with mock.patch.object(Session, "request") as req:
+        # We need to mock transcode() because providing default values
+        # for required fields will fail the real version if the http_options
+        # expect actual values for those fields.
+        with mock.patch.object(path_template, "transcode") as transcode:
+            # A uri without fields and an empty body will force all the
+            # request fields to show up in the query_params.
+            pb_request = request_type.pb(request)
+            transcode_result = {
+                "uri": "v1/sample_method",
+                "method": "post",
+                "query_params": pb_request,
+            }
+            transcode_result["body"] = pb_request
+            transcode.return_value = transcode_result
+
+            response_value = Response()
+            response_value.status_code = 200
+
+            pb_return_value = schema.Schema.pb(return_value)
+            json_return_value = json_format.MessageToJson(pb_return_value)
+
+            response_value._content = json_return_value.encode("UTF-8")
+            req.return_value = response_value
+
+            response = client.rollback_schema(request)
+
+            expected_params = [("$alt", "json;enum-encoding=int")]
+            actual_params = req.call_args.kwargs["params"]
+            assert expected_params == actual_params
+
+
+def test_rollback_schema_rest_unset_required_fields():
+    transport = transports.SchemaServiceRestTransport(
+        credentials=ga_credentials.AnonymousCredentials
+    )
+
+    unset_fields = transport.rollback_schema._get_unset_required_fields({})
+    assert set(unset_fields) == (
+        set(())
+        & set(
+            (
+                "name",
+                "revisionId",
+            )
+        )
+    )
+
+
+@pytest.mark.parametrize("null_interceptor", [True, False])
+def test_rollback_schema_rest_interceptors(null_interceptor):
+    transport = transports.SchemaServiceRestTransport(
+        credentials=ga_credentials.AnonymousCredentials(),
+        interceptor=None
+        if null_interceptor
+        else transports.SchemaServiceRestInterceptor(),
+    )
+    client = SchemaServiceClient(transport=transport)
+    with mock.patch.object(
+        type(client.transport._session), "request"
+    ) as req, mock.patch.object(
+        path_template, "transcode"
+    ) as transcode, mock.patch.object(
+        transports.SchemaServiceRestInterceptor, "post_rollback_schema"
+    ) as post, mock.patch.object(
+        transports.SchemaServiceRestInterceptor, "pre_rollback_schema"
+    ) as pre:
+        pre.assert_not_called()
+        post.assert_not_called()
+        pb_message = schema.RollbackSchemaRequest.pb(schema.RollbackSchemaRequest())
+        transcode.return_value = {
+            "method": "post",
+            "uri": "my_uri",
+            "body": pb_message,
+            "query_params": pb_message,
+        }
+
+        req.return_value = Response()
+        req.return_value.status_code = 200
+        req.return_value.request = PreparedRequest()
+        req.return_value._content = schema.Schema.to_json(schema.Schema())
+
+        request = schema.RollbackSchemaRequest()
+        metadata = [
+            ("key", "val"),
+            ("cephalopod", "squid"),
+        ]
+        pre.return_value = request, metadata
+        post.return_value = schema.Schema()
+
+        client.rollback_schema(
+            request,
+            metadata=[
+                ("key", "val"),
+                ("cephalopod", "squid"),
+            ],
+        )
+
+        pre.assert_called_once()
+        post.assert_called_once()
+
+
+def test_rollback_schema_rest_bad_request(
+    transport: str = "rest", request_type=schema.RollbackSchemaRequest
+):
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport=transport,
+    )
+
+    # send a request that will satisfy transcoding
+    request_init = {"name": "projects/sample1/schemas/sample2"}
+    request = request_type(**request_init)
+
+    # Mock the http request call within the method and fake a BadRequest error.
+    with mock.patch.object(Session, "request") as req, pytest.raises(
+        core_exceptions.BadRequest
+    ):
+        # Wrap the value into a proper Response obj
+        response_value = Response()
+        response_value.status_code = 400
+        response_value.request = Request()
+        req.return_value = response_value
+        client.rollback_schema(request)
+
+
+def test_rollback_schema_rest_flattened():
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="rest",
+    )
+
+    # Mock the http request call within the method and fake a response.
+    with mock.patch.object(type(client.transport._session), "request") as req:
+        # Designate an appropriate value for the returned response.
+        return_value = schema.Schema()
+
+        # get arguments that satisfy an http rule for this method
+        sample_request = {"name": "projects/sample1/schemas/sample2"}
+
+        # get truthy value for each flattened field
+        mock_args = dict(
+            name="name_value",
+            revision_id="revision_id_value",
+        )
+        mock_args.update(sample_request)
+
+        # Wrap the value into a proper Response obj
+        response_value = Response()
+        response_value.status_code = 200
+        pb_return_value = schema.Schema.pb(return_value)
+        json_return_value = json_format.MessageToJson(pb_return_value)
+        response_value._content = json_return_value.encode("UTF-8")
+        req.return_value = response_value
+
+        client.rollback_schema(**mock_args)
+
+        # Establish that the underlying call was made with the expected
+        # request object values.
+        assert len(req.mock_calls) == 1
+        _, args, _ = req.mock_calls[0]
+        assert path_template.validate(
+            "%s/v1/{name=projects/*/schemas/*}:rollback" % client.transport._host,
+            args[1],
+        )
+
+
+def test_rollback_schema_rest_flattened_error(transport: str = "rest"):
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport=transport,
+    )
+
+    # Attempting to call a method with both a request object and flattened
+    # fields is an error.
+    with pytest.raises(ValueError):
+        client.rollback_schema(
+            schema.RollbackSchemaRequest(),
+            name="name_value",
+            revision_id="revision_id_value",
+        )
+
+
+def test_rollback_schema_rest_error():
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(), transport="rest"
+    )
+
+
+@pytest.mark.parametrize(
+    "request_type",
+    [
+        schema.DeleteSchemaRevisionRequest,
+        dict,
+    ],
+)
+def test_delete_schema_revision_rest(request_type):
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="rest",
+    )
+
+    # send a request that will satisfy transcoding
+    request_init = {"name": "projects/sample1/schemas/sample2"}
+    request = request_type(**request_init)
+
+    # Mock the http request call within the method and fake a response.
+    with mock.patch.object(type(client.transport._session), "request") as req:
+        # Designate an appropriate value for the returned response.
+        return_value = schema.Schema(
+            name="name_value",
+            type_=schema.Schema.Type.PROTOCOL_BUFFER,
+            definition="definition_value",
+            revision_id="revision_id_value",
+        )
+
+        # Wrap the value into a proper Response obj
+        response_value = Response()
+        response_value.status_code = 200
+        pb_return_value = schema.Schema.pb(return_value)
+        json_return_value = json_format.MessageToJson(pb_return_value)
+
+        response_value._content = json_return_value.encode("UTF-8")
+        req.return_value = response_value
+        response = client.delete_schema_revision(request)
+
+    # Establish that the response is the type that we expect.
+    assert isinstance(response, schema.Schema)
+    assert response.name == "name_value"
+    assert response.type_ == schema.Schema.Type.PROTOCOL_BUFFER
+    assert response.definition == "definition_value"
+    assert response.revision_id == "revision_id_value"
+
+
+def test_delete_schema_revision_rest_required_fields(
+    request_type=schema.DeleteSchemaRevisionRequest,
+):
+    transport_class = transports.SchemaServiceRestTransport
+
+    request_init = {}
+    request_init["name"] = ""
+    request = request_type(**request_init)
+    pb_request = request_type.pb(request)
+    jsonified_request = json.loads(
+        json_format.MessageToJson(
+            pb_request,
+            including_default_value_fields=False,
+            use_integers_for_enums=False,
+        )
+    )
+
+    # verify fields with default values are dropped
+
+    unset_fields = transport_class(
+        credentials=ga_credentials.AnonymousCredentials()
+    ).delete_schema_revision._get_unset_required_fields(jsonified_request)
+    jsonified_request.update(unset_fields)
+
+    # verify required fields with default values are now present
+
+    jsonified_request["name"] = "name_value"
+
+    unset_fields = transport_class(
+        credentials=ga_credentials.AnonymousCredentials()
+    ).delete_schema_revision._get_unset_required_fields(jsonified_request)
+    # Check that path parameters and body parameters are not mixing in.
+    assert not set(unset_fields) - set(("revision_id",))
+    jsonified_request.update(unset_fields)
+
+    # verify required fields with non-default values are left alone
+    assert "name" in jsonified_request
+    assert jsonified_request["name"] == "name_value"
+
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="rest",
+    )
+    request = request_type(**request_init)
+
+    # Designate an appropriate value for the returned response.
+    return_value = schema.Schema()
+    # Mock the http request call within the method and fake a response.
+    with mock.patch.object(Session, "request") as req:
+        # We need to mock transcode() because providing default values
+        # for required fields will fail the real version if the http_options
+        # expect actual values for those fields.
+        with mock.patch.object(path_template, "transcode") as transcode:
+            # A uri without fields and an empty body will force all the
+            # request fields to show up in the query_params.
+            pb_request = request_type.pb(request)
+            transcode_result = {
+                "uri": "v1/sample_method",
+                "method": "delete",
+                "query_params": pb_request,
+            }
+            transcode.return_value = transcode_result
+
+            response_value = Response()
+            response_value.status_code = 200
+
+            pb_return_value = schema.Schema.pb(return_value)
+            json_return_value = json_format.MessageToJson(pb_return_value)
+
+            response_value._content = json_return_value.encode("UTF-8")
+            req.return_value = response_value
+
+            response = client.delete_schema_revision(request)
+
+            expected_params = [("$alt", "json;enum-encoding=int")]
+            actual_params = req.call_args.kwargs["params"]
+            assert expected_params == actual_params
+
+
+def test_delete_schema_revision_rest_unset_required_fields():
+    transport = transports.SchemaServiceRestTransport(
+        credentials=ga_credentials.AnonymousCredentials
+    )
+
+    unset_fields = transport.delete_schema_revision._get_unset_required_fields({})
+    assert set(unset_fields) == (set(("revisionId",)) & set(("name",)))
+
+
+@pytest.mark.parametrize("null_interceptor", [True, False])
+def test_delete_schema_revision_rest_interceptors(null_interceptor):
+    transport = transports.SchemaServiceRestTransport(
+        credentials=ga_credentials.AnonymousCredentials(),
+        interceptor=None
+        if null_interceptor
+        else transports.SchemaServiceRestInterceptor(),
+    )
+    client = SchemaServiceClient(transport=transport)
+    with mock.patch.object(
+        type(client.transport._session), "request"
+    ) as req, mock.patch.object(
+        path_template, "transcode"
+    ) as transcode, mock.patch.object(
+        transports.SchemaServiceRestInterceptor, "post_delete_schema_revision"
+    ) as post, mock.patch.object(
+        transports.SchemaServiceRestInterceptor, "pre_delete_schema_revision"
+    ) as pre:
+        pre.assert_not_called()
+        post.assert_not_called()
+        pb_message = schema.DeleteSchemaRevisionRequest.pb(
+            schema.DeleteSchemaRevisionRequest()
+        )
+        transcode.return_value = {
+            "method": "post",
+            "uri": "my_uri",
+            "body": pb_message,
+            "query_params": pb_message,
+        }
+
+        req.return_value = Response()
+        req.return_value.status_code = 200
+        req.return_value.request = PreparedRequest()
+        req.return_value._content = schema.Schema.to_json(schema.Schema())
+
+        request = schema.DeleteSchemaRevisionRequest()
+        metadata = [
+            ("key", "val"),
+            ("cephalopod", "squid"),
+        ]
+        pre.return_value = request, metadata
+        post.return_value = schema.Schema()
+
+        client.delete_schema_revision(
+            request,
+            metadata=[
+                ("key", "val"),
+                ("cephalopod", "squid"),
+            ],
+        )
+
+        pre.assert_called_once()
+        post.assert_called_once()
+
+
+def test_delete_schema_revision_rest_bad_request(
+    transport: str = "rest", request_type=schema.DeleteSchemaRevisionRequest
+):
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport=transport,
+    )
+
+    # send a request that will satisfy transcoding
+    request_init = {"name": "projects/sample1/schemas/sample2"}
+    request = request_type(**request_init)
+
+    # Mock the http request call within the method and fake a BadRequest error.
+    with mock.patch.object(Session, "request") as req, pytest.raises(
+        core_exceptions.BadRequest
+    ):
+        # Wrap the value into a proper Response obj
+        response_value = Response()
+        response_value.status_code = 400
+        response_value.request = Request()
+        req.return_value = response_value
+        client.delete_schema_revision(request)
+
+
+def test_delete_schema_revision_rest_flattened():
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="rest",
+    )
+
+    # Mock the http request call within the method and fake a response.
+    with mock.patch.object(type(client.transport._session), "request") as req:
+        # Designate an appropriate value for the returned response.
+        return_value = schema.Schema()
+
+        # get arguments that satisfy an http rule for this method
+        sample_request = {"name": "projects/sample1/schemas/sample2"}
+
+        # get truthy value for each flattened field
+        mock_args = dict(
+            name="name_value",
+            revision_id="revision_id_value",
+        )
+        mock_args.update(sample_request)
+
+        # Wrap the value into a proper Response obj
+        response_value = Response()
+        response_value.status_code = 200
+        pb_return_value = schema.Schema.pb(return_value)
+        json_return_value = json_format.MessageToJson(pb_return_value)
+        response_value._content = json_return_value.encode("UTF-8")
+        req.return_value = response_value
+
+        client.delete_schema_revision(**mock_args)
+
+        # Establish that the underlying call was made with the expected
+        # request object values.
+        assert len(req.mock_calls) == 1
+        _, args, _ = req.mock_calls[0]
+        assert path_template.validate(
+            "%s/v1/{name=projects/*/schemas/*}:deleteRevision" % client.transport._host,
+            args[1],
+        )
+
+
+def test_delete_schema_revision_rest_flattened_error(transport: str = "rest"):
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport=transport,
+    )
+
+    # Attempting to call a method with both a request object and flattened
+    # fields is an error.
+    with pytest.raises(ValueError):
+        client.delete_schema_revision(
+            schema.DeleteSchemaRevisionRequest(),
+            name="name_value",
+            revision_id="revision_id_value",
+        )
+
+
+def test_delete_schema_revision_rest_error():
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(), transport="rest"
+    )
+
+
+@pytest.mark.parametrize(
+    "request_type",
+    [
+        schema.DeleteSchemaRequest,
+        dict,
+    ],
+)
+def test_delete_schema_rest(request_type):
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="rest",
+    )
+
+    # send a request that will satisfy transcoding
+    request_init = {"name": "projects/sample1/schemas/sample2"}
+    request = request_type(**request_init)
+
+    # Mock the http request call within the method and fake a response.
+    with mock.patch.object(type(client.transport._session), "request") as req:
+        # Designate an appropriate value for the returned response.
+        return_value = None
+
+        # Wrap the value into a proper Response obj
+        response_value = Response()
+        response_value.status_code = 200
+        json_return_value = ""
+
+        response_value._content = json_return_value.encode("UTF-8")
+        req.return_value = response_value
+        response = client.delete_schema(request)
+
+    # Establish that the response is the type that we expect.
+    assert response is None
+
+
+def test_delete_schema_rest_required_fields(request_type=schema.DeleteSchemaRequest):
+    transport_class = transports.SchemaServiceRestTransport
+
+    request_init = {}
+    request_init["name"] = ""
+    request = request_type(**request_init)
+    pb_request = request_type.pb(request)
+    jsonified_request = json.loads(
+        json_format.MessageToJson(
+            pb_request,
+            including_default_value_fields=False,
+            use_integers_for_enums=False,
+        )
+    )
+
+    # verify fields with default values are dropped
+
+    unset_fields = transport_class(
+        credentials=ga_credentials.AnonymousCredentials()
+    ).delete_schema._get_unset_required_fields(jsonified_request)
+    jsonified_request.update(unset_fields)
+
+    # verify required fields with default values are now present
+
+    jsonified_request["name"] = "name_value"
+
+    unset_fields = transport_class(
+        credentials=ga_credentials.AnonymousCredentials()
+    ).delete_schema._get_unset_required_fields(jsonified_request)
+    jsonified_request.update(unset_fields)
+
+    # verify required fields with non-default values are left alone
+    assert "name" in jsonified_request
+    assert jsonified_request["name"] == "name_value"
+
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="rest",
+    )
+    request = request_type(**request_init)
+
+    # Designate an appropriate value for the returned response.
+    return_value = None
+    # Mock the http request call within the method and fake a response.
+    with mock.patch.object(Session, "request") as req:
+        # We need to mock transcode() because providing default values
+        # for required fields will fail the real version if the http_options
+        # expect actual values for those fields.
+        with mock.patch.object(path_template, "transcode") as transcode:
+            # A uri without fields and an empty body will force all the
+            # request fields to show up in the query_params.
+            pb_request = request_type.pb(request)
+            transcode_result = {
+                "uri": "v1/sample_method",
+                "method": "delete",
+                "query_params": pb_request,
+            }
+            transcode.return_value = transcode_result
+
+            response_value = Response()
+            response_value.status_code = 200
+            json_return_value = ""
+
+            response_value._content = json_return_value.encode("UTF-8")
+            req.return_value = response_value
+
+            response = client.delete_schema(request)
+
+            expected_params = [("$alt", "json;enum-encoding=int")]
+            actual_params = req.call_args.kwargs["params"]
+            assert expected_params == actual_params
+
+
+def test_delete_schema_rest_unset_required_fields():
+    transport = transports.SchemaServiceRestTransport(
+        credentials=ga_credentials.AnonymousCredentials
+    )
+
+    unset_fields = transport.delete_schema._get_unset_required_fields({})
+    assert set(unset_fields) == (set(()) & set(("name",)))
+
+
+@pytest.mark.parametrize("null_interceptor", [True, False])
+def test_delete_schema_rest_interceptors(null_interceptor):
+    transport = transports.SchemaServiceRestTransport(
+        credentials=ga_credentials.AnonymousCredentials(),
+        interceptor=None
+        if null_interceptor
+        else transports.SchemaServiceRestInterceptor(),
+    )
+    client = SchemaServiceClient(transport=transport)
+    with mock.patch.object(
+        type(client.transport._session), "request"
+    ) as req, mock.patch.object(
+        path_template, "transcode"
+    ) as transcode, mock.patch.object(
+        transports.SchemaServiceRestInterceptor, "pre_delete_schema"
+    ) as pre:
+        pre.assert_not_called()
+        pb_message = schema.DeleteSchemaRequest.pb(schema.DeleteSchemaRequest())
+        transcode.return_value = {
+            "method": "post",
+            "uri": "my_uri",
+            "body": pb_message,
+            "query_params": pb_message,
+        }
+
+        req.return_value = Response()
+        req.return_value.status_code = 200
+        req.return_value.request = PreparedRequest()
+
+        request = schema.DeleteSchemaRequest()
+        metadata = [
+            ("key", "val"),
+            ("cephalopod", "squid"),
+        ]
+        pre.return_value = request, metadata
+
+        client.delete_schema(
+            request,
+            metadata=[
+                ("key", "val"),
+                ("cephalopod", "squid"),
+            ],
+        )
+
+        pre.assert_called_once()
+
+
+def test_delete_schema_rest_bad_request(
+    transport: str = "rest", request_type=schema.DeleteSchemaRequest
+):
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport=transport,
+    )
+
+    # send a request that will satisfy transcoding
+    request_init = {"name": "projects/sample1/schemas/sample2"}
+    request = request_type(**request_init)
+
+    # Mock the http request call within the method and fake a BadRequest error.
+    with mock.patch.object(Session, "request") as req, pytest.raises(
+        core_exceptions.BadRequest
+    ):
+        # Wrap the value into a proper Response obj
+        response_value = Response()
+        response_value.status_code = 400
+        response_value.request = Request()
+        req.return_value = response_value
+        client.delete_schema(request)
+
+
+def test_delete_schema_rest_flattened():
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="rest",
+    )
+
+    # Mock the http request call within the method and fake a response.
+    with mock.patch.object(type(client.transport._session), "request") as req:
+        # Designate an appropriate value for the returned response.
+        return_value = None
+
+        # get arguments that satisfy an http rule for this method
+        sample_request = {"name": "projects/sample1/schemas/sample2"}
+
+        # get truthy value for each flattened field
+        mock_args = dict(
+            name="name_value",
+        )
+        mock_args.update(sample_request)
+
+        # Wrap the value into a proper Response obj
+        response_value = Response()
+        response_value.status_code = 200
+        json_return_value = ""
+        response_value._content = json_return_value.encode("UTF-8")
+        req.return_value = response_value
+
+        client.delete_schema(**mock_args)
+
+        # Establish that the underlying call was made with the expected
+        # request object values.
+        assert len(req.mock_calls) == 1
+        _, args, _ = req.mock_calls[0]
+        assert path_template.validate(
+            "%s/v1/{name=projects/*/schemas/*}" % client.transport._host, args[1]
+        )
+
+
+def test_delete_schema_rest_flattened_error(transport: str = "rest"):
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport=transport,
+    )
+
+    # Attempting to call a method with both a request object and flattened
+    # fields is an error.
+    with pytest.raises(ValueError):
+        client.delete_schema(
+            schema.DeleteSchemaRequest(),
+            name="name_value",
+        )
+
+
+def test_delete_schema_rest_error():
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(), transport="rest"
+    )
+
+
+@pytest.mark.parametrize(
+    "request_type",
+    [
+        gp_schema.ValidateSchemaRequest,
+        dict,
+    ],
+)
+def test_validate_schema_rest(request_type):
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="rest",
+    )
+
+    # send a request that will satisfy transcoding
+    request_init = {"parent": "projects/sample1"}
+    request = request_type(**request_init)
+
+    # Mock the http request call within the method and fake a response.
+    with mock.patch.object(type(client.transport._session), "request") as req:
+        # Designate an appropriate value for the returned response.
+        return_value = gp_schema.ValidateSchemaResponse()
+
+        # Wrap the value into a proper Response obj
+        response_value = Response()
+        response_value.status_code = 200
+        pb_return_value = gp_schema.ValidateSchemaResponse.pb(return_value)
+        json_return_value = json_format.MessageToJson(pb_return_value)
+
+        response_value._content = json_return_value.encode("UTF-8")
+        req.return_value = response_value
+        response = client.validate_schema(request)
+
+    # Establish that the response is the type that we expect.
+    assert isinstance(response, gp_schema.ValidateSchemaResponse)
+
+
+def test_validate_schema_rest_required_fields(
+    request_type=gp_schema.ValidateSchemaRequest,
+):
+    transport_class = transports.SchemaServiceRestTransport
+
+    request_init = {}
+    request_init["parent"] = ""
+    request = request_type(**request_init)
+    pb_request = request_type.pb(request)
+    jsonified_request = json.loads(
+        json_format.MessageToJson(
+            pb_request,
+            including_default_value_fields=False,
+            use_integers_for_enums=False,
+        )
+    )
+
+    # verify fields with default values are dropped
+
+    unset_fields = transport_class(
+        credentials=ga_credentials.AnonymousCredentials()
+    ).validate_schema._get_unset_required_fields(jsonified_request)
+    jsonified_request.update(unset_fields)
+
+    # verify required fields with default values are now present
+
+    jsonified_request["parent"] = "parent_value"
+
+    unset_fields = transport_class(
+        credentials=ga_credentials.AnonymousCredentials()
+    ).validate_schema._get_unset_required_fields(jsonified_request)
+    jsonified_request.update(unset_fields)
+
+    # verify required fields with non-default values are left alone
+    assert "parent" in jsonified_request
+    assert jsonified_request["parent"] == "parent_value"
+
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="rest",
+    )
+    request = request_type(**request_init)
+
+    # Designate an appropriate value for the returned response.
+    return_value = gp_schema.ValidateSchemaResponse()
+    # Mock the http request call within the method and fake a response.
+    with mock.patch.object(Session, "request") as req:
+        # We need to mock transcode() because providing default values
+        # for required fields will fail the real version if the http_options
+        # expect actual values for those fields.
+        with mock.patch.object(path_template, "transcode") as transcode:
+            # A uri without fields and an empty body will force all the
+            # request fields to show up in the query_params.
+            pb_request = request_type.pb(request)
+            transcode_result = {
+                "uri": "v1/sample_method",
+                "method": "post",
+                "query_params": pb_request,
+            }
+            transcode_result["body"] = pb_request
+            transcode.return_value = transcode_result
+
+            response_value = Response()
+            response_value.status_code = 200
+
+            pb_return_value = gp_schema.ValidateSchemaResponse.pb(return_value)
+            json_return_value = json_format.MessageToJson(pb_return_value)
+
+            response_value._content = json_return_value.encode("UTF-8")
+            req.return_value = response_value
+
+            response = client.validate_schema(request)
+
+            expected_params = [("$alt", "json;enum-encoding=int")]
+            actual_params = req.call_args.kwargs["params"]
+            assert expected_params == actual_params
+
+
+def test_validate_schema_rest_unset_required_fields():
+    transport = transports.SchemaServiceRestTransport(
+        credentials=ga_credentials.AnonymousCredentials
+    )
+
+    unset_fields = transport.validate_schema._get_unset_required_fields({})
+    assert set(unset_fields) == (
+        set(())
+        & set(
+            (
+                "parent",
+                "schema",
+            )
+        )
+    )
+
+
+@pytest.mark.parametrize("null_interceptor", [True, False])
+def test_validate_schema_rest_interceptors(null_interceptor):
+    transport = transports.SchemaServiceRestTransport(
+        credentials=ga_credentials.AnonymousCredentials(),
+        interceptor=None
+        if null_interceptor
+        else transports.SchemaServiceRestInterceptor(),
+    )
+    client = SchemaServiceClient(transport=transport)
+    with mock.patch.object(
+        type(client.transport._session), "request"
+    ) as req, mock.patch.object(
+        path_template, "transcode"
+    ) as transcode, mock.patch.object(
+        transports.SchemaServiceRestInterceptor, "post_validate_schema"
+    ) as post, mock.patch.object(
+        transports.SchemaServiceRestInterceptor, "pre_validate_schema"
+    ) as pre:
+        pre.assert_not_called()
+        post.assert_not_called()
+        pb_message = gp_schema.ValidateSchemaRequest.pb(
+            gp_schema.ValidateSchemaRequest()
+        )
+        transcode.return_value = {
+            "method": "post",
+            "uri": "my_uri",
+            "body": pb_message,
+            "query_params": pb_message,
+        }
+
+        req.return_value = Response()
+        req.return_value.status_code = 200
+        req.return_value.request = PreparedRequest()
+        req.return_value._content = gp_schema.ValidateSchemaResponse.to_json(
+            gp_schema.ValidateSchemaResponse()
+        )
+
+        request = gp_schema.ValidateSchemaRequest()
+        metadata = [
+            ("key", "val"),
+            ("cephalopod", "squid"),
+        ]
+        pre.return_value = request, metadata
+        post.return_value = gp_schema.ValidateSchemaResponse()
+
+        client.validate_schema(
+            request,
+            metadata=[
+                ("key", "val"),
+                ("cephalopod", "squid"),
+            ],
+        )
+
+        pre.assert_called_once()
+        post.assert_called_once()
+
+
+def test_validate_schema_rest_bad_request(
+    transport: str = "rest", request_type=gp_schema.ValidateSchemaRequest
+):
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport=transport,
+    )
+
+    # send a request that will satisfy transcoding
+    request_init = {"parent": "projects/sample1"}
+    request = request_type(**request_init)
+
+    # Mock the http request call within the method and fake a BadRequest error.
+    with mock.patch.object(Session, "request") as req, pytest.raises(
+        core_exceptions.BadRequest
+    ):
+        # Wrap the value into a proper Response obj
+        response_value = Response()
+        response_value.status_code = 400
+        response_value.request = Request()
+        req.return_value = response_value
+        client.validate_schema(request)
+
+
+def test_validate_schema_rest_flattened():
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="rest",
+    )
+
+    # Mock the http request call within the method and fake a response.
+    with mock.patch.object(type(client.transport._session), "request") as req:
+        # Designate an appropriate value for the returned response.
+        return_value = gp_schema.ValidateSchemaResponse()
+
+        # get arguments that satisfy an http rule for this method
+        sample_request = {"parent": "projects/sample1"}
+
+        # get truthy value for each flattened field
+        mock_args = dict(
+            parent="parent_value",
+            schema=gp_schema.Schema(name="name_value"),
+        )
+        mock_args.update(sample_request)
+
+        # Wrap the value into a proper Response obj
+        response_value = Response()
+        response_value.status_code = 200
+        pb_return_value = gp_schema.ValidateSchemaResponse.pb(return_value)
+        json_return_value = json_format.MessageToJson(pb_return_value)
+        response_value._content = json_return_value.encode("UTF-8")
+        req.return_value = response_value
+
+        client.validate_schema(**mock_args)
+
+        # Establish that the underlying call was made with the expected
+        # request object values.
+        assert len(req.mock_calls) == 1
+        _, args, _ = req.mock_calls[0]
+        assert path_template.validate(
+            "%s/v1/{parent=projects/*}/schemas:validate" % client.transport._host,
+            args[1],
+        )
+
+
+def test_validate_schema_rest_flattened_error(transport: str = "rest"):
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport=transport,
+    )
+
+    # Attempting to call a method with both a request object and flattened
+    # fields is an error.
+    with pytest.raises(ValueError):
+        client.validate_schema(
+            gp_schema.ValidateSchemaRequest(),
+            parent="parent_value",
+            schema=gp_schema.Schema(name="name_value"),
+        )
+
+
+def test_validate_schema_rest_error():
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(), transport="rest"
+    )
+
+
+@pytest.mark.parametrize(
+    "request_type",
+    [
+        schema.ValidateMessageRequest,
+        dict,
+    ],
+)
+def test_validate_message_rest(request_type):
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="rest",
+    )
+
+    # send a request that will satisfy transcoding
+    request_init = {"parent": "projects/sample1"}
+    request = request_type(**request_init)
+
+    # Mock the http request call within the method and fake a response.
+    with mock.patch.object(type(client.transport._session), "request") as req:
+        # Designate an appropriate value for the returned response.
+        return_value = schema.ValidateMessageResponse()
+
+        # Wrap the value into a proper Response obj
+        response_value = Response()
+        response_value.status_code = 200
+        pb_return_value = schema.ValidateMessageResponse.pb(return_value)
+        json_return_value = json_format.MessageToJson(pb_return_value)
+
+        response_value._content = json_return_value.encode("UTF-8")
+        req.return_value = response_value
+        response = client.validate_message(request)
+
+    # Establish that the response is the type that we expect.
+    assert isinstance(response, schema.ValidateMessageResponse)
+
+
+def test_validate_message_rest_required_fields(
+    request_type=schema.ValidateMessageRequest,
+):
+    transport_class = transports.SchemaServiceRestTransport
+
+    request_init = {}
+    request_init["parent"] = ""
+    request = request_type(**request_init)
+    pb_request = request_type.pb(request)
+    jsonified_request = json.loads(
+        json_format.MessageToJson(
+            pb_request,
+            including_default_value_fields=False,
+            use_integers_for_enums=False,
+        )
+    )
+
+    # verify fields with default values are dropped
+
+    unset_fields = transport_class(
+        credentials=ga_credentials.AnonymousCredentials()
+    ).validate_message._get_unset_required_fields(jsonified_request)
+    jsonified_request.update(unset_fields)
+
+    # verify required fields with default values are now present
+
+    jsonified_request["parent"] = "parent_value"
+
+    unset_fields = transport_class(
+        credentials=ga_credentials.AnonymousCredentials()
+    ).validate_message._get_unset_required_fields(jsonified_request)
+    jsonified_request.update(unset_fields)
+
+    # verify required fields with non-default values are left alone
+    assert "parent" in jsonified_request
+    assert jsonified_request["parent"] == "parent_value"
+
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="rest",
+    )
+    request = request_type(**request_init)
+
+    # Designate an appropriate value for the returned response.
+    return_value = schema.ValidateMessageResponse()
+    # Mock the http request call within the method and fake a response.
+    with mock.patch.object(Session, "request") as req:
+        # We need to mock transcode() because providing default values
+        # for required fields will fail the real version if the http_options
+        # expect actual values for those fields.
+        with mock.patch.object(path_template, "transcode") as transcode:
+            # A uri without fields and an empty body will force all the
+            # request fields to show up in the query_params.
+            pb_request = request_type.pb(request)
+            transcode_result = {
+                "uri": "v1/sample_method",
+                "method": "post",
+                "query_params": pb_request,
+            }
+            transcode_result["body"] = pb_request
+            transcode.return_value = transcode_result
+
+            response_value = Response()
+            response_value.status_code = 200
+
+            pb_return_value = schema.ValidateMessageResponse.pb(return_value)
+            json_return_value = json_format.MessageToJson(pb_return_value)
+
+            response_value._content = json_return_value.encode("UTF-8")
+            req.return_value = response_value
+
+            response = client.validate_message(request)
+
+            expected_params = [("$alt", "json;enum-encoding=int")]
+            actual_params = req.call_args.kwargs["params"]
+            assert expected_params == actual_params
+
+
+def test_validate_message_rest_unset_required_fields():
+    transport = transports.SchemaServiceRestTransport(
+        credentials=ga_credentials.AnonymousCredentials
+    )
+
+    unset_fields = transport.validate_message._get_unset_required_fields({})
+    assert set(unset_fields) == (set(()) & set(("parent",)))
+
+
+@pytest.mark.parametrize("null_interceptor", [True, False])
+def test_validate_message_rest_interceptors(null_interceptor):
+    transport = transports.SchemaServiceRestTransport(
+        credentials=ga_credentials.AnonymousCredentials(),
+        interceptor=None
+        if null_interceptor
+        else transports.SchemaServiceRestInterceptor(),
+    )
+    client = SchemaServiceClient(transport=transport)
+    with mock.patch.object(
+        type(client.transport._session), "request"
+    ) as req, mock.patch.object(
+        path_template, "transcode"
+    ) as transcode, mock.patch.object(
+        transports.SchemaServiceRestInterceptor, "post_validate_message"
+    ) as post, mock.patch.object(
+        transports.SchemaServiceRestInterceptor, "pre_validate_message"
+    ) as pre:
+        pre.assert_not_called()
+        post.assert_not_called()
+        pb_message = schema.ValidateMessageRequest.pb(schema.ValidateMessageRequest())
+        transcode.return_value = {
+            "method": "post",
+            "uri": "my_uri",
+            "body": pb_message,
+            "query_params": pb_message,
+        }
+
+        req.return_value = Response()
+        req.return_value.status_code = 200
+        req.return_value.request = PreparedRequest()
+        req.return_value._content = schema.ValidateMessageResponse.to_json(
+            schema.ValidateMessageResponse()
+        )
+
+        request = schema.ValidateMessageRequest()
+        metadata = [
+            ("key", "val"),
+            ("cephalopod", "squid"),
+        ]
+        pre.return_value = request, metadata
+        post.return_value = schema.ValidateMessageResponse()
+
+        client.validate_message(
+            request,
+            metadata=[
+                ("key", "val"),
+                ("cephalopod", "squid"),
+            ],
+        )
+
+        pre.assert_called_once()
+        post.assert_called_once()
+
+
+def test_validate_message_rest_bad_request(
+    transport: str = "rest", request_type=schema.ValidateMessageRequest
+):
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport=transport,
+    )
+
+    # send a request that will satisfy transcoding
+    request_init = {"parent": "projects/sample1"}
+    request = request_type(**request_init)
+
+    # Mock the http request call within the method and fake a BadRequest error.
+    with mock.patch.object(Session, "request") as req, pytest.raises(
+        core_exceptions.BadRequest
+    ):
+        # Wrap the value into a proper Response obj
+        response_value = Response()
+        response_value.status_code = 400
+        response_value.request = Request()
+        req.return_value = response_value
+        client.validate_message(request)
+
+
+def test_validate_message_rest_error():
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(), transport="rest"
+    )
+
+
 def test_credentials_transport_error():
     # It is an error to provide credentials and a transport instance.
     transport = transports.SchemaServiceGrpcTransport(
@@ -2282,6 +6325,7 @@ def test_transport_get_channel():
     [
         transports.SchemaServiceGrpcTransport,
         transports.SchemaServiceGrpcAsyncIOTransport,
+        transports.SchemaServiceRestTransport,
     ],
 )
 def test_transport_adc(transport_class):
@@ -2296,6 +6340,7 @@ def test_transport_adc(transport_class):
     "transport_name",
     [
         "grpc",
+        "rest",
     ],
 )
 def test_transport_kind(transport_name):
@@ -2341,6 +6386,10 @@ def test_schema_service_base_transport():
         "create_schema",
         "get_schema",
         "list_schemas",
+        "list_schema_revisions",
+        "commit_schema",
+        "rollback_schema",
+        "delete_schema_revision",
         "delete_schema",
         "validate_schema",
         "validate_message",
@@ -2442,6 +6491,7 @@ def test_schema_service_transport_auth_adc(transport_class):
     [
         transports.SchemaServiceGrpcTransport,
         transports.SchemaServiceGrpcAsyncIOTransport,
+        transports.SchemaServiceRestTransport,
     ],
 )
 def test_schema_service_transport_auth_gdch_credentials(transport_class):
@@ -2546,11 +6596,23 @@ def test_schema_service_grpc_transport_client_cert_source_for_mtls(transport_cla
             )
 
 
+def test_schema_service_http_transport_client_cert_source_for_mtls():
+    cred = ga_credentials.AnonymousCredentials()
+    with mock.patch(
+        "google.auth.transport.requests.AuthorizedSession.configure_mtls_channel"
+    ) as mock_configure_mtls_channel:
+        transports.SchemaServiceRestTransport(
+            credentials=cred, client_cert_source_for_mtls=client_cert_source_callback
+        )
+        mock_configure_mtls_channel.assert_called_once_with(client_cert_source_callback)
+
+
 @pytest.mark.parametrize(
     "transport_name",
     [
         "grpc",
         "grpc_asyncio",
+        "rest",
     ],
 )
 def test_schema_service_host_no_port(transport_name):
@@ -2561,7 +6623,11 @@ def test_schema_service_host_no_port(transport_name):
         ),
         transport=transport_name,
     )
-    assert client.transport._host == ("pubsub.googleapis.com:443")
+    assert client.transport._host == (
+        "pubsub.googleapis.com:443"
+        if transport_name in ["grpc", "grpc_asyncio"]
+        else "https://pubsub.googleapis.com"
+    )
 
 
 @pytest.mark.parametrize(
@@ -2569,6 +6635,7 @@ def test_schema_service_host_no_port(transport_name):
     [
         "grpc",
         "grpc_asyncio",
+        "rest",
     ],
 )
 def test_schema_service_host_with_port(transport_name):
@@ -2579,7 +6646,60 @@ def test_schema_service_host_with_port(transport_name):
         ),
         transport=transport_name,
     )
-    assert client.transport._host == ("pubsub.googleapis.com:8000")
+    assert client.transport._host == (
+        "pubsub.googleapis.com:8000"
+        if transport_name in ["grpc", "grpc_asyncio"]
+        else "https://pubsub.googleapis.com:8000"
+    )
+
+
+@pytest.mark.parametrize(
+    "transport_name",
+    [
+        "rest",
+    ],
+)
+def test_schema_service_client_transport_session_collision(transport_name):
+    creds1 = ga_credentials.AnonymousCredentials()
+    creds2 = ga_credentials.AnonymousCredentials()
+    client1 = SchemaServiceClient(
+        credentials=creds1,
+        transport=transport_name,
+    )
+    client2 = SchemaServiceClient(
+        credentials=creds2,
+        transport=transport_name,
+    )
+    session1 = client1.transport.create_schema._session
+    session2 = client2.transport.create_schema._session
+    assert session1 != session2
+    session1 = client1.transport.get_schema._session
+    session2 = client2.transport.get_schema._session
+    assert session1 != session2
+    session1 = client1.transport.list_schemas._session
+    session2 = client2.transport.list_schemas._session
+    assert session1 != session2
+    session1 = client1.transport.list_schema_revisions._session
+    session2 = client2.transport.list_schema_revisions._session
+    assert session1 != session2
+    session1 = client1.transport.commit_schema._session
+    session2 = client2.transport.commit_schema._session
+    assert session1 != session2
+    session1 = client1.transport.rollback_schema._session
+    session2 = client2.transport.rollback_schema._session
+    assert session1 != session2
+    session1 = client1.transport.delete_schema_revision._session
+    session2 = client2.transport.delete_schema_revision._session
+    assert session1 != session2
+    session1 = client1.transport.delete_schema._session
+    session2 = client2.transport.delete_schema._session
+    assert session1 != session2
+    session1 = client1.transport.validate_schema._session
+    session2 = client2.transport.validate_schema._session
+    assert session1 != session2
+    session1 = client1.transport.validate_message._session
+    session2 = client2.transport.validate_message._session
+    assert session1 != session2
 
 
 def test_schema_service_grpc_transport_channel():
@@ -2871,6 +6991,180 @@ async def test_transport_close_async():
         async with client:
             close.assert_not_called()
         close.assert_called_once()
+
+
+def test_get_iam_policy_rest_bad_request(
+    transport: str = "rest", request_type=iam_policy_pb2.GetIamPolicyRequest
+):
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport=transport,
+    )
+
+    request = request_type()
+    request = json_format.ParseDict(
+        {"resource": "projects/sample1/topics/sample2"}, request
+    )
+
+    # Mock the http request call within the method and fake a BadRequest error.
+    with mock.patch.object(Session, "request") as req, pytest.raises(
+        core_exceptions.BadRequest
+    ):
+        # Wrap the value into a proper Response obj
+        response_value = Response()
+        response_value.status_code = 400
+        response_value.request = Request()
+        req.return_value = response_value
+        client.get_iam_policy(request)
+
+
+@pytest.mark.parametrize(
+    "request_type",
+    [
+        iam_policy_pb2.GetIamPolicyRequest,
+        dict,
+    ],
+)
+def test_get_iam_policy_rest(request_type):
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="rest",
+    )
+    request_init = {"resource": "projects/sample1/topics/sample2"}
+    request = request_type(**request_init)
+    # Mock the http request call within the method and fake a response.
+    with mock.patch.object(type(client.transport._session), "request") as req:
+        # Designate an appropriate value for the returned response.
+        return_value = policy_pb2.Policy()
+
+        # Wrap the value into a proper Response obj
+        response_value = Response()
+        response_value.status_code = 200
+        json_return_value = json_format.MessageToJson(return_value)
+
+        response_value._content = json_return_value.encode("UTF-8")
+        req.return_value = response_value
+
+        response = client.get_iam_policy(request)
+
+    # Establish that the response is the type that we expect.
+    assert isinstance(response, policy_pb2.Policy)
+
+
+def test_set_iam_policy_rest_bad_request(
+    transport: str = "rest", request_type=iam_policy_pb2.SetIamPolicyRequest
+):
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport=transport,
+    )
+
+    request = request_type()
+    request = json_format.ParseDict(
+        {"resource": "projects/sample1/topics/sample2"}, request
+    )
+
+    # Mock the http request call within the method and fake a BadRequest error.
+    with mock.patch.object(Session, "request") as req, pytest.raises(
+        core_exceptions.BadRequest
+    ):
+        # Wrap the value into a proper Response obj
+        response_value = Response()
+        response_value.status_code = 400
+        response_value.request = Request()
+        req.return_value = response_value
+        client.set_iam_policy(request)
+
+
+@pytest.mark.parametrize(
+    "request_type",
+    [
+        iam_policy_pb2.SetIamPolicyRequest,
+        dict,
+    ],
+)
+def test_set_iam_policy_rest(request_type):
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="rest",
+    )
+    request_init = {"resource": "projects/sample1/topics/sample2"}
+    request = request_type(**request_init)
+    # Mock the http request call within the method and fake a response.
+    with mock.patch.object(type(client.transport._session), "request") as req:
+        # Designate an appropriate value for the returned response.
+        return_value = policy_pb2.Policy()
+
+        # Wrap the value into a proper Response obj
+        response_value = Response()
+        response_value.status_code = 200
+        json_return_value = json_format.MessageToJson(return_value)
+
+        response_value._content = json_return_value.encode("UTF-8")
+        req.return_value = response_value
+
+        response = client.set_iam_policy(request)
+
+    # Establish that the response is the type that we expect.
+    assert isinstance(response, policy_pb2.Policy)
+
+
+def test_test_iam_permissions_rest_bad_request(
+    transport: str = "rest", request_type=iam_policy_pb2.TestIamPermissionsRequest
+):
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport=transport,
+    )
+
+    request = request_type()
+    request = json_format.ParseDict(
+        {"resource": "projects/sample1/subscriptions/sample2"}, request
+    )
+
+    # Mock the http request call within the method and fake a BadRequest error.
+    with mock.patch.object(Session, "request") as req, pytest.raises(
+        core_exceptions.BadRequest
+    ):
+        # Wrap the value into a proper Response obj
+        response_value = Response()
+        response_value.status_code = 400
+        response_value.request = Request()
+        req.return_value = response_value
+        client.test_iam_permissions(request)
+
+
+@pytest.mark.parametrize(
+    "request_type",
+    [
+        iam_policy_pb2.TestIamPermissionsRequest,
+        dict,
+    ],
+)
+def test_test_iam_permissions_rest(request_type):
+    client = SchemaServiceClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="rest",
+    )
+    request_init = {"resource": "projects/sample1/subscriptions/sample2"}
+    request = request_type(**request_init)
+    # Mock the http request call within the method and fake a response.
+    with mock.patch.object(type(client.transport._session), "request") as req:
+        # Designate an appropriate value for the returned response.
+        return_value = iam_policy_pb2.TestIamPermissionsResponse()
+
+        # Wrap the value into a proper Response obj
+        response_value = Response()
+        response_value.status_code = 200
+        json_return_value = json_format.MessageToJson(return_value)
+
+        response_value._content = json_return_value.encode("UTF-8")
+        req.return_value = response_value
+
+        response = client.test_iam_permissions(request)
+
+    # Establish that the response is the type that we expect.
+    assert isinstance(response, iam_policy_pb2.TestIamPermissionsResponse)
 
 
 def test_set_iam_policy(transport: str = "grpc"):
@@ -3383,6 +7677,7 @@ async def test_test_iam_permissions_from_dict_async():
 
 def test_transport_close():
     transports = {
+        "rest": "_session",
         "grpc": "_grpc_channel",
     }
 
@@ -3400,6 +7695,7 @@ def test_transport_close():
 
 def test_client_ctx():
     transports = [
+        "rest",
         "grpc",
     ]
     for transport in transports:

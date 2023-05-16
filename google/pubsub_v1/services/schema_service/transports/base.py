@@ -15,7 +15,8 @@
 #
 import abc
 from typing import Awaitable, Callable, Dict, Optional, Sequence, Union
-import pkg_resources
+
+from google.pubsub_v1 import gapic_version as package_version
 
 import google.auth  # type: ignore
 import google.api_core
@@ -31,14 +32,9 @@ from google.protobuf import empty_pb2  # type: ignore
 from google.pubsub_v1.types import schema
 from google.pubsub_v1.types import schema as gp_schema
 
-try:
-    DEFAULT_CLIENT_INFO = gapic_v1.client_info.ClientInfo(
-        client_library_version=pkg_resources.get_distribution(
-            "google-cloud-pubsub",
-        ).version,
-    )
-except pkg_resources.DistributionNotFound:
-    DEFAULT_CLIENT_INFO = gapic_v1.client_info.ClientInfo()
+DEFAULT_CLIENT_INFO = gapic_v1.client_info.ClientInfo(
+    client_library_version=package_version.__version__
+)
 
 
 class SchemaServiceTransport(abc.ABC):
@@ -55,7 +51,7 @@ class SchemaServiceTransport(abc.ABC):
         self,
         *,
         host: str = DEFAULT_HOST,
-        credentials: ga_credentials.Credentials = None,
+        credentials: Optional[ga_credentials.Credentials] = None,
         credentials_file: Optional[str] = None,
         scopes: Optional[Sequence[str]] = None,
         quota_project_id: Optional[str] = None,
@@ -136,32 +132,142 @@ class SchemaServiceTransport(abc.ABC):
         self._wrapped_methods = {
             self.create_schema: gapic_v1.method.wrap_method(
                 self.create_schema,
-                default_timeout=None,
+                default_retry=retries.Retry(
+                    initial=0.1,
+                    maximum=60.0,
+                    multiplier=1.3,
+                    predicate=retries.if_exception_type(
+                        core_exceptions.ServiceUnavailable,
+                    ),
+                    deadline=60.0,
+                ),
+                default_timeout=60.0,
                 client_info=client_info,
             ),
             self.get_schema: gapic_v1.method.wrap_method(
                 self.get_schema,
-                default_timeout=None,
+                default_retry=retries.Retry(
+                    initial=0.1,
+                    maximum=60.0,
+                    multiplier=1.3,
+                    predicate=retries.if_exception_type(
+                        core_exceptions.ServiceUnavailable,
+                    ),
+                    deadline=60.0,
+                ),
+                default_timeout=60.0,
                 client_info=client_info,
             ),
             self.list_schemas: gapic_v1.method.wrap_method(
                 self.list_schemas,
-                default_timeout=None,
+                default_retry=retries.Retry(
+                    initial=0.1,
+                    maximum=60.0,
+                    multiplier=1.3,
+                    predicate=retries.if_exception_type(
+                        core_exceptions.ServiceUnavailable,
+                    ),
+                    deadline=60.0,
+                ),
+                default_timeout=60.0,
+                client_info=client_info,
+            ),
+            self.list_schema_revisions: gapic_v1.method.wrap_method(
+                self.list_schema_revisions,
+                default_retry=retries.Retry(
+                    initial=0.1,
+                    maximum=60.0,
+                    multiplier=1.3,
+                    predicate=retries.if_exception_type(
+                        core_exceptions.ServiceUnavailable,
+                    ),
+                    deadline=60.0,
+                ),
+                default_timeout=60.0,
+                client_info=client_info,
+            ),
+            self.commit_schema: gapic_v1.method.wrap_method(
+                self.commit_schema,
+                default_retry=retries.Retry(
+                    initial=0.1,
+                    maximum=60.0,
+                    multiplier=1.3,
+                    predicate=retries.if_exception_type(
+                        core_exceptions.ServiceUnavailable,
+                    ),
+                    deadline=60.0,
+                ),
+                default_timeout=60.0,
+                client_info=client_info,
+            ),
+            self.rollback_schema: gapic_v1.method.wrap_method(
+                self.rollback_schema,
+                default_retry=retries.Retry(
+                    initial=0.1,
+                    maximum=60.0,
+                    multiplier=1.3,
+                    predicate=retries.if_exception_type(
+                        core_exceptions.ServiceUnavailable,
+                    ),
+                    deadline=60.0,
+                ),
+                default_timeout=60.0,
+                client_info=client_info,
+            ),
+            self.delete_schema_revision: gapic_v1.method.wrap_method(
+                self.delete_schema_revision,
+                default_retry=retries.Retry(
+                    initial=0.1,
+                    maximum=60.0,
+                    multiplier=1.3,
+                    predicate=retries.if_exception_type(
+                        core_exceptions.ServiceUnavailable,
+                    ),
+                    deadline=60.0,
+                ),
+                default_timeout=60.0,
                 client_info=client_info,
             ),
             self.delete_schema: gapic_v1.method.wrap_method(
                 self.delete_schema,
-                default_timeout=None,
+                default_retry=retries.Retry(
+                    initial=0.1,
+                    maximum=60.0,
+                    multiplier=1.3,
+                    predicate=retries.if_exception_type(
+                        core_exceptions.ServiceUnavailable,
+                    ),
+                    deadline=60.0,
+                ),
+                default_timeout=60.0,
                 client_info=client_info,
             ),
             self.validate_schema: gapic_v1.method.wrap_method(
                 self.validate_schema,
-                default_timeout=None,
+                default_retry=retries.Retry(
+                    initial=0.1,
+                    maximum=60.0,
+                    multiplier=1.3,
+                    predicate=retries.if_exception_type(
+                        core_exceptions.ServiceUnavailable,
+                    ),
+                    deadline=60.0,
+                ),
+                default_timeout=60.0,
                 client_info=client_info,
             ),
             self.validate_message: gapic_v1.method.wrap_method(
                 self.validate_message,
-                default_timeout=None,
+                default_retry=retries.Retry(
+                    initial=0.1,
+                    maximum=60.0,
+                    multiplier=1.3,
+                    predicate=retries.if_exception_type(
+                        core_exceptions.ServiceUnavailable,
+                    ),
+                    deadline=60.0,
+                ),
+                default_timeout=60.0,
                 client_info=client_info,
             ),
         }
@@ -198,6 +304,44 @@ class SchemaServiceTransport(abc.ABC):
     ) -> Callable[
         [schema.ListSchemasRequest],
         Union[schema.ListSchemasResponse, Awaitable[schema.ListSchemasResponse]],
+    ]:
+        raise NotImplementedError()
+
+    @property
+    def list_schema_revisions(
+        self,
+    ) -> Callable[
+        [schema.ListSchemaRevisionsRequest],
+        Union[
+            schema.ListSchemaRevisionsResponse,
+            Awaitable[schema.ListSchemaRevisionsResponse],
+        ],
+    ]:
+        raise NotImplementedError()
+
+    @property
+    def commit_schema(
+        self,
+    ) -> Callable[
+        [gp_schema.CommitSchemaRequest],
+        Union[gp_schema.Schema, Awaitable[gp_schema.Schema]],
+    ]:
+        raise NotImplementedError()
+
+    @property
+    def rollback_schema(
+        self,
+    ) -> Callable[
+        [schema.RollbackSchemaRequest], Union[schema.Schema, Awaitable[schema.Schema]]
+    ]:
+        raise NotImplementedError()
+
+    @property
+    def delete_schema_revision(
+        self,
+    ) -> Callable[
+        [schema.DeleteSchemaRevisionRequest],
+        Union[schema.Schema, Awaitable[schema.Schema]],
     ]:
         raise NotImplementedError()
 

@@ -14,11 +14,16 @@
 
 import functools
 import logging
+import sys
 import threading
 import time
 import types as stdlib_types
 
-import mock
+# special case python < 3.8
+if sys.version_info.major == 3 and sys.version_info.minor < 8:
+    import mock
+else:
+    from unittest import mock
 import pytest
 
 from google.api_core import bidi
@@ -86,6 +91,7 @@ def test__wrap_callback_errors_error():
 
 
 def test_constructor_and_default_state():
+    mock.sentinel.subscription = str()
     manager = streaming_pull_manager.StreamingPullManager(
         mock.sentinel.client, mock.sentinel.subscription
     )
@@ -108,6 +114,7 @@ def test_constructor_and_default_state():
 
 
 def test_constructor_with_default_options():
+    mock.sentinel.subscription = str()
     flow_control_ = types.FlowControl()
     manager = streaming_pull_manager.StreamingPullManager(
         mock.sentinel.client,
@@ -123,6 +130,7 @@ def test_constructor_with_default_options():
 
 
 def test_constructor_with_min_and_max_duration_per_lease_extension_():
+    mock.sentinel.subscription = str()
     flow_control_ = types.FlowControl(
         min_duration_per_lease_extension=15, max_duration_per_lease_extension=20
     )
@@ -137,6 +145,7 @@ def test_constructor_with_min_and_max_duration_per_lease_extension_():
 
 
 def test_constructor_with_min_duration_per_lease_extension_too_low():
+    mock.sentinel.subscription = str()
     flow_control_ = types.FlowControl(
         min_duration_per_lease_extension=9, max_duration_per_lease_extension=9
     )
@@ -151,6 +160,7 @@ def test_constructor_with_min_duration_per_lease_extension_too_low():
 
 
 def test_constructor_with_max_duration_per_lease_extension_too_high():
+    mock.sentinel.subscription = str()
     flow_control_ = types.FlowControl(
         max_duration_per_lease_extension=601, min_duration_per_lease_extension=601
     )
@@ -669,6 +679,33 @@ def test_send_unary_modack():
     )
 
 
+def test_send_unary_modack_default_deadline():
+    manager = make_manager()
+
+    ack_reqs_dict = {
+        "ack_id3": requests.ModAckRequest(ack_id="ack_id3", seconds=60, future=None),
+        "ack_id4": requests.ModAckRequest(ack_id="ack_id4", seconds=60, future=None),
+        "ack_id5": requests.ModAckRequest(ack_id="ack_id5", seconds=60, future=None),
+    }
+    manager.send_unary_modack(
+        modify_deadline_ack_ids=["ack_id3", "ack_id4", "ack_id5"],
+        modify_deadline_seconds=None,
+        ack_reqs_dict=ack_reqs_dict,
+        default_deadline=10,
+    )
+
+    manager._client.modify_ack_deadline.assert_has_calls(
+        [
+            mock.call(
+                subscription=manager._subscription,
+                ack_ids=["ack_id3", "ack_id4", "ack_id5"],
+                ack_deadline_seconds=10,
+            ),
+        ],
+        any_order=True,
+    )
+
+
 def test_send_unary_modack_exactly_once_enabled_with_futures():
     manager = make_manager()
     manager._exactly_once_enabled = True
@@ -1120,6 +1157,7 @@ def test_heartbeat_stream_ack_deadline_seconds(caplog):
     "google.cloud.pubsub_v1.subscriber._protocol.heartbeater.Heartbeater", autospec=True
 )
 def test_open(heartbeater, dispatcher, leaser, background_consumer, resumable_bidi_rpc):
+
     manager = make_manager()
 
     with mock.patch.object(
@@ -1148,6 +1186,7 @@ def test_open(heartbeater, dispatcher, leaser, background_consumer, resumable_bi
         initial_request=mock.ANY,
         should_recover=manager._should_recover,
         should_terminate=manager._should_terminate,
+        metadata=manager._stream_metadata,
         throttle_reopen=True,
     )
     initial_request_arg = resumable_bidi_rpc.call_args.kwargs["initial_request"]
@@ -1454,7 +1493,8 @@ def test__on_response_modifies_ack_deadline():
         [
             requests.ModAckRequest("ack_1", 18, None),
             requests.ModAckRequest("ack_2", 18, None),
-        ]
+        ],
+        18,
     )
 
 
@@ -1515,6 +1555,7 @@ def test__on_response_modifies_ack_deadline_with_exactly_once_min_lease():
         requests.ModAckRequest("ack_1", 10, None),
         requests.ModAckRequest("ack_2", 10, None),
     ]
+    assert call.args[1] == 10
 
     # exactly_once should be enabled after this request b/c subscription_properties says so
     manager._on_response(response2)
@@ -1528,6 +1569,8 @@ def test__on_response_modifies_ack_deadline_with_exactly_once_min_lease():
     assert modack_reqs[0].seconds == 60
     assert modack_reqs[1].ack_id == "ack_4"
     assert modack_reqs[1].seconds == 60
+    modack_deadline = call.args[1]
+    assert modack_deadline == 60
 
 
 def test__on_response_send_ack_deadline_after_enabling_exactly_once():
@@ -1604,7 +1647,8 @@ def test__on_response_no_leaser_overload():
         [
             requests.ModAckRequest("fack", 10, None),
             requests.ModAckRequest("back", 10, None),
-        ]
+        ],
+        10,
     )
 
     schedule_calls = scheduler.schedule.mock_calls
@@ -1654,7 +1698,8 @@ def test__on_response_with_leaser_overload():
             requests.ModAckRequest("fack", 10, None),
             requests.ModAckRequest("back", 10, None),
             requests.ModAckRequest("zack", 10, None),
-        ]
+        ],
+        10,
     )
 
     # one message should be scheduled, the flow control limits allow for it
@@ -1734,7 +1779,8 @@ def test__on_response_with_ordering_keys():
             requests.ModAckRequest("fack", 10, None),
             requests.ModAckRequest("back", 10, None),
             requests.ModAckRequest("zack", 10, None),
-        ]
+        ],
+        10,
     )
 
     # The first two messages should be scheduled, The third should be put on
@@ -1840,18 +1886,25 @@ def test__on_response_disable_exactly_once():
     assert manager._stream_ack_deadline == 60
 
 
-def test__on_response_exactly_once_immediate_modacks_fail():
+def test__on_response_exactly_once_immediate_modacks_fail(caplog):
     manager, _, dispatcher, leaser, _, scheduler = make_running_manager()
     manager._callback = mock.sentinel.callback
 
     def complete_futures_with_error(*args, **kwargs):
         modack_requests = args[0]
         for req in modack_requests:
-            req.future.set_exception(
-                subscriber_exceptions.AcknowledgeError(
-                    subscriber_exceptions.AcknowledgeStatus.SUCCESS, None
+            if req.ack_id == "fack":
+                req.future.set_exception(
+                    subscriber_exceptions.AcknowledgeError(
+                        subscriber_exceptions.AcknowledgeStatus.INVALID_ACK_ID, None
+                    )
                 )
-            )
+            else:
+                req.future.set_exception(
+                    subscriber_exceptions.AcknowledgeError(
+                        subscriber_exceptions.AcknowledgeStatus.SUCCESS, None
+                    )
+                )
 
     dispatcher.modify_ack_deadline.side_effect = complete_futures_with_error
 
@@ -1861,19 +1914,120 @@ def test__on_response_exactly_once_immediate_modacks_fail():
             gapic_types.ReceivedMessage(
                 ack_id="fack",
                 message=gapic_types.PubsubMessage(data=b"foo", message_id="1"),
-            )
+            ),
+            gapic_types.ReceivedMessage(
+                ack_id="good",
+                message=gapic_types.PubsubMessage(data=b"foo", message_id="2"),
+            ),
         ],
         subscription_properties=gapic_types.StreamingPullResponse.SubscriptionProperties(
             exactly_once_delivery_enabled=True
         ),
     )
 
-    # adjust message bookkeeping in leaser
-    fake_leaser_add(leaser, init_msg_count=0, assumed_msg_size=42)
+    # Actually run the method and prove that modack and schedule are called in
+    # the expected way.
 
-    # exactly_once should be enabled
-    manager._on_response(response)
-    # exceptions are logged, but otherwise no effect
+    fake_leaser_add(leaser, init_msg_count=0, assumed_msg_size=10)
+
+    with caplog.at_level(logging.WARNING):
+        manager._on_response(response)
+
+    # The second messages should be scheduled, and not the first.
+
+    schedule_calls = scheduler.schedule.mock_calls
+    assert len(schedule_calls) == 1
+    call_args = schedule_calls[0][1]
+    assert call_args[0] == mock.sentinel.callback
+    assert isinstance(call_args[1], message.Message)
+    assert call_args[1].message_id == "2"
+
+    assert manager._messages_on_hold.size == 0
+
+    expected_warnings = [
+        record.message.lower()
+        for record in caplog.records
+        if "AcknowledgeError when lease-modacking a message." in record.message
+    ]
+    assert len(expected_warnings) == 1
+
+    # No messages available
+    assert manager._messages_on_hold.get() is None
+
+    # do not add message
+    assert manager.load == 0.001
+
+
+def test__on_response_exactly_once_immediate_modacks_fail_non_invalid(caplog):
+    manager, _, dispatcher, leaser, _, scheduler = make_running_manager()
+    manager._callback = mock.sentinel.callback
+
+    def complete_futures_with_error(*args, **kwargs):
+        modack_requests = args[0]
+        for req in modack_requests:
+            if req.ack_id == "fack":
+                req.future.set_exception(
+                    subscriber_exceptions.AcknowledgeError(
+                        subscriber_exceptions.AcknowledgeStatus.OTHER, None
+                    )
+                )
+            else:
+                req.future.set_exception(
+                    subscriber_exceptions.AcknowledgeError(
+                        subscriber_exceptions.AcknowledgeStatus.SUCCESS, None
+                    )
+                )
+
+    dispatcher.modify_ack_deadline.side_effect = complete_futures_with_error
+
+    # Set up the messages.
+    response = gapic_types.StreamingPullResponse(
+        received_messages=[
+            gapic_types.ReceivedMessage(
+                ack_id="fack",
+                message=gapic_types.PubsubMessage(data=b"foo", message_id="1"),
+            ),
+            gapic_types.ReceivedMessage(
+                ack_id="good",
+                message=gapic_types.PubsubMessage(data=b"foo", message_id="2"),
+            ),
+        ],
+        subscription_properties=gapic_types.StreamingPullResponse.SubscriptionProperties(
+            exactly_once_delivery_enabled=True
+        ),
+    )
+
+    # Actually run the method and prove that modack and schedule are called in
+    # the expected way.
+
+    fake_leaser_add(leaser, init_msg_count=0, assumed_msg_size=10)
+
+    with caplog.at_level(logging.WARNING):
+        manager._on_response(response)
+
+    # The second messages should be scheduled, and not the first.
+
+    schedule_calls = scheduler.schedule.mock_calls
+    assert len(schedule_calls) == 2
+    call_args = schedule_calls[0][1]
+    assert call_args[0] == mock.sentinel.callback
+    assert isinstance(call_args[1], message.Message)
+    assert call_args[1].message_id == "1"
+
+    assert manager._messages_on_hold.size == 0
+
+    expected_warnings = [
+        record.message.lower()
+        for record in caplog.records
+        if "AcknowledgeError when lease-modacking a message." in record.message
+    ]
+    assert len(expected_warnings) == 2
+
+    # No messages available
+    assert manager._messages_on_hold.get() is None
+
+    # do not add message
+    assert manager.load == 0.002
 
 
 def test__should_recover_true():

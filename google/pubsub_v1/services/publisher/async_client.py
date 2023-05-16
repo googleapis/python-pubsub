@@ -16,8 +16,19 @@
 from collections import OrderedDict
 import functools
 import re
-from typing import Dict, Mapping, Optional, Sequence, Tuple, Type, Union
-import pkg_resources
+from typing import (
+    Dict,
+    Mapping,
+    MutableMapping,
+    MutableSequence,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    Union,
+)
+
+from google.pubsub_v1 import gapic_version as package_version
 
 from google.api_core.client_options import ClientOptions
 from google.api_core import exceptions as core_exceptions
@@ -35,6 +46,7 @@ except AttributeError:  # pragma: NO COVER
 from google.iam.v1 import iam_policy_pb2  # type: ignore
 from google.iam.v1 import policy_pb2  # type: ignore
 from google.protobuf import duration_pb2  # type: ignore
+from google.protobuf import field_mask_pb2  # type: ignore
 from google.pubsub_v1.services.publisher import pagers
 from google.pubsub_v1.types import pubsub
 from google.pubsub_v1.types import TimeoutType
@@ -127,7 +139,7 @@ class PublisherAsyncClient:
         The API endpoint is determined in the following order:
         (1) if `client_options.api_endpoint` if provided, use the provided one.
         (2) if `GOOGLE_API_USE_CLIENT_CERTIFICATE` environment variable is "always", use the
-        default mTLS endpoint; if the environment variabel is "never", use the default API
+        default mTLS endpoint; if the environment variable is "never", use the default API
         endpoint; otherwise if client cert source exists, use the default mTLS endpoint, otherwise
         use the default API endpoint.
 
@@ -163,9 +175,9 @@ class PublisherAsyncClient:
     def __init__(
         self,
         *,
-        credentials: ga_credentials.Credentials = None,
+        credentials: Optional[ga_credentials.Credentials] = None,
         transport: Union[str, PublisherTransport] = "grpc_asyncio",
-        client_options: ClientOptions = None,
+        client_options: Optional[ClientOptions] = None,
         client_info: gapic_v1.client_info.ClientInfo = DEFAULT_CLIENT_INFO,
     ) -> None:
         """Instantiates the publisher client.
@@ -209,9 +221,9 @@ class PublisherAsyncClient:
 
     async def create_topic(
         self,
-        request: Union[pubsub.Topic, dict] = None,
+        request: Optional[Union[pubsub.Topic, dict]] = None,
         *,
-        name: str = None,
+        name: Optional[str] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: TimeoutType = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
@@ -222,6 +234,13 @@ class PublisherAsyncClient:
 
         .. code-block:: python
 
+            # This snippet has been automatically generated and should be regarded as a
+            # code template only.
+            # It will require modifications to work:
+            # - It may require correct/in-range values for request initialization.
+            # - It may require specifying regional endpoints when creating the service
+            #   client as shown in:
+            #   https://googleapis.dev/python/google-api-core/latest/client_options.html
             from google import pubsub_v1
 
             async def sample_create_topic():
@@ -240,7 +259,7 @@ class PublisherAsyncClient:
                 print(response)
 
         Args:
-            request (Union[google.pubsub_v1.types.Topic, dict]):
+            request (Optional[Union[google.pubsub_v1.types.Topic, dict]]):
                 The request object. A topic resource.
             name (:class:`str`):
                 Required. The name of the topic. It must have the format
@@ -319,8 +338,10 @@ class PublisherAsyncClient:
 
     async def update_topic(
         self,
-        request: Union[pubsub.UpdateTopicRequest, dict] = None,
+        request: Optional[Union[pubsub.UpdateTopicRequest, dict]] = None,
         *,
+        topic: Optional[pubsub.Topic] = None,
+        update_mask: Optional[field_mask_pb2.FieldMask] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: TimeoutType = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
@@ -330,6 +351,13 @@ class PublisherAsyncClient:
 
         .. code-block:: python
 
+            # This snippet has been automatically generated and should be regarded as a
+            # code template only.
+            # It will require modifications to work:
+            # - It may require correct/in-range values for request initialization.
+            # - It may require specifying regional endpoints when creating the service
+            #   client as shown in:
+            #   https://googleapis.dev/python/google-api-core/latest/client_options.html
             from google import pubsub_v1
 
             async def sample_update_topic():
@@ -351,8 +379,25 @@ class PublisherAsyncClient:
                 print(response)
 
         Args:
-            request (Union[google.pubsub_v1.types.UpdateTopicRequest, dict]):
+            request (Optional[Union[google.pubsub_v1.types.UpdateTopicRequest, dict]]):
                 The request object. Request for the UpdateTopic method.
+            topic (:class:`google.pubsub_v1.types.Topic`):
+                Required. The updated topic object.
+                This corresponds to the ``topic`` field
+                on the ``request`` instance; if ``request`` is provided, this
+                should not be set.
+            update_mask (:class:`google.protobuf.field_mask_pb2.FieldMask`):
+                Required. Indicates which fields in the provided topic
+                to update. Must be specified and non-empty. Note that if
+                ``update_mask`` contains "message_storage_policy" but
+                the ``message_storage_policy`` is not set in the
+                ``topic`` provided above, then the updated value is
+                determined by the policy configured at the project or
+                organization level.
+
+                This corresponds to the ``update_mask`` field
+                on the ``request`` instance; if ``request`` is provided, this
+                should not be set.
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (TimeoutType):
@@ -365,7 +410,23 @@ class PublisherAsyncClient:
                 A topic resource.
         """
         # Create or coerce a protobuf request object.
+        # Quick check: If we got a request object, we should *not* have
+        # gotten any keyword arguments that map to the request.
+        has_flattened_params = any([topic, update_mask])
+        if request is not None and has_flattened_params:
+            raise ValueError(
+                "If the `request` argument is set, then none of "
+                "the individual field arguments should be set."
+            )
+
         request = pubsub.UpdateTopicRequest(request)
+
+        # If we have keyword arguments corresponding to fields on the
+        # request, apply these.
+        if topic is not None:
+            request.topic = topic
+        if update_mask is not None:
+            request.update_mask = update_mask
 
         # Wrap the RPC method; this adds retry and timeout information,
         # and friendly error handling.
@@ -405,10 +466,10 @@ class PublisherAsyncClient:
 
     async def publish(
         self,
-        request: Union[pubsub.PublishRequest, dict] = None,
+        request: Optional[Union[pubsub.PublishRequest, dict]] = None,
         *,
-        topic: str = None,
-        messages: Sequence[pubsub.PubsubMessage] = None,
+        topic: Optional[str] = None,
+        messages: Optional[MutableSequence[pubsub.PubsubMessage]] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: TimeoutType = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
@@ -418,6 +479,13 @@ class PublisherAsyncClient:
 
         .. code-block:: python
 
+            # This snippet has been automatically generated and should be regarded as a
+            # code template only.
+            # It will require modifications to work:
+            # - It may require correct/in-range values for request initialization.
+            # - It may require specifying regional endpoints when creating the service
+            #   client as shown in:
+            #   https://googleapis.dev/python/google-api-core/latest/client_options.html
             from google import pubsub_v1
 
             async def sample_publish():
@@ -436,7 +504,7 @@ class PublisherAsyncClient:
                 print(response)
 
         Args:
-            request (Union[google.pubsub_v1.types.PublishRequest, dict]):
+            request (Optional[Union[google.pubsub_v1.types.PublishRequest, dict]]):
                 The request object. Request for the Publish method.
             topic (:class:`str`):
                 Required. The messages in the request will be published
@@ -446,7 +514,7 @@ class PublisherAsyncClient:
                 This corresponds to the ``topic`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
-            messages (:class:`Sequence[google.pubsub_v1.types.PubsubMessage]`):
+            messages (:class:`MutableSequence[google.pubsub_v1.types.PubsubMessage]`):
                 Required. The messages to publish.
                 This corresponds to the ``messages`` field
                 on the ``request`` instance; if ``request`` is provided, this
@@ -523,9 +591,9 @@ class PublisherAsyncClient:
 
     async def get_topic(
         self,
-        request: Union[pubsub.GetTopicRequest, dict] = None,
+        request: Optional[Union[pubsub.GetTopicRequest, dict]] = None,
         *,
-        topic: str = None,
+        topic: Optional[str] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: TimeoutType = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
@@ -534,6 +602,13 @@ class PublisherAsyncClient:
 
         .. code-block:: python
 
+            # This snippet has been automatically generated and should be regarded as a
+            # code template only.
+            # It will require modifications to work:
+            # - It may require correct/in-range values for request initialization.
+            # - It may require specifying regional endpoints when creating the service
+            #   client as shown in:
+            #   https://googleapis.dev/python/google-api-core/latest/client_options.html
             from google import pubsub_v1
 
             async def sample_get_topic():
@@ -552,7 +627,7 @@ class PublisherAsyncClient:
                 print(response)
 
         Args:
-            request (Union[google.pubsub_v1.types.GetTopicRequest, dict]):
+            request (Optional[Union[google.pubsub_v1.types.GetTopicRequest, dict]]):
                 The request object. Request for the GetTopic method.
             topic (:class:`str`):
                 Required. The name of the topic to get. Format is
@@ -627,9 +702,9 @@ class PublisherAsyncClient:
 
     async def list_topics(
         self,
-        request: Union[pubsub.ListTopicsRequest, dict] = None,
+        request: Optional[Union[pubsub.ListTopicsRequest, dict]] = None,
         *,
-        project: str = None,
+        project: Optional[str] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: TimeoutType = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
@@ -638,6 +713,13 @@ class PublisherAsyncClient:
 
         .. code-block:: python
 
+            # This snippet has been automatically generated and should be regarded as a
+            # code template only.
+            # It will require modifications to work:
+            # - It may require correct/in-range values for request initialization.
+            # - It may require specifying regional endpoints when creating the service
+            #   client as shown in:
+            #   https://googleapis.dev/python/google-api-core/latest/client_options.html
             from google import pubsub_v1
 
             async def sample_list_topics():
@@ -657,8 +739,8 @@ class PublisherAsyncClient:
                     print(response)
 
         Args:
-            request (Union[google.pubsub_v1.types.ListTopicsRequest, dict]):
-                The request object. Request for the `ListTopics` method.
+            request (Optional[Union[google.pubsub_v1.types.ListTopicsRequest, dict]]):
+                The request object. Request for the ``ListTopics`` method.
             project (:class:`str`):
                 Required. The name of the project in which to list
                 topics. Format is ``projects/{project-id}``.
@@ -745,9 +827,9 @@ class PublisherAsyncClient:
 
     async def list_topic_subscriptions(
         self,
-        request: Union[pubsub.ListTopicSubscriptionsRequest, dict] = None,
+        request: Optional[Union[pubsub.ListTopicSubscriptionsRequest, dict]] = None,
         *,
-        topic: str = None,
+        topic: Optional[str] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: TimeoutType = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
@@ -757,6 +839,13 @@ class PublisherAsyncClient:
 
         .. code-block:: python
 
+            # This snippet has been automatically generated and should be regarded as a
+            # code template only.
+            # It will require modifications to work:
+            # - It may require correct/in-range values for request initialization.
+            # - It may require specifying regional endpoints when creating the service
+            #   client as shown in:
+            #   https://googleapis.dev/python/google-api-core/latest/client_options.html
             from google import pubsub_v1
 
             async def sample_list_topic_subscriptions():
@@ -776,9 +865,8 @@ class PublisherAsyncClient:
                     print(response)
 
         Args:
-            request (Union[google.pubsub_v1.types.ListTopicSubscriptionsRequest, dict]):
-                The request object. Request for the
-                `ListTopicSubscriptions` method.
+            request (Optional[Union[google.pubsub_v1.types.ListTopicSubscriptionsRequest, dict]]):
+                The request object. Request for the ``ListTopicSubscriptions`` method.
             topic (:class:`str`):
                 Required. The name of the topic that subscriptions are
                 attached to. Format is
@@ -866,9 +954,9 @@ class PublisherAsyncClient:
 
     async def list_topic_snapshots(
         self,
-        request: Union[pubsub.ListTopicSnapshotsRequest, dict] = None,
+        request: Optional[Union[pubsub.ListTopicSnapshotsRequest, dict]] = None,
         *,
-        topic: str = None,
+        topic: Optional[str] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: TimeoutType = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
@@ -882,6 +970,13 @@ class PublisherAsyncClient:
 
         .. code-block:: python
 
+            # This snippet has been automatically generated and should be regarded as a
+            # code template only.
+            # It will require modifications to work:
+            # - It may require correct/in-range values for request initialization.
+            # - It may require specifying regional endpoints when creating the service
+            #   client as shown in:
+            #   https://googleapis.dev/python/google-api-core/latest/client_options.html
             from google import pubsub_v1
 
             async def sample_list_topic_snapshots():
@@ -901,9 +996,8 @@ class PublisherAsyncClient:
                     print(response)
 
         Args:
-            request (Union[google.pubsub_v1.types.ListTopicSnapshotsRequest, dict]):
-                The request object. Request for the `ListTopicSnapshots`
-                method.
+            request (Optional[Union[google.pubsub_v1.types.ListTopicSnapshotsRequest, dict]]):
+                The request object. Request for the ``ListTopicSnapshots`` method.
             topic (:class:`str`):
                 Required. The name of the topic that snapshots are
                 attached to. Format is
@@ -991,9 +1085,9 @@ class PublisherAsyncClient:
 
     async def delete_topic(
         self,
-        request: Union[pubsub.DeleteTopicRequest, dict] = None,
+        request: Optional[Union[pubsub.DeleteTopicRequest, dict]] = None,
         *,
-        topic: str = None,
+        topic: Optional[str] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: TimeoutType = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
@@ -1007,6 +1101,13 @@ class PublisherAsyncClient:
 
         .. code-block:: python
 
+            # This snippet has been automatically generated and should be regarded as a
+            # code template only.
+            # It will require modifications to work:
+            # - It may require correct/in-range values for request initialization.
+            # - It may require specifying regional endpoints when creating the service
+            #   client as shown in:
+            #   https://googleapis.dev/python/google-api-core/latest/client_options.html
             from google import pubsub_v1
 
             async def sample_delete_topic():
@@ -1022,9 +1123,8 @@ class PublisherAsyncClient:
                 await client.delete_topic(request=request)
 
         Args:
-            request (Union[google.pubsub_v1.types.DeleteTopicRequest, dict]):
-                The request object. Request for the `DeleteTopic`
-                method.
+            request (Optional[Union[google.pubsub_v1.types.DeleteTopicRequest, dict]]):
+                The request object. Request for the ``DeleteTopic`` method.
             topic (:class:`str`):
                 Required. Name of the topic to delete. Format is
                 ``projects/{project}/topics/{topic}``.
@@ -1089,7 +1189,7 @@ class PublisherAsyncClient:
 
     async def detach_subscription(
         self,
-        request: Union[pubsub.DetachSubscriptionRequest, dict] = None,
+        request: Optional[Union[pubsub.DetachSubscriptionRequest, dict]] = None,
         *,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: TimeoutType = gapic_v1.method.DEFAULT,
@@ -1103,6 +1203,13 @@ class PublisherAsyncClient:
 
         .. code-block:: python
 
+            # This snippet has been automatically generated and should be regarded as a
+            # code template only.
+            # It will require modifications to work:
+            # - It may require correct/in-range values for request initialization.
+            # - It may require specifying regional endpoints when creating the service
+            #   client as shown in:
+            #   https://googleapis.dev/python/google-api-core/latest/client_options.html
             from google import pubsub_v1
 
             async def sample_detach_subscription():
@@ -1121,7 +1228,7 @@ class PublisherAsyncClient:
                 print(response)
 
         Args:
-            request (Union[google.pubsub_v1.types.DetachSubscriptionRequest, dict]):
+            request (Optional[Union[google.pubsub_v1.types.DetachSubscriptionRequest, dict]]):
                 The request object. Request for the DetachSubscription
                 method.
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
@@ -1178,7 +1285,7 @@ class PublisherAsyncClient:
 
     async def set_iam_policy(
         self,
-        request: iam_policy_pb2.SetIamPolicyRequest = None,
+        request: Optional[iam_policy_pb2.SetIamPolicyRequest] = None,
         *,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: TimeoutType = gapic_v1.method.DEFAULT,
@@ -1298,7 +1405,7 @@ class PublisherAsyncClient:
 
     async def get_iam_policy(
         self,
-        request: iam_policy_pb2.GetIamPolicyRequest = None,
+        request: Optional[iam_policy_pb2.GetIamPolicyRequest] = None,
         *,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: TimeoutType = gapic_v1.method.DEFAULT,
@@ -1420,7 +1527,7 @@ class PublisherAsyncClient:
 
     async def test_iam_permissions(
         self,
-        request: iam_policy_pb2.TestIamPermissionsRequest = None,
+        request: Optional[iam_policy_pb2.TestIamPermissionsRequest] = None,
         *,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: TimeoutType = gapic_v1.method.DEFAULT,
@@ -1485,14 +1592,9 @@ class PublisherAsyncClient:
         await self.transport.close()
 
 
-try:
-    DEFAULT_CLIENT_INFO = gapic_v1.client_info.ClientInfo(
-        client_library_version=pkg_resources.get_distribution(
-            "google-cloud-pubsub",
-        ).version,
-    )
-except pkg_resources.DistributionNotFound:
-    DEFAULT_CLIENT_INFO = gapic_v1.client_info.ClientInfo()
+DEFAULT_CLIENT_INFO = gapic_v1.client_info.ClientInfo(
+    client_library_version=package_version.__version__
+)
 
 
 __all__ = ("PublisherAsyncClient",)

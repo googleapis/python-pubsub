@@ -14,6 +14,7 @@
 
 import collections
 import queue
+import sys
 import threading
 
 from google.cloud.pubsub_v1.subscriber._protocol import dispatcher
@@ -22,7 +23,12 @@ from google.cloud.pubsub_v1.subscriber._protocol import requests
 from google.cloud.pubsub_v1.subscriber._protocol import streaming_pull_manager
 from google.cloud.pubsub_v1.subscriber import futures
 
-import mock
+# special case python < 3.8
+if sys.version_info.major == 3 and sys.version_info.minor < 8:
+    import mock
+else:
+    from unittest import mock
+
 import pytest
 from google.cloud.pubsub_v1.subscriber.exceptions import (
     AcknowledgeStatus,
@@ -431,7 +437,7 @@ def test_ack_splitting_large_payload():
     dispatcher_.ack(items)
 
     calls = manager.send_unary_ack.call_args_list
-    assert len(calls) == 3
+    assert len(calls) == 6
 
     all_ack_ids = {item.ack_id for item in items}
     sent_ack_ids = collections.Counter()
@@ -639,16 +645,20 @@ def test_nack():
     ]
     manager.send_unary_modack.return_value = (items, [])
     dispatcher_.nack(items)
+    calls = manager.send_unary_modack.call_args_list
+    assert len(calls) == 1
 
-    manager.send_unary_modack.assert_called_once_with(
-        modify_deadline_ack_ids=["ack_id_string"],
-        modify_deadline_seconds=[0],
-        ack_reqs_dict={
+    for call in calls:
+        modify_deadline_ack_ids = call[1]["modify_deadline_ack_ids"]
+        assert list(modify_deadline_ack_ids) == ["ack_id_string"]
+        modify_deadline_seconds = call[1]["modify_deadline_seconds"]
+        assert list(modify_deadline_seconds) == [0]
+        ack_reqs_dict = call[1]["ack_reqs_dict"]
+        assert ack_reqs_dict == {
             "ack_id_string": requests.ModAckRequest(
                 ack_id="ack_id_string", seconds=0, future=None
             )
-        },
-    )
+        }
 
 
 def test_modify_ack_deadline():
@@ -660,12 +670,16 @@ def test_modify_ack_deadline():
     items = [requests.ModAckRequest(ack_id="ack_id_string", seconds=60, future=None)]
     manager.send_unary_modack.return_value = (items, [])
     dispatcher_.modify_ack_deadline(items)
+    calls = manager.send_unary_modack.call_args_list
+    assert len(calls) == 1
 
-    manager.send_unary_modack.assert_called_once_with(
-        modify_deadline_ack_ids=["ack_id_string"],
-        modify_deadline_seconds=[60],
-        ack_reqs_dict={"ack_id_string": items[0]},
-    )
+    for call in calls:
+        modify_deadline_ack_ids = call[1]["modify_deadline_ack_ids"]
+        assert list(modify_deadline_ack_ids) == ["ack_id_string"]
+        modify_deadline_seconds = call[1]["modify_deadline_seconds"]
+        assert list(modify_deadline_seconds) == [60]
+        ack_reqs_dict = call[1]["ack_reqs_dict"]
+        assert ack_reqs_dict == {"ack_id_string": items[0]}
 
 
 def test_modify_ack_deadline_splitting_large_payload():
@@ -683,14 +697,47 @@ def test_modify_ack_deadline_splitting_large_payload():
     dispatcher_.modify_ack_deadline(items)
 
     calls = manager.send_unary_modack.call_args_list
-    assert len(calls) == 3
+    assert len(calls) == 6
 
     all_ack_ids = {item.ack_id for item in items}
     sent_ack_ids = collections.Counter()
 
     for call in calls:
-        modack_ackids = call[1]["modify_deadline_ack_ids"]
+        modack_ackids = list(call[1]["modify_deadline_ack_ids"])
         assert len(modack_ackids) <= dispatcher._ACK_IDS_BATCH_SIZE
+        sent_ack_ids.update(modack_ackids)
+
+    assert set(sent_ack_ids) == all_ack_ids  # all messages should have been MODACK-ed
+    assert sent_ack_ids.most_common(1)[0][1] == 1  # each message MODACK-ed exactly once
+
+
+def test_modify_ack_deadline_splitting_large_payload_with_default_deadline():
+    manager = mock.create_autospec(
+        streaming_pull_manager.StreamingPullManager, instance=True
+    )
+    dispatcher_ = dispatcher.Dispatcher(manager, mock.sentinel.queue)
+
+    items = [
+        # use realistic lengths for ACK IDs (max 176 bytes)
+        requests.ModAckRequest(ack_id=str(i).zfill(176), seconds=60, future=None)
+        for i in range(5001)
+    ]
+    manager.send_unary_modack.return_value = (items, [])
+    dispatcher_.modify_ack_deadline(items, 60)
+
+    calls = manager.send_unary_modack.call_args_list
+    assert len(calls) == 6
+
+    all_ack_ids = {item.ack_id for item in items}
+    sent_ack_ids = collections.Counter()
+
+    for call in calls:
+        modack_ackids = list(call[1]["modify_deadline_ack_ids"])
+        modack_deadline_seconds = call[1]["modify_deadline_seconds"]
+        default_deadline = call[1]["default_deadline"]
+        assert len(list(modack_ackids)) <= dispatcher._ACK_IDS_BATCH_SIZE
+        assert modack_deadline_seconds is None
+        assert default_deadline == 60
         sent_ack_ids.update(modack_ackids)
 
     assert set(sent_ack_ids) == all_ack_ids  # all messages should have been MODACK-ed

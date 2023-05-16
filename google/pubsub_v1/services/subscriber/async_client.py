@@ -19,6 +19,8 @@ import re
 from typing import (
     Dict,
     Mapping,
+    MutableMapping,
+    MutableSequence,
     Optional,
     AsyncIterable,
     Awaitable,
@@ -28,8 +30,9 @@ from typing import (
     Type,
     Union,
 )
+
 import warnings
-import pkg_resources
+from google.pubsub_v1 import gapic_version as package_version
 
 from google.api_core.client_options import ClientOptions
 from google.api_core import exceptions as core_exceptions
@@ -46,6 +49,7 @@ except AttributeError:  # pragma: NO COVER
 from google.iam.v1 import iam_policy_pb2  # type: ignore
 from google.iam.v1 import policy_pb2  # type: ignore
 from google.protobuf import duration_pb2  # type: ignore
+from google.protobuf import field_mask_pb2  # type: ignore
 from google.protobuf import timestamp_pb2  # type: ignore
 from google.pubsub_v1.services.subscriber import pagers
 from google.pubsub_v1.types import pubsub
@@ -140,7 +144,7 @@ class SubscriberAsyncClient:
         The API endpoint is determined in the following order:
         (1) if `client_options.api_endpoint` if provided, use the provided one.
         (2) if `GOOGLE_API_USE_CLIENT_CERTIFICATE` environment variable is "always", use the
-        default mTLS endpoint; if the environment variabel is "never", use the default API
+        default mTLS endpoint; if the environment variable is "never", use the default API
         endpoint; otherwise if client cert source exists, use the default mTLS endpoint, otherwise
         use the default API endpoint.
 
@@ -176,9 +180,9 @@ class SubscriberAsyncClient:
     def __init__(
         self,
         *,
-        credentials: ga_credentials.Credentials = None,
+        credentials: Optional[ga_credentials.Credentials] = None,
         transport: Union[str, SubscriberTransport] = "grpc_asyncio",
-        client_options: ClientOptions = None,
+        client_options: Optional[ClientOptions] = None,
         client_info: gapic_v1.client_info.ClientInfo = DEFAULT_CLIENT_INFO,
     ) -> None:
         """Instantiates the subscriber client.
@@ -222,14 +226,14 @@ class SubscriberAsyncClient:
 
     async def create_subscription(
         self,
-        request: Union[pubsub.Subscription, dict] = None,
+        request: Optional[Union[pubsub.Subscription, dict]] = None,
         *,
-        name: str = None,
-        topic: str = None,
-        push_config: pubsub.PushConfig = None,
-        ack_deadline_seconds: int = None,
+        name: Optional[str] = None,
+        topic: Optional[str] = None,
+        push_config: Optional[pubsub.PushConfig] = None,
+        ack_deadline_seconds: Optional[int] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        timeout: Union[float, object] = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pubsub.Subscription:
         r"""Creates a subscription to a given topic. See the [resource name
@@ -248,6 +252,13 @@ class SubscriberAsyncClient:
 
         .. code-block:: python
 
+            # This snippet has been automatically generated and should be regarded as a
+            # code template only.
+            # It will require modifications to work:
+            # - It may require correct/in-range values for request initialization.
+            # - It may require specifying regional endpoints when creating the service
+            #   client as shown in:
+            #   https://googleapis.dev/python/google-api-core/latest/client_options.html
             from google import pubsub_v1
 
             async def sample_create_subscription():
@@ -267,8 +278,11 @@ class SubscriberAsyncClient:
                 print(response)
 
         Args:
-            request (Union[google.pubsub_v1.types.Subscription, dict]):
-                The request object. A subscription resource.
+            request (Optional[Union[google.pubsub_v1.types.Subscription, dict]]):
+                The request object. A subscription resource. If none of ``push_config``,
+                ``bigquery_config``, or ``cloud_storage_config`` is set,
+                then the subscriber will pull and ack messages using API
+                methods. At most one of these fields may be set.
             name (:class:`str`):
                 Required. The name of the subscription. It must have the
                 format
@@ -294,11 +308,9 @@ class SubscriberAsyncClient:
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
             push_config (:class:`google.pubsub_v1.types.PushConfig`):
-                If push delivery is used with this subscription, this
-                field is used to configure it. Either ``pushConfig`` or
-                ``bigQueryConfig`` can be set, but not both. If both are
-                empty, then the subscriber will pull and ack messages
-                using API methods.
+                If push delivery is used with this
+                subscription, this field is used to
+                configure it.
 
                 This corresponds to the ``push_config`` field
                 on the ``request`` instance; if ``request`` is provided, this
@@ -308,7 +320,7 @@ class SubscriberAsyncClient:
                 Pub/Sub waits for the subscriber to acknowledge receipt
                 before resending the message. In the interval after the
                 message is delivered and before it is acknowledged, it
-                is considered to be outstanding. During that time
+                is considered to be *outstanding*. During that time
                 period, the message will not be redelivered (on a
                 best-effort basis).
 
@@ -340,7 +352,11 @@ class SubscriberAsyncClient:
 
         Returns:
             google.pubsub_v1.types.Subscription:
-                A subscription resource.
+                A subscription resource. If none of push_config, bigquery_config, or
+                   cloud_storage_config is set, then the subscriber will
+                   pull and ack messages using API methods. At most one
+                   of these fields may be set.
+
         """
         # Create or coerce a protobuf request object.
         # Quick check: If we got a request object, we should *not* have
@@ -403,17 +419,24 @@ class SubscriberAsyncClient:
 
     async def get_subscription(
         self,
-        request: Union[pubsub.GetSubscriptionRequest, dict] = None,
+        request: Optional[Union[pubsub.GetSubscriptionRequest, dict]] = None,
         *,
-        subscription: str = None,
+        subscription: Optional[str] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        timeout: Union[float, object] = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pubsub.Subscription:
         r"""Gets the configuration details of a subscription.
 
         .. code-block:: python
 
+            # This snippet has been automatically generated and should be regarded as a
+            # code template only.
+            # It will require modifications to work:
+            # - It may require correct/in-range values for request initialization.
+            # - It may require specifying regional endpoints when creating the service
+            #   client as shown in:
+            #   https://googleapis.dev/python/google-api-core/latest/client_options.html
             from google import pubsub_v1
 
             async def sample_get_subscription():
@@ -432,7 +455,7 @@ class SubscriberAsyncClient:
                 print(response)
 
         Args:
-            request (Union[google.pubsub_v1.types.GetSubscriptionRequest, dict]):
+            request (Optional[Union[google.pubsub_v1.types.GetSubscriptionRequest, dict]]):
                 The request object. Request for the GetSubscription
                 method.
             subscription (:class:`str`):
@@ -450,7 +473,11 @@ class SubscriberAsyncClient:
 
         Returns:
             google.pubsub_v1.types.Subscription:
-                A subscription resource.
+                A subscription resource. If none of push_config, bigquery_config, or
+                   cloud_storage_config is set, then the subscriber will
+                   pull and ack messages using API methods. At most one
+                   of these fields may be set.
+
         """
         # Create or coerce a protobuf request object.
         # Quick check: If we got a request object, we should *not* have
@@ -509,10 +536,12 @@ class SubscriberAsyncClient:
 
     async def update_subscription(
         self,
-        request: Union[pubsub.UpdateSubscriptionRequest, dict] = None,
+        request: Optional[Union[pubsub.UpdateSubscriptionRequest, dict]] = None,
         *,
+        subscription: Optional[pubsub.Subscription] = None,
+        update_mask: Optional[field_mask_pb2.FieldMask] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        timeout: Union[float, object] = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pubsub.Subscription:
         r"""Updates an existing subscription. Note that certain
@@ -521,6 +550,13 @@ class SubscriberAsyncClient:
 
         .. code-block:: python
 
+            # This snippet has been automatically generated and should be regarded as a
+            # code template only.
+            # It will require modifications to work:
+            # - It may require correct/in-range values for request initialization.
+            # - It may require specifying regional endpoints when creating the service
+            #   client as shown in:
+            #   https://googleapis.dev/python/google-api-core/latest/client_options.html
             from google import pubsub_v1
 
             async def sample_update_subscription():
@@ -543,9 +579,24 @@ class SubscriberAsyncClient:
                 print(response)
 
         Args:
-            request (Union[google.pubsub_v1.types.UpdateSubscriptionRequest, dict]):
+            request (Optional[Union[google.pubsub_v1.types.UpdateSubscriptionRequest, dict]]):
                 The request object. Request for the UpdateSubscription
                 method.
+            subscription (:class:`google.pubsub_v1.types.Subscription`):
+                Required. The updated subscription
+                object.
+
+                This corresponds to the ``subscription`` field
+                on the ``request`` instance; if ``request`` is provided, this
+                should not be set.
+            update_mask (:class:`google.protobuf.field_mask_pb2.FieldMask`):
+                Required. Indicates which fields in
+                the provided subscription to update.
+                Must be specified and non-empty.
+
+                This corresponds to the ``update_mask`` field
+                on the ``request`` instance; if ``request`` is provided, this
+                should not be set.
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
@@ -554,10 +605,30 @@ class SubscriberAsyncClient:
 
         Returns:
             google.pubsub_v1.types.Subscription:
-                A subscription resource.
+                A subscription resource. If none of push_config, bigquery_config, or
+                   cloud_storage_config is set, then the subscriber will
+                   pull and ack messages using API methods. At most one
+                   of these fields may be set.
+
         """
         # Create or coerce a protobuf request object.
+        # Quick check: If we got a request object, we should *not* have
+        # gotten any keyword arguments that map to the request.
+        has_flattened_params = any([subscription, update_mask])
+        if request is not None and has_flattened_params:
+            raise ValueError(
+                "If the `request` argument is set, then none of "
+                "the individual field arguments should be set."
+            )
+
         request = pubsub.UpdateSubscriptionRequest(request)
+
+        # If we have keyword arguments corresponding to fields on the
+        # request, apply these.
+        if subscription is not None:
+            request.subscription = subscription
+        if update_mask is not None:
+            request.update_mask = update_mask
 
         # Wrap the RPC method; this adds retry and timeout information,
         # and friendly error handling.
@@ -597,17 +668,24 @@ class SubscriberAsyncClient:
 
     async def list_subscriptions(
         self,
-        request: Union[pubsub.ListSubscriptionsRequest, dict] = None,
+        request: Optional[Union[pubsub.ListSubscriptionsRequest, dict]] = None,
         *,
-        project: str = None,
+        project: Optional[str] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        timeout: Union[float, object] = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pagers.ListSubscriptionsAsyncPager:
         r"""Lists matching subscriptions.
 
         .. code-block:: python
 
+            # This snippet has been automatically generated and should be regarded as a
+            # code template only.
+            # It will require modifications to work:
+            # - It may require correct/in-range values for request initialization.
+            # - It may require specifying regional endpoints when creating the service
+            #   client as shown in:
+            #   https://googleapis.dev/python/google-api-core/latest/client_options.html
             from google import pubsub_v1
 
             async def sample_list_subscriptions():
@@ -627,9 +705,8 @@ class SubscriberAsyncClient:
                     print(response)
 
         Args:
-            request (Union[google.pubsub_v1.types.ListSubscriptionsRequest, dict]):
-                The request object. Request for the `ListSubscriptions`
-                method.
+            request (Optional[Union[google.pubsub_v1.types.ListSubscriptionsRequest, dict]]):
+                The request object. Request for the ``ListSubscriptions`` method.
             project (:class:`str`):
                 Required. The name of the project in which to list
                 subscriptions. Format is ``projects/{project-id}``.
@@ -715,11 +792,11 @@ class SubscriberAsyncClient:
 
     async def delete_subscription(
         self,
-        request: Union[pubsub.DeleteSubscriptionRequest, dict] = None,
+        request: Optional[Union[pubsub.DeleteSubscriptionRequest, dict]] = None,
         *,
-        subscription: str = None,
+        subscription: Optional[str] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        timeout: Union[float, object] = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> None:
         r"""Deletes an existing subscription. All messages retained in the
@@ -731,6 +808,13 @@ class SubscriberAsyncClient:
 
         .. code-block:: python
 
+            # This snippet has been automatically generated and should be regarded as a
+            # code template only.
+            # It will require modifications to work:
+            # - It may require correct/in-range values for request initialization.
+            # - It may require specifying regional endpoints when creating the service
+            #   client as shown in:
+            #   https://googleapis.dev/python/google-api-core/latest/client_options.html
             from google import pubsub_v1
 
             async def sample_delete_subscription():
@@ -746,7 +830,7 @@ class SubscriberAsyncClient:
                 await client.delete_subscription(request=request)
 
         Args:
-            request (Union[google.pubsub_v1.types.DeleteSubscriptionRequest, dict]):
+            request (Optional[Union[google.pubsub_v1.types.DeleteSubscriptionRequest, dict]]):
                 The request object. Request for the DeleteSubscription
                 method.
             subscription (:class:`str`):
@@ -814,13 +898,13 @@ class SubscriberAsyncClient:
 
     async def modify_ack_deadline(
         self,
-        request: Union[pubsub.ModifyAckDeadlineRequest, dict] = None,
+        request: Optional[Union[pubsub.ModifyAckDeadlineRequest, dict]] = None,
         *,
-        subscription: str = None,
-        ack_ids: Sequence[str] = None,
-        ack_deadline_seconds: int = None,
+        subscription: Optional[str] = None,
+        ack_ids: Optional[MutableSequence[str]] = None,
+        ack_deadline_seconds: Optional[int] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        timeout: Union[float, object] = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> None:
         r"""Modifies the ack deadline for a specific message. This method is
@@ -832,6 +916,13 @@ class SubscriberAsyncClient:
 
         .. code-block:: python
 
+            # This snippet has been automatically generated and should be regarded as a
+            # code template only.
+            # It will require modifications to work:
+            # - It may require correct/in-range values for request initialization.
+            # - It may require specifying regional endpoints when creating the service
+            #   client as shown in:
+            #   https://googleapis.dev/python/google-api-core/latest/client_options.html
             from google import pubsub_v1
 
             async def sample_modify_ack_deadline():
@@ -841,7 +932,7 @@ class SubscriberAsyncClient:
                 # Initialize request argument(s)
                 request = pubsub_v1.ModifyAckDeadlineRequest(
                     subscription="subscription_value",
-                    ack_ids=['ack_ids_value_1', 'ack_ids_value_2'],
+                    ack_ids=['ack_ids_value1', 'ack_ids_value2'],
                     ack_deadline_seconds=2066,
                 )
 
@@ -849,7 +940,7 @@ class SubscriberAsyncClient:
                 await client.modify_ack_deadline(request=request)
 
         Args:
-            request (Union[google.pubsub_v1.types.ModifyAckDeadlineRequest, dict]):
+            request (Optional[Union[google.pubsub_v1.types.ModifyAckDeadlineRequest, dict]]):
                 The request object. Request for the ModifyAckDeadline
                 method.
             subscription (:class:`str`):
@@ -859,7 +950,7 @@ class SubscriberAsyncClient:
                 This corresponds to the ``subscription`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
-            ack_ids (:class:`Sequence[str]`):
+            ack_ids (:class:`MutableSequence[str]`):
                 Required. List of acknowledgment IDs.
                 This corresponds to the ``ack_ids`` field
                 on the ``request`` instance; if ``request`` is provided, this
@@ -942,12 +1033,12 @@ class SubscriberAsyncClient:
 
     async def acknowledge(
         self,
-        request: Union[pubsub.AcknowledgeRequest, dict] = None,
+        request: Optional[Union[pubsub.AcknowledgeRequest, dict]] = None,
         *,
-        subscription: str = None,
-        ack_ids: Sequence[str] = None,
+        subscription: Optional[str] = None,
+        ack_ids: Optional[MutableSequence[str]] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        timeout: Union[float, object] = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> None:
         r"""Acknowledges the messages associated with the ``ack_ids`` in the
@@ -961,6 +1052,13 @@ class SubscriberAsyncClient:
 
         .. code-block:: python
 
+            # This snippet has been automatically generated and should be regarded as a
+            # code template only.
+            # It will require modifications to work:
+            # - It may require correct/in-range values for request initialization.
+            # - It may require specifying regional endpoints when creating the service
+            #   client as shown in:
+            #   https://googleapis.dev/python/google-api-core/latest/client_options.html
             from google import pubsub_v1
 
             async def sample_acknowledge():
@@ -970,14 +1068,14 @@ class SubscriberAsyncClient:
                 # Initialize request argument(s)
                 request = pubsub_v1.AcknowledgeRequest(
                     subscription="subscription_value",
-                    ack_ids=['ack_ids_value_1', 'ack_ids_value_2'],
+                    ack_ids=['ack_ids_value1', 'ack_ids_value2'],
                 )
 
                 # Make the request
                 await client.acknowledge(request=request)
 
         Args:
-            request (Union[google.pubsub_v1.types.AcknowledgeRequest, dict]):
+            request (Optional[Union[google.pubsub_v1.types.AcknowledgeRequest, dict]]):
                 The request object. Request for the Acknowledge method.
             subscription (:class:`str`):
                 Required. The subscription whose message is being
@@ -987,7 +1085,7 @@ class SubscriberAsyncClient:
                 This corresponds to the ``subscription`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
-            ack_ids (:class:`Sequence[str]`):
+            ack_ids (:class:`MutableSequence[str]`):
                 Required. The acknowledgment ID for the messages being
                 acknowledged that was returned by the Pub/Sub system in
                 the ``Pull`` response. Must not be empty.
@@ -1055,21 +1153,26 @@ class SubscriberAsyncClient:
 
     async def pull(
         self,
-        request: Union[pubsub.PullRequest, dict] = None,
+        request: Optional[Union[pubsub.PullRequest, dict]] = None,
         *,
-        subscription: str = None,
-        return_immediately: bool = None,
-        max_messages: int = None,
+        subscription: Optional[str] = None,
+        return_immediately: Optional[bool] = None,
+        max_messages: Optional[int] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        timeout: Union[float, object] = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pubsub.PullResponse:
-        r"""Pulls messages from the server. The server may return
-        ``UNAVAILABLE`` if there are too many concurrent pull requests
-        pending for the given subscription.
+        r"""Pulls messages from the server.
 
         .. code-block:: python
 
+            # This snippet has been automatically generated and should be regarded as a
+            # code template only.
+            # It will require modifications to work:
+            # - It may require correct/in-range values for request initialization.
+            # - It may require specifying regional endpoints when creating the service
+            #   client as shown in:
+            #   https://googleapis.dev/python/google-api-core/latest/client_options.html
             from google import pubsub_v1
 
             async def sample_pull():
@@ -1089,8 +1192,8 @@ class SubscriberAsyncClient:
                 print(response)
 
         Args:
-            request (Union[google.pubsub_v1.types.PullRequest, dict]):
-                The request object. Request for the `Pull` method.
+            request (Optional[Union[google.pubsub_v1.types.PullRequest, dict]]):
+                The request object. Request for the ``Pull`` method.
             subscription (:class:`str`):
                 Required. The subscription from which messages should be
                 pulled. Format is
@@ -1170,6 +1273,7 @@ class SubscriberAsyncClient:
                 multiplier=1.3,
                 predicate=retries.if_exception_type(
                     core_exceptions.Aborted,
+                    core_exceptions.InternalServerError,
                     core_exceptions.ServiceUnavailable,
                     core_exceptions.Unknown,
                 ),
@@ -1200,10 +1304,10 @@ class SubscriberAsyncClient:
 
     def streaming_pull(
         self,
-        requests: AsyncIterator[pubsub.StreamingPullRequest] = None,
+        requests: Optional[AsyncIterator[pubsub.StreamingPullRequest]] = None,
         *,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        timeout: Union[float, object] = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> Awaitable[AsyncIterable[pubsub.StreamingPullResponse]]:
         r"""Establishes a stream with the server, which sends messages down
@@ -1217,6 +1321,13 @@ class SubscriberAsyncClient:
 
         .. code-block:: python
 
+            # This snippet has been automatically generated and should be regarded as a
+            # code template only.
+            # It will require modifications to work:
+            # - It may require correct/in-range values for request initialization.
+            # - It may require specifying regional endpoints when creating the service
+            #   client as shown in:
+            #   https://googleapis.dev/python/google-api-core/latest/client_options.html
             from google import pubsub_v1
 
             async def sample_streaming_pull():
@@ -1248,11 +1359,10 @@ class SubscriberAsyncClient:
 
         Args:
             requests (AsyncIterator[`google.pubsub_v1.types.StreamingPullRequest`]):
-                The request object AsyncIterator. Request for the `StreamingPull`
-                streaming RPC method. This request is used to establish
-                the initial stream as well as to stream acknowledgements
-                and ack deadline modifications from the client to the
-                server.
+                The request object AsyncIterator. Request for the ``StreamingPull`` streaming RPC method.
+                This request is used to establish the initial stream as
+                well as to stream acknowledgements and ack deadline
+                modifications from the client to the server.
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
@@ -1300,12 +1410,12 @@ class SubscriberAsyncClient:
 
     async def modify_push_config(
         self,
-        request: Union[pubsub.ModifyPushConfigRequest, dict] = None,
+        request: Optional[Union[pubsub.ModifyPushConfigRequest, dict]] = None,
         *,
-        subscription: str = None,
-        push_config: pubsub.PushConfig = None,
+        subscription: Optional[str] = None,
+        push_config: Optional[pubsub.PushConfig] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        timeout: Union[float, object] = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> None:
         r"""Modifies the ``PushConfig`` for a specified subscription.
@@ -1318,6 +1428,13 @@ class SubscriberAsyncClient:
 
         .. code-block:: python
 
+            # This snippet has been automatically generated and should be regarded as a
+            # code template only.
+            # It will require modifications to work:
+            # - It may require correct/in-range values for request initialization.
+            # - It may require specifying regional endpoints when creating the service
+            #   client as shown in:
+            #   https://googleapis.dev/python/google-api-core/latest/client_options.html
             from google import pubsub_v1
 
             async def sample_modify_push_config():
@@ -1333,7 +1450,7 @@ class SubscriberAsyncClient:
                 await client.modify_push_config(request=request)
 
         Args:
-            request (Union[google.pubsub_v1.types.ModifyPushConfigRequest, dict]):
+            request (Optional[Union[google.pubsub_v1.types.ModifyPushConfigRequest, dict]]):
                 The request object. Request for the ModifyPushConfig
                 method.
             subscription (:class:`str`):
@@ -1415,23 +1532,29 @@ class SubscriberAsyncClient:
 
     async def get_snapshot(
         self,
-        request: Union[pubsub.GetSnapshotRequest, dict] = None,
+        request: Optional[Union[pubsub.GetSnapshotRequest, dict]] = None,
         *,
-        snapshot: str = None,
+        snapshot: Optional[str] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        timeout: Union[float, object] = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pubsub.Snapshot:
-        r"""Gets the configuration details of a snapshot.
-        Snapshots are used in <a
-        href="https://cloud.google.com/pubsub/docs/replay-overview">Seek</a>
-        operations, which allow you to manage message
-        acknowledgments in bulk. That is, you can set the
-        acknowledgment state of messages in an existing
-        subscription to the state captured by a snapshot.
+        r"""Gets the configuration details of a snapshot. Snapshots are used
+        in
+        `Seek <https://cloud.google.com/pubsub/docs/replay-overview>`__
+        operations, which allow you to manage message acknowledgments in
+        bulk. That is, you can set the acknowledgment state of messages
+        in an existing subscription to the state captured by a snapshot.
 
         .. code-block:: python
 
+            # This snippet has been automatically generated and should be regarded as a
+            # code template only.
+            # It will require modifications to work:
+            # - It may require correct/in-range values for request initialization.
+            # - It may require specifying regional endpoints when creating the service
+            #   client as shown in:
+            #   https://googleapis.dev/python/google-api-core/latest/client_options.html
             from google import pubsub_v1
 
             async def sample_get_snapshot():
@@ -1450,7 +1573,7 @@ class SubscriberAsyncClient:
                 print(response)
 
         Args:
-            request (Union[google.pubsub_v1.types.GetSnapshotRequest, dict]):
+            request (Optional[Union[google.pubsub_v1.types.GetSnapshotRequest, dict]]):
                 The request object. Request for the GetSnapshot method.
             snapshot (:class:`str`):
                 Required. The name of the snapshot to get. Format is
@@ -1530,11 +1653,11 @@ class SubscriberAsyncClient:
 
     async def list_snapshots(
         self,
-        request: Union[pubsub.ListSnapshotsRequest, dict] = None,
+        request: Optional[Union[pubsub.ListSnapshotsRequest, dict]] = None,
         *,
-        project: str = None,
+        project: Optional[str] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        timeout: Union[float, object] = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pagers.ListSnapshotsAsyncPager:
         r"""Lists the existing snapshots. Snapshots are used in
@@ -1545,6 +1668,13 @@ class SubscriberAsyncClient:
 
         .. code-block:: python
 
+            # This snippet has been automatically generated and should be regarded as a
+            # code template only.
+            # It will require modifications to work:
+            # - It may require correct/in-range values for request initialization.
+            # - It may require specifying regional endpoints when creating the service
+            #   client as shown in:
+            #   https://googleapis.dev/python/google-api-core/latest/client_options.html
             from google import pubsub_v1
 
             async def sample_list_snapshots():
@@ -1564,9 +1694,8 @@ class SubscriberAsyncClient:
                     print(response)
 
         Args:
-            request (Union[google.pubsub_v1.types.ListSnapshotsRequest, dict]):
-                The request object. Request for the `ListSnapshots`
-                method.
+            request (Optional[Union[google.pubsub_v1.types.ListSnapshotsRequest, dict]]):
+                The request object. Request for the ``ListSnapshots`` method.
             project (:class:`str`):
                 Required. The name of the project in which to list
                 snapshots. Format is ``projects/{project-id}``.
@@ -1652,12 +1781,12 @@ class SubscriberAsyncClient:
 
     async def create_snapshot(
         self,
-        request: Union[pubsub.CreateSnapshotRequest, dict] = None,
+        request: Optional[Union[pubsub.CreateSnapshotRequest, dict]] = None,
         *,
-        name: str = None,
-        subscription: str = None,
+        name: Optional[str] = None,
+        subscription: Optional[str] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        timeout: Union[float, object] = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pubsub.Snapshot:
         r"""Creates a snapshot from the requested subscription. Snapshots
@@ -1682,6 +1811,13 @@ class SubscriberAsyncClient:
 
         .. code-block:: python
 
+            # This snippet has been automatically generated and should be regarded as a
+            # code template only.
+            # It will require modifications to work:
+            # - It may require correct/in-range values for request initialization.
+            # - It may require specifying regional endpoints when creating the service
+            #   client as shown in:
+            #   https://googleapis.dev/python/google-api-core/latest/client_options.html
             from google import pubsub_v1
 
             async def sample_create_snapshot():
@@ -1701,17 +1837,17 @@ class SubscriberAsyncClient:
                 print(response)
 
         Args:
-            request (Union[google.pubsub_v1.types.CreateSnapshotRequest, dict]):
-                The request object. Request for the `CreateSnapshot`
-                method.
+            request (Optional[Union[google.pubsub_v1.types.CreateSnapshotRequest, dict]]):
+                The request object. Request for the ``CreateSnapshot`` method.
             name (:class:`str`):
                 Required. User-provided name for this snapshot. If the
                 name is not provided in the request, the server will
                 assign a random name for this snapshot on the same
                 project as the subscription. Note that for REST API
-                requests, you must specify a name. See the resource name
-                rules. Format is
-                ``projects/{project}/snapshots/{snap}``.
+                requests, you must specify a name. See the `resource
+                name
+                rules <https://cloud.google.com/pubsub/docs/admin#resource_names>`__.
+                Format is ``projects/{project}/snapshots/{snap}``.
 
                 This corresponds to the ``name`` field
                 on the ``request`` instance; if ``request`` is provided, this
@@ -1802,23 +1938,29 @@ class SubscriberAsyncClient:
 
     async def update_snapshot(
         self,
-        request: Union[pubsub.UpdateSnapshotRequest, dict] = None,
+        request: Optional[Union[pubsub.UpdateSnapshotRequest, dict]] = None,
         *,
+        snapshot: Optional[pubsub.Snapshot] = None,
+        update_mask: Optional[field_mask_pb2.FieldMask] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        timeout: Union[float, object] = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pubsub.Snapshot:
         r"""Updates an existing snapshot. Snapshots are used in
-        <a
-        href="https://cloud.google.com/pubsub/docs/replay-overview">Seek</a>
-        operations, which allow
-        you to manage message acknowledgments in bulk. That is,
-        you can set the acknowledgment state of messages in an
-        existing subscription to the state captured by a
-        snapshot.
+        `Seek <https://cloud.google.com/pubsub/docs/replay-overview>`__
+        operations, which allow you to manage message acknowledgments in
+        bulk. That is, you can set the acknowledgment state of messages
+        in an existing subscription to the state captured by a snapshot.
 
         .. code-block:: python
 
+            # This snippet has been automatically generated and should be regarded as a
+            # code template only.
+            # It will require modifications to work:
+            # - It may require correct/in-range values for request initialization.
+            # - It may require specifying regional endpoints when creating the service
+            #   client as shown in:
+            #   https://googleapis.dev/python/google-api-core/latest/client_options.html
             from google import pubsub_v1
 
             async def sample_update_snapshot():
@@ -1836,9 +1978,24 @@ class SubscriberAsyncClient:
                 print(response)
 
         Args:
-            request (Union[google.pubsub_v1.types.UpdateSnapshotRequest, dict]):
+            request (Optional[Union[google.pubsub_v1.types.UpdateSnapshotRequest, dict]]):
                 The request object. Request for the UpdateSnapshot
                 method.
+            snapshot (:class:`google.pubsub_v1.types.Snapshot`):
+                Required. The updated snapshot
+                object.
+
+                This corresponds to the ``snapshot`` field
+                on the ``request`` instance; if ``request`` is provided, this
+                should not be set.
+            update_mask (:class:`google.protobuf.field_mask_pb2.FieldMask`):
+                Required. Indicates which fields in
+                the provided snapshot to update. Must be
+                specified and non-empty.
+
+                This corresponds to the ``update_mask`` field
+                on the ``request`` instance; if ``request`` is provided, this
+                should not be set.
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
@@ -1856,7 +2013,23 @@ class SubscriberAsyncClient:
 
         """
         # Create or coerce a protobuf request object.
+        # Quick check: If we got a request object, we should *not* have
+        # gotten any keyword arguments that map to the request.
+        has_flattened_params = any([snapshot, update_mask])
+        if request is not None and has_flattened_params:
+            raise ValueError(
+                "If the `request` argument is set, then none of "
+                "the individual field arguments should be set."
+            )
+
         request = pubsub.UpdateSnapshotRequest(request)
+
+        # If we have keyword arguments corresponding to fields on the
+        # request, apply these.
+        if snapshot is not None:
+            request.snapshot = snapshot
+        if update_mask is not None:
+            request.update_mask = update_mask
 
         # Wrap the RPC method; this adds retry and timeout information,
         # and friendly error handling.
@@ -1896,11 +2069,11 @@ class SubscriberAsyncClient:
 
     async def delete_snapshot(
         self,
-        request: Union[pubsub.DeleteSnapshotRequest, dict] = None,
+        request: Optional[Union[pubsub.DeleteSnapshotRequest, dict]] = None,
         *,
-        snapshot: str = None,
+        snapshot: Optional[str] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        timeout: Union[float, object] = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> None:
         r"""Removes an existing snapshot. Snapshots are used in [Seek]
@@ -1916,6 +2089,13 @@ class SubscriberAsyncClient:
 
         .. code-block:: python
 
+            # This snippet has been automatically generated and should be regarded as a
+            # code template only.
+            # It will require modifications to work:
+            # - It may require correct/in-range values for request initialization.
+            # - It may require specifying regional endpoints when creating the service
+            #   client as shown in:
+            #   https://googleapis.dev/python/google-api-core/latest/client_options.html
             from google import pubsub_v1
 
             async def sample_delete_snapshot():
@@ -1931,9 +2111,8 @@ class SubscriberAsyncClient:
                 await client.delete_snapshot(request=request)
 
         Args:
-            request (Union[google.pubsub_v1.types.DeleteSnapshotRequest, dict]):
-                The request object. Request for the `DeleteSnapshot`
-                method.
+            request (Optional[Union[google.pubsub_v1.types.DeleteSnapshotRequest, dict]]):
+                The request object. Request for the ``DeleteSnapshot`` method.
             snapshot (:class:`str`):
                 Required. The name of the snapshot to delete. Format is
                 ``projects/{project}/snapshots/{snap}``.
@@ -1997,10 +2176,10 @@ class SubscriberAsyncClient:
 
     async def seek(
         self,
-        request: Union[pubsub.SeekRequest, dict] = None,
+        request: Optional[Union[pubsub.SeekRequest, dict]] = None,
         *,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        timeout: Union[float, object] = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pubsub.SeekResponse:
         r"""Seeks an existing subscription to a point in time or to a given
@@ -2015,6 +2194,13 @@ class SubscriberAsyncClient:
 
         .. code-block:: python
 
+            # This snippet has been automatically generated and should be regarded as a
+            # code template only.
+            # It will require modifications to work:
+            # - It may require correct/in-range values for request initialization.
+            # - It may require specifying regional endpoints when creating the service
+            #   client as shown in:
+            #   https://googleapis.dev/python/google-api-core/latest/client_options.html
             from google import pubsub_v1
 
             async def sample_seek():
@@ -2033,8 +2219,8 @@ class SubscriberAsyncClient:
                 print(response)
 
         Args:
-            request (Union[google.pubsub_v1.types.SeekRequest, dict]):
-                The request object. Request for the `Seek` method.
+            request (Optional[Union[google.pubsub_v1.types.SeekRequest, dict]]):
+                The request object. Request for the ``Seek`` method.
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
@@ -2088,10 +2274,10 @@ class SubscriberAsyncClient:
 
     async def set_iam_policy(
         self,
-        request: iam_policy_pb2.SetIamPolicyRequest = None,
+        request: Optional[iam_policy_pb2.SetIamPolicyRequest] = None,
         *,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        timeout: Union[float, object] = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> policy_pb2.Policy:
         r"""Sets the IAM access control policy on the specified function.
@@ -2207,10 +2393,10 @@ class SubscriberAsyncClient:
 
     async def get_iam_policy(
         self,
-        request: iam_policy_pb2.GetIamPolicyRequest = None,
+        request: Optional[iam_policy_pb2.GetIamPolicyRequest] = None,
         *,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        timeout: Union[float, object] = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> policy_pb2.Policy:
         r"""Gets the IAM access control policy for a function.
@@ -2328,10 +2514,10 @@ class SubscriberAsyncClient:
 
     async def test_iam_permissions(
         self,
-        request: iam_policy_pb2.TestIamPermissionsRequest = None,
+        request: Optional[iam_policy_pb2.TestIamPermissionsRequest] = None,
         *,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
-        timeout: float = None,
+        timeout: Union[float, object] = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> iam_policy_pb2.TestIamPermissionsResponse:
         r"""Tests the specified permissions against the IAM access control
@@ -2392,14 +2578,9 @@ class SubscriberAsyncClient:
         await self.transport.close()
 
 
-try:
-    DEFAULT_CLIENT_INFO = gapic_v1.client_info.ClientInfo(
-        client_library_version=pkg_resources.get_distribution(
-            "google-cloud-pubsub",
-        ).version,
-    )
-except pkg_resources.DistributionNotFound:
-    DEFAULT_CLIENT_INFO = gapic_v1.client_info.ClientInfo()
+DEFAULT_CLIENT_INFO = gapic_v1.client_info.ClientInfo(
+    client_library_version=package_version.__version__
+)
 
 
 __all__ = ("SubscriberAsyncClient",)
