@@ -181,7 +181,7 @@ class PublisherOptions(NamedTuple):
 # these settings can be altered to tweak Pub/Sub behavior.
 # The defaults should be fine for most use cases.
 class FlowControl(NamedTuple):
-    r"""The settings for controlling the rate at which messages are pulled
+    """The settings for controlling the rate at which messages are pulled
     with an asynchronous subscription.
 
     Attributes:
@@ -192,7 +192,7 @@ class FlowControl(NamedTuple):
             The maximum number of received - but not yet processed - messages before
             pausing the message stream. Defaults to 1000.
         max_lease_duration (float):
-        The maximum amount of time in seconds to hold a lease on a message
+            The maximum amount of time in seconds to hold a lease on a message
             before dropping it from the lease management. Defaults to 1 hour.
         min_duration_per_lease_extension (float):
             The min amount of time in seconds for a single lease extension attempt.
