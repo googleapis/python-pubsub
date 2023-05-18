@@ -62,18 +62,18 @@ if typing.TYPE_CHECKING:  # pragma: NO COVER
 # The defaults should be fine for most use cases.
 class BatchSettings(NamedTuple):
     r"""The settings for batch publishing the messages.
-        Attributes:
-            max_bytes (int):
-                The maximum total size of the messages to collect before automatically
-                publishing the batch, including any byte size overhead of the publish
-                request itself. The maximum value is bound by the server-side limit of
-                10_000_000 bytes. Defaults to 1 MB.
-            max_latency (float):
-                The maximum number of seconds to wait for additional messages before
-                automatically publishing the batch. Defaults to 10ms.
-            max_messages (int):
-                The maximum number of messages to collect before automatically
-                publishing the batch. Defaults to 100.
+    Attributes:
+        max_bytes (int):
+            The maximum total size of the messages to collect before automatically
+            publishing the batch, including any byte size overhead of the publish
+            request itself. The maximum value is bound by the server-side limit of
+            10_000_000 bytes. Defaults to 1 MB.
+        max_latency (float):
+            The maximum number of seconds to wait for additional messages before
+            automatically publishing the batch. Defaults to 10ms.
+        max_messages (int):
+            The maximum number of messages to collect before automatically
+            publishing the batch. Defaults to 100.
     """
 
     max_bytes: int = 1 * 1000 * 1000  # 1 MB
@@ -136,19 +136,19 @@ class PublishFlowControl(NamedTuple):
 class PublisherOptions(NamedTuple):
     """The options for the publisher client.
 
-        Attributes:
-            enable_message_ordering (bool):
-                Whether to order messages in a batch by a supplied ordering key.
-                Defaults to false.
-            flow_control (PublishFlowControl):
-                Flow control settings for message publishing by the client. By default
-                the publisher client does not do any throttling.
-            retry ("OptionalRetry"):
-                Retry settings for message publishing by the client. This should be
-                an instance of :class:`google.api_core.retry.Retry`.
-            timeout ("OptionalTimeout"):
-                Timeout settings for message publishing by the client. It should be
-                compatible with :class:`~.pubsub_v1.types.TimeoutType`.
+    Attributes:
+        enable_message_ordering (bool):
+            Whether to order messages in a batch by a supplied ordering key.
+            Defaults to false.
+        flow_control (PublishFlowControl):
+            Flow control settings for message publishing by the client. By default
+            the publisher client does not do any throttling.
+        retry ("OptionalRetry"):
+            Retry settings for message publishing by the client. This should be
+            an instance of :class:`google.api_core.retry.Retry`.
+        timeout ("OptionalTimeout"):
+            Timeout settings for message publishing by the client. It should be
+            compatible with :class:`~.pubsub_v1.types.TimeoutType`.
     """
 
     enable_message_ordering: bool = False
