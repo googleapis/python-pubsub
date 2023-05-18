@@ -62,6 +62,7 @@ if typing.TYPE_CHECKING:  # pragma: NO COVER
 # The defaults should be fine for most use cases.
 class BatchSettings(NamedTuple):
     r"""The settings for batch publishing the messages.
+
     Attributes:
         max_bytes (int):
             The maximum total size of the messages to collect before automatically
@@ -107,6 +108,7 @@ class LimitExceededBehavior(str, enum.Enum):
 
 class PublishFlowControl(NamedTuple):
     r"""The client flow control settings for message publishing.
+
     Attributes:
         message_limit (int):
             The maximum number of messages awaiting to be published.
