@@ -61,7 +61,7 @@ if typing.TYPE_CHECKING:  # pragma: NO COVER
 # these settings can be altered to tweak Pub/Sub behavior.
 # The defaults should be fine for most use cases.
 class BatchSettings(NamedTuple):
-    r"""The settings for batch publishing the messages.
+    """The settings for batch publishing the messages.
 
     Attributes:
         max_bytes (int):
@@ -107,7 +107,7 @@ class LimitExceededBehavior(str, enum.Enum):
 
 
 class PublishFlowControl(NamedTuple):
-    r"""The client flow control settings for message publishing.
+    """The client flow control settings for message publishing.
 
     Attributes:
         message_limit (int):
@@ -145,10 +145,10 @@ class PublisherOptions(NamedTuple):
         flow_control (PublishFlowControl):
             Flow control settings for message publishing by the client. By default
             the publisher client does not do any throttling.
-        retry ("OptionalRetry"):
+        retry (OptionalRetry):
             Retry settings for message publishing by the client. This should be
             an instance of :class:`google.api_core.retry.Retry`.
-        timeout ("OptionalTimeout"):
+        timeout (OptionalTimeout):
             Timeout settings for message publishing by the client. It should be
             compatible with :class:`~.pubsub_v1.types.TimeoutType`.
     """
