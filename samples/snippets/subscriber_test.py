@@ -604,6 +604,45 @@ def test_create_bigquery_subscription(
     # Clean up.
     subscriber_client.delete_subscription(request={"subscription": subscription_path})
 
+@pytest.fixture(scope="module")
+def cloudstorage_bucket() -> Generator[str, None, None]:
+    # client = cloudstorage.Client()
+    # create bucket
+
+    yield bucket_id
+    
+    # delete bucket
+
+def test_create_cloudstorage_subscription(
+    subscriber_client: pubsub_v1.SubscriberClient,
+    topic: str,
+    cloudstorage_bucket: str,
+    capsys: CaptureFixture[str],
+) -> None:
+    cloudstorage_subscription_for_create_name = (
+        f"subscription-test-subscription-cloudstorage-for-create-{PY_VERSION}-{UUID}"
+    )
+
+    subscription_path = subscriber_client.subscription_path(
+        PROJECT_ID, cloudstorage_subscription_for_create_name
+    )
+    try:
+        subscriber_client.delete_subscription(
+            request={"subscription": subscription_path}
+        )
+    except NotFound:
+        pass
+
+    subscriber.create_bigquery_subscription(
+        PROJECT_ID, TOPIC, cloudstorage_subscription_for_create_name, bigquery_table
+    )
+
+    out, _ = capsys.readouterr()
+    assert f"{cloudstorage_subscription_for_create_name}" in out
+
+    # Clean up.
+    subscriber_client.delete_subscription(request={"subscription": subscription_path})
+
 
 def test_delete_subscription(
     subscriber_client: pubsub_v1.SubscriberClient,

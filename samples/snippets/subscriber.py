@@ -314,6 +314,59 @@ def create_bigquery_subscription(
     # [END pubsub_create_bigquery_subscription]
 
 
+def create_cloudstorage_subscription(
+    project_id: str, topic_id: str, subscription_id: str,
+    bucket: str, filename_prefix: str, filename_suffix: str) -> None:
+    """Create a new CloudStorage subscription on the given topic."""
+    # [START pubsub_cloudstorage_subscription]
+    from google.cloud import pubsub_v1
+    from google.protobuf.duration_pb2 import Duration
+
+    # TODO(developer)
+    # project_id = "your-project-id"
+    # topic_id = "your-topic-id"
+    # subscription_id = "your-subscription-id"
+    # bucket = "my-bucket"
+    # filename_prefix = "my-prefix"
+    # filename_suffix = "my-suffix"
+
+    # Either CloudStorageConfig.AvroConfig or CloudStorageConfig.TextConfig
+    # defaults to TextConfig
+    output_format = pubsub_v1.CloudStorageConfig.AvroConfig(write_metadata=True)
+
+    publisher = pubsub_v1.PublisherClient()
+    subscriber = pubsub_v1.SubscriberClient()
+    topic_path = publisher.topic_path(project_id, topic_id)
+    subscription_path = subscriber.subscription_path(project_id, subscription_id)
+
+    cloudstorage_config = pubsub_v1.types.CloudStorageConfig(bucket=bucket,
+                                                            filename_prefix=filename_prefix,
+                                                            filename_suffix=filename_suffix,
+                                                            output_format=output_format,
+                                                            # Min 1 minutes, max 10 minutes
+                                                            max_duration=Duration.FromSeconds(300),
+                                                            # Min 1 KB, max 10 GiB
+                                                            max_bytes=2000)
+                                            
+
+    # Wrap the subscriber in a 'with' block to automatically call close() to
+    # close the underlying gRPC channel when done.
+    with subscriber:
+        subscription = subscriber.create_subscription(
+            request={
+                "name": subscription_path,
+                "topic": topic_path,
+                "cloudstorage_config": cloudstorage_config,
+            }
+        )
+
+    print(f"CloudStorage subscription created: {subscription}.")
+    print(f"Bucket for subscription is: {bucket}")
+    print(f"Prefix is: {filename_prefix}")
+    print(f"Suffix is: {filename_suffix}")
+    # [END pubsub_cloudstorage_subscription]
+
+
 def delete_subscription(project_id: str, subscription_id: str) -> None:
     """Deletes an existing Pub/Sub topic."""
     # [START pubsub_delete_subscription]
@@ -976,6 +1029,16 @@ if __name__ == "__main__":  # noqa
     create_bigquery_subscription_parser.add_argument("subscription_id")
     create_bigquery_subscription_parser.add_argument("bigquery_table_id")
 
+    create_cloudstorage_subscription_parser = subparsers.add_parser(
+        "create-cloudstorage",
+        help=create_cloudstorage_subscription.__doc__,
+    )
+    create_cloudstorage_subscription_parser.add_argument("topic_id")
+    create_cloudstorage_subscription_parser.add_argument("subscription_id")
+    create_cloudstorage_subscription_parser.add_argument("bucket")
+    create_cloudstorage_subscription_parser.add_argument("filename_prefix")
+    create_cloudstorage_subscription_parser.add_argument("filename_suffix")
+     
     delete_parser = subparsers.add_parser("delete", help=delete_subscription.__doc__)
     delete_parser.add_argument("subscription_id")
 
@@ -1111,6 +1174,16 @@ if __name__ == "__main__":  # noqa
             args.subscription_id,
             args.bigquery_table_id,
         )
+    elif args.command == "create-cloudstorage":
+        create_cloudstorage_subscription(
+            args.project_id,
+            args.topic_id,
+            args.subscription_id,
+            args.bucket,
+            args.filename_prefix,
+            args.filename_suffix
+        )
+
     elif args.command == "delete":
         delete_subscription(args.project_id, args.subscription_id)
     elif args.command == "update-push":
