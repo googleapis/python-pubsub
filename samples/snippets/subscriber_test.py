@@ -23,7 +23,7 @@ from _pytest.capture import CaptureFixture
 import backoff
 from flaky import flaky
 from google.api_core.exceptions import NotFound
-from google.cloud import bigquery, pubsub_v1
+from google.cloud import bigquery, pubsub_v1, storage
 import pytest
 
 import subscriber
@@ -45,6 +45,7 @@ UPDATED_MAX_DELIVERY_ATTEMPTS = 20
 FILTER = 'attributes.author="unknown"'
 BIGQUERY_DATASET_ID = f"python_samples_dataset_{UNDERSCORE_PY_VERSION}_{UUID}"
 BIGQUERY_TABLE_ID = f"python_samples_table_{UNDERSCORE_PY_VERSION}_{UUID}"
+CLOUDSTORAGE_BUCKET = f"python_samples_bucket_{UNDERSCORE_PY_VERSION}_{UUID}"
 
 C = TypeVar("C", bound=Callable[..., Any])
 
@@ -606,13 +607,17 @@ def test_create_bigquery_subscription(
 
 @pytest.fixture(scope="module")
 def cloudstorage_bucket() -> Generator[str, None, None]:
-    # client = cloudstorage.Client()
-    # create bucket
+    storage_client = storage.Client()
 
-    yield bucket_id
+    bucket_name = CLOUDSTORAGE_BUCKET
+
+    bucket = storage_client.create_bucket(bucket_name)
+    print(f"Bucket {bucket.name} created.")
+
+    yield bucket.name
+
+    bucket.delete()
     
-    # delete bucket
-
 def test_create_cloudstorage_subscription(
     subscriber_client: pubsub_v1.SubscriberClient,
     topic: str,
@@ -633,8 +638,8 @@ def test_create_cloudstorage_subscription(
     except NotFound:
         pass
 
-    subscriber.create_bigquery_subscription(
-        PROJECT_ID, TOPIC, cloudstorage_subscription_for_create_name, bigquery_table
+    subscriber.create_cloudstorage_subscription(
+        PROJECT_ID, TOPIC, cloudstorage_subscription_for_create_name, cloudstorage_bucket
     )
 
     out, _ = capsys.readouterr()

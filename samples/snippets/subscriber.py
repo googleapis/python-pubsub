@@ -316,7 +316,7 @@ def create_bigquery_subscription(
 
 def create_cloudstorage_subscription(
     project_id: str, topic_id: str, subscription_id: str,
-    bucket: str, filename_prefix: str, filename_suffix: str) -> None:
+    bucket: str) -> None:
     """Create a new CloudStorage subscription on the given topic."""
     # [START pubsub_cloudstorage_subscription]
     from google.cloud import pubsub_v1
@@ -327,12 +327,12 @@ def create_cloudstorage_subscription(
     # topic_id = "your-topic-id"
     # subscription_id = "your-subscription-id"
     # bucket = "my-bucket"
-    # filename_prefix = "my-prefix"
-    # filename_suffix = "my-suffix"
 
+    filename_prefix = "log_events_"
+    filename_suffix = ".avro"
     # Either CloudStorageConfig.AvroConfig or CloudStorageConfig.TextConfig
     # defaults to TextConfig
-    output_format = pubsub_v1.CloudStorageConfig.AvroConfig(write_metadata=True)
+    output_format = pubsub_v1.types.CloudStorageConfig.AvroConfig(write_metadata=True)
 
     publisher = pubsub_v1.PublisherClient()
     subscriber = pubsub_v1.SubscriberClient()
@@ -1036,8 +1036,6 @@ if __name__ == "__main__":  # noqa
     create_cloudstorage_subscription_parser.add_argument("topic_id")
     create_cloudstorage_subscription_parser.add_argument("subscription_id")
     create_cloudstorage_subscription_parser.add_argument("bucket")
-    create_cloudstorage_subscription_parser.add_argument("filename_prefix")
-    create_cloudstorage_subscription_parser.add_argument("filename_suffix")
      
     delete_parser = subparsers.add_parser("delete", help=delete_subscription.__doc__)
     delete_parser.add_argument("subscription_id")
@@ -1179,9 +1177,7 @@ if __name__ == "__main__":  # noqa
             args.project_id,
             args.topic_id,
             args.subscription_id,
-            args.bucket,
-            args.filename_prefix,
-            args.filename_suffix
+            args.bucket
         )
 
     elif args.command == "delete":
