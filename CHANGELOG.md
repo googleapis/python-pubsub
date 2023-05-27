@@ -5,6 +5,44 @@
 [1]: https://pypi.org/project/google-cloud-pubsub/#history
 
 
+## [2.17.1](https://github.com/googleapis/python-pubsub/compare/v2.17.0...v2.17.1) (2023-05-23)
+
+
+### Documentation
+
+* Add attributes to pubsub_v1.types ([#921](https://github.com/googleapis/python-pubsub/issues/921)) ([4607dca](https://github.com/googleapis/python-pubsub/commit/4607dca983a8f5d4043c5661165da99453f2ef4a))
+
+## [2.17.0](https://github.com/googleapis/python-pubsub/compare/v2.16.1...v2.17.0) (2023-05-12)
+
+
+### Features
+
+* Add cloud storage subscription fields ([#918](https://github.com/googleapis/python-pubsub/issues/918)) ([6e262da](https://github.com/googleapis/python-pubsub/commit/6e262da9810f58f3f34b352e4771e084381ed0aa))
+
+## [2.16.1](https://github.com/googleapis/python-pubsub/compare/v2.16.0...v2.16.1) (2023-05-05)
+
+
+### Bug Fixes
+
+* Allow dropping cleaned-up keys ([#911](https://github.com/googleapis/python-pubsub/issues/911)) ([4b3157c](https://github.com/googleapis/python-pubsub/commit/4b3157ccb83771a2e613fc3475035f24d358ccf6))
+
+
+### Documentation
+
+* Add comment to setup.py ([#905](https://github.com/googleapis/python-pubsub/issues/905)) ([9825109](https://github.com/googleapis/python-pubsub/commit/9825109a826e63cd076c21367157be7a3c01c45b))
+
+## [2.16.0](https://github.com/googleapis/python-pubsub/compare/v2.15.2...v2.16.0) (2023-04-06)
+
+
+### Features
+
+* Enable "rest" transport in Python for services supporting numeric enums ([#863](https://github.com/googleapis/python-pubsub/issues/863)) ([a80c1d1](https://github.com/googleapis/python-pubsub/commit/a80c1d1f6f880cd13c247231bdc86c824edab8cb))
+
+
+### Documentation
+
+* Fix formatting of request arg in docstring ([#894](https://github.com/googleapis/python-pubsub/issues/894)) ([ee2ea73](https://github.com/googleapis/python-pubsub/commit/ee2ea7341268fd5428d98208b8af2fc96efe8d03))
+
 ## [2.15.2](https://github.com/googleapis/python-pubsub/compare/v2.15.1...v2.15.2) (2023-03-20)
 
 
