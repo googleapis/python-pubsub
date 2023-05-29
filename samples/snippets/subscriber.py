@@ -315,8 +315,8 @@ def create_bigquery_subscription(
 
 
 def create_cloudstorage_subscription(
-    project_id: str, topic_id: str, subscription_id: str,
-    bucket: str) -> None:
+    project_id: str, topic_id: str, subscription_id: str, bucket: str
+) -> None:
     """Create a new CloudStorage subscription on the given topic."""
     # [START pubsub_cloudstorage_subscription]
     from google.cloud import pubsub_v1
@@ -339,15 +339,16 @@ def create_cloudstorage_subscription(
     topic_path = publisher.topic_path(project_id, topic_id)
     subscription_path = subscriber.subscription_path(project_id, subscription_id)
 
-    cloudstorage_config = pubsub_v1.types.CloudStorageConfig(bucket=bucket,
-                                                            filename_prefix=filename_prefix,
-                                                            filename_suffix=filename_suffix,
-                                                            output_format=output_format,
-                                                            # Min 1 minutes, max 10 minutes
-                                                            max_duration=Duration.FromSeconds(300),
-                                                            # Min 1 KB, max 10 GiB
-                                                            max_bytes=2000)
-                                            
+    cloudstorage_config = pubsub_v1.types.CloudStorageConfig(
+        bucket=bucket,
+        filename_prefix=filename_prefix,
+        filename_suffix=filename_suffix,
+        output_format=output_format,
+        # Min 1 minutes, max 10 minutes
+        max_duration=Duration.FromSeconds(300),
+        # Min 1 KB, max 10 GiB
+        max_bytes=2000,
+    )
 
     # Wrap the subscriber in a 'with' block to automatically call close() to
     # close the underlying gRPC channel when done.
@@ -1036,7 +1037,7 @@ if __name__ == "__main__":  # noqa
     create_cloudstorage_subscription_parser.add_argument("topic_id")
     create_cloudstorage_subscription_parser.add_argument("subscription_id")
     create_cloudstorage_subscription_parser.add_argument("bucket")
-     
+
     delete_parser = subparsers.add_parser("delete", help=delete_subscription.__doc__)
     delete_parser.add_argument("subscription_id")
 
@@ -1174,10 +1175,7 @@ if __name__ == "__main__":  # noqa
         )
     elif args.command == "create-cloudstorage":
         create_cloudstorage_subscription(
-            args.project_id,
-            args.topic_id,
-            args.subscription_id,
-            args.bucket
+            args.project_id, args.topic_id, args.subscription_id, args.bucket
         )
 
     elif args.command == "delete":

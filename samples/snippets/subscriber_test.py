@@ -605,6 +605,7 @@ def test_create_bigquery_subscription(
     # Clean up.
     subscriber_client.delete_subscription(request={"subscription": subscription_path})
 
+
 @pytest.fixture(scope="module")
 def cloudstorage_bucket() -> Generator[str, None, None]:
     storage_client = storage.Client()
@@ -617,7 +618,8 @@ def cloudstorage_bucket() -> Generator[str, None, None]:
     yield bucket.name
 
     bucket.delete()
-    
+
+
 def test_create_cloudstorage_subscription(
     subscriber_client: pubsub_v1.SubscriberClient,
     topic: str,
@@ -639,7 +641,10 @@ def test_create_cloudstorage_subscription(
         pass
 
     subscriber.create_cloudstorage_subscription(
-        PROJECT_ID, TOPIC, cloudstorage_subscription_for_create_name, cloudstorage_bucket
+        PROJECT_ID,
+        TOPIC,
+        cloudstorage_subscription_for_create_name,
+        cloudstorage_bucket,
     )
 
     out, _ = capsys.readouterr()
