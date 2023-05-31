@@ -359,7 +359,7 @@ def create_cloudstorage_subscription(
             request={
                 "name": subscription_path,
                 "topic": topic_path,
-                "cloudstorage_config": cloudstorage_config,
+                "cloud_storage_config": cloudstorage_config,
             }
         )
 
