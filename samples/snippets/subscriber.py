@@ -338,6 +338,8 @@ def create_cloudstorage_subscription(
     subscriber = pubsub_v1.SubscriberClient()
     topic_path = publisher.topic_path(project_id, topic_id)
     subscription_path = subscriber.subscription_path(project_id, subscription_id)
+    max_duration = duration_pb2.Duration()
+    max_duration.FromSeconds(300)
 
     cloudstorage_config = pubsub_v1.types.CloudStorageConfig(
         bucket=bucket,
@@ -345,7 +347,7 @@ def create_cloudstorage_subscription(
         filename_suffix=filename_suffix,
         output_format=output_format,
         # Min 1 minutes, max 10 minutes
-        max_duration=duration_pb2.Duration.FromSeconds(300),
+        max_duration=max_duration,
         # Min 1 KB, max 10 GiB
         max_bytes=2000,
     )
