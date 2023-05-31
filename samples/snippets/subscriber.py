@@ -332,7 +332,7 @@ def create_cloudstorage_subscription(
     filename_suffix = ".avro"
     # Either CloudStorageConfig.AvroConfig or CloudStorageConfig.TextConfig
     # defaults to TextConfig
-    output_format = pubsub_v1.types.CloudStorageConfig.AvroConfig(write_metadata=True)
+    avro_config = pubsub_v1.types.CloudStorageConfig.AvroConfig(write_metadata=True)
 
     publisher = pubsub_v1.PublisherClient()
     subscriber = pubsub_v1.SubscriberClient()
@@ -345,7 +345,7 @@ def create_cloudstorage_subscription(
         bucket=bucket,
         filename_prefix=filename_prefix,
         filename_suffix=filename_suffix,
-        output_format=output_format,
+        avro_config=avro_config,
         # Min 1 minutes, max 10 minutes
         max_duration=max_duration,
         # Min 1 KB, max 10 GiB
