@@ -320,7 +320,7 @@ def create_cloudstorage_subscription(
     """Create a new CloudStorage subscription on the given topic."""
     # [START pubsub_cloudstorage_subscription]
     from google.cloud import pubsub_v1
-    from google.protobuf.duration_pb2 import Duration
+    from google.protobuf import duration_pb2
 
     # TODO(developer)
     # project_id = "your-project-id"
@@ -345,7 +345,7 @@ def create_cloudstorage_subscription(
         filename_suffix=filename_suffix,
         output_format=output_format,
         # Min 1 minutes, max 10 minutes
-        max_duration=Duration.FromSeconds(300),
+        max_duration=duration_pb2.Duration.FromSeconds(300),
         # Min 1 KB, max 10 GiB
         max_bytes=2000,
     )
