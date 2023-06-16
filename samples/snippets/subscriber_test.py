@@ -549,6 +549,7 @@ def test_update_push_subscription(
     # Clean up.
     subscriber_client.delete_subscription(request={"subscription": subscription_path})
 
+
 def test_create_push_no_wrapper_subscription(
         subscriber_client: pubsub_v1.SubscriberClient,
         topic: str,
@@ -578,6 +579,7 @@ def test_create_push_no_wrapper_subscription(
 
     # Clean up.
     subscriber_client.delete_subscription(request={"subscription": subscription_path})
+
 
 @pytest.fixture(scope="module")
 def bigquery_table() -> Generator[str, None, None]:
