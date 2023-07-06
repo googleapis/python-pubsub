@@ -219,7 +219,7 @@ See the `CONTRIBUTING doc`_ for more information on how to get started.
 Community
 ---------
 
-The best place for questions is via Stackoverflow: https://stackoverflow.com/questions/tagged/google-cloud-pubsub
+The best place to ask questions is via Stackoverflow: https://stackoverflow.com/questions/tagged/google-cloud-pubsub
 
 
 License
