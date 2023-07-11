@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2022 Google LLC
+# Copyright 2023 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -1212,6 +1212,7 @@ class CloudStorageConfig(proto.Message):
             User-provided suffix for Cloud Storage filename. See the
             `object naming
             requirements <https://cloud.google.com/storage/docs/objects#naming>`__.
+            Must not end in "/".
         text_config (google.pubsub_v1.types.CloudStorageConfig.TextConfig):
             If set, message data will be written to Cloud
             Storage in text format.
