@@ -87,7 +87,7 @@ def cleanup():
         try:
             to_call(*args, **kwargs)
         except core_exceptions.NotFound:
-            continue
+            pass
 
 
 def test_publish_messages(publisher, topic_path_base, cleanup):
