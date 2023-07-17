@@ -1138,9 +1138,9 @@ if __name__ == "__main__":  # noqa
             args.project_id, args.topic_id, args.subscription_id, args.endpoint
         )
     elif args.command == "create-push-no-wrapper":
-         create_push_no_wrapper_subscription(
+        create_push_no_wrapper_subscription(
             args.project_id, args.topic_id, args.subscription_id, args.endpoint
-         )
+        )
     elif args.command == "create-with-ordering":
         create_subscription_with_ordering(
             args.project_id, args.topic_id, args.subscription_id
