@@ -5,6 +5,13 @@
 [1]: https://pypi.org/project/google-cloud-pubsub/#history
 
 
+## [2.18.1](https://github.com/googleapis/python-pubsub/compare/v2.18.0...v2.18.1) (2023-07-17)
+
+
+### Bug Fixes
+
+* Fix resource not found error for flaky test. ([#951](https://github.com/googleapis/python-pubsub/issues/951)) ([d42ace7](https://github.com/googleapis/python-pubsub/commit/d42ace70b77e61093106e4855e40ab63cd2237c6))
+
 ## [2.18.0](https://github.com/googleapis/python-pubsub/compare/v2.17.1...v2.18.0) (2023-07-12)
 
 
