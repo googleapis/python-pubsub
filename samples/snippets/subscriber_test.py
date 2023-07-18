@@ -551,9 +551,9 @@ def test_update_push_subscription(
 
 
 def test_create_push_no_wrapper_subscription(
-        subscriber_client: pubsub_v1.SubscriberClient,
-        topic: str,
-        capsys: CaptureFixture[str],
+    subscriber_client: pubsub_v1.SubscriberClient,
+    topic: str,
+    capsys: CaptureFixture[str],
 ) -> None:
 
     push_subscription_for_create_name = (

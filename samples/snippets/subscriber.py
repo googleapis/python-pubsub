@@ -206,7 +206,9 @@ def create_push_no_wrapper_subscription(
     subscription_path = subscriber.subscription_path(project_id, subscription_id)
 
     no_wrapper = pubsub_v1.types.PushConfig.NoWrapper(write_metadata=True)
-    push_config = pubsub_v1.types.PushConfig(push_endpoint=endpoint, no_wrapper=no_wrapper)
+    push_config = pubsub_v1.types.PushConfig(
+        push_endpoint=endpoint, no_wrapper=no_wrapper
+    )
 
     # Wrap the subscriber in a 'with' block to automatically call close() to
     # close the underlying gRPC channel when done.
