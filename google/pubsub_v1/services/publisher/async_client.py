@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2022 Google LLC
+# Copyright 2023 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -230,7 +230,7 @@ class PublisherAsyncClient:
     ) -> pubsub.Topic:
         r"""Creates the given topic with the given name. See the [resource
         name rules]
-        (https://cloud.google.com/pubsub/docs/admin#resource_names).
+        (https://cloud.google.com/pubsub/docs/pubsub-basics#resource_names).
 
         .. code-block:: python
 
@@ -556,7 +556,7 @@ class PublisherAsyncClient:
             default_retry=retries.Retry(
                 initial=0.1,
                 maximum=60.0,
-                multiplier=1.3,
+                multiplier=4.0,
                 predicate=retries.if_exception_type(
                     core_exceptions.Aborted,
                     core_exceptions.Cancelled,
@@ -740,7 +740,7 @@ class PublisherAsyncClient:
 
         Args:
             request (Optional[Union[google.pubsub_v1.types.ListTopicsRequest, dict]]):
-                The request object. Request for the `ListTopics` method.
+                The request object. Request for the ``ListTopics`` method.
             project (:class:`str`):
                 Required. The name of the project in which to list
                 topics. Format is ``projects/{project-id}``.
@@ -866,8 +866,7 @@ class PublisherAsyncClient:
 
         Args:
             request (Optional[Union[google.pubsub_v1.types.ListTopicSubscriptionsRequest, dict]]):
-                The request object. Request for the
-                `ListTopicSubscriptions` method.
+                The request object. Request for the ``ListTopicSubscriptions`` method.
             topic (:class:`str`):
                 Required. The name of the topic that subscriptions are
                 attached to. Format is
@@ -998,8 +997,7 @@ class PublisherAsyncClient:
 
         Args:
             request (Optional[Union[google.pubsub_v1.types.ListTopicSnapshotsRequest, dict]]):
-                The request object. Request for the `ListTopicSnapshots`
-                method.
+                The request object. Request for the ``ListTopicSnapshots`` method.
             topic (:class:`str`):
                 Required. The name of the topic that snapshots are
                 attached to. Format is
@@ -1126,8 +1124,7 @@ class PublisherAsyncClient:
 
         Args:
             request (Optional[Union[google.pubsub_v1.types.DeleteTopicRequest, dict]]):
-                The request object. Request for the `DeleteTopic`
-                method.
+                The request object. Request for the ``DeleteTopic`` method.
             topic (:class:`str`):
                 Required. Name of the topic to delete. Format is
                 ``projects/{project}/topics/{topic}``.
@@ -1588,7 +1585,7 @@ class PublisherAsyncClient:
         # Done; return the response.
         return response
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> "PublisherAsyncClient":
         return self
 
     async def __aexit__(self, exc_type, exc, tb):

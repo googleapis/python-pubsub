@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2022 Google LLC
+# Copyright 2023 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,15 +19,20 @@ from typing import Dict, Type
 from .base import SchemaServiceTransport
 from .grpc import SchemaServiceGrpcTransport
 from .grpc_asyncio import SchemaServiceGrpcAsyncIOTransport
+from .rest import SchemaServiceRestTransport
+from .rest import SchemaServiceRestInterceptor
 
 
 # Compile a registry of transports.
 _transport_registry = OrderedDict()  # type: Dict[str, Type[SchemaServiceTransport]]
 _transport_registry["grpc"] = SchemaServiceGrpcTransport
 _transport_registry["grpc_asyncio"] = SchemaServiceGrpcAsyncIOTransport
+_transport_registry["rest"] = SchemaServiceRestTransport
 
 __all__ = (
     "SchemaServiceTransport",
     "SchemaServiceGrpcTransport",
     "SchemaServiceGrpcAsyncIOTransport",
+    "SchemaServiceRestTransport",
+    "SchemaServiceRestInterceptor",
 )

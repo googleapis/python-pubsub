@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2022 Google LLC
+# Copyright 2023 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -326,7 +326,16 @@ class SchemaServiceAsyncClient:
         # and friendly error handling.
         rpc = gapic_v1.method_async.wrap_method(
             self._client._transport.create_schema,
-            default_timeout=None,
+            default_retry=retries.Retry(
+                initial=0.1,
+                maximum=60.0,
+                multiplier=1.3,
+                predicate=retries.if_exception_type(
+                    core_exceptions.ServiceUnavailable,
+                ),
+                deadline=60.0,
+            ),
+            default_timeout=60.0,
             client_info=DEFAULT_CLIENT_INFO,
         )
 
@@ -425,7 +434,16 @@ class SchemaServiceAsyncClient:
         # and friendly error handling.
         rpc = gapic_v1.method_async.wrap_method(
             self._client._transport.get_schema,
-            default_timeout=None,
+            default_retry=retries.Retry(
+                initial=0.1,
+                maximum=60.0,
+                multiplier=1.3,
+                predicate=retries.if_exception_type(
+                    core_exceptions.ServiceUnavailable,
+                ),
+                deadline=60.0,
+            ),
+            default_timeout=60.0,
             client_info=DEFAULT_CLIENT_INFO,
         )
 
@@ -486,8 +504,7 @@ class SchemaServiceAsyncClient:
 
         Args:
             request (Optional[Union[google.pubsub_v1.types.ListSchemasRequest, dict]]):
-                The request object. Request for the `ListSchemas`
-                method.
+                The request object. Request for the ``ListSchemas`` method.
             parent (:class:`str`):
                 Required. The name of the project in which to list
                 schemas. Format is ``projects/{project-id}``.
@@ -530,7 +547,16 @@ class SchemaServiceAsyncClient:
         # and friendly error handling.
         rpc = gapic_v1.method_async.wrap_method(
             self._client._transport.list_schemas,
-            default_timeout=None,
+            default_retry=retries.Retry(
+                initial=0.1,
+                maximum=60.0,
+                multiplier=1.3,
+                predicate=retries.if_exception_type(
+                    core_exceptions.ServiceUnavailable,
+                ),
+                deadline=60.0,
+            ),
+            default_timeout=60.0,
             client_info=DEFAULT_CLIENT_INFO,
         )
 
@@ -600,8 +626,7 @@ class SchemaServiceAsyncClient:
 
         Args:
             request (Optional[Union[google.pubsub_v1.types.ListSchemaRevisionsRequest, dict]]):
-                The request object. Request for the
-                `ListSchemaRevisions` method.
+                The request object. Request for the ``ListSchemaRevisions`` method.
             name (:class:`str`):
                 Required. The name of the schema to
                 list revisions for.
@@ -644,7 +669,16 @@ class SchemaServiceAsyncClient:
         # and friendly error handling.
         rpc = gapic_v1.method_async.wrap_method(
             self._client._transport.list_schema_revisions,
-            default_timeout=None,
+            default_retry=retries.Retry(
+                initial=0.1,
+                maximum=60.0,
+                multiplier=1.3,
+                predicate=retries.if_exception_type(
+                    core_exceptions.ServiceUnavailable,
+                ),
+                deadline=60.0,
+            ),
+            default_timeout=60.0,
             client_info=DEFAULT_CLIENT_INFO,
         )
 
@@ -766,7 +800,16 @@ class SchemaServiceAsyncClient:
         # and friendly error handling.
         rpc = gapic_v1.method_async.wrap_method(
             self._client._transport.commit_schema,
-            default_timeout=None,
+            default_retry=retries.Retry(
+                initial=0.1,
+                maximum=60.0,
+                multiplier=1.3,
+                predicate=retries.if_exception_type(
+                    core_exceptions.ServiceUnavailable,
+                ),
+                deadline=60.0,
+            ),
+            default_timeout=60.0,
             client_info=DEFAULT_CLIENT_INFO,
         )
 
@@ -829,8 +872,7 @@ class SchemaServiceAsyncClient:
 
         Args:
             request (Optional[Union[google.pubsub_v1.types.RollbackSchemaRequest, dict]]):
-                The request object. Request for the `RollbackSchema`
-                method.
+                The request object. Request for the ``RollbackSchema`` method.
             name (:class:`str`):
                 Required. The schema being rolled
                 back with revision id.
@@ -842,6 +884,7 @@ class SchemaServiceAsyncClient:
                 Required. The revision ID to roll
                 back to. It must be a revision of the
                 same schema.
+
                   Example: c7cfa2a8
 
                 This corresponds to the ``revision_id`` field
@@ -880,7 +923,16 @@ class SchemaServiceAsyncClient:
         # and friendly error handling.
         rpc = gapic_v1.method_async.wrap_method(
             self._client._transport.rollback_schema,
-            default_timeout=None,
+            default_retry=retries.Retry(
+                initial=0.1,
+                maximum=60.0,
+                multiplier=1.3,
+                predicate=retries.if_exception_type(
+                    core_exceptions.ServiceUnavailable,
+                ),
+                deadline=60.0,
+            ),
+            default_timeout=60.0,
             client_info=DEFAULT_CLIENT_INFO,
         )
 
@@ -941,8 +993,7 @@ class SchemaServiceAsyncClient:
 
         Args:
             request (Optional[Union[google.pubsub_v1.types.DeleteSchemaRevisionRequest, dict]]):
-                The request object. Request for the
-                `DeleteSchemaRevision` method.
+                The request object. Request for the ``DeleteSchemaRevision`` method.
             name (:class:`str`):
                 Required. The name of the schema revision to be deleted,
                 with a revision ID explicitly included.
@@ -993,7 +1044,16 @@ class SchemaServiceAsyncClient:
         # and friendly error handling.
         rpc = gapic_v1.method_async.wrap_method(
             self._client._transport.delete_schema_revision,
-            default_timeout=None,
+            default_retry=retries.Retry(
+                initial=0.1,
+                maximum=60.0,
+                multiplier=1.3,
+                predicate=retries.if_exception_type(
+                    core_exceptions.ServiceUnavailable,
+                ),
+                deadline=60.0,
+            ),
+            default_timeout=60.0,
             client_info=DEFAULT_CLIENT_INFO,
         )
 
@@ -1050,8 +1110,7 @@ class SchemaServiceAsyncClient:
 
         Args:
             request (Optional[Union[google.pubsub_v1.types.DeleteSchemaRequest, dict]]):
-                The request object. Request for the `DeleteSchema`
-                method.
+                The request object. Request for the ``DeleteSchema`` method.
             name (:class:`str`):
                 Required. Name of the schema to delete. Format is
                 ``projects/{project}/schemas/{schema}``.
@@ -1086,7 +1145,16 @@ class SchemaServiceAsyncClient:
         # and friendly error handling.
         rpc = gapic_v1.method_async.wrap_method(
             self._client._transport.delete_schema,
-            default_timeout=None,
+            default_retry=retries.Retry(
+                initial=0.1,
+                maximum=60.0,
+                multiplier=1.3,
+                predicate=retries.if_exception_type(
+                    core_exceptions.ServiceUnavailable,
+                ),
+                deadline=60.0,
+            ),
+            default_timeout=60.0,
             client_info=DEFAULT_CLIENT_INFO,
         )
 
@@ -1148,8 +1216,7 @@ class SchemaServiceAsyncClient:
 
         Args:
             request (Optional[Union[google.pubsub_v1.types.ValidateSchemaRequest, dict]]):
-                The request object. Request for the `ValidateSchema`
-                method.
+                The request object. Request for the ``ValidateSchema`` method.
             parent (:class:`str`):
                 Required. The name of the project in which to validate
                 schemas. Format is ``projects/{project-id}``.
@@ -1199,7 +1266,16 @@ class SchemaServiceAsyncClient:
         # and friendly error handling.
         rpc = gapic_v1.method_async.wrap_method(
             self._client._transport.validate_schema,
-            default_timeout=None,
+            default_retry=retries.Retry(
+                initial=0.1,
+                maximum=60.0,
+                multiplier=1.3,
+                predicate=retries.if_exception_type(
+                    core_exceptions.ServiceUnavailable,
+                ),
+                deadline=60.0,
+            ),
+            default_timeout=60.0,
             client_info=DEFAULT_CLIENT_INFO,
         )
 
@@ -1259,8 +1335,7 @@ class SchemaServiceAsyncClient:
 
         Args:
             request (Optional[Union[google.pubsub_v1.types.ValidateMessageRequest, dict]]):
-                The request object. Request for the `ValidateMessage`
-                method.
+                The request object. Request for the ``ValidateMessage`` method.
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
@@ -1280,7 +1355,16 @@ class SchemaServiceAsyncClient:
         # and friendly error handling.
         rpc = gapic_v1.method_async.wrap_method(
             self._client._transport.validate_message,
-            default_timeout=None,
+            default_retry=retries.Retry(
+                initial=0.1,
+                maximum=60.0,
+                multiplier=1.3,
+                predicate=retries.if_exception_type(
+                    core_exceptions.ServiceUnavailable,
+                ),
+                deadline=60.0,
+            ),
+            default_timeout=60.0,
             client_info=DEFAULT_CLIENT_INFO,
         )
 
@@ -1600,7 +1684,7 @@ class SchemaServiceAsyncClient:
         # Done; return the response.
         return response
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> "SchemaServiceAsyncClient":
         return self
 
     async def __aexit__(self, exc_type, exc, tb):

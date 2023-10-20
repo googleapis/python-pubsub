@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2022 Google LLC
+# Copyright 2023 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ from google.pubsub_v1.services.subscriber.async_client import SubscriberAsyncCli
 
 from google.pubsub_v1.types.pubsub import AcknowledgeRequest
 from google.pubsub_v1.types.pubsub import BigQueryConfig
+from google.pubsub_v1.types.pubsub import CloudStorageConfig
 from google.pubsub_v1.types.pubsub import CreateSnapshotRequest
 from google.pubsub_v1.types.pubsub import DeadLetterPolicy
 from google.pubsub_v1.types.pubsub import DeleteSnapshotRequest
@@ -99,6 +100,7 @@ __all__ = (
     "SubscriberAsyncClient",
     "AcknowledgeRequest",
     "BigQueryConfig",
+    "CloudStorageConfig",
     "CreateSnapshotRequest",
     "DeadLetterPolicy",
     "DeleteSnapshotRequest",

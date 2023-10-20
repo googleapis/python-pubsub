@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2022 Google LLC
+# Copyright 2023 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ from typing import Union
 from .pubsub import (
     AcknowledgeRequest,
     BigQueryConfig,
+    CloudStorageConfig,
     CreateSnapshotRequest,
     DeadLetterPolicy,
     DeleteSnapshotRequest,
@@ -94,6 +95,7 @@ __all__ = (
     "TimeoutType",
     "AcknowledgeRequest",
     "BigQueryConfig",
+    "CloudStorageConfig",
     "CreateSnapshotRequest",
     "DeadLetterPolicy",
     "DeleteSnapshotRequest",

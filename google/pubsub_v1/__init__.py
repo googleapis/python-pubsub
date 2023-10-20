@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2022 Google LLC
+# Copyright 2023 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ from .services.subscriber import SubscriberAsyncClient
 
 from .types.pubsub import AcknowledgeRequest
 from .types.pubsub import BigQueryConfig
+from .types.pubsub import CloudStorageConfig
 from .types.pubsub import CreateSnapshotRequest
 from .types.pubsub import DeadLetterPolicy
 from .types.pubsub import DeleteSnapshotRequest
@@ -94,6 +95,7 @@ __all__ = (
     "SubscriberAsyncClient",
     "AcknowledgeRequest",
     "BigQueryConfig",
+    "CloudStorageConfig",
     "CommitSchemaRequest",
     "CreateSchemaRequest",
     "CreateSnapshotRequest",

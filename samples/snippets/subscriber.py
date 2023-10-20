@@ -187,6 +187,46 @@ def create_push_subscription(
     # [END pubsub_create_push_subscription]
 
 
+def create_push_no_wrapper_subscription(
+    project_id: str, topic_id: str, subscription_id: str, endpoint: str
+) -> None:
+    """Create a new push no wrapper subscription on the given topic."""
+    # [START pubsub_create_unwrapped_push_subscription]
+    from google.cloud import pubsub_v1
+
+    # TODO(developer)
+    # project_id = "your-project-id"
+    # topic_id = "your-topic-id"
+    # subscription_id = "your-subscription-id"
+    # endpoint = "https://my-test-project.appspot.com/push"
+
+    publisher = pubsub_v1.PublisherClient()
+    subscriber = pubsub_v1.SubscriberClient()
+    topic_path = publisher.topic_path(project_id, topic_id)
+    subscription_path = subscriber.subscription_path(project_id, subscription_id)
+
+    no_wrapper = pubsub_v1.types.PushConfig.NoWrapper(write_metadata=True)
+    push_config = pubsub_v1.types.PushConfig(
+        push_endpoint=endpoint, no_wrapper=no_wrapper
+    )
+
+    # Wrap the subscriber in a 'with' block to automatically call close() to
+    # close the underlying gRPC channel when done.
+    with subscriber:
+        subscription = subscriber.create_subscription(
+            request={
+                "name": subscription_path,
+                "topic": topic_path,
+                "push_config": push_config,
+            }
+        )
+
+    print(f"Push no wrapper subscription created: {subscription}.")
+    print(f"Endpoint for subscription is: {endpoint}")
+    print(f"No wrapper configuration for subscription is: {no_wrapper}")
+    # [END pubsub_create_unwrapped_push_subscription]
+
+
 def create_subscription_with_ordering(
     project_id: str, topic_id: str, subscription_id: str
 ) -> None:
@@ -312,6 +352,62 @@ def create_bigquery_subscription(
     print(f"BigQuery subscription created: {subscription}.")
     print(f"Table for subscription is: {bigquery_table_id}")
     # [END pubsub_create_bigquery_subscription]
+
+
+def create_cloudstorage_subscription(
+    project_id: str, topic_id: str, subscription_id: str, bucket: str
+) -> None:
+    """Create a new CloudStorage subscription on the given topic."""
+    # [START pubsub_create_cloud_storage_subscription]
+    from google.cloud import pubsub_v1
+    from google.protobuf import duration_pb2
+
+    # TODO(developer)
+    # project_id = "your-project-id"
+    # topic_id = "your-topic-id"
+    # subscription_id = "your-subscription-id"
+    # bucket = "my-bucket"
+
+    filename_prefix = "log_events_"
+    filename_suffix = ".avro"
+    # Either CloudStorageConfig.AvroConfig or CloudStorageConfig.TextConfig
+    # defaults to TextConfig
+    avro_config = pubsub_v1.types.CloudStorageConfig.AvroConfig(write_metadata=True)
+
+    publisher = pubsub_v1.PublisherClient()
+    subscriber = pubsub_v1.SubscriberClient()
+    topic_path = publisher.topic_path(project_id, topic_id)
+    subscription_path = subscriber.subscription_path(project_id, subscription_id)
+    max_duration = duration_pb2.Duration()
+    max_duration.FromSeconds(300)
+
+    cloudstorage_config = pubsub_v1.types.CloudStorageConfig(
+        bucket=bucket,
+        filename_prefix=filename_prefix,
+        filename_suffix=filename_suffix,
+        avro_config=avro_config,
+        # Min 1 minutes, max 10 minutes
+        max_duration=max_duration,
+        # Min 1 KB, max 10 GiB
+        max_bytes=2000,
+    )
+
+    # Wrap the subscriber in a 'with' block to automatically call close() to
+    # close the underlying gRPC channel when done.
+    with subscriber:
+        subscription = subscriber.create_subscription(
+            request={
+                "name": subscription_path,
+                "topic": topic_path,
+                "cloud_storage_config": cloudstorage_config,
+            }
+        )
+
+    print(f"CloudStorage subscription created: {subscription}.")
+    print(f"Bucket for subscription is: {bucket}")
+    print(f"Prefix is: {filename_prefix}")
+    print(f"Suffix is: {filename_suffix}")
+    # [END pubsub_create_cloud_storage_subscription]
 
 
 def delete_subscription(project_id: str, subscription_id: str) -> None:
@@ -946,6 +1042,13 @@ if __name__ == "__main__":  # noqa
     create_push_parser.add_argument("subscription_id")
     create_push_parser.add_argument("endpoint")
 
+    create_push_no_wrapper_parser = subparsers.add_parser(
+        "create-push-no-wrapper", help=create_push_no_wrapper_subscription.__doc__
+    )
+    create_push_no_wrapper_parser.add_argument("topic_id")
+    create_push_no_wrapper_parser.add_argument("subscription_id")
+    create_push_no_wrapper_parser.add_argument("endpoint")
+
     create_subscription_with_ordering_parser = subparsers.add_parser(
         "create-with-ordering", help=create_subscription_with_ordering.__doc__
     )
@@ -975,6 +1078,14 @@ if __name__ == "__main__":  # noqa
     create_bigquery_subscription_parser.add_argument("topic_id")
     create_bigquery_subscription_parser.add_argument("subscription_id")
     create_bigquery_subscription_parser.add_argument("bigquery_table_id")
+
+    create_cloudstorage_subscription_parser = subparsers.add_parser(
+        "create-cloudstorage",
+        help=create_cloudstorage_subscription.__doc__,
+    )
+    create_cloudstorage_subscription_parser.add_argument("topic_id")
+    create_cloudstorage_subscription_parser.add_argument("subscription_id")
+    create_cloudstorage_subscription_parser.add_argument("bucket")
 
     delete_parser = subparsers.add_parser("delete", help=delete_subscription.__doc__)
     delete_parser.add_argument("subscription_id")
@@ -1092,6 +1203,10 @@ if __name__ == "__main__":  # noqa
         create_push_subscription(
             args.project_id, args.topic_id, args.subscription_id, args.endpoint
         )
+    elif args.command == "create-push-no-wrapper":
+        create_push_no_wrapper_subscription(
+            args.project_id, args.topic_id, args.subscription_id, args.endpoint
+        )
     elif args.command == "create-with-ordering":
         create_subscription_with_ordering(
             args.project_id, args.topic_id, args.subscription_id
@@ -1111,6 +1226,11 @@ if __name__ == "__main__":  # noqa
             args.subscription_id,
             args.bigquery_table_id,
         )
+    elif args.command == "create-cloudstorage":
+        create_cloudstorage_subscription(
+            args.project_id, args.topic_id, args.subscription_id, args.bucket
+        )
+
     elif args.command == "delete":
         delete_subscription(args.project_id, args.subscription_id)
     elif args.command == "update-push":

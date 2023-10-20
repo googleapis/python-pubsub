@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2022 Google LLC
+# Copyright 2023 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -58,6 +58,7 @@ import grpc
 from .transports.base import SchemaServiceTransport, DEFAULT_CLIENT_INFO
 from .transports.grpc import SchemaServiceGrpcTransport
 from .transports.grpc_asyncio import SchemaServiceGrpcAsyncIOTransport
+from .transports.rest import SchemaServiceRestTransport
 
 
 class SchemaServiceClientMeta(type):
@@ -71,6 +72,7 @@ class SchemaServiceClientMeta(type):
     _transport_registry = OrderedDict()  # type: Dict[str, Type[SchemaServiceTransport]]
     _transport_registry["grpc"] = SchemaServiceGrpcTransport
     _transport_registry["grpc_asyncio"] = SchemaServiceGrpcAsyncIOTransport
+    _transport_registry["rest"] = SchemaServiceRestTransport
 
     def get_transport_class(
         cls,
@@ -718,8 +720,7 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
 
         Args:
             request (Union[google.pubsub_v1.types.ListSchemasRequest, dict]):
-                The request object. Request for the `ListSchemas`
-                method.
+                The request object. Request for the ``ListSchemas`` method.
             parent (str):
                 Required. The name of the project in which to list
                 schemas. Format is ``projects/{project-id}``.
@@ -832,8 +833,7 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
 
         Args:
             request (Union[google.pubsub_v1.types.ListSchemaRevisionsRequest, dict]):
-                The request object. Request for the
-                `ListSchemaRevisions` method.
+                The request object. Request for the ``ListSchemaRevisions`` method.
             name (str):
                 Required. The name of the schema to
                 list revisions for.
@@ -1061,8 +1061,7 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
 
         Args:
             request (Union[google.pubsub_v1.types.RollbackSchemaRequest, dict]):
-                The request object. Request for the `RollbackSchema`
-                method.
+                The request object. Request for the ``RollbackSchema`` method.
             name (str):
                 Required. The schema being rolled
                 back with revision id.
@@ -1074,6 +1073,7 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
                 Required. The revision ID to roll
                 back to. It must be a revision of the
                 same schema.
+
                   Example: c7cfa2a8
 
                 This corresponds to the ``revision_id`` field
@@ -1173,8 +1173,7 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
 
         Args:
             request (Union[google.pubsub_v1.types.DeleteSchemaRevisionRequest, dict]):
-                The request object. Request for the
-                `DeleteSchemaRevision` method.
+                The request object. Request for the ``DeleteSchemaRevision`` method.
             name (str):
                 Required. The name of the schema revision to be deleted,
                 with a revision ID explicitly included.
@@ -1282,8 +1281,7 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
 
         Args:
             request (Union[google.pubsub_v1.types.DeleteSchemaRequest, dict]):
-                The request object. Request for the `DeleteSchema`
-                method.
+                The request object. Request for the ``DeleteSchema`` method.
             name (str):
                 Required. Name of the schema to delete. Format is
                 ``projects/{project}/schemas/{schema}``.
@@ -1380,8 +1378,7 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
 
         Args:
             request (Union[google.pubsub_v1.types.ValidateSchemaRequest, dict]):
-                The request object. Request for the `ValidateSchema`
-                method.
+                The request object. Request for the ``ValidateSchema`` method.
             parent (str):
                 Required. The name of the project in which to validate
                 schemas. Format is ``projects/{project-id}``.
@@ -1491,8 +1488,7 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
 
         Args:
             request (Union[google.pubsub_v1.types.ValidateMessageRequest, dict]):
-                The request object. Request for the `ValidateMessage`
-                method.
+                The request object. Request for the ``ValidateMessage`` method.
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.

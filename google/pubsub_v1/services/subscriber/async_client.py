@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2022 Google LLC
+# Copyright 2023 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -238,17 +238,17 @@ class SubscriberAsyncClient:
     ) -> pubsub.Subscription:
         r"""Creates a subscription to a given topic. See the [resource name
         rules]
-        (https://cloud.google.com/pubsub/docs/admin#resource_names). If
-        the subscription already exists, returns ``ALREADY_EXISTS``. If
-        the corresponding topic doesn't exist, returns ``NOT_FOUND``.
+        (https://cloud.google.com/pubsub/docs/pubsub-basics#resource_names).
+        If the subscription already exists, returns ``ALREADY_EXISTS``.
+        If the corresponding topic doesn't exist, returns ``NOT_FOUND``.
 
         If the name is not provided in the request, the server will
         assign a random name for this subscription on the same project
         as the topic, conforming to the [resource name format]
-        (https://cloud.google.com/pubsub/docs/admin#resource_names). The
-        generated name is populated in the returned Subscription object.
-        Note that for REST API requests, you must specify a name in the
-        request.
+        (https://cloud.google.com/pubsub/docs/pubsub-basics#resource_names).
+        The generated name is populated in the returned Subscription
+        object. Note that for REST API requests, you must specify a name
+        in the request.
 
         .. code-block:: python
 
@@ -279,10 +279,10 @@ class SubscriberAsyncClient:
 
         Args:
             request (Optional[Union[google.pubsub_v1.types.Subscription, dict]]):
-                The request object. A subscription resource. If none of
-                `push_config` or `bigquery_config` is set, then the
-                subscriber will pull and ack messages using API methods.
-                At most one of these fields may be set.
+                The request object. A subscription resource. If none of ``push_config``,
+                ``bigquery_config``, or ``cloud_storage_config`` is set,
+                then the subscriber will pull and ack messages using API
+                methods. At most one of these fields may be set.
             name (:class:`str`):
                 Required. The name of the subscription. It must have the
                 format
@@ -352,10 +352,10 @@ class SubscriberAsyncClient:
 
         Returns:
             google.pubsub_v1.types.Subscription:
-                A subscription resource. If none of push_config or bigquery_config is
-                   set, then the subscriber will pull and ack messages
-                   using API methods. At most one of these fields may be
-                   set.
+                A subscription resource. If none of push_config, bigquery_config, or
+                   cloud_storage_config is set, then the subscriber will
+                   pull and ack messages using API methods. At most one
+                   of these fields may be set.
 
         """
         # Create or coerce a protobuf request object.
@@ -473,10 +473,10 @@ class SubscriberAsyncClient:
 
         Returns:
             google.pubsub_v1.types.Subscription:
-                A subscription resource. If none of push_config or bigquery_config is
-                   set, then the subscriber will pull and ack messages
-                   using API methods. At most one of these fields may be
-                   set.
+                A subscription resource. If none of push_config, bigquery_config, or
+                   cloud_storage_config is set, then the subscriber will
+                   pull and ack messages using API methods. At most one
+                   of these fields may be set.
 
         """
         # Create or coerce a protobuf request object.
@@ -605,10 +605,10 @@ class SubscriberAsyncClient:
 
         Returns:
             google.pubsub_v1.types.Subscription:
-                A subscription resource. If none of push_config or bigquery_config is
-                   set, then the subscriber will pull and ack messages
-                   using API methods. At most one of these fields may be
-                   set.
+                A subscription resource. If none of push_config, bigquery_config, or
+                   cloud_storage_config is set, then the subscriber will
+                   pull and ack messages using API methods. At most one
+                   of these fields may be set.
 
         """
         # Create or coerce a protobuf request object.
@@ -706,8 +706,7 @@ class SubscriberAsyncClient:
 
         Args:
             request (Optional[Union[google.pubsub_v1.types.ListSubscriptionsRequest, dict]]):
-                The request object. Request for the `ListSubscriptions`
-                method.
+                The request object. Request for the ``ListSubscriptions`` method.
             project (:class:`str`):
                 Required. The name of the project in which to list
                 subscriptions. Format is ``projects/{project-id}``.
@@ -1194,7 +1193,7 @@ class SubscriberAsyncClient:
 
         Args:
             request (Optional[Union[google.pubsub_v1.types.PullRequest, dict]]):
-                The request object. Request for the `Pull` method.
+                The request object. Request for the ``Pull`` method.
             subscription (:class:`str`):
                 Required. The subscription from which messages should be
                 pulled. Format is
@@ -1360,11 +1359,10 @@ class SubscriberAsyncClient:
 
         Args:
             requests (AsyncIterator[`google.pubsub_v1.types.StreamingPullRequest`]):
-                The request object AsyncIterator. Request for the `StreamingPull`
-                streaming RPC method. This request is used to establish
-                the initial stream as well as to stream acknowledgements
-                and ack deadline modifications from the client to the
-                server.
+                The request object AsyncIterator. Request for the ``StreamingPull`` streaming RPC method.
+                This request is used to establish the initial stream as
+                well as to stream acknowledgements and ack deadline
+                modifications from the client to the server.
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
@@ -1385,7 +1383,7 @@ class SubscriberAsyncClient:
             default_retry=retries.Retry(
                 initial=0.1,
                 maximum=60.0,
-                multiplier=1.3,
+                multiplier=4.0,
                 predicate=retries.if_exception_type(
                     core_exceptions.Aborted,
                     core_exceptions.DeadlineExceeded,
@@ -1697,8 +1695,7 @@ class SubscriberAsyncClient:
 
         Args:
             request (Optional[Union[google.pubsub_v1.types.ListSnapshotsRequest, dict]]):
-                The request object. Request for the `ListSnapshots`
-                method.
+                The request object. Request for the ``ListSnapshots`` method.
             project (:class:`str`):
                 Required. The name of the project in which to list
                 snapshots. Format is ``projects/{project-id}``.
@@ -1807,8 +1804,8 @@ class SubscriberAsyncClient:
         the request, the server will assign a random name for this
         snapshot on the same project as the subscription, conforming to
         the [resource name format]
-        (https://cloud.google.com/pubsub/docs/admin#resource_names). The
-        generated name is populated in the returned Snapshot object.
+        (https://cloud.google.com/pubsub/docs/pubsub-basics#resource_names).
+        The generated name is populated in the returned Snapshot object.
         Note that for REST API requests, you must specify a name in the
         request.
 
@@ -1841,8 +1838,7 @@ class SubscriberAsyncClient:
 
         Args:
             request (Optional[Union[google.pubsub_v1.types.CreateSnapshotRequest, dict]]):
-                The request object. Request for the `CreateSnapshot`
-                method.
+                The request object. Request for the ``CreateSnapshot`` method.
             name (:class:`str`):
                 Required. User-provided name for this snapshot. If the
                 name is not provided in the request, the server will
@@ -1850,7 +1846,7 @@ class SubscriberAsyncClient:
                 project as the subscription. Note that for REST API
                 requests, you must specify a name. See the `resource
                 name
-                rules <https://cloud.google.com/pubsub/docs/admin#resource_names>`__.
+                rules <https://cloud.google.com/pubsub/docs/pubsub-basics#resource_names>`__.
                 Format is ``projects/{project}/snapshots/{snap}``.
 
                 This corresponds to the ``name`` field
@@ -2116,8 +2112,7 @@ class SubscriberAsyncClient:
 
         Args:
             request (Optional[Union[google.pubsub_v1.types.DeleteSnapshotRequest, dict]]):
-                The request object. Request for the `DeleteSnapshot`
-                method.
+                The request object. Request for the ``DeleteSnapshot`` method.
             snapshot (:class:`str`):
                 Required. The name of the snapshot to delete. Format is
                 ``projects/{project}/snapshots/{snap}``.
@@ -2225,7 +2220,7 @@ class SubscriberAsyncClient:
 
         Args:
             request (Optional[Union[google.pubsub_v1.types.SeekRequest, dict]]):
-                The request object. Request for the `Seek` method.
+                The request object. Request for the ``Seek`` method.
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
@@ -2576,7 +2571,7 @@ class SubscriberAsyncClient:
         # Done; return the response.
         return response
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> "SubscriberAsyncClient":
         return self
 
     async def __aexit__(self, exc_type, exc, tb):

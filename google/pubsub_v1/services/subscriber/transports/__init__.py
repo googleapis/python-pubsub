@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2022 Google LLC
+# Copyright 2023 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,15 +19,20 @@ from typing import Dict, Type
 from .base import SubscriberTransport
 from .grpc import SubscriberGrpcTransport
 from .grpc_asyncio import SubscriberGrpcAsyncIOTransport
+from .rest import SubscriberRestTransport
+from .rest import SubscriberRestInterceptor
 
 
 # Compile a registry of transports.
 _transport_registry = OrderedDict()  # type: Dict[str, Type[SubscriberTransport]]
 _transport_registry["grpc"] = SubscriberGrpcTransport
 _transport_registry["grpc_asyncio"] = SubscriberGrpcAsyncIOTransport
+_transport_registry["rest"] = SubscriberRestTransport
 
 __all__ = (
     "SubscriberTransport",
     "SubscriberGrpcTransport",
     "SubscriberGrpcAsyncIOTransport",
+    "SubscriberRestTransport",
+    "SubscriberRestInterceptor",
 )
