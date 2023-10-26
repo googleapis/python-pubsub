@@ -1045,6 +1045,7 @@ def receive_messages_with_concurrency_control(
             streaming_pull_future.result()  # Block until the shutdown is complete.
     # [END pubsub_subscriber_concurrency_control]
 
+
 if __name__ == "__main__":  # noqa
     parser = argparse.ArgumentParser(
         description=__doc__,
@@ -1227,7 +1228,7 @@ if __name__ == "__main__":  # noqa
 
     receive_messages_with_concurrency_control_parser = subparsers.add_parser(
         "receive-messages-with-concurrency-control",
-        help=receive_messages_with_concurrency_control.__doc__
+        help=receive_messages_with_concurrency_control.__doc__,
     )
     receive_messages_with_concurrency_control_parser.add_argument("subscription_id")
     receive_messages_with_concurrency_control_parser.add_argument(
