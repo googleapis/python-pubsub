@@ -1002,6 +1002,7 @@ def receive_messages_with_delivery_attempts(
             streaming_pull_future.result()  # Block until the shutdown is complete.
     # [END pubsub_dead_letter_delivery_attempt]
 
+
 def receive_messages_with_concurrency_control(
     project_id: str, subscription_id: str, timeout: Optional[float] = None
 ) -> None:
@@ -1027,7 +1028,7 @@ def receive_messages_with_concurrency_control(
     def callback(message: pubsub_v1.subscriber.message.Message) -> None:
         print(f"Received {message.data!r}.")
         message.ack()
-    
+
     streaming_pull_future = subscriber.subscribe(
         subscription_path, callback=callback, scheduler=scheduler
     )
