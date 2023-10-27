@@ -1014,9 +1014,7 @@ def test_receive_messages_with_concurrency_control(
     topic: str,
     capsys: CaptureFixture[str],
 ) -> None:
-    subscription_async_receive_messages_with_concurrency_control_name = (
-        f"subscription-test-subscription-async-receive-messages-with-concurrency-control-{PY_VERSION}-{UUID}"
-    )
+    subscription_async_receive_messages_with_concurrency_control_name = f"subscription-test-subscription-async-receive-messages-with-concurrency-control-{PY_VERSION}-{UUID}"
 
     subscription_path = subscriber_client.subscription_path(
         PROJECT_ID, subscription_async_receive_messages_with_concurrency_control_name
