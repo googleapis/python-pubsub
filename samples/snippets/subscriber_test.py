@@ -1007,6 +1007,7 @@ def test_receive_synchronously(
     # Clean up.
     subscriber_client.delete_subscription(request={"subscription": subscription_path})
 
+
 def test_receive_messages_with_concurrency_control(
     subscriber_client: pubsub_v1.SubscriberClient,
     publisher_client: pubsub_v1.PublisherClient,
