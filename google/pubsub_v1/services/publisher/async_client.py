@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2022 Google LLC
+# Copyright 2023 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -230,7 +230,7 @@ class PublisherAsyncClient:
     ) -> pubsub.Topic:
         r"""Creates the given topic with the given name. See the [resource
         name rules]
-        (https://cloud.google.com/pubsub/docs/admin#resource_names).
+        (https://cloud.google.com/pubsub/docs/pubsub-basics#resource_names).
 
         .. code-block:: python
 
@@ -556,7 +556,7 @@ class PublisherAsyncClient:
             default_retry=retries.Retry(
                 initial=0.1,
                 maximum=60.0,
-                multiplier=1.3,
+                multiplier=4.0,
                 predicate=retries.if_exception_type(
                     core_exceptions.Aborted,
                     core_exceptions.Cancelled,
@@ -1585,7 +1585,7 @@ class PublisherAsyncClient:
         # Done; return the response.
         return response
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> "PublisherAsyncClient":
         return self
 
     async def __aexit__(self, exc_type, exc, tb):

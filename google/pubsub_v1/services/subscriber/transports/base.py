@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2022 Google LLC
+# Copyright 2023 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -255,7 +255,7 @@ class SubscriberTransport(abc.ABC):
                 default_retry=retries.Retry(
                     initial=0.1,
                     maximum=60.0,
-                    multiplier=1.3,
+                    multiplier=4.0,
                     predicate=retries.if_exception_type(
                         core_exceptions.Aborted,
                         core_exceptions.DeadlineExceeded,

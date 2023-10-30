@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2022 Google LLC
+# Copyright 2023 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -1073,6 +1073,7 @@ class SchemaServiceClient(metaclass=SchemaServiceClientMeta):
                 Required. The revision ID to roll
                 back to. It must be a revision of the
                 same schema.
+
                   Example: c7cfa2a8
 
                 This corresponds to the ``revision_id`` field

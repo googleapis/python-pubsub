@@ -5,6 +5,59 @@
 [1]: https://pypi.org/project/google-cloud-pubsub/#history
 
 
+## [2.18.4](https://github.com/googleapis/python-pubsub/compare/v2.18.3...v2.18.4) (2023-09-09)
+
+
+### Documentation
+
+* Minor formatting ([#988](https://github.com/googleapis/python-pubsub/issues/988)) ([4eea8c5](https://github.com/googleapis/python-pubsub/commit/4eea8c5c757da6800ba6958e4b8e66085b0e9ddb))
+
+## [2.18.3](https://github.com/googleapis/python-pubsub/compare/v2.18.2...v2.18.3) (2023-08-18)
+
+
+### Bug Fixes
+
+* Make retry policy back off more aggressively for RPCs that retry RESOURCE_EXHAUSTD ([#979](https://github.com/googleapis/python-pubsub/issues/979)) ([4073b3d](https://github.com/googleapis/python-pubsub/commit/4073b3dd6a6989e86d5e19bdb9b9c47ae2b0db87))
+
+## [2.18.2](https://github.com/googleapis/python-pubsub/compare/v2.18.1...v2.18.2) (2023-08-07)
+
+
+### Bug Fixes
+
+* Change retry multiplier from 1.3 to 4, for requests that retry Resour… ([#971](https://github.com/googleapis/python-pubsub/issues/971)) ([e4364d2](https://github.com/googleapis/python-pubsub/commit/e4364d2a061bb73fe3410d2ef213a04f3315e282))
+
+## [2.18.1](https://github.com/googleapis/python-pubsub/compare/v2.18.0...v2.18.1) (2023-07-26)
+
+
+### Documentation
+
+* Clarified where ordering_key will be written if write_metadata is set ([#965](https://github.com/googleapis/python-pubsub/issues/965)) ([3d95034](https://github.com/googleapis/python-pubsub/commit/3d95034f94426cdcf5b87323b9e463a7e8ce4f91))
+
+## [2.18.0](https://github.com/googleapis/python-pubsub/compare/v2.17.1...v2.18.0) (2023-07-12)
+
+
+### Features
+
+* Add push config wrapper fields ([#925](https://github.com/googleapis/python-pubsub/issues/925)) ([8e803cf](https://github.com/googleapis/python-pubsub/commit/8e803cf4ab136d606a0be459ab6d281b65560599))
+
+
+### Bug Fixes
+
+* Add async context manager return types ([#944](https://github.com/googleapis/python-pubsub/issues/944)) ([a3b2061](https://github.com/googleapis/python-pubsub/commit/a3b2061c4edf42123335fcfee6fcc4a44e90a5eb))
+
+
+### Documentation
+
+* Tightened requirements on cloud storage subscription filename suffixes ([#938](https://github.com/googleapis/python-pubsub/issues/938)) ([f54dcd0](https://github.com/googleapis/python-pubsub/commit/f54dcd0e7324218d87c37c0266c441a62012866d))
+* Update Community section in README.rst ([#945](https://github.com/googleapis/python-pubsub/issues/945)) ([dea258c](https://github.com/googleapis/python-pubsub/commit/dea258cff3ad19ffba67659bb03a2edcc44889d9))
+
+## [2.17.1](https://github.com/googleapis/python-pubsub/compare/v2.17.0...v2.17.1) (2023-05-23)
+
+
+### Documentation
+
+* Add attributes to pubsub_v1.types ([#921](https://github.com/googleapis/python-pubsub/issues/921)) ([4607dca](https://github.com/googleapis/python-pubsub/commit/4607dca983a8f5d4043c5661165da99453f2ef4a))
+
 ## [2.17.0](https://github.com/googleapis/python-pubsub/compare/v2.16.1...v2.17.0) (2023-05-12)
 
 

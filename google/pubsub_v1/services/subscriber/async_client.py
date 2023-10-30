@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2022 Google LLC
+# Copyright 2023 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -238,17 +238,17 @@ class SubscriberAsyncClient:
     ) -> pubsub.Subscription:
         r"""Creates a subscription to a given topic. See the [resource name
         rules]
-        (https://cloud.google.com/pubsub/docs/admin#resource_names). If
-        the subscription already exists, returns ``ALREADY_EXISTS``. If
-        the corresponding topic doesn't exist, returns ``NOT_FOUND``.
+        (https://cloud.google.com/pubsub/docs/pubsub-basics#resource_names).
+        If the subscription already exists, returns ``ALREADY_EXISTS``.
+        If the corresponding topic doesn't exist, returns ``NOT_FOUND``.
 
         If the name is not provided in the request, the server will
         assign a random name for this subscription on the same project
         as the topic, conforming to the [resource name format]
-        (https://cloud.google.com/pubsub/docs/admin#resource_names). The
-        generated name is populated in the returned Subscription object.
-        Note that for REST API requests, you must specify a name in the
-        request.
+        (https://cloud.google.com/pubsub/docs/pubsub-basics#resource_names).
+        The generated name is populated in the returned Subscription
+        object. Note that for REST API requests, you must specify a name
+        in the request.
 
         .. code-block:: python
 
@@ -1383,7 +1383,7 @@ class SubscriberAsyncClient:
             default_retry=retries.Retry(
                 initial=0.1,
                 maximum=60.0,
-                multiplier=1.3,
+                multiplier=4.0,
                 predicate=retries.if_exception_type(
                     core_exceptions.Aborted,
                     core_exceptions.DeadlineExceeded,
@@ -1804,8 +1804,8 @@ class SubscriberAsyncClient:
         the request, the server will assign a random name for this
         snapshot on the same project as the subscription, conforming to
         the [resource name format]
-        (https://cloud.google.com/pubsub/docs/admin#resource_names). The
-        generated name is populated in the returned Snapshot object.
+        (https://cloud.google.com/pubsub/docs/pubsub-basics#resource_names).
+        The generated name is populated in the returned Snapshot object.
         Note that for REST API requests, you must specify a name in the
         request.
 
@@ -1846,7 +1846,7 @@ class SubscriberAsyncClient:
                 project as the subscription. Note that for REST API
                 requests, you must specify a name. See the `resource
                 name
-                rules <https://cloud.google.com/pubsub/docs/admin#resource_names>`__.
+                rules <https://cloud.google.com/pubsub/docs/pubsub-basics#resource_names>`__.
                 Format is ``projects/{project}/snapshots/{snap}``.
 
                 This corresponds to the ``name`` field
@@ -2571,7 +2571,7 @@ class SubscriberAsyncClient:
         # Done; return the response.
         return response
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> "SubscriberAsyncClient":
         return self
 
     async def __aexit__(self, exc_type, exc, tb):

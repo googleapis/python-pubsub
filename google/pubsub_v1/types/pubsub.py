@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2022 Google LLC
+# Copyright 2023 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -84,14 +84,15 @@ class MessageStoragePolicy(proto.Message):
 
     Attributes:
         allowed_persistence_regions (MutableSequence[str]):
-            A list of IDs of GCP regions where messages
-            that are published to the topic may be persisted
-            in storage. Messages published by publishers
-            running in non-allowed GCP regions (or running
-            outside of GCP altogether) will be routed for
-            storage in one of the allowed regions. An empty
-            list means that no regions are allowed, and is
-            not a valid configuration.
+            A list of IDs of Google Cloud regions where
+            messages that are published to the topic may be
+            persisted in storage. Messages published by
+            publishers running in non-allowed Google Cloud
+            regions (or running outside of Google Cloud
+            altogether) are routed for storage in one of the
+            allowed regions. An empty list means that no
+            regions are allowed, and is not a valid
+            configuration.
     """
 
     allowed_persistence_regions: MutableSequence[str] = proto.RepeatedField(
@@ -959,6 +960,11 @@ class ExpirationPolicy(proto.Message):
 class PushConfig(proto.Message):
     r"""Configuration for a push delivery endpoint.
 
+    This message has `oneof`_ fields (mutually exclusive fields).
+    For each oneof, at most one member field can be set at the same time.
+    Setting any member of the oneof automatically clears all other
+    members.
+
     .. _oneof: https://proto-plus-python.readthedocs.io/en/stable/fields.html#oneofs-mutually-exclusive-fields
 
     Attributes:
@@ -998,6 +1004,18 @@ class PushConfig(proto.Message):
             every pushed message.
 
             This field is a member of `oneof`_ ``authentication_method``.
+        pubsub_wrapper (google.pubsub_v1.types.PushConfig.PubsubWrapper):
+            When set, the payload to the push endpoint is
+            in the form of the JSON representation of a
+            PubsubMessage
+            (https://cloud.google.com/pubsub/docs/reference/rpc/google.pubsub.v1#pubsubmessage).
+
+            This field is a member of `oneof`_ ``wrapper``.
+        no_wrapper (google.pubsub_v1.types.PushConfig.NoWrapper):
+            When set, the payload to the push endpoint is
+            not wrapped.
+
+            This field is a member of `oneof`_ ``wrapper``.
     """
 
     class OidcToken(proto.Message):
@@ -1033,6 +1051,29 @@ class PushConfig(proto.Message):
             number=2,
         )
 
+    class PubsubWrapper(proto.Message):
+        r"""The payload to the push endpoint is in the form of the JSON
+        representation of a PubsubMessage
+        (https://cloud.google.com/pubsub/docs/reference/rpc/google.pubsub.v1#pubsubmessage).
+
+        """
+
+    class NoWrapper(proto.Message):
+        r"""Sets the ``data`` field as the HTTP body for delivery.
+
+        Attributes:
+            write_metadata (bool):
+                When true, writes the Pub/Sub message metadata to
+                ``x-goog-pubsub-<KEY>:<VAL>`` headers of the HTTP request.
+                Writes the Pub/Sub message attributes to ``<KEY>:<VAL>``
+                headers of the HTTP request.
+        """
+
+        write_metadata: bool = proto.Field(
+            proto.BOOL,
+            number=1,
+        )
+
     push_endpoint: str = proto.Field(
         proto.STRING,
         number=1,
@@ -1047,6 +1088,18 @@ class PushConfig(proto.Message):
         number=3,
         oneof="authentication_method",
         message=OidcToken,
+    )
+    pubsub_wrapper: PubsubWrapper = proto.Field(
+        proto.MESSAGE,
+        number=4,
+        oneof="wrapper",
+        message=PubsubWrapper,
+    )
+    no_wrapper: NoWrapper = proto.Field(
+        proto.MESSAGE,
+        number=5,
+        oneof="wrapper",
+        message=NoWrapper,
     )
 
 
@@ -1160,6 +1213,7 @@ class CloudStorageConfig(proto.Message):
             User-provided suffix for Cloud Storage filename. See the
             `object naming
             requirements <https://cloud.google.com/storage/docs/objects#naming>`__.
+            Must not end in "/".
         text_config (google.pubsub_v1.types.CloudStorageConfig.TextConfig):
             If set, message data will be written to Cloud
             Storage in text format.
@@ -1224,7 +1278,11 @@ class CloudStorageConfig(proto.Message):
             write_metadata (bool):
                 When true, write the subscription name, message_id,
                 publish_time, attributes, and ordering_key as additional
-                fields in the output.
+                fields in the output. The subscription name, message_id, and
+                publish_time fields are put in their own fields while all
+                other message properties other than data (for example, an
+                ordering_key, if present) are added as entries in the
+                attributes map.
         """
 
         write_metadata: bool = proto.Field(
@@ -1828,7 +1886,7 @@ class CreateSnapshotRequest(proto.Message):
             random name for this snapshot on the same project as the
             subscription. Note that for REST API requests, you must
             specify a name. See the `resource name
-            rules <https://cloud.google.com/pubsub/docs/admin#resource_names>`__.
+            rules <https://cloud.google.com/pubsub/docs/pubsub-basics#resource_names>`__.
             Format is ``projects/{project}/snapshots/{snap}``.
         subscription (str):
             Required. The subscription whose backlog the snapshot
