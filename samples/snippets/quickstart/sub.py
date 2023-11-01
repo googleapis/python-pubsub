@@ -42,7 +42,7 @@ def sub(project_id: str, subscription_id: str, timeout: Optional[float] = None) 
     try:
         # Calling result() on StreamingPullFuture keeps the main thread from
         # exiting while messages get processed in the callbacks.
-        streaming_pull_future.result(timeout=timeout)
+        streaming_pull_future.result(timeout=float(timeout))
     except:  # noqa
         streaming_pull_future.cancel()  # Trigger the shutdown.
         streaming_pull_future.result()  # Block until the shutdown is complete.
@@ -57,7 +57,7 @@ if __name__ == "__main__":
     parser.add_argument("project_id", help="Google Cloud project ID")
     parser.add_argument("subscription_id", help="Pub/Sub subscription ID")
     parser.add_argument(
-        "timeout", default=None, nargs="?", const=1, help="Pub/Sub subscription ID"
+        "timeout", default=None, nargs="?", const=1, help="Subscription Timeout in seconds"
     )
 
     args = parser.parse_args()
