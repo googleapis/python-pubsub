@@ -42,7 +42,7 @@ def sub(project_id: str, subscription_id: str, timeout: Optional[float] = None) 
     try:
         # Calling result() on StreamingPullFuture keeps the main thread from
         # exiting while messages get processed in the callbacks.
-        streaming_pull_future.result(timeout=float(timeout))
+        streaming_pull_future.result(timeout=timeout and float(timeout))
     except:  # noqa
         streaming_pull_future.cancel()  # Trigger the shutdown.
         streaming_pull_future.result()  # Block until the shutdown is complete.
