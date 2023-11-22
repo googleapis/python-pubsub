@@ -60,10 +60,6 @@ packages = [
     if package.startswith("google")
 ]
 
-namespaces = ["google"]
-if "google.cloud" in packages:
-    namespaces.append("google.cloud")
-
 setuptools.setup(
     name=name,
     version=version,
@@ -89,7 +85,6 @@ setuptools.setup(
     ],
     platforms="Posix; MacOS X; Windows",
     packages=packages,
-    namespace_packages=namespaces,
     install_requires=dependencies,
     extras_require=extras,
     python_requires=">=3.7",
