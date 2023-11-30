@@ -218,7 +218,9 @@ def test_context_manager_raises_if_closed(creds):
 def test_api_property_deprecated(creds):
     client = subscriber.Client(credentials=creds)
 
-    with warnings.catch_warnings(record=True) as warned:
+    with pytest.warns(
+        DeprecationWarning, match="client.api"
+    ) as warned:
         client.api
 
     assert len(warned) == 1
@@ -230,7 +232,9 @@ def test_api_property_deprecated(creds):
 def test_api_property_proxy_to_generated_client(creds):
     client = subscriber.Client(credentials=creds)
 
-    with warnings.catch_warnings(record=True):
+    with pytest.warns(
+        DeprecationWarning, match="client.api"
+    ) as warned:
         api_object = client.api
 
     # Not a perfect check, but we are satisficed if the returned API object indeed
@@ -264,7 +268,7 @@ def test_sync_pull_warning_if_return_immediately(creds):
 
     with mock.patch.object(
         client._transport, "_wrapped_methods"
-    ), warnings.catch_warnings(record=True) as warned:
+    ), pytest.warns(DeprecationWarning, match="The return_immediately flag is deprecated and should be set to False") as warned:
         client.pull(subscription=subscription_path, return_immediately=True)
 
     # Setting the deprecated return_immediately flag to True should emit a warning.
@@ -287,7 +291,7 @@ async def test_sync_pull_warning_if_return_immediately_async(creds):
         new=mock.AsyncMock,
     )
 
-    with patcher, warnings.catch_warnings(record=True) as warned:
+    with patcher, pytest.warns(DeprecationWarning, match="The return_immediately flag is deprecated and should be set to False") as warned:
         await client.pull(subscription=subscription_path, return_immediately=True)
 
     # Setting the deprecated return_immediately flag to True should emit a warning.
