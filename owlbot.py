@@ -380,7 +380,7 @@ s.replace(
         # TODO: Only check the hand-written layer, the generated code does not pass
         # mypy checks yet.
         # https://github.com/googleapis/gapic-generator-python/issues/1092
-        session.run("mypy", "google/cloud")'''
+        session.run("mypy", "-p", "google.cloud")'''
     ),
 )
 
@@ -396,7 +396,7 @@ s.replace(
 )
 s.replace(
     "noxfile.py",
-    r'session\.run\("mypy", "google/cloud"\)',
+    r'session\.run\("mypy", "-p", "google.cloud"\)',
     textwrap.dedent(
         '''    \g<0>
 
