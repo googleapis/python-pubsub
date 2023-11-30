@@ -56,7 +56,7 @@ with io.open(readme_filename, encoding="utf-8") as readme_file:
 
 packages = [
     package
-    for package in setuptools.PEP420PackageFinder.find()
+    for package in setuptools.find_namespace_packages()
     if package.startswith("google")
 ]
 
