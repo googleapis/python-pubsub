@@ -361,9 +361,7 @@ def test_unknown_request_type():
 
     items = ["a random string, not a known request type"]
     manager.send_unary_ack.return_value = (items, [])
-    with pytest.warns(
-        RuntimeWarning, match="Skipping unknown request item of type"
-    ):
+    with pytest.warns(RuntimeWarning, match="Skipping unknown request item of type"):
         dispatcher_.dispatch_callback(items)
 
 

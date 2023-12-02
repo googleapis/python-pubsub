@@ -60,9 +60,7 @@ def _assert_retries_equal(retry, retry2):
 def test_api_property_deprecated(creds):
     client = publisher.Client(credentials=creds)
 
-    with pytest.warns(
-        DeprecationWarning, match="client.api"
-    ) as warned:
+    with pytest.warns(DeprecationWarning, match="client.api") as warned:
         client.api
 
     assert len(warned) == 1
@@ -74,9 +72,7 @@ def test_api_property_deprecated(creds):
 def test_api_property_proxy_to_generated_client(creds):
     client = publisher.Client(credentials=creds)
 
-    with pytest.warns(
-        DeprecationWarning, match="client.api"
-    ) as warned:
+    with pytest.warns(DeprecationWarning, match="client.api") as warned:
         api_object = client.api
 
     # Not a perfect check, but we are satisficed if the returned API object indeed
