@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import sys
-import warnings
 
 import grpc
 
@@ -230,7 +229,7 @@ def test_api_property_deprecated(creds):
 def test_api_property_proxy_to_generated_client(creds):
     client = subscriber.Client(credentials=creds)
 
-    with pytest.warns(DeprecationWarning, match="client.api") as warned:
+    with pytest.warns(DeprecationWarning, match="client.api"):
         api_object = client.api
 
     # Not a perfect check, but we are satisficed if the returned API object indeed

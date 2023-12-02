@@ -19,7 +19,6 @@ import time
 from typing import Callable
 from typing import Sequence
 from typing import Union
-import warnings
 
 import pytest
 

@@ -28,7 +28,6 @@ else:
 
 import pytest
 import time
-import warnings
 
 from google.api_core import gapic_v1
 from google.api_core import retry as retries
@@ -72,7 +71,7 @@ def test_api_property_deprecated(creds):
 def test_api_property_proxy_to_generated_client(creds):
     client = publisher.Client(credentials=creds)
 
-    with pytest.warns(DeprecationWarning, match="client.api") as warned:
+    with pytest.warns(DeprecationWarning, match="client.api"):
         api_object = client.api
 
     # Not a perfect check, but we are satisficed if the returned API object indeed
