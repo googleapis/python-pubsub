@@ -36,9 +36,9 @@ MYPY_VERSION = "mypy==0.910"
 
 DEFAULT_PYTHON_VERSION = "3.8"
 
-UNIT_TEST_PYTHON_VERSIONS: List[str] = ["3.7", "3.8", "3.9", "3.10", "3.11"]
+UNIT_TEST_PYTHON_VERSIONS: List[str] = ["3.7", "3.8", "3.9", "3.10", "3.11", "3.12"]
 UNIT_TEST_STANDARD_DEPENDENCIES = [
-    "mock==5.0.0",
+    "mock",
     "asyncmock",
     "pytest",
     "pytest-cov",
@@ -52,7 +52,7 @@ UNIT_TEST_EXTRAS_BY_PYTHON: Dict[str, List[str]] = {}
 
 SYSTEM_TEST_PYTHON_VERSIONS: List[str] = ["3.10"]
 SYSTEM_TEST_STANDARD_DEPENDENCIES: List[str] = [
-    "mock==5.0.0",
+    "mock",
     "pytest",
     "google-cloud-testutils",
 ]
@@ -106,7 +106,7 @@ def mypy(session):
     # TODO: Only check the hand-written layer, the generated code does not pass
     # mypy checks yet.
     # https://github.com/googleapis/gapic-generator-python/issues/1092
-    session.run("mypy", "google/cloud")
+    session.run("mypy", "-p", "google.cloud")
 
 
 @nox.session(python=DEFAULT_PYTHON_VERSION)
@@ -354,7 +354,7 @@ def docs(session):
     )
 
 
-@nox.session(python="3.9")
+@nox.session(python="3.10")
 def docfx(session):
     """Build the docfx yaml files for this library."""
 

@@ -336,7 +336,7 @@ templated_files = gcp.CommonTemplates().py_library(
     samples=True,
     cov_level=100,
     versions=gcp.common.detect_versions(path="./google", default_first=True),
-    unit_test_python_versions=["3.7", "3.8", "3.9", "3.10", "3.11"],
+    unit_test_python_versions=["3.7", "3.8", "3.9", "3.10", "3.11", "3.12"],
     system_test_python_versions=["3.10"],
     system_test_external_dependencies=["psutil","flaky"],
 )
@@ -352,9 +352,6 @@ s.replace(
 )
 s.replace(
     "noxfile.py", r'"blacken",', '\g<0>\n    "mypy",',
-)
-s.replace(
-    "noxfile.py", r'"mock"', '"mock==5.0.0"',
 )
 s.replace(
     "noxfile.py",
@@ -383,7 +380,7 @@ s.replace(
         # TODO: Only check the hand-written layer, the generated code does not pass
         # mypy checks yet.
         # https://github.com/googleapis/gapic-generator-python/issues/1092
-        session.run("mypy", "google/cloud")'''
+        session.run("mypy", "-p", "google.cloud")'''
     ),
 )
 
@@ -399,7 +396,7 @@ s.replace(
 )
 s.replace(
     "noxfile.py",
-    r'session\.run\("mypy", "google/cloud"\)',
+    r'session\.run\("mypy", "-p", "google.cloud"\)',
     textwrap.dedent(
         '''    \g<0>
 
