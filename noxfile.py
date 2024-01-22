@@ -101,7 +101,7 @@ def mypy(session):
 
     # Just install the type info directly, since "mypy --install-types" might
     # require an additional pass.
-    # Exclude type-protobuf==4.24.0.20240106
+    # Exclude types-protobuf==4.24.0.20240106
     # See https://github.com/python/typeshed/issues/11254
     session.install("types-protobuf!=4.24.0.20240106", "types-setuptools")
 
