@@ -30,6 +30,7 @@ __protobuf__ = proto.module(
     manifest={
         "MessageStoragePolicy",
         "SchemaSettings",
+        "IngestionDataSourceSettings",
         "Topic",
         "PubsubMessage",
         "GetTopicRequest",
@@ -144,6 +145,116 @@ class SchemaSettings(proto.Message):
     )
 
 
+class IngestionDataSourceSettings(proto.Message):
+    r"""Settings for an ingestion data source on a topic.
+
+    .. _oneof: https://proto-plus-python.readthedocs.io/en/stable/fields.html#oneofs-mutually-exclusive-fields
+
+    Attributes:
+        aws_kinesis (google.pubsub_v1.types.IngestionDataSourceSettings.AwsKinesis):
+            Optional. Amazon Kinesis Data Streams.
+
+            This field is a member of `oneof`_ ``source``.
+    """
+
+    class AwsKinesis(proto.Message):
+        r"""Ingestion settings for Amazon Kinesis Data Streams.
+
+        Attributes:
+            state (google.pubsub_v1.types.IngestionDataSourceSettings.AwsKinesis.State):
+                Output only. An output-only field that
+                indicates the state of the Kinesis ingestion
+                source.
+            stream_arn (str):
+                Required. The Kinesis stream ARN to ingest
+                data from.
+            consumer_arn (str):
+                Required. The Kinesis consumer ARN to used
+                for ingestion in Enhanced Fan-Out mode. The
+                consumer must be already created and ready to be
+                used.
+            aws_role_arn (str):
+                Required. AWS role ARN to be used for
+                Federated Identity authentication with Kinesis.
+                Check the Pub/Sub docs for how to set up this
+                role and the required permissions that need to
+                be attached to it.
+            gcp_service_account (str):
+                Required. The GCP service account to be used for Federated
+                Identity authentication with Kinesis (via a
+                ``AssumeRoleWithWebIdentity`` call for the provided role).
+                The ``aws_role_arn`` must be set up with
+                ``accounts.google.com:sub`` equals to this service account
+                number.
+        """
+
+        class State(proto.Enum):
+            r"""Possible states for managed ingestion from Amazon Kinesis
+            Data Streams.
+
+            Values:
+                STATE_UNSPECIFIED (0):
+                    Default value. This value is unused.
+                ACTIVE (1):
+                    Ingestion is active.
+                KINESIS_PERMISSION_DENIED (2):
+                    Permission denied encountered while consuming data from
+                    Kinesis. This can happen if:
+
+                    -  The provided ``aws_role_arn`` does not exist or does not
+                       have the appropriate permissions attached.
+                    -  The provided ``aws_role_arn`` is not set up properly for
+                       Identity Federation using ``gcp_service_account``.
+                    -  The Pub/Sub SA is not granted the
+                       ``iam.serviceAccounts.getOpenIdToken`` permission on
+                       ``gcp_service_account``.
+                PUBLISH_PERMISSION_DENIED (3):
+                    Permission denied encountered while publishing to the topic.
+                    This can happen due to Pub/Sub SA has not been granted the
+                    `appropriate publish
+                    permissions <https://cloud.google.com/pubsub/docs/access-control#pubsub.publisher>`__
+                STREAM_NOT_FOUND (4):
+                    The Kinesis stream does not exist.
+                CONSUMER_NOT_FOUND (5):
+                    The Kinesis consumer does not exist.
+            """
+            STATE_UNSPECIFIED = 0
+            ACTIVE = 1
+            KINESIS_PERMISSION_DENIED = 2
+            PUBLISH_PERMISSION_DENIED = 3
+            STREAM_NOT_FOUND = 4
+            CONSUMER_NOT_FOUND = 5
+
+        state: "IngestionDataSourceSettings.AwsKinesis.State" = proto.Field(
+            proto.ENUM,
+            number=1,
+            enum="IngestionDataSourceSettings.AwsKinesis.State",
+        )
+        stream_arn: str = proto.Field(
+            proto.STRING,
+            number=2,
+        )
+        consumer_arn: str = proto.Field(
+            proto.STRING,
+            number=3,
+        )
+        aws_role_arn: str = proto.Field(
+            proto.STRING,
+            number=4,
+        )
+        gcp_service_account: str = proto.Field(
+            proto.STRING,
+            number=5,
+        )
+
+    aws_kinesis: AwsKinesis = proto.Field(
+        proto.MESSAGE,
+        number=1,
+        oneof="source",
+        message=AwsKinesis,
+    )
+
+
 class Topic(proto.Message):
     r"""A topic resource.
 
@@ -190,7 +301,32 @@ class Topic(proto.Message):
             this field is not set, message retention is controlled by
             settings on individual subscriptions. Cannot be more than 31
             days or less than 10 minutes.
+        state (google.pubsub_v1.types.Topic.State):
+            Output only. An output-only field indicating
+            the state of the topic.
+        ingestion_data_source_settings (google.pubsub_v1.types.IngestionDataSourceSettings):
+            Optional. Settings for managed ingestion from
+            a data source into this topic.
     """
+
+    class State(proto.Enum):
+        r"""The state of the topic.
+
+        Values:
+            STATE_UNSPECIFIED (0):
+                Default value. This value is unused.
+            ACTIVE (1):
+                The topic does not have any persistent
+                errors.
+            INGESTION_RESOURCE_ERROR (2):
+                Ingestion from the data source has
+                encountered a permanent error. See the more
+                detailed error state in the corresponding
+                ingestion source configuration.
+        """
+        STATE_UNSPECIFIED = 0
+        ACTIVE = 1
+        INGESTION_RESOURCE_ERROR = 2
 
     name: str = proto.Field(
         proto.STRING,
@@ -223,6 +359,16 @@ class Topic(proto.Message):
         proto.MESSAGE,
         number=8,
         message=duration_pb2.Duration,
+    )
+    state: State = proto.Field(
+        proto.ENUM,
+        number=9,
+        enum=State,
+    )
+    ingestion_data_source_settings: "IngestionDataSourceSettings" = proto.Field(
+        proto.MESSAGE,
+        number=10,
+        message="IngestionDataSourceSettings",
     )
 
 

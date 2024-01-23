@@ -713,6 +713,7 @@ def test_create_topic(request_type, transport: str = "grpc"):
             name="name_value",
             kms_key_name="kms_key_name_value",
             satisfies_pzs=True,
+            state=pubsub.Topic.State.ACTIVE,
         )
         response = client.create_topic(request)
 
@@ -726,6 +727,7 @@ def test_create_topic(request_type, transport: str = "grpc"):
     assert response.name == "name_value"
     assert response.kms_key_name == "kms_key_name_value"
     assert response.satisfies_pzs is True
+    assert response.state == pubsub.Topic.State.ACTIVE
 
 
 def test_create_topic_empty_call():
@@ -765,6 +767,7 @@ async def test_create_topic_async(
                 name="name_value",
                 kms_key_name="kms_key_name_value",
                 satisfies_pzs=True,
+                state=pubsub.Topic.State.ACTIVE,
             )
         )
         response = await client.create_topic(request)
@@ -779,6 +782,7 @@ async def test_create_topic_async(
     assert response.name == "name_value"
     assert response.kms_key_name == "kms_key_name_value"
     assert response.satisfies_pzs is True
+    assert response.state == pubsub.Topic.State.ACTIVE
 
 
 @pytest.mark.asyncio
@@ -949,6 +953,7 @@ def test_update_topic(request_type, transport: str = "grpc"):
             name="name_value",
             kms_key_name="kms_key_name_value",
             satisfies_pzs=True,
+            state=pubsub.Topic.State.ACTIVE,
         )
         response = client.update_topic(request)
 
@@ -962,6 +967,7 @@ def test_update_topic(request_type, transport: str = "grpc"):
     assert response.name == "name_value"
     assert response.kms_key_name == "kms_key_name_value"
     assert response.satisfies_pzs is True
+    assert response.state == pubsub.Topic.State.ACTIVE
 
 
 def test_update_topic_empty_call():
@@ -1001,6 +1007,7 @@ async def test_update_topic_async(
                 name="name_value",
                 kms_key_name="kms_key_name_value",
                 satisfies_pzs=True,
+                state=pubsub.Topic.State.ACTIVE,
             )
         )
         response = await client.update_topic(request)
@@ -1015,6 +1022,7 @@ async def test_update_topic_async(
     assert response.name == "name_value"
     assert response.kms_key_name == "kms_key_name_value"
     assert response.satisfies_pzs is True
+    assert response.state == pubsub.Topic.State.ACTIVE
 
 
 @pytest.mark.asyncio
@@ -1437,6 +1445,7 @@ def test_get_topic(request_type, transport: str = "grpc"):
             name="name_value",
             kms_key_name="kms_key_name_value",
             satisfies_pzs=True,
+            state=pubsub.Topic.State.ACTIVE,
         )
         response = client.get_topic(request)
 
@@ -1450,6 +1459,7 @@ def test_get_topic(request_type, transport: str = "grpc"):
     assert response.name == "name_value"
     assert response.kms_key_name == "kms_key_name_value"
     assert response.satisfies_pzs is True
+    assert response.state == pubsub.Topic.State.ACTIVE
 
 
 def test_get_topic_empty_call():
@@ -1489,6 +1499,7 @@ async def test_get_topic_async(
                 name="name_value",
                 kms_key_name="kms_key_name_value",
                 satisfies_pzs=True,
+                state=pubsub.Topic.State.ACTIVE,
             )
         )
         response = await client.get_topic(request)
@@ -1503,6 +1514,7 @@ async def test_get_topic_async(
     assert response.name == "name_value"
     assert response.kms_key_name == "kms_key_name_value"
     assert response.satisfies_pzs is True
+    assert response.state == pubsub.Topic.State.ACTIVE
 
 
 @pytest.mark.asyncio
@@ -3365,6 +3377,7 @@ def test_create_topic_rest(request_type):
             name="name_value",
             kms_key_name="kms_key_name_value",
             satisfies_pzs=True,
+            state=pubsub.Topic.State.ACTIVE,
         )
 
         # Wrap the value into a proper Response obj
@@ -3383,6 +3396,7 @@ def test_create_topic_rest(request_type):
     assert response.name == "name_value"
     assert response.kms_key_name == "kms_key_name_value"
     assert response.satisfies_pzs is True
+    assert response.state == pubsub.Topic.State.ACTIVE
 
 
 def test_create_topic_rest_required_fields(request_type=pubsub.Topic):
@@ -3631,6 +3645,7 @@ def test_update_topic_rest(request_type):
             name="name_value",
             kms_key_name="kms_key_name_value",
             satisfies_pzs=True,
+            state=pubsub.Topic.State.ACTIVE,
         )
 
         # Wrap the value into a proper Response obj
@@ -3649,6 +3664,7 @@ def test_update_topic_rest(request_type):
     assert response.name == "name_value"
     assert response.kms_key_name == "kms_key_name_value"
     assert response.satisfies_pzs is True
+    assert response.state == pubsub.Topic.State.ACTIVE
 
 
 def test_update_topic_rest_required_fields(request_type=pubsub.UpdateTopicRequest):
@@ -4177,6 +4193,7 @@ def test_get_topic_rest(request_type):
             name="name_value",
             kms_key_name="kms_key_name_value",
             satisfies_pzs=True,
+            state=pubsub.Topic.State.ACTIVE,
         )
 
         # Wrap the value into a proper Response obj
@@ -4195,6 +4212,7 @@ def test_get_topic_rest(request_type):
     assert response.name == "name_value"
     assert response.kms_key_name == "kms_key_name_value"
     assert response.satisfies_pzs is True
+    assert response.state == pubsub.Topic.State.ACTIVE
 
 
 def test_get_topic_rest_required_fields(request_type=pubsub.GetTopicRequest):
