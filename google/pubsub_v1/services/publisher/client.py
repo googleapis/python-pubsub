@@ -619,7 +619,8 @@ class PublisherClient(metaclass=PublisherClientMeta):
         timeout: TimeoutType = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pubsub.Topic:
-        r"""Updates an existing topic. Note that certain
+        r"""Updates an existing topic by updating the fields
+        specified in the update mask. Note that certain
         properties of a topic are not modifiable.
 
         .. code-block:: python

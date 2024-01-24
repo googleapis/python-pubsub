@@ -345,7 +345,8 @@ class PublisherAsyncClient:
         timeout: TimeoutType = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pubsub.Topic:
-        r"""Updates an existing topic. Note that certain
+        r"""Updates an existing topic by updating the fields
+        specified in the update mask. Note that certain
         properties of a topic are not modifiable.
 
         .. code-block:: python
@@ -555,7 +556,7 @@ class PublisherAsyncClient:
             default_retry=retries.AsyncRetry(
                 initial=0.1,
                 maximum=60.0,
-                multiplier=4.0,
+                multiplier=4,
                 predicate=retries.if_exception_type(
                     core_exceptions.Aborted,
                     core_exceptions.Cancelled,

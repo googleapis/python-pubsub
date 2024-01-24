@@ -308,21 +308,21 @@ class SubscriberAsyncClient:
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
             push_config (:class:`google.pubsub_v1.types.PushConfig`):
-                If push delivery is used with this
-                subscription, this field is used to
-                configure it.
+                Optional. If push delivery is used
+                with this subscription, this field is
+                used to configure it.
 
                 This corresponds to the ``push_config`` field
                 on the ``request`` instance; if ``request`` is provided, this
                 should not be set.
             ack_deadline_seconds (:class:`int`):
-                The approximate amount of time (on a best-effort basis)
-                Pub/Sub waits for the subscriber to acknowledge receipt
-                before resending the message. In the interval after the
-                message is delivered and before it is acknowledged, it
-                is considered to be *outstanding*. During that time
-                period, the message will not be redelivered (on a
-                best-effort basis).
+                Optional. The approximate amount of time (on a
+                best-effort basis) Pub/Sub waits for the subscriber to
+                acknowledge receipt before resending the message. In the
+                interval after the message is delivered and before it is
+                acknowledged, it is considered to be *outstanding*.
+                During that time period, the message will not be
+                redelivered (on a best-effort basis).
 
                 For pull subscriptions, this value is used as the
                 initial value for the ack deadline. To override this
@@ -544,7 +544,8 @@ class SubscriberAsyncClient:
         timeout: Union[float, object] = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pubsub.Subscription:
-        r"""Updates an existing subscription. Note that certain
+        r"""Updates an existing subscription by updating the
+        fields specified in the update mask. Note that certain
         properties of a subscription, such as its topic, are not
         modifiable.
 
@@ -965,8 +966,8 @@ class SubscriberAsyncClient:
                 client. This typically results in an increase in the
                 rate of message redeliveries (that is, duplicates). The
                 minimum deadline you can specify is 0 seconds. The
-                maximum deadline you can specify is 600 seconds (10
-                minutes).
+                maximum deadline you can specify in a single request is
+                600 seconds (10 minutes).
 
                 This corresponds to the ``ack_deadline_seconds`` field
                 on the ``request`` instance; if ``request`` is provided, this
@@ -1383,7 +1384,7 @@ class SubscriberAsyncClient:
             default_retry=retries.AsyncRetry(
                 initial=0.1,
                 maximum=60.0,
-                multiplier=4.0,
+                multiplier=4,
                 predicate=retries.if_exception_type(
                     core_exceptions.Aborted,
                     core_exceptions.DeadlineExceeded,
@@ -1946,7 +1947,8 @@ class SubscriberAsyncClient:
         timeout: Union[float, object] = gapic_v1.method.DEFAULT,
         metadata: Sequence[Tuple[str, str]] = (),
     ) -> pubsub.Snapshot:
-        r"""Updates an existing snapshot. Snapshots are used in
+        r"""Updates an existing snapshot by updating the fields specified in
+        the update mask. Snapshots are used in
         `Seek <https://cloud.google.com/pubsub/docs/replay-overview>`__
         operations, which allow you to manage message acknowledgments in
         bulk. That is, you can set the acknowledgment state of messages
