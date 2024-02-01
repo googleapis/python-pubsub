@@ -15,8 +15,8 @@
 from __future__ import absolute_import
 
 import typing
-from typing import Any
-from typing import Union
+from typing import Any, Union
+from typing import Optional, Callable
 
 from google.cloud.pubsub_v1 import futures
 from google.cloud.pubsub_v1.subscriber.exceptions import AcknowledgeStatus
@@ -42,7 +42,7 @@ class StreamingPullFuture(futures.Future):
         self.__manager.add_close_callback(self._on_close_callback)
         self.__cancelled = False
 
-    def _on_close_callback(self, manager: "StreamingPullManager", result: Any):
+    def _on_close_callback(self, manager: "StreamingPullManager", result: Optional[BaseException]):
         if self.done():
             # The future has already been resolved in a different thread,
             # nothing to do on the streaming pull manager shutdown.
@@ -104,7 +104,7 @@ class Future(futures.Future):
         """
         return False
 
-    def result(self, timeout: Union[int, float] = None) -> AcknowledgeStatus:
+    def result(self, timeout:Optional[float] = '') -> AcknowledgeStatus:
         """Return a success code or raise an exception.
 
         This blocks until the operation completes successfully and
