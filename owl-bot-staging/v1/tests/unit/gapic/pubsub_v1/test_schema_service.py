@@ -73,16 +73,6 @@ def modify_default_endpoint(client):
 def modify_default_endpoint_template(client):
     return "test.{UNIVERSE_DOMAIN}" if ("localhost" in client._DEFAULT_ENDPOINT_TEMPLATE) else client._DEFAULT_ENDPOINT_TEMPLATE
 
-# Anonymous Credentials with universe domain property. If no universe domain is provided, then
-# the default universe domain is "googleapis.com".
-class _AnonymousCredentialsWithUniverseDomain(ga_credentials.AnonymousCredentials):
-    def __init__(self, universe_domain="googleapis.com"):
-        super(_AnonymousCredentialsWithUniverseDomain, self).__init__()
-        self._universe_domain = universe_domain
-
-    @property
-    def universe_domain(self):
-        return self._universe_domain
 
 def test__get_default_mtls_endpoint():
     api_endpoint = "example.googleapis.com"
@@ -183,7 +173,7 @@ def test__get_universe_domain():
 def test__validate_universe_domain(client_class, transport_class, transport_name):
     client = client_class(
         transport=transport_class(
-            credentials=_AnonymousCredentialsWithUniverseDomain()
+            credentials=ga_credentials.AnonymousCredentials()
         )
     )
     assert client._validate_universe_domain() == True
@@ -207,24 +197,36 @@ def test__validate_universe_domain(client_class, transport_class, transport_name
         client = client_class(transport=transport)
         assert client._validate_universe_domain() == True
 
-    # Test the case when there is a universe mismatch from the credentials.
-    client = client_class(
-        transport=transport_class(credentials=_AnonymousCredentialsWithUniverseDomain(universe_domain="foo.com"))
-    )
-    with pytest.raises(ValueError) as excinfo:
-        client._validate_universe_domain()
-    assert str(excinfo.value) == "The configured universe domain (googleapis.com) does not match the universe domain found in the credentials (foo.com). If you haven't configured the universe domain explicitly, `googleapis.com` is the default."
-
-    # Test the case when there is a universe mismatch from the client.
-    #
-    # TODO: Make this test unconditional once the minimum supported version of
-    # google-api-core becomes 2.15.0 or higher.
-    api_core_major, api_core_minor, _ = [int(part) for part in api_core_version.__version__.split(".")]
-    if api_core_major > 2 or (api_core_major == 2 and api_core_minor >= 15):
-        client = client_class(client_options={"universe_domain": "bar.com"}, transport=transport_class(credentials=_AnonymousCredentialsWithUniverseDomain(),))
+    # TODO: This is needed to cater for older versions of google-auth
+    # Make this test unconditional once the minimum supported version of
+    # google-auth becomes 2.23.0 or higher.
+    google_auth_major, google_auth_minor, _ = [int(part) for part in google.auth.__version__.split(".")]
+    if google_auth_major > 2 or (google_auth_major == 2 and google_auth_minor >= 23):
+        credentials = ga_credentials.AnonymousCredentials()
+        credentials._universe_domain = "foo.com"
+        # Test the case when there is a universe mismatch from the credentials.
+        client = client_class(
+            transport=transport_class(credentials=credentials)
+        )
         with pytest.raises(ValueError) as excinfo:
             client._validate_universe_domain()
-        assert str(excinfo.value) == "The configured universe domain (bar.com) does not match the universe domain found in the credentials (googleapis.com). If you haven't configured the universe domain explicitly, `googleapis.com` is the default."
+        assert str(excinfo.value) == "The configured universe domain (googleapis.com) does not match the universe domain found in the credentials (foo.com). If you haven't configured the universe domain explicitly, `googleapis.com` is the default."
+
+        # Test the case when there is a universe mismatch from the client.
+        #
+        # TODO: Make this test unconditional once the minimum supported version of
+        # google-api-core becomes 2.15.0 or higher.
+        api_core_major, api_core_minor, _ = [int(part) for part in api_core_version.__version__.split(".")]
+        if api_core_major > 2 or (api_core_major == 2 and api_core_minor >= 15):
+            client = client_class(client_options={"universe_domain": "bar.com"}, transport=transport_class(credentials=ga_credentials.AnonymousCredentials(),))
+            with pytest.raises(ValueError) as excinfo:
+                client._validate_universe_domain()
+            assert str(excinfo.value) == "The configured universe domain (bar.com) does not match the universe domain found in the credentials (googleapis.com). If you haven't configured the universe domain explicitly, `googleapis.com` is the default."
+
+    # Test that ValueError is raised if universe_domain is provided via client options and credentials is None
+    with pytest.raises(ValueError):
+        client._compare_universes("foo.bar", None)
+
 
 @pytest.mark.parametrize("client_class,transport_name", [
     (SchemaServiceClient, "grpc"),
@@ -232,7 +234,7 @@ def test__validate_universe_domain(client_class, transport_class, transport_name
     (SchemaServiceClient, "rest"),
 ])
 def test_schema_service_client_from_service_account_info(client_class, transport_name):
-    creds = _AnonymousCredentialsWithUniverseDomain()
+    creds = ga_credentials.AnonymousCredentials()
     with mock.patch.object(service_account.Credentials, 'from_service_account_info') as factory:
         factory.return_value = creds
         info = {"valid": True}
@@ -271,7 +273,7 @@ def test_schema_service_client_service_account_always_use_jwt(transport_class, t
     (SchemaServiceClient, "rest"),
 ])
 def test_schema_service_client_from_service_account_file(client_class, transport_name):
-    creds = _AnonymousCredentialsWithUniverseDomain()
+    creds = ga_credentials.AnonymousCredentials()
     with mock.patch.object(service_account.Credentials, 'from_service_account_file') as factory:
         factory.return_value = creds
         client = client_class.from_service_account_file("dummy/file/path.json", transport=transport_name)
@@ -313,7 +315,7 @@ def test_schema_service_client_client_options(client_class, transport_class, tra
     # Check that if channel is provided we won't create a new one.
     with mock.patch.object(SchemaServiceClient, 'get_transport_class') as gtc:
         transport = transport_class(
-            credentials=_AnonymousCredentialsWithUniverseDomain()
+            credentials=ga_credentials.AnonymousCredentials()
         )
         client = client_class(transport=transport)
         gtc.assert_not_called()
@@ -595,19 +597,19 @@ def test_schema_service_client_client_api_endpoint(client_class):
     with mock.patch.dict(os.environ, {"GOOGLE_API_USE_CLIENT_CERTIFICATE": "true"}):
         with mock.patch("google.auth.transport.requests.AuthorizedSession.configure_mtls_channel"):
             options = client_options.ClientOptions(client_cert_source=mock_client_cert_source, api_endpoint=api_override)
-            client = client_class(client_options=options, credentials=_AnonymousCredentialsWithUniverseDomain())
+            client = client_class(client_options=options, credentials=ga_credentials.AnonymousCredentials())
             assert client.api_endpoint == api_override
 
     # If ClientOptions.api_endpoint is not set and GOOGLE_API_USE_MTLS_ENDPOINT="never",
     # use the _DEFAULT_ENDPOINT_TEMPLATE populated with GDU as the api endpoint.
     with mock.patch.dict(os.environ, {"GOOGLE_API_USE_MTLS_ENDPOINT": "never"}):
-        client = client_class(credentials=_AnonymousCredentialsWithUniverseDomain())
+        client = client_class(credentials=ga_credentials.AnonymousCredentials())
         assert client.api_endpoint == default_endpoint
 
     # If ClientOptions.api_endpoint is not set and GOOGLE_API_USE_MTLS_ENDPOINT="always",
     # use the DEFAULT_MTLS_ENDPOINT as the api endpoint.
     with mock.patch.dict(os.environ, {"GOOGLE_API_USE_MTLS_ENDPOINT": "always"}):
-        client = client_class(credentials=_AnonymousCredentialsWithUniverseDomain())
+        client = client_class(credentials=ga_credentials.AnonymousCredentials())
         assert client.api_endpoint == client_class.DEFAULT_MTLS_ENDPOINT
 
     # If ClientOptions.api_endpoint is not set, GOOGLE_API_USE_MTLS_ENDPOINT="auto" (default),
@@ -618,9 +620,9 @@ def test_schema_service_client_client_api_endpoint(client_class):
     universe_exists = hasattr(options, "universe_domain")
     if universe_exists:
         options = client_options.ClientOptions(universe_domain=mock_universe)
-        client = client_class(client_options=options, credentials=_AnonymousCredentialsWithUniverseDomain())
+        client = client_class(client_options=options, credentials=ga_credentials.AnonymousCredentials())
     else:
-        client = client_class(client_options=options, credentials=_AnonymousCredentialsWithUniverseDomain())
+        client = client_class(client_options=options, credentials=ga_credentials.AnonymousCredentials())
     assert client.api_endpoint == (mock_endpoint if universe_exists else default_endpoint)
     assert client.universe_domain == (mock_universe if universe_exists else default_universe)
 
@@ -630,7 +632,7 @@ def test_schema_service_client_client_api_endpoint(client_class):
     if hasattr(options, "universe_domain"):
         delattr(options, "universe_domain")
     with mock.patch.dict(os.environ, {"GOOGLE_API_USE_MTLS_ENDPOINT": "never"}):
-        client = client_class(client_options=options, credentials=_AnonymousCredentialsWithUniverseDomain())
+        client = client_class(client_options=options, credentials=ga_credentials.AnonymousCredentials())
         assert client.api_endpoint == default_endpoint
 
 
@@ -737,8 +739,8 @@ def test_schema_service_client_create_channel_credentials_file(client_class, tra
     ) as adc, mock.patch.object(
         grpc_helpers, "create_channel"
     ) as create_channel:
-        creds = _AnonymousCredentialsWithUniverseDomain()
-        file_creds = _AnonymousCredentialsWithUniverseDomain()
+        creds = ga_credentials.AnonymousCredentials()
+        file_creds = ga_credentials.AnonymousCredentials()
         load_creds.return_value = (file_creds, None)
         adc.return_value = (creds, None)
         client = client_class(client_options=options, transport=transport_name)
@@ -767,7 +769,7 @@ def test_schema_service_client_create_channel_credentials_file(client_class, tra
 ])
 def test_create_schema(request_type, transport: str = 'grpc'):
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport=transport,
     )
 
@@ -805,7 +807,7 @@ def test_create_schema_empty_call():
     # This test is a coverage failsafe to make sure that totally empty calls,
     # i.e. request == None and no flattened fields passed, work.
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport='grpc',
     )
 
@@ -821,7 +823,7 @@ def test_create_schema_empty_call():
 @pytest.mark.asyncio
 async def test_create_schema_async(transport: str = 'grpc_asyncio', request_type=gp_schema.CreateSchemaRequest):
     client = SchemaServiceAsyncClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport=transport,
     )
 
@@ -862,7 +864,7 @@ async def test_create_schema_async_from_dict():
 
 def test_create_schema_field_headers():
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
 
     # Any value that is part of the HTTP/1.1 URI should be sent as
@@ -894,7 +896,7 @@ def test_create_schema_field_headers():
 @pytest.mark.asyncio
 async def test_create_schema_field_headers_async():
     client = SchemaServiceAsyncClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
 
     # Any value that is part of the HTTP/1.1 URI should be sent as
@@ -925,7 +927,7 @@ async def test_create_schema_field_headers_async():
 
 def test_create_schema_flattened():
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
 
     # Mock the actual call within the gRPC stub, and fake the request.
@@ -959,7 +961,7 @@ def test_create_schema_flattened():
 
 def test_create_schema_flattened_error():
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
 
     # Attempting to call a method with both a request object and flattened
@@ -975,7 +977,7 @@ def test_create_schema_flattened_error():
 @pytest.mark.asyncio
 async def test_create_schema_flattened_async():
     client = SchemaServiceAsyncClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
 
     # Mock the actual call within the gRPC stub, and fake the request.
@@ -1011,7 +1013,7 @@ async def test_create_schema_flattened_async():
 @pytest.mark.asyncio
 async def test_create_schema_flattened_error_async():
     client = SchemaServiceAsyncClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
 
     # Attempting to call a method with both a request object and flattened
@@ -1031,7 +1033,7 @@ async def test_create_schema_flattened_error_async():
 ])
 def test_get_schema(request_type, transport: str = 'grpc'):
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport=transport,
     )
 
@@ -1069,7 +1071,7 @@ def test_get_schema_empty_call():
     # This test is a coverage failsafe to make sure that totally empty calls,
     # i.e. request == None and no flattened fields passed, work.
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport='grpc',
     )
 
@@ -1085,7 +1087,7 @@ def test_get_schema_empty_call():
 @pytest.mark.asyncio
 async def test_get_schema_async(transport: str = 'grpc_asyncio', request_type=schema.GetSchemaRequest):
     client = SchemaServiceAsyncClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport=transport,
     )
 
@@ -1126,7 +1128,7 @@ async def test_get_schema_async_from_dict():
 
 def test_get_schema_field_headers():
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
 
     # Any value that is part of the HTTP/1.1 URI should be sent as
@@ -1158,7 +1160,7 @@ def test_get_schema_field_headers():
 @pytest.mark.asyncio
 async def test_get_schema_field_headers_async():
     client = SchemaServiceAsyncClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
 
     # Any value that is part of the HTTP/1.1 URI should be sent as
@@ -1189,7 +1191,7 @@ async def test_get_schema_field_headers_async():
 
 def test_get_schema_flattened():
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
 
     # Mock the actual call within the gRPC stub, and fake the request.
@@ -1215,7 +1217,7 @@ def test_get_schema_flattened():
 
 def test_get_schema_flattened_error():
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
 
     # Attempting to call a method with both a request object and flattened
@@ -1229,7 +1231,7 @@ def test_get_schema_flattened_error():
 @pytest.mark.asyncio
 async def test_get_schema_flattened_async():
     client = SchemaServiceAsyncClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
 
     # Mock the actual call within the gRPC stub, and fake the request.
@@ -1257,7 +1259,7 @@ async def test_get_schema_flattened_async():
 @pytest.mark.asyncio
 async def test_get_schema_flattened_error_async():
     client = SchemaServiceAsyncClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
 
     # Attempting to call a method with both a request object and flattened
@@ -1275,7 +1277,7 @@ async def test_get_schema_flattened_error_async():
 ])
 def test_list_schemas(request_type, transport: str = 'grpc'):
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport=transport,
     )
 
@@ -1307,7 +1309,7 @@ def test_list_schemas_empty_call():
     # This test is a coverage failsafe to make sure that totally empty calls,
     # i.e. request == None and no flattened fields passed, work.
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport='grpc',
     )
 
@@ -1323,7 +1325,7 @@ def test_list_schemas_empty_call():
 @pytest.mark.asyncio
 async def test_list_schemas_async(transport: str = 'grpc_asyncio', request_type=schema.ListSchemasRequest):
     client = SchemaServiceAsyncClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport=transport,
     )
 
@@ -1358,7 +1360,7 @@ async def test_list_schemas_async_from_dict():
 
 def test_list_schemas_field_headers():
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
 
     # Any value that is part of the HTTP/1.1 URI should be sent as
@@ -1390,7 +1392,7 @@ def test_list_schemas_field_headers():
 @pytest.mark.asyncio
 async def test_list_schemas_field_headers_async():
     client = SchemaServiceAsyncClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
 
     # Any value that is part of the HTTP/1.1 URI should be sent as
@@ -1421,7 +1423,7 @@ async def test_list_schemas_field_headers_async():
 
 def test_list_schemas_flattened():
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
 
     # Mock the actual call within the gRPC stub, and fake the request.
@@ -1447,7 +1449,7 @@ def test_list_schemas_flattened():
 
 def test_list_schemas_flattened_error():
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
 
     # Attempting to call a method with both a request object and flattened
@@ -1461,7 +1463,7 @@ def test_list_schemas_flattened_error():
 @pytest.mark.asyncio
 async def test_list_schemas_flattened_async():
     client = SchemaServiceAsyncClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
 
     # Mock the actual call within the gRPC stub, and fake the request.
@@ -1489,7 +1491,7 @@ async def test_list_schemas_flattened_async():
 @pytest.mark.asyncio
 async def test_list_schemas_flattened_error_async():
     client = SchemaServiceAsyncClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
 
     # Attempting to call a method with both a request object and flattened
@@ -1503,7 +1505,7 @@ async def test_list_schemas_flattened_error_async():
 
 def test_list_schemas_pager(transport_name: str = "grpc"):
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport=transport_name,
     )
 
@@ -1556,7 +1558,7 @@ def test_list_schemas_pager(transport_name: str = "grpc"):
                    for i in results)
 def test_list_schemas_pages(transport_name: str = "grpc"):
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport=transport_name,
     )
 
@@ -1599,7 +1601,7 @@ def test_list_schemas_pages(transport_name: str = "grpc"):
 @pytest.mark.asyncio
 async def test_list_schemas_async_pager():
     client = SchemaServiceAsyncClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
 
     # Mock the actual call within the gRPC stub, and fake the request.
@@ -1648,7 +1650,7 @@ async def test_list_schemas_async_pager():
 @pytest.mark.asyncio
 async def test_list_schemas_async_pages():
     client = SchemaServiceAsyncClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
 
     # Mock the actual call within the gRPC stub, and fake the request.
@@ -1699,7 +1701,7 @@ async def test_list_schemas_async_pages():
 ])
 def test_list_schema_revisions(request_type, transport: str = 'grpc'):
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport=transport,
     )
 
@@ -1731,7 +1733,7 @@ def test_list_schema_revisions_empty_call():
     # This test is a coverage failsafe to make sure that totally empty calls,
     # i.e. request == None and no flattened fields passed, work.
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport='grpc',
     )
 
@@ -1747,7 +1749,7 @@ def test_list_schema_revisions_empty_call():
 @pytest.mark.asyncio
 async def test_list_schema_revisions_async(transport: str = 'grpc_asyncio', request_type=schema.ListSchemaRevisionsRequest):
     client = SchemaServiceAsyncClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport=transport,
     )
 
@@ -1782,7 +1784,7 @@ async def test_list_schema_revisions_async_from_dict():
 
 def test_list_schema_revisions_field_headers():
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
 
     # Any value that is part of the HTTP/1.1 URI should be sent as
@@ -1814,7 +1816,7 @@ def test_list_schema_revisions_field_headers():
 @pytest.mark.asyncio
 async def test_list_schema_revisions_field_headers_async():
     client = SchemaServiceAsyncClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
 
     # Any value that is part of the HTTP/1.1 URI should be sent as
@@ -1845,7 +1847,7 @@ async def test_list_schema_revisions_field_headers_async():
 
 def test_list_schema_revisions_flattened():
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
 
     # Mock the actual call within the gRPC stub, and fake the request.
@@ -1871,7 +1873,7 @@ def test_list_schema_revisions_flattened():
 
 def test_list_schema_revisions_flattened_error():
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
 
     # Attempting to call a method with both a request object and flattened
@@ -1885,7 +1887,7 @@ def test_list_schema_revisions_flattened_error():
 @pytest.mark.asyncio
 async def test_list_schema_revisions_flattened_async():
     client = SchemaServiceAsyncClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
 
     # Mock the actual call within the gRPC stub, and fake the request.
@@ -1913,7 +1915,7 @@ async def test_list_schema_revisions_flattened_async():
 @pytest.mark.asyncio
 async def test_list_schema_revisions_flattened_error_async():
     client = SchemaServiceAsyncClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
 
     # Attempting to call a method with both a request object and flattened
@@ -1927,7 +1929,7 @@ async def test_list_schema_revisions_flattened_error_async():
 
 def test_list_schema_revisions_pager(transport_name: str = "grpc"):
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport=transport_name,
     )
 
@@ -1980,7 +1982,7 @@ def test_list_schema_revisions_pager(transport_name: str = "grpc"):
                    for i in results)
 def test_list_schema_revisions_pages(transport_name: str = "grpc"):
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport=transport_name,
     )
 
@@ -2023,7 +2025,7 @@ def test_list_schema_revisions_pages(transport_name: str = "grpc"):
 @pytest.mark.asyncio
 async def test_list_schema_revisions_async_pager():
     client = SchemaServiceAsyncClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
 
     # Mock the actual call within the gRPC stub, and fake the request.
@@ -2072,7 +2074,7 @@ async def test_list_schema_revisions_async_pager():
 @pytest.mark.asyncio
 async def test_list_schema_revisions_async_pages():
     client = SchemaServiceAsyncClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
 
     # Mock the actual call within the gRPC stub, and fake the request.
@@ -2123,7 +2125,7 @@ async def test_list_schema_revisions_async_pages():
 ])
 def test_commit_schema(request_type, transport: str = 'grpc'):
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport=transport,
     )
 
@@ -2161,7 +2163,7 @@ def test_commit_schema_empty_call():
     # This test is a coverage failsafe to make sure that totally empty calls,
     # i.e. request == None and no flattened fields passed, work.
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport='grpc',
     )
 
@@ -2177,7 +2179,7 @@ def test_commit_schema_empty_call():
 @pytest.mark.asyncio
 async def test_commit_schema_async(transport: str = 'grpc_asyncio', request_type=gp_schema.CommitSchemaRequest):
     client = SchemaServiceAsyncClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport=transport,
     )
 
@@ -2218,7 +2220,7 @@ async def test_commit_schema_async_from_dict():
 
 def test_commit_schema_field_headers():
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
 
     # Any value that is part of the HTTP/1.1 URI should be sent as
@@ -2250,7 +2252,7 @@ def test_commit_schema_field_headers():
 @pytest.mark.asyncio
 async def test_commit_schema_field_headers_async():
     client = SchemaServiceAsyncClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
 
     # Any value that is part of the HTTP/1.1 URI should be sent as
@@ -2281,7 +2283,7 @@ async def test_commit_schema_field_headers_async():
 
 def test_commit_schema_flattened():
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
 
     # Mock the actual call within the gRPC stub, and fake the request.
@@ -2311,7 +2313,7 @@ def test_commit_schema_flattened():
 
 def test_commit_schema_flattened_error():
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
 
     # Attempting to call a method with both a request object and flattened
@@ -2326,7 +2328,7 @@ def test_commit_schema_flattened_error():
 @pytest.mark.asyncio
 async def test_commit_schema_flattened_async():
     client = SchemaServiceAsyncClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
 
     # Mock the actual call within the gRPC stub, and fake the request.
@@ -2358,7 +2360,7 @@ async def test_commit_schema_flattened_async():
 @pytest.mark.asyncio
 async def test_commit_schema_flattened_error_async():
     client = SchemaServiceAsyncClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
 
     # Attempting to call a method with both a request object and flattened
@@ -2377,7 +2379,7 @@ async def test_commit_schema_flattened_error_async():
 ])
 def test_rollback_schema(request_type, transport: str = 'grpc'):
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport=transport,
     )
 
@@ -2415,7 +2417,7 @@ def test_rollback_schema_empty_call():
     # This test is a coverage failsafe to make sure that totally empty calls,
     # i.e. request == None and no flattened fields passed, work.
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport='grpc',
     )
 
@@ -2431,7 +2433,7 @@ def test_rollback_schema_empty_call():
 @pytest.mark.asyncio
 async def test_rollback_schema_async(transport: str = 'grpc_asyncio', request_type=schema.RollbackSchemaRequest):
     client = SchemaServiceAsyncClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport=transport,
     )
 
@@ -2472,7 +2474,7 @@ async def test_rollback_schema_async_from_dict():
 
 def test_rollback_schema_field_headers():
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
 
     # Any value that is part of the HTTP/1.1 URI should be sent as
@@ -2504,7 +2506,7 @@ def test_rollback_schema_field_headers():
 @pytest.mark.asyncio
 async def test_rollback_schema_field_headers_async():
     client = SchemaServiceAsyncClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
 
     # Any value that is part of the HTTP/1.1 URI should be sent as
@@ -2535,7 +2537,7 @@ async def test_rollback_schema_field_headers_async():
 
 def test_rollback_schema_flattened():
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
 
     # Mock the actual call within the gRPC stub, and fake the request.
@@ -2565,7 +2567,7 @@ def test_rollback_schema_flattened():
 
 def test_rollback_schema_flattened_error():
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
 
     # Attempting to call a method with both a request object and flattened
@@ -2580,7 +2582,7 @@ def test_rollback_schema_flattened_error():
 @pytest.mark.asyncio
 async def test_rollback_schema_flattened_async():
     client = SchemaServiceAsyncClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
 
     # Mock the actual call within the gRPC stub, and fake the request.
@@ -2612,7 +2614,7 @@ async def test_rollback_schema_flattened_async():
 @pytest.mark.asyncio
 async def test_rollback_schema_flattened_error_async():
     client = SchemaServiceAsyncClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
 
     # Attempting to call a method with both a request object and flattened
@@ -2631,7 +2633,7 @@ async def test_rollback_schema_flattened_error_async():
 ])
 def test_delete_schema_revision(request_type, transport: str = 'grpc'):
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport=transport,
     )
 
@@ -2669,7 +2671,7 @@ def test_delete_schema_revision_empty_call():
     # This test is a coverage failsafe to make sure that totally empty calls,
     # i.e. request == None and no flattened fields passed, work.
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport='grpc',
     )
 
@@ -2685,7 +2687,7 @@ def test_delete_schema_revision_empty_call():
 @pytest.mark.asyncio
 async def test_delete_schema_revision_async(transport: str = 'grpc_asyncio', request_type=schema.DeleteSchemaRevisionRequest):
     client = SchemaServiceAsyncClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport=transport,
     )
 
@@ -2726,7 +2728,7 @@ async def test_delete_schema_revision_async_from_dict():
 
 def test_delete_schema_revision_field_headers():
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
 
     # Any value that is part of the HTTP/1.1 URI should be sent as
@@ -2758,7 +2760,7 @@ def test_delete_schema_revision_field_headers():
 @pytest.mark.asyncio
 async def test_delete_schema_revision_field_headers_async():
     client = SchemaServiceAsyncClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
 
     # Any value that is part of the HTTP/1.1 URI should be sent as
@@ -2789,7 +2791,7 @@ async def test_delete_schema_revision_field_headers_async():
 
 def test_delete_schema_revision_flattened():
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
 
     # Mock the actual call within the gRPC stub, and fake the request.
@@ -2819,7 +2821,7 @@ def test_delete_schema_revision_flattened():
 
 def test_delete_schema_revision_flattened_error():
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
 
     # Attempting to call a method with both a request object and flattened
@@ -2834,7 +2836,7 @@ def test_delete_schema_revision_flattened_error():
 @pytest.mark.asyncio
 async def test_delete_schema_revision_flattened_async():
     client = SchemaServiceAsyncClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
 
     # Mock the actual call within the gRPC stub, and fake the request.
@@ -2866,7 +2868,7 @@ async def test_delete_schema_revision_flattened_async():
 @pytest.mark.asyncio
 async def test_delete_schema_revision_flattened_error_async():
     client = SchemaServiceAsyncClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
 
     # Attempting to call a method with both a request object and flattened
@@ -2885,7 +2887,7 @@ async def test_delete_schema_revision_flattened_error_async():
 ])
 def test_delete_schema(request_type, transport: str = 'grpc'):
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport=transport,
     )
 
@@ -2914,7 +2916,7 @@ def test_delete_schema_empty_call():
     # This test is a coverage failsafe to make sure that totally empty calls,
     # i.e. request == None and no flattened fields passed, work.
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport='grpc',
     )
 
@@ -2930,7 +2932,7 @@ def test_delete_schema_empty_call():
 @pytest.mark.asyncio
 async def test_delete_schema_async(transport: str = 'grpc_asyncio', request_type=schema.DeleteSchemaRequest):
     client = SchemaServiceAsyncClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport=transport,
     )
 
@@ -2962,7 +2964,7 @@ async def test_delete_schema_async_from_dict():
 
 def test_delete_schema_field_headers():
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
 
     # Any value that is part of the HTTP/1.1 URI should be sent as
@@ -2994,7 +2996,7 @@ def test_delete_schema_field_headers():
 @pytest.mark.asyncio
 async def test_delete_schema_field_headers_async():
     client = SchemaServiceAsyncClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
 
     # Any value that is part of the HTTP/1.1 URI should be sent as
@@ -3025,7 +3027,7 @@ async def test_delete_schema_field_headers_async():
 
 def test_delete_schema_flattened():
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
 
     # Mock the actual call within the gRPC stub, and fake the request.
@@ -3051,7 +3053,7 @@ def test_delete_schema_flattened():
 
 def test_delete_schema_flattened_error():
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
 
     # Attempting to call a method with both a request object and flattened
@@ -3065,7 +3067,7 @@ def test_delete_schema_flattened_error():
 @pytest.mark.asyncio
 async def test_delete_schema_flattened_async():
     client = SchemaServiceAsyncClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
 
     # Mock the actual call within the gRPC stub, and fake the request.
@@ -3093,7 +3095,7 @@ async def test_delete_schema_flattened_async():
 @pytest.mark.asyncio
 async def test_delete_schema_flattened_error_async():
     client = SchemaServiceAsyncClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
 
     # Attempting to call a method with both a request object and flattened
@@ -3111,7 +3113,7 @@ async def test_delete_schema_flattened_error_async():
 ])
 def test_validate_schema(request_type, transport: str = 'grpc'):
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport=transport,
     )
 
@@ -3141,7 +3143,7 @@ def test_validate_schema_empty_call():
     # This test is a coverage failsafe to make sure that totally empty calls,
     # i.e. request == None and no flattened fields passed, work.
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport='grpc',
     )
 
@@ -3157,7 +3159,7 @@ def test_validate_schema_empty_call():
 @pytest.mark.asyncio
 async def test_validate_schema_async(transport: str = 'grpc_asyncio', request_type=gp_schema.ValidateSchemaRequest):
     client = SchemaServiceAsyncClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport=transport,
     )
 
@@ -3190,7 +3192,7 @@ async def test_validate_schema_async_from_dict():
 
 def test_validate_schema_field_headers():
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
 
     # Any value that is part of the HTTP/1.1 URI should be sent as
@@ -3222,7 +3224,7 @@ def test_validate_schema_field_headers():
 @pytest.mark.asyncio
 async def test_validate_schema_field_headers_async():
     client = SchemaServiceAsyncClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
 
     # Any value that is part of the HTTP/1.1 URI should be sent as
@@ -3253,7 +3255,7 @@ async def test_validate_schema_field_headers_async():
 
 def test_validate_schema_flattened():
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
 
     # Mock the actual call within the gRPC stub, and fake the request.
@@ -3283,7 +3285,7 @@ def test_validate_schema_flattened():
 
 def test_validate_schema_flattened_error():
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
 
     # Attempting to call a method with both a request object and flattened
@@ -3298,7 +3300,7 @@ def test_validate_schema_flattened_error():
 @pytest.mark.asyncio
 async def test_validate_schema_flattened_async():
     client = SchemaServiceAsyncClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
 
     # Mock the actual call within the gRPC stub, and fake the request.
@@ -3330,7 +3332,7 @@ async def test_validate_schema_flattened_async():
 @pytest.mark.asyncio
 async def test_validate_schema_flattened_error_async():
     client = SchemaServiceAsyncClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
 
     # Attempting to call a method with both a request object and flattened
@@ -3349,7 +3351,7 @@ async def test_validate_schema_flattened_error_async():
 ])
 def test_validate_message(request_type, transport: str = 'grpc'):
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport=transport,
     )
 
@@ -3379,7 +3381,7 @@ def test_validate_message_empty_call():
     # This test is a coverage failsafe to make sure that totally empty calls,
     # i.e. request == None and no flattened fields passed, work.
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport='grpc',
     )
 
@@ -3395,7 +3397,7 @@ def test_validate_message_empty_call():
 @pytest.mark.asyncio
 async def test_validate_message_async(transport: str = 'grpc_asyncio', request_type=schema.ValidateMessageRequest):
     client = SchemaServiceAsyncClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport=transport,
     )
 
@@ -3428,7 +3430,7 @@ async def test_validate_message_async_from_dict():
 
 def test_validate_message_field_headers():
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
 
     # Any value that is part of the HTTP/1.1 URI should be sent as
@@ -3460,7 +3462,7 @@ def test_validate_message_field_headers():
 @pytest.mark.asyncio
 async def test_validate_message_field_headers_async():
     client = SchemaServiceAsyncClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
 
     # Any value that is part of the HTTP/1.1 URI should be sent as
@@ -3495,7 +3497,7 @@ async def test_validate_message_field_headers_async():
 ])
 def test_create_schema_rest(request_type):
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport="rest",
     )
 
@@ -3611,14 +3613,14 @@ def test_create_schema_rest_required_fields(request_type=gp_schema.CreateSchemaR
 
     # verify fields with default values are dropped
 
-    unset_fields = transport_class(credentials=_AnonymousCredentialsWithUniverseDomain()).create_schema._get_unset_required_fields(jsonified_request)
+    unset_fields = transport_class(credentials=ga_credentials.AnonymousCredentials()).create_schema._get_unset_required_fields(jsonified_request)
     jsonified_request.update(unset_fields)
 
     # verify required fields with default values are now present
 
     jsonified_request["parent"] = 'parent_value'
 
-    unset_fields = transport_class(credentials=_AnonymousCredentialsWithUniverseDomain()).create_schema._get_unset_required_fields(jsonified_request)
+    unset_fields = transport_class(credentials=ga_credentials.AnonymousCredentials()).create_schema._get_unset_required_fields(jsonified_request)
     # Check that path parameters and body parameters are not mixing in.
     assert not set(unset_fields) - set(("schema_id", ))
     jsonified_request.update(unset_fields)
@@ -3628,7 +3630,7 @@ def test_create_schema_rest_required_fields(request_type=gp_schema.CreateSchemaR
     assert jsonified_request["parent"] == 'parent_value'
 
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport='rest',
     )
     request = request_type(**request_init)
@@ -3672,7 +3674,7 @@ def test_create_schema_rest_required_fields(request_type=gp_schema.CreateSchemaR
 
 
 def test_create_schema_rest_unset_required_fields():
-    transport = transports.SchemaServiceRestTransport(credentials=_AnonymousCredentialsWithUniverseDomain)
+    transport = transports.SchemaServiceRestTransport(credentials=ga_credentials.AnonymousCredentials)
 
     unset_fields = transport.create_schema._get_unset_required_fields({})
     assert set(unset_fields) == (set(("schemaId", )) & set(("parent", "schema", )))
@@ -3681,7 +3683,7 @@ def test_create_schema_rest_unset_required_fields():
 @pytest.mark.parametrize("null_interceptor", [True, False])
 def test_create_schema_rest_interceptors(null_interceptor):
     transport = transports.SchemaServiceRestTransport(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         interceptor=None if null_interceptor else transports.SchemaServiceRestInterceptor(),
         )
     client = SchemaServiceClient(transport=transport)
@@ -3720,7 +3722,7 @@ def test_create_schema_rest_interceptors(null_interceptor):
 
 def test_create_schema_rest_bad_request(transport: str = 'rest', request_type=gp_schema.CreateSchemaRequest):
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport=transport,
     )
 
@@ -3740,7 +3742,7 @@ def test_create_schema_rest_bad_request(transport: str = 'rest', request_type=gp
 
 def test_create_schema_rest_flattened():
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport="rest",
     )
 
@@ -3780,7 +3782,7 @@ def test_create_schema_rest_flattened():
 
 def test_create_schema_rest_flattened_error(transport: str = 'rest'):
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport=transport,
     )
 
@@ -3797,7 +3799,7 @@ def test_create_schema_rest_flattened_error(transport: str = 'rest'):
 
 def test_create_schema_rest_error():
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport='rest'
     )
 
@@ -3808,7 +3810,7 @@ def test_create_schema_rest_error():
 ])
 def test_get_schema_rest(request_type):
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport="rest",
     )
 
@@ -3860,14 +3862,14 @@ def test_get_schema_rest_required_fields(request_type=schema.GetSchemaRequest):
 
     # verify fields with default values are dropped
 
-    unset_fields = transport_class(credentials=_AnonymousCredentialsWithUniverseDomain()).get_schema._get_unset_required_fields(jsonified_request)
+    unset_fields = transport_class(credentials=ga_credentials.AnonymousCredentials()).get_schema._get_unset_required_fields(jsonified_request)
     jsonified_request.update(unset_fields)
 
     # verify required fields with default values are now present
 
     jsonified_request["name"] = 'name_value'
 
-    unset_fields = transport_class(credentials=_AnonymousCredentialsWithUniverseDomain()).get_schema._get_unset_required_fields(jsonified_request)
+    unset_fields = transport_class(credentials=ga_credentials.AnonymousCredentials()).get_schema._get_unset_required_fields(jsonified_request)
     # Check that path parameters and body parameters are not mixing in.
     assert not set(unset_fields) - set(("view", ))
     jsonified_request.update(unset_fields)
@@ -3877,7 +3879,7 @@ def test_get_schema_rest_required_fields(request_type=schema.GetSchemaRequest):
     assert jsonified_request["name"] == 'name_value'
 
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport='rest',
     )
     request = request_type(**request_init)
@@ -3920,7 +3922,7 @@ def test_get_schema_rest_required_fields(request_type=schema.GetSchemaRequest):
 
 
 def test_get_schema_rest_unset_required_fields():
-    transport = transports.SchemaServiceRestTransport(credentials=_AnonymousCredentialsWithUniverseDomain)
+    transport = transports.SchemaServiceRestTransport(credentials=ga_credentials.AnonymousCredentials)
 
     unset_fields = transport.get_schema._get_unset_required_fields({})
     assert set(unset_fields) == (set(("view", )) & set(("name", )))
@@ -3929,7 +3931,7 @@ def test_get_schema_rest_unset_required_fields():
 @pytest.mark.parametrize("null_interceptor", [True, False])
 def test_get_schema_rest_interceptors(null_interceptor):
     transport = transports.SchemaServiceRestTransport(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         interceptor=None if null_interceptor else transports.SchemaServiceRestInterceptor(),
         )
     client = SchemaServiceClient(transport=transport)
@@ -3968,7 +3970,7 @@ def test_get_schema_rest_interceptors(null_interceptor):
 
 def test_get_schema_rest_bad_request(transport: str = 'rest', request_type=schema.GetSchemaRequest):
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport=transport,
     )
 
@@ -3988,7 +3990,7 @@ def test_get_schema_rest_bad_request(transport: str = 'rest', request_type=schem
 
 def test_get_schema_rest_flattened():
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport="rest",
     )
 
@@ -4026,7 +4028,7 @@ def test_get_schema_rest_flattened():
 
 def test_get_schema_rest_flattened_error(transport: str = 'rest'):
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport=transport,
     )
 
@@ -4041,7 +4043,7 @@ def test_get_schema_rest_flattened_error(transport: str = 'rest'):
 
 def test_get_schema_rest_error():
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport='rest'
     )
 
@@ -4052,7 +4054,7 @@ def test_get_schema_rest_error():
 ])
 def test_list_schemas_rest(request_type):
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport="rest",
     )
 
@@ -4098,14 +4100,14 @@ def test_list_schemas_rest_required_fields(request_type=schema.ListSchemasReques
 
     # verify fields with default values are dropped
 
-    unset_fields = transport_class(credentials=_AnonymousCredentialsWithUniverseDomain()).list_schemas._get_unset_required_fields(jsonified_request)
+    unset_fields = transport_class(credentials=ga_credentials.AnonymousCredentials()).list_schemas._get_unset_required_fields(jsonified_request)
     jsonified_request.update(unset_fields)
 
     # verify required fields with default values are now present
 
     jsonified_request["parent"] = 'parent_value'
 
-    unset_fields = transport_class(credentials=_AnonymousCredentialsWithUniverseDomain()).list_schemas._get_unset_required_fields(jsonified_request)
+    unset_fields = transport_class(credentials=ga_credentials.AnonymousCredentials()).list_schemas._get_unset_required_fields(jsonified_request)
     # Check that path parameters and body parameters are not mixing in.
     assert not set(unset_fields) - set(("page_size", "page_token", "view", ))
     jsonified_request.update(unset_fields)
@@ -4115,7 +4117,7 @@ def test_list_schemas_rest_required_fields(request_type=schema.ListSchemasReques
     assert jsonified_request["parent"] == 'parent_value'
 
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport='rest',
     )
     request = request_type(**request_init)
@@ -4158,7 +4160,7 @@ def test_list_schemas_rest_required_fields(request_type=schema.ListSchemasReques
 
 
 def test_list_schemas_rest_unset_required_fields():
-    transport = transports.SchemaServiceRestTransport(credentials=_AnonymousCredentialsWithUniverseDomain)
+    transport = transports.SchemaServiceRestTransport(credentials=ga_credentials.AnonymousCredentials)
 
     unset_fields = transport.list_schemas._get_unset_required_fields({})
     assert set(unset_fields) == (set(("pageSize", "pageToken", "view", )) & set(("parent", )))
@@ -4167,7 +4169,7 @@ def test_list_schemas_rest_unset_required_fields():
 @pytest.mark.parametrize("null_interceptor", [True, False])
 def test_list_schemas_rest_interceptors(null_interceptor):
     transport = transports.SchemaServiceRestTransport(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         interceptor=None if null_interceptor else transports.SchemaServiceRestInterceptor(),
         )
     client = SchemaServiceClient(transport=transport)
@@ -4206,7 +4208,7 @@ def test_list_schemas_rest_interceptors(null_interceptor):
 
 def test_list_schemas_rest_bad_request(transport: str = 'rest', request_type=schema.ListSchemasRequest):
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport=transport,
     )
 
@@ -4226,7 +4228,7 @@ def test_list_schemas_rest_bad_request(transport: str = 'rest', request_type=sch
 
 def test_list_schemas_rest_flattened():
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport="rest",
     )
 
@@ -4264,7 +4266,7 @@ def test_list_schemas_rest_flattened():
 
 def test_list_schemas_rest_flattened_error(transport: str = 'rest'):
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport=transport,
     )
 
@@ -4279,7 +4281,7 @@ def test_list_schemas_rest_flattened_error(transport: str = 'rest'):
 
 def test_list_schemas_rest_pager(transport: str = 'rest'):
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport=transport,
     )
 
@@ -4345,7 +4347,7 @@ def test_list_schemas_rest_pager(transport: str = 'rest'):
 ])
 def test_list_schema_revisions_rest(request_type):
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport="rest",
     )
 
@@ -4391,14 +4393,14 @@ def test_list_schema_revisions_rest_required_fields(request_type=schema.ListSche
 
     # verify fields with default values are dropped
 
-    unset_fields = transport_class(credentials=_AnonymousCredentialsWithUniverseDomain()).list_schema_revisions._get_unset_required_fields(jsonified_request)
+    unset_fields = transport_class(credentials=ga_credentials.AnonymousCredentials()).list_schema_revisions._get_unset_required_fields(jsonified_request)
     jsonified_request.update(unset_fields)
 
     # verify required fields with default values are now present
 
     jsonified_request["name"] = 'name_value'
 
-    unset_fields = transport_class(credentials=_AnonymousCredentialsWithUniverseDomain()).list_schema_revisions._get_unset_required_fields(jsonified_request)
+    unset_fields = transport_class(credentials=ga_credentials.AnonymousCredentials()).list_schema_revisions._get_unset_required_fields(jsonified_request)
     # Check that path parameters and body parameters are not mixing in.
     assert not set(unset_fields) - set(("page_size", "page_token", "view", ))
     jsonified_request.update(unset_fields)
@@ -4408,7 +4410,7 @@ def test_list_schema_revisions_rest_required_fields(request_type=schema.ListSche
     assert jsonified_request["name"] == 'name_value'
 
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport='rest',
     )
     request = request_type(**request_init)
@@ -4451,7 +4453,7 @@ def test_list_schema_revisions_rest_required_fields(request_type=schema.ListSche
 
 
 def test_list_schema_revisions_rest_unset_required_fields():
-    transport = transports.SchemaServiceRestTransport(credentials=_AnonymousCredentialsWithUniverseDomain)
+    transport = transports.SchemaServiceRestTransport(credentials=ga_credentials.AnonymousCredentials)
 
     unset_fields = transport.list_schema_revisions._get_unset_required_fields({})
     assert set(unset_fields) == (set(("pageSize", "pageToken", "view", )) & set(("name", )))
@@ -4460,7 +4462,7 @@ def test_list_schema_revisions_rest_unset_required_fields():
 @pytest.mark.parametrize("null_interceptor", [True, False])
 def test_list_schema_revisions_rest_interceptors(null_interceptor):
     transport = transports.SchemaServiceRestTransport(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         interceptor=None if null_interceptor else transports.SchemaServiceRestInterceptor(),
         )
     client = SchemaServiceClient(transport=transport)
@@ -4499,7 +4501,7 @@ def test_list_schema_revisions_rest_interceptors(null_interceptor):
 
 def test_list_schema_revisions_rest_bad_request(transport: str = 'rest', request_type=schema.ListSchemaRevisionsRequest):
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport=transport,
     )
 
@@ -4519,7 +4521,7 @@ def test_list_schema_revisions_rest_bad_request(transport: str = 'rest', request
 
 def test_list_schema_revisions_rest_flattened():
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport="rest",
     )
 
@@ -4557,7 +4559,7 @@ def test_list_schema_revisions_rest_flattened():
 
 def test_list_schema_revisions_rest_flattened_error(transport: str = 'rest'):
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport=transport,
     )
 
@@ -4572,7 +4574,7 @@ def test_list_schema_revisions_rest_flattened_error(transport: str = 'rest'):
 
 def test_list_schema_revisions_rest_pager(transport: str = 'rest'):
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport=transport,
     )
 
@@ -4638,7 +4640,7 @@ def test_list_schema_revisions_rest_pager(transport: str = 'rest'):
 ])
 def test_commit_schema_rest(request_type):
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport="rest",
     )
 
@@ -4690,14 +4692,14 @@ def test_commit_schema_rest_required_fields(request_type=gp_schema.CommitSchemaR
 
     # verify fields with default values are dropped
 
-    unset_fields = transport_class(credentials=_AnonymousCredentialsWithUniverseDomain()).commit_schema._get_unset_required_fields(jsonified_request)
+    unset_fields = transport_class(credentials=ga_credentials.AnonymousCredentials()).commit_schema._get_unset_required_fields(jsonified_request)
     jsonified_request.update(unset_fields)
 
     # verify required fields with default values are now present
 
     jsonified_request["name"] = 'name_value'
 
-    unset_fields = transport_class(credentials=_AnonymousCredentialsWithUniverseDomain()).commit_schema._get_unset_required_fields(jsonified_request)
+    unset_fields = transport_class(credentials=ga_credentials.AnonymousCredentials()).commit_schema._get_unset_required_fields(jsonified_request)
     jsonified_request.update(unset_fields)
 
     # verify required fields with non-default values are left alone
@@ -4705,7 +4707,7 @@ def test_commit_schema_rest_required_fields(request_type=gp_schema.CommitSchemaR
     assert jsonified_request["name"] == 'name_value'
 
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport='rest',
     )
     request = request_type(**request_init)
@@ -4749,7 +4751,7 @@ def test_commit_schema_rest_required_fields(request_type=gp_schema.CommitSchemaR
 
 
 def test_commit_schema_rest_unset_required_fields():
-    transport = transports.SchemaServiceRestTransport(credentials=_AnonymousCredentialsWithUniverseDomain)
+    transport = transports.SchemaServiceRestTransport(credentials=ga_credentials.AnonymousCredentials)
 
     unset_fields = transport.commit_schema._get_unset_required_fields({})
     assert set(unset_fields) == (set(()) & set(("name", "schema", )))
@@ -4758,7 +4760,7 @@ def test_commit_schema_rest_unset_required_fields():
 @pytest.mark.parametrize("null_interceptor", [True, False])
 def test_commit_schema_rest_interceptors(null_interceptor):
     transport = transports.SchemaServiceRestTransport(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         interceptor=None if null_interceptor else transports.SchemaServiceRestInterceptor(),
         )
     client = SchemaServiceClient(transport=transport)
@@ -4797,7 +4799,7 @@ def test_commit_schema_rest_interceptors(null_interceptor):
 
 def test_commit_schema_rest_bad_request(transport: str = 'rest', request_type=gp_schema.CommitSchemaRequest):
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport=transport,
     )
 
@@ -4817,7 +4819,7 @@ def test_commit_schema_rest_bad_request(transport: str = 'rest', request_type=gp
 
 def test_commit_schema_rest_flattened():
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport="rest",
     )
 
@@ -4856,7 +4858,7 @@ def test_commit_schema_rest_flattened():
 
 def test_commit_schema_rest_flattened_error(transport: str = 'rest'):
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport=transport,
     )
 
@@ -4872,7 +4874,7 @@ def test_commit_schema_rest_flattened_error(transport: str = 'rest'):
 
 def test_commit_schema_rest_error():
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport='rest'
     )
 
@@ -4883,7 +4885,7 @@ def test_commit_schema_rest_error():
 ])
 def test_rollback_schema_rest(request_type):
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport="rest",
     )
 
@@ -4936,7 +4938,7 @@ def test_rollback_schema_rest_required_fields(request_type=schema.RollbackSchema
 
     # verify fields with default values are dropped
 
-    unset_fields = transport_class(credentials=_AnonymousCredentialsWithUniverseDomain()).rollback_schema._get_unset_required_fields(jsonified_request)
+    unset_fields = transport_class(credentials=ga_credentials.AnonymousCredentials()).rollback_schema._get_unset_required_fields(jsonified_request)
     jsonified_request.update(unset_fields)
 
     # verify required fields with default values are now present
@@ -4944,7 +4946,7 @@ def test_rollback_schema_rest_required_fields(request_type=schema.RollbackSchema
     jsonified_request["name"] = 'name_value'
     jsonified_request["revisionId"] = 'revision_id_value'
 
-    unset_fields = transport_class(credentials=_AnonymousCredentialsWithUniverseDomain()).rollback_schema._get_unset_required_fields(jsonified_request)
+    unset_fields = transport_class(credentials=ga_credentials.AnonymousCredentials()).rollback_schema._get_unset_required_fields(jsonified_request)
     jsonified_request.update(unset_fields)
 
     # verify required fields with non-default values are left alone
@@ -4954,7 +4956,7 @@ def test_rollback_schema_rest_required_fields(request_type=schema.RollbackSchema
     assert jsonified_request["revisionId"] == 'revision_id_value'
 
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport='rest',
     )
     request = request_type(**request_init)
@@ -4998,7 +5000,7 @@ def test_rollback_schema_rest_required_fields(request_type=schema.RollbackSchema
 
 
 def test_rollback_schema_rest_unset_required_fields():
-    transport = transports.SchemaServiceRestTransport(credentials=_AnonymousCredentialsWithUniverseDomain)
+    transport = transports.SchemaServiceRestTransport(credentials=ga_credentials.AnonymousCredentials)
 
     unset_fields = transport.rollback_schema._get_unset_required_fields({})
     assert set(unset_fields) == (set(()) & set(("name", "revisionId", )))
@@ -5007,7 +5009,7 @@ def test_rollback_schema_rest_unset_required_fields():
 @pytest.mark.parametrize("null_interceptor", [True, False])
 def test_rollback_schema_rest_interceptors(null_interceptor):
     transport = transports.SchemaServiceRestTransport(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         interceptor=None if null_interceptor else transports.SchemaServiceRestInterceptor(),
         )
     client = SchemaServiceClient(transport=transport)
@@ -5046,7 +5048,7 @@ def test_rollback_schema_rest_interceptors(null_interceptor):
 
 def test_rollback_schema_rest_bad_request(transport: str = 'rest', request_type=schema.RollbackSchemaRequest):
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport=transport,
     )
 
@@ -5066,7 +5068,7 @@ def test_rollback_schema_rest_bad_request(transport: str = 'rest', request_type=
 
 def test_rollback_schema_rest_flattened():
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport="rest",
     )
 
@@ -5105,7 +5107,7 @@ def test_rollback_schema_rest_flattened():
 
 def test_rollback_schema_rest_flattened_error(transport: str = 'rest'):
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport=transport,
     )
 
@@ -5121,7 +5123,7 @@ def test_rollback_schema_rest_flattened_error(transport: str = 'rest'):
 
 def test_rollback_schema_rest_error():
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport='rest'
     )
 
@@ -5132,7 +5134,7 @@ def test_rollback_schema_rest_error():
 ])
 def test_delete_schema_revision_rest(request_type):
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport="rest",
     )
 
@@ -5184,14 +5186,14 @@ def test_delete_schema_revision_rest_required_fields(request_type=schema.DeleteS
 
     # verify fields with default values are dropped
 
-    unset_fields = transport_class(credentials=_AnonymousCredentialsWithUniverseDomain()).delete_schema_revision._get_unset_required_fields(jsonified_request)
+    unset_fields = transport_class(credentials=ga_credentials.AnonymousCredentials()).delete_schema_revision._get_unset_required_fields(jsonified_request)
     jsonified_request.update(unset_fields)
 
     # verify required fields with default values are now present
 
     jsonified_request["name"] = 'name_value'
 
-    unset_fields = transport_class(credentials=_AnonymousCredentialsWithUniverseDomain()).delete_schema_revision._get_unset_required_fields(jsonified_request)
+    unset_fields = transport_class(credentials=ga_credentials.AnonymousCredentials()).delete_schema_revision._get_unset_required_fields(jsonified_request)
     # Check that path parameters and body parameters are not mixing in.
     assert not set(unset_fields) - set(("revision_id", ))
     jsonified_request.update(unset_fields)
@@ -5201,7 +5203,7 @@ def test_delete_schema_revision_rest_required_fields(request_type=schema.DeleteS
     assert jsonified_request["name"] == 'name_value'
 
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport='rest',
     )
     request = request_type(**request_init)
@@ -5244,7 +5246,7 @@ def test_delete_schema_revision_rest_required_fields(request_type=schema.DeleteS
 
 
 def test_delete_schema_revision_rest_unset_required_fields():
-    transport = transports.SchemaServiceRestTransport(credentials=_AnonymousCredentialsWithUniverseDomain)
+    transport = transports.SchemaServiceRestTransport(credentials=ga_credentials.AnonymousCredentials)
 
     unset_fields = transport.delete_schema_revision._get_unset_required_fields({})
     assert set(unset_fields) == (set(("revisionId", )) & set(("name", )))
@@ -5253,7 +5255,7 @@ def test_delete_schema_revision_rest_unset_required_fields():
 @pytest.mark.parametrize("null_interceptor", [True, False])
 def test_delete_schema_revision_rest_interceptors(null_interceptor):
     transport = transports.SchemaServiceRestTransport(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         interceptor=None if null_interceptor else transports.SchemaServiceRestInterceptor(),
         )
     client = SchemaServiceClient(transport=transport)
@@ -5292,7 +5294,7 @@ def test_delete_schema_revision_rest_interceptors(null_interceptor):
 
 def test_delete_schema_revision_rest_bad_request(transport: str = 'rest', request_type=schema.DeleteSchemaRevisionRequest):
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport=transport,
     )
 
@@ -5312,7 +5314,7 @@ def test_delete_schema_revision_rest_bad_request(transport: str = 'rest', reques
 
 def test_delete_schema_revision_rest_flattened():
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport="rest",
     )
 
@@ -5351,7 +5353,7 @@ def test_delete_schema_revision_rest_flattened():
 
 def test_delete_schema_revision_rest_flattened_error(transport: str = 'rest'):
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport=transport,
     )
 
@@ -5367,7 +5369,7 @@ def test_delete_schema_revision_rest_flattened_error(transport: str = 'rest'):
 
 def test_delete_schema_revision_rest_error():
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport='rest'
     )
 
@@ -5378,7 +5380,7 @@ def test_delete_schema_revision_rest_error():
 ])
 def test_delete_schema_rest(request_type):
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport="rest",
     )
 
@@ -5419,14 +5421,14 @@ def test_delete_schema_rest_required_fields(request_type=schema.DeleteSchemaRequ
 
     # verify fields with default values are dropped
 
-    unset_fields = transport_class(credentials=_AnonymousCredentialsWithUniverseDomain()).delete_schema._get_unset_required_fields(jsonified_request)
+    unset_fields = transport_class(credentials=ga_credentials.AnonymousCredentials()).delete_schema._get_unset_required_fields(jsonified_request)
     jsonified_request.update(unset_fields)
 
     # verify required fields with default values are now present
 
     jsonified_request["name"] = 'name_value'
 
-    unset_fields = transport_class(credentials=_AnonymousCredentialsWithUniverseDomain()).delete_schema._get_unset_required_fields(jsonified_request)
+    unset_fields = transport_class(credentials=ga_credentials.AnonymousCredentials()).delete_schema._get_unset_required_fields(jsonified_request)
     jsonified_request.update(unset_fields)
 
     # verify required fields with non-default values are left alone
@@ -5434,7 +5436,7 @@ def test_delete_schema_rest_required_fields(request_type=schema.DeleteSchemaRequ
     assert jsonified_request["name"] == 'name_value'
 
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport='rest',
     )
     request = request_type(**request_init)
@@ -5474,7 +5476,7 @@ def test_delete_schema_rest_required_fields(request_type=schema.DeleteSchemaRequ
 
 
 def test_delete_schema_rest_unset_required_fields():
-    transport = transports.SchemaServiceRestTransport(credentials=_AnonymousCredentialsWithUniverseDomain)
+    transport = transports.SchemaServiceRestTransport(credentials=ga_credentials.AnonymousCredentials)
 
     unset_fields = transport.delete_schema._get_unset_required_fields({})
     assert set(unset_fields) == (set(()) & set(("name", )))
@@ -5483,7 +5485,7 @@ def test_delete_schema_rest_unset_required_fields():
 @pytest.mark.parametrize("null_interceptor", [True, False])
 def test_delete_schema_rest_interceptors(null_interceptor):
     transport = transports.SchemaServiceRestTransport(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         interceptor=None if null_interceptor else transports.SchemaServiceRestInterceptor(),
         )
     client = SchemaServiceClient(transport=transport)
@@ -5517,7 +5519,7 @@ def test_delete_schema_rest_interceptors(null_interceptor):
 
 def test_delete_schema_rest_bad_request(transport: str = 'rest', request_type=schema.DeleteSchemaRequest):
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport=transport,
     )
 
@@ -5537,7 +5539,7 @@ def test_delete_schema_rest_bad_request(transport: str = 'rest', request_type=sc
 
 def test_delete_schema_rest_flattened():
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport="rest",
     )
 
@@ -5573,7 +5575,7 @@ def test_delete_schema_rest_flattened():
 
 def test_delete_schema_rest_flattened_error(transport: str = 'rest'):
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport=transport,
     )
 
@@ -5588,7 +5590,7 @@ def test_delete_schema_rest_flattened_error(transport: str = 'rest'):
 
 def test_delete_schema_rest_error():
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport='rest'
     )
 
@@ -5599,7 +5601,7 @@ def test_delete_schema_rest_error():
 ])
 def test_validate_schema_rest(request_type):
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport="rest",
     )
 
@@ -5643,14 +5645,14 @@ def test_validate_schema_rest_required_fields(request_type=gp_schema.ValidateSch
 
     # verify fields with default values are dropped
 
-    unset_fields = transport_class(credentials=_AnonymousCredentialsWithUniverseDomain()).validate_schema._get_unset_required_fields(jsonified_request)
+    unset_fields = transport_class(credentials=ga_credentials.AnonymousCredentials()).validate_schema._get_unset_required_fields(jsonified_request)
     jsonified_request.update(unset_fields)
 
     # verify required fields with default values are now present
 
     jsonified_request["parent"] = 'parent_value'
 
-    unset_fields = transport_class(credentials=_AnonymousCredentialsWithUniverseDomain()).validate_schema._get_unset_required_fields(jsonified_request)
+    unset_fields = transport_class(credentials=ga_credentials.AnonymousCredentials()).validate_schema._get_unset_required_fields(jsonified_request)
     jsonified_request.update(unset_fields)
 
     # verify required fields with non-default values are left alone
@@ -5658,7 +5660,7 @@ def test_validate_schema_rest_required_fields(request_type=gp_schema.ValidateSch
     assert jsonified_request["parent"] == 'parent_value'
 
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport='rest',
     )
     request = request_type(**request_init)
@@ -5702,7 +5704,7 @@ def test_validate_schema_rest_required_fields(request_type=gp_schema.ValidateSch
 
 
 def test_validate_schema_rest_unset_required_fields():
-    transport = transports.SchemaServiceRestTransport(credentials=_AnonymousCredentialsWithUniverseDomain)
+    transport = transports.SchemaServiceRestTransport(credentials=ga_credentials.AnonymousCredentials)
 
     unset_fields = transport.validate_schema._get_unset_required_fields({})
     assert set(unset_fields) == (set(()) & set(("parent", "schema", )))
@@ -5711,7 +5713,7 @@ def test_validate_schema_rest_unset_required_fields():
 @pytest.mark.parametrize("null_interceptor", [True, False])
 def test_validate_schema_rest_interceptors(null_interceptor):
     transport = transports.SchemaServiceRestTransport(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         interceptor=None if null_interceptor else transports.SchemaServiceRestInterceptor(),
         )
     client = SchemaServiceClient(transport=transport)
@@ -5750,7 +5752,7 @@ def test_validate_schema_rest_interceptors(null_interceptor):
 
 def test_validate_schema_rest_bad_request(transport: str = 'rest', request_type=gp_schema.ValidateSchemaRequest):
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport=transport,
     )
 
@@ -5770,7 +5772,7 @@ def test_validate_schema_rest_bad_request(transport: str = 'rest', request_type=
 
 def test_validate_schema_rest_flattened():
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport="rest",
     )
 
@@ -5809,7 +5811,7 @@ def test_validate_schema_rest_flattened():
 
 def test_validate_schema_rest_flattened_error(transport: str = 'rest'):
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport=transport,
     )
 
@@ -5825,7 +5827,7 @@ def test_validate_schema_rest_flattened_error(transport: str = 'rest'):
 
 def test_validate_schema_rest_error():
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport='rest'
     )
 
@@ -5836,7 +5838,7 @@ def test_validate_schema_rest_error():
 ])
 def test_validate_message_rest(request_type):
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport="rest",
     )
 
@@ -5880,14 +5882,14 @@ def test_validate_message_rest_required_fields(request_type=schema.ValidateMessa
 
     # verify fields with default values are dropped
 
-    unset_fields = transport_class(credentials=_AnonymousCredentialsWithUniverseDomain()).validate_message._get_unset_required_fields(jsonified_request)
+    unset_fields = transport_class(credentials=ga_credentials.AnonymousCredentials()).validate_message._get_unset_required_fields(jsonified_request)
     jsonified_request.update(unset_fields)
 
     # verify required fields with default values are now present
 
     jsonified_request["parent"] = 'parent_value'
 
-    unset_fields = transport_class(credentials=_AnonymousCredentialsWithUniverseDomain()).validate_message._get_unset_required_fields(jsonified_request)
+    unset_fields = transport_class(credentials=ga_credentials.AnonymousCredentials()).validate_message._get_unset_required_fields(jsonified_request)
     jsonified_request.update(unset_fields)
 
     # verify required fields with non-default values are left alone
@@ -5895,7 +5897,7 @@ def test_validate_message_rest_required_fields(request_type=schema.ValidateMessa
     assert jsonified_request["parent"] == 'parent_value'
 
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport='rest',
     )
     request = request_type(**request_init)
@@ -5939,7 +5941,7 @@ def test_validate_message_rest_required_fields(request_type=schema.ValidateMessa
 
 
 def test_validate_message_rest_unset_required_fields():
-    transport = transports.SchemaServiceRestTransport(credentials=_AnonymousCredentialsWithUniverseDomain)
+    transport = transports.SchemaServiceRestTransport(credentials=ga_credentials.AnonymousCredentials)
 
     unset_fields = transport.validate_message._get_unset_required_fields({})
     assert set(unset_fields) == (set(()) & set(("parent", )))
@@ -5948,7 +5950,7 @@ def test_validate_message_rest_unset_required_fields():
 @pytest.mark.parametrize("null_interceptor", [True, False])
 def test_validate_message_rest_interceptors(null_interceptor):
     transport = transports.SchemaServiceRestTransport(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         interceptor=None if null_interceptor else transports.SchemaServiceRestInterceptor(),
         )
     client = SchemaServiceClient(transport=transport)
@@ -5987,7 +5989,7 @@ def test_validate_message_rest_interceptors(null_interceptor):
 
 def test_validate_message_rest_bad_request(transport: str = 'rest', request_type=schema.ValidateMessageRequest):
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport=transport,
     )
 
@@ -6007,7 +6009,7 @@ def test_validate_message_rest_bad_request(transport: str = 'rest', request_type
 
 def test_validate_message_rest_error():
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport='rest'
     )
 
@@ -6015,17 +6017,17 @@ def test_validate_message_rest_error():
 def test_credentials_transport_error():
     # It is an error to provide credentials and a transport instance.
     transport = transports.SchemaServiceGrpcTransport(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
     with pytest.raises(ValueError):
         client = SchemaServiceClient(
-            credentials=_AnonymousCredentialsWithUniverseDomain(),
+            credentials=ga_credentials.AnonymousCredentials(),
             transport=transport,
         )
 
     # It is an error to provide a credentials file and a transport instance.
     transport = transports.SchemaServiceGrpcTransport(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
     with pytest.raises(ValueError):
         client = SchemaServiceClient(
@@ -6035,7 +6037,7 @@ def test_credentials_transport_error():
 
     # It is an error to provide an api_key and a transport instance.
     transport = transports.SchemaServiceGrpcTransport(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
     options = client_options.ClientOptions()
     options.api_key = "api_key"
@@ -6051,12 +6053,12 @@ def test_credentials_transport_error():
     with pytest.raises(ValueError):
         client = SchemaServiceClient(
             client_options=options,
-            credentials=_AnonymousCredentialsWithUniverseDomain()
+            credentials=ga_credentials.AnonymousCredentials()
         )
 
     # It is an error to provide scopes and a transport instance.
     transport = transports.SchemaServiceGrpcTransport(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
     with pytest.raises(ValueError):
         client = SchemaServiceClient(
@@ -6068,7 +6070,7 @@ def test_credentials_transport_error():
 def test_transport_instance():
     # A client may be instantiated with a custom transport instance.
     transport = transports.SchemaServiceGrpcTransport(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
     client = SchemaServiceClient(transport=transport)
     assert client.transport is transport
@@ -6076,13 +6078,13 @@ def test_transport_instance():
 def test_transport_get_channel():
     # A client may be instantiated with a custom transport instance.
     transport = transports.SchemaServiceGrpcTransport(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
     channel = transport.grpc_channel
     assert channel
 
     transport = transports.SchemaServiceGrpcAsyncIOTransport(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
     channel = transport.grpc_channel
     assert channel
@@ -6095,7 +6097,7 @@ def test_transport_get_channel():
 def test_transport_adc(transport_class):
     # Test default credentials are used if not provided.
     with mock.patch.object(google.auth, 'default') as adc:
-        adc.return_value = (_AnonymousCredentialsWithUniverseDomain(), None)
+        adc.return_value = (ga_credentials.AnonymousCredentials(), None)
         transport_class()
         adc.assert_called_once()
 
@@ -6105,14 +6107,14 @@ def test_transport_adc(transport_class):
 ])
 def test_transport_kind(transport_name):
     transport = SchemaServiceClient.get_transport_class(transport_name)(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
     assert transport.kind == transport_name
 
 def test_transport_grpc_default():
     # A client should use the gRPC transport by default.
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
     assert isinstance(
         client.transport,
@@ -6123,7 +6125,7 @@ def test_schema_service_base_transport_error():
     # Passing both a credentials object and credentials_file should raise an error
     with pytest.raises(core_exceptions.DuplicateCredentialArgs):
         transport = transports.SchemaServiceTransport(
-            credentials=_AnonymousCredentialsWithUniverseDomain(),
+            credentials=ga_credentials.AnonymousCredentials(),
             credentials_file="credentials.json"
         )
 
@@ -6133,7 +6135,7 @@ def test_schema_service_base_transport():
     with mock.patch('google.pubsub_v1.services.schema_service.transports.SchemaServiceTransport.__init__') as Transport:
         Transport.return_value = None
         transport = transports.SchemaServiceTransport(
-            credentials=_AnonymousCredentialsWithUniverseDomain(),
+            credentials=ga_credentials.AnonymousCredentials(),
         )
 
     # Every method on the transport should just blindly
@@ -6173,7 +6175,7 @@ def test_schema_service_base_transport_with_credentials_file():
     # Instantiate the base transport with a credentials file
     with mock.patch.object(google.auth, 'load_credentials_from_file', autospec=True) as load_creds, mock.patch('google.pubsub_v1.services.schema_service.transports.SchemaServiceTransport._prep_wrapped_messages') as Transport:
         Transport.return_value = None
-        load_creds.return_value = (_AnonymousCredentialsWithUniverseDomain(), None)
+        load_creds.return_value = (ga_credentials.AnonymousCredentials(), None)
         transport = transports.SchemaServiceTransport(
             credentials_file="credentials.json",
             quota_project_id="octopus",
@@ -6192,7 +6194,7 @@ def test_schema_service_base_transport_with_adc():
     # Test the default credentials are used if credentials and credentials_file are None.
     with mock.patch.object(google.auth, 'default', autospec=True) as adc, mock.patch('google.pubsub_v1.services.schema_service.transports.SchemaServiceTransport._prep_wrapped_messages') as Transport:
         Transport.return_value = None
-        adc.return_value = (_AnonymousCredentialsWithUniverseDomain(), None)
+        adc.return_value = (ga_credentials.AnonymousCredentials(), None)
         transport = transports.SchemaServiceTransport()
         adc.assert_called_once()
 
@@ -6200,7 +6202,7 @@ def test_schema_service_base_transport_with_adc():
 def test_schema_service_auth_adc():
     # If no credentials are provided, we should use ADC credentials.
     with mock.patch.object(google.auth, 'default', autospec=True) as adc:
-        adc.return_value = (_AnonymousCredentialsWithUniverseDomain(), None)
+        adc.return_value = (ga_credentials.AnonymousCredentials(), None)
         SchemaServiceClient()
         adc.assert_called_once_with(
             scopes=None,
@@ -6223,7 +6225,7 @@ def test_schema_service_transport_auth_adc(transport_class):
     # If credentials and host are not provided, the transport class should use
     # ADC credentials.
     with mock.patch.object(google.auth, 'default', autospec=True) as adc:
-        adc.return_value = (_AnonymousCredentialsWithUniverseDomain(), None)
+        adc.return_value = (ga_credentials.AnonymousCredentials(), None)
         transport_class(quota_project_id="octopus", scopes=["1", "2"])
         adc.assert_called_once_with(
             scopes=["1", "2"],
@@ -6268,7 +6270,7 @@ def test_schema_service_transport_create_channel(transport_class, grpc_helpers):
     with mock.patch.object(google.auth, "default", autospec=True) as adc, mock.patch.object(
         grpc_helpers, "create_channel", autospec=True
     ) as create_channel:
-        creds = _AnonymousCredentialsWithUniverseDomain()
+        creds = ga_credentials.AnonymousCredentials()
         adc.return_value = (creds, None)
         transport_class(
             quota_project_id="octopus",
@@ -6298,7 +6300,7 @@ def test_schema_service_transport_create_channel(transport_class, grpc_helpers):
 def test_schema_service_grpc_transport_client_cert_source_for_mtls(
     transport_class
 ):
-    cred = _AnonymousCredentialsWithUniverseDomain()
+    cred = ga_credentials.AnonymousCredentials()
 
     # Check ssl_channel_credentials is used if provided.
     with mock.patch.object(transport_class, "create_channel") as mock_create_channel:
@@ -6336,7 +6338,7 @@ def test_schema_service_grpc_transport_client_cert_source_for_mtls(
             )
 
 def test_schema_service_http_transport_client_cert_source_for_mtls():
-    cred = _AnonymousCredentialsWithUniverseDomain()
+    cred = ga_credentials.AnonymousCredentials()
     with mock.patch("google.auth.transport.requests.AuthorizedSession.configure_mtls_channel") as mock_configure_mtls_channel:
         transports.SchemaServiceRestTransport (
             credentials=cred,
@@ -6352,7 +6354,7 @@ def test_schema_service_http_transport_client_cert_source_for_mtls():
 ])
 def test_schema_service_host_no_port(transport_name):
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         client_options=client_options.ClientOptions(api_endpoint='pubsub.googleapis.com'),
          transport=transport_name,
     )
@@ -6369,7 +6371,7 @@ def test_schema_service_host_no_port(transport_name):
 ])
 def test_schema_service_host_with_port(transport_name):
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         client_options=client_options.ClientOptions(api_endpoint='pubsub.googleapis.com:8000'),
         transport=transport_name,
     )
@@ -6383,8 +6385,8 @@ def test_schema_service_host_with_port(transport_name):
     "rest",
 ])
 def test_schema_service_client_transport_session_collision(transport_name):
-    creds1 = _AnonymousCredentialsWithUniverseDomain()
-    creds2 = _AnonymousCredentialsWithUniverseDomain()
+    creds1 = ga_credentials.AnonymousCredentials()
+    creds2 = ga_credentials.AnonymousCredentials()
     client1 = SchemaServiceClient(
         credentials=creds1,
         transport=transport_name,
@@ -6463,7 +6465,7 @@ def test_schema_service_transport_channel_mtls_with_client_cert_source(
             mock_grpc_channel = mock.Mock()
             grpc_create_channel.return_value = mock_grpc_channel
 
-            cred = _AnonymousCredentialsWithUniverseDomain()
+            cred = ga_credentials.AnonymousCredentials()
             with pytest.warns(DeprecationWarning):
                 with mock.patch.object(google.auth, 'default') as adc:
                     adc.return_value = (cred, None)
@@ -6645,7 +6647,7 @@ def test_client_with_default_client_info():
 
     with mock.patch.object(transports.SchemaServiceTransport, '_prep_wrapped_messages') as prep:
         client = SchemaServiceClient(
-            credentials=_AnonymousCredentialsWithUniverseDomain(),
+            credentials=ga_credentials.AnonymousCredentials(),
             client_info=client_info,
         )
         prep.assert_called_once_with(client_info)
@@ -6653,7 +6655,7 @@ def test_client_with_default_client_info():
     with mock.patch.object(transports.SchemaServiceTransport, '_prep_wrapped_messages') as prep:
         transport_class = SchemaServiceClient.get_transport_class()
         transport = transport_class(
-            credentials=_AnonymousCredentialsWithUniverseDomain(),
+            credentials=ga_credentials.AnonymousCredentials(),
             client_info=client_info,
         )
         prep.assert_called_once_with(client_info)
@@ -6661,7 +6663,7 @@ def test_client_with_default_client_info():
 @pytest.mark.asyncio
 async def test_transport_close_async():
     client = SchemaServiceAsyncClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport="grpc_asyncio",
     )
     with mock.patch.object(type(getattr(client.transport, "grpc_channel")), "close") as close:
@@ -6672,7 +6674,7 @@ async def test_transport_close_async():
 
 def test_get_iam_policy_rest_bad_request(transport: str = 'rest', request_type=iam_policy_pb2.GetIamPolicyRequest):
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport=transport,
     )
 
@@ -6694,7 +6696,7 @@ def test_get_iam_policy_rest_bad_request(transport: str = 'rest', request_type=i
 ])
 def test_get_iam_policy_rest(request_type):
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport="rest",
     )
     request_init = {'resource': 'projects/sample1/topics/sample2'}
@@ -6719,7 +6721,7 @@ def test_get_iam_policy_rest(request_type):
 
 def test_set_iam_policy_rest_bad_request(transport: str = 'rest', request_type=iam_policy_pb2.SetIamPolicyRequest):
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport=transport,
     )
 
@@ -6741,7 +6743,7 @@ def test_set_iam_policy_rest_bad_request(transport: str = 'rest', request_type=i
 ])
 def test_set_iam_policy_rest(request_type):
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport="rest",
     )
     request_init = {'resource': 'projects/sample1/topics/sample2'}
@@ -6766,7 +6768,7 @@ def test_set_iam_policy_rest(request_type):
 
 def test_test_iam_permissions_rest_bad_request(transport: str = 'rest', request_type=iam_policy_pb2.TestIamPermissionsRequest):
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport=transport,
     )
 
@@ -6788,7 +6790,7 @@ def test_test_iam_permissions_rest_bad_request(transport: str = 'rest', request_
 ])
 def test_test_iam_permissions_rest(request_type):
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
         transport="rest",
     )
     request_init = {'resource': 'projects/sample1/subscriptions/sample2'}
@@ -6814,7 +6816,7 @@ def test_test_iam_permissions_rest(request_type):
 
 def test_set_iam_policy(transport: str = "grpc"):
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(), transport=transport,
+        credentials=ga_credentials.AnonymousCredentials(), transport=transport,
     )
 
     # Everything is optional in proto3 as far as the runtime is concerned,
@@ -6841,7 +6843,7 @@ def test_set_iam_policy(transport: str = "grpc"):
 @pytest.mark.asyncio
 async def test_set_iam_policy_async(transport: str = "grpc_asyncio"):
     client = SchemaServiceAsyncClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(), transport=transport,
+        credentials=ga_credentials.AnonymousCredentials(), transport=transport,
     )
 
     # Everything is optional in proto3 as far as the runtime is concerned,
@@ -6871,7 +6873,7 @@ async def test_set_iam_policy_async(transport: str = "grpc_asyncio"):
 
 def test_set_iam_policy_field_headers():
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
 
     # Any value that is part of the HTTP/1.1 URI should be sent as
@@ -6896,7 +6898,7 @@ def test_set_iam_policy_field_headers():
 @pytest.mark.asyncio
 async def test_set_iam_policy_field_headers_async():
     client = SchemaServiceAsyncClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
 
     # Any value that is part of the HTTP/1.1 URI should be sent as
@@ -6921,7 +6923,7 @@ async def test_set_iam_policy_field_headers_async():
 
 def test_set_iam_policy_from_dict():
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(type(client.transport.set_iam_policy), "__call__") as call:
@@ -6940,7 +6942,7 @@ def test_set_iam_policy_from_dict():
 @pytest.mark.asyncio
 async def test_set_iam_policy_from_dict_async():
     client = SchemaServiceAsyncClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(type(client.transport.set_iam_policy), "__call__") as call:
@@ -6960,7 +6962,7 @@ async def test_set_iam_policy_from_dict_async():
 
 def test_get_iam_policy(transport: str = "grpc"):
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(), transport=transport,
+        credentials=ga_credentials.AnonymousCredentials(), transport=transport,
     )
 
     # Everything is optional in proto3 as far as the runtime is concerned,
@@ -6991,7 +6993,7 @@ def test_get_iam_policy(transport: str = "grpc"):
 @pytest.mark.asyncio
 async def test_get_iam_policy_async(transport: str = "grpc_asyncio"):
     client = SchemaServiceAsyncClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(), transport=transport,
+        credentials=ga_credentials.AnonymousCredentials(), transport=transport,
     )
 
     # Everything is optional in proto3 as far as the runtime is concerned,
@@ -7025,7 +7027,7 @@ async def test_get_iam_policy_async(transport: str = "grpc_asyncio"):
 
 def test_get_iam_policy_field_headers():
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
 
     # Any value that is part of the HTTP/1.1 URI should be sent as
@@ -7052,7 +7054,7 @@ def test_get_iam_policy_field_headers():
 @pytest.mark.asyncio
 async def test_get_iam_policy_field_headers_async():
     client = SchemaServiceAsyncClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
 
     # Any value that is part of the HTTP/1.1 URI should be sent as
@@ -7080,7 +7082,7 @@ async def test_get_iam_policy_field_headers_async():
 
 def test_get_iam_policy_from_dict():
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(type(client.transport.get_iam_policy), "__call__") as call:
@@ -7098,7 +7100,7 @@ def test_get_iam_policy_from_dict():
 @pytest.mark.asyncio
 async def test_get_iam_policy_from_dict_async():
     client = SchemaServiceAsyncClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(type(client.transport.get_iam_policy), "__call__") as call:
@@ -7118,7 +7120,7 @@ async def test_get_iam_policy_from_dict_async():
 
 def test_test_iam_permissions(transport: str = "grpc"):
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(), transport=transport,
+        credentials=ga_credentials.AnonymousCredentials(), transport=transport,
     )
 
     # Everything is optional in proto3 as far as the runtime is concerned,
@@ -7151,7 +7153,7 @@ def test_test_iam_permissions(transport: str = "grpc"):
 @pytest.mark.asyncio
 async def test_test_iam_permissions_async(transport: str = "grpc_asyncio"):
     client = SchemaServiceAsyncClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(), transport=transport,
+        credentials=ga_credentials.AnonymousCredentials(), transport=transport,
     )
 
     # Everything is optional in proto3 as far as the runtime is concerned,
@@ -7183,7 +7185,7 @@ async def test_test_iam_permissions_async(transport: str = "grpc_asyncio"):
 
 def test_test_iam_permissions_field_headers():
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
 
     # Any value that is part of the HTTP/1.1 URI should be sent as
@@ -7212,7 +7214,7 @@ def test_test_iam_permissions_field_headers():
 @pytest.mark.asyncio
 async def test_test_iam_permissions_field_headers_async():
     client = SchemaServiceAsyncClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
 
     # Any value that is part of the HTTP/1.1 URI should be sent as
@@ -7242,7 +7244,7 @@ async def test_test_iam_permissions_field_headers_async():
 
 def test_test_iam_permissions_from_dict():
     client = SchemaServiceClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(
@@ -7262,7 +7264,7 @@ def test_test_iam_permissions_from_dict():
 @pytest.mark.asyncio
 async def test_test_iam_permissions_from_dict_async():
     client = SchemaServiceAsyncClient(
-        credentials=_AnonymousCredentialsWithUniverseDomain(),
+        credentials=ga_credentials.AnonymousCredentials(),
     )
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(
@@ -7290,7 +7292,7 @@ def test_transport_close():
 
     for transport, close_name in transports.items():
         client = SchemaServiceClient(
-            credentials=_AnonymousCredentialsWithUniverseDomain(),
+            credentials=ga_credentials.AnonymousCredentials(),
             transport=transport
         )
         with mock.patch.object(type(getattr(client.transport, close_name)), "close") as close:
@@ -7305,7 +7307,7 @@ def test_client_ctx():
     ]
     for transport in transports:
         client = SchemaServiceClient(
-            credentials=_AnonymousCredentialsWithUniverseDomain(),
+            credentials=ga_credentials.AnonymousCredentials(),
             transport=transport
         )
         # Test client calls underlying transport.
