@@ -12,10 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
 import datetime
 import sys
 import threading
 import time
+from typing import Sequence, Union
 
 # special case python < 3.8
 if sys.version_info.major == 3 and sys.version_info.minor < 8:
@@ -36,11 +38,12 @@ from google.cloud.pubsub_v1.publisher._batch.base import BatchCancellationReason
 from google.cloud.pubsub_v1.publisher._batch import thread
 from google.cloud.pubsub_v1.publisher._batch.thread import Batch
 from google.pubsub_v1 import types as gapic_types
+import grpc
 
 
-def create_client():
+def create_client(client_options: Union[types.PublisherOptions, Sequence] = ()):
     creds = mock.Mock(spec=credentials.Credentials)
-    return publisher.Client(credentials=creds)
+    return publisher.Client(credentials=creds, publisher_options=client_options)
 
 
 def create_batch(
@@ -49,6 +52,7 @@ def create_batch(
     commit_when_full=True,
     commit_retry=gapic_v1.method.DEFAULT,
     commit_timeout: gapic_types.TimeoutType = gapic_v1.method.DEFAULT,
+    client_options: Union[types.PublisherOptions, Sequence] = (),
     **batch_settings
 ):
     """Return a batch object suitable for testing.
@@ -63,13 +67,15 @@ def create_batch(
             for the batch commit call.
         commit_timeout (:class:`~.pubsub_v1.types.TimeoutType`):
             The timeout to apply to the batch commit call.
+        client_options (Union[types.PublisherOptions, Sequence]): Arguments passed on
+            to the :class ``~.pubsub_v1.types.publisher.Client`` constructor.
         batch_settings (Mapping[str, str]): Arguments passed on to the
             :class:``~.pubsub_v1.types.BatchSettings`` constructor.
 
     Returns:
         ~.pubsub_v1.publisher.batch.thread.Batch: A batch object.
     """
-    client = create_client()
+    client = create_client(client_options)
     settings = types.BatchSettings(**batch_settings)
     return Batch(
         client,
@@ -94,6 +100,14 @@ def test_client():
     settings = types.BatchSettings()
     batch = Batch(client, "topic_name", settings)
     assert batch.client is client
+
+
+def test_client_with_compression():
+    client = create_client(types.PublisherOptions(enable_grpc_compression=True))
+    settings = types.BatchSettings()
+    batch = Batch(client, "topic_name", settings)
+    assert batch.client is client
+    assert batch.client._enable_grpc_compression
 
 
 def test_commit():
@@ -149,6 +163,125 @@ def test_blocking__commit():
         ],
         retry=gapic_v1.method.DEFAULT,
         timeout=gapic_v1.method.DEFAULT,
+        compression=None,
+    )
+
+    # Establish that all of the futures are done, and that they have the
+    # expected values.
+    assert futures[0].done()
+    assert futures[0].result() == "a"
+    assert futures[1].done()
+    assert futures[1].result() == "b"
+
+
+def test_blocking__commit_with_compression_at_zero_bytes():
+    batch = create_batch(
+        client_options=types.PublisherOptions(
+            enable_grpc_compression=True, compression_bytes_threshold=0
+        )
+    )
+    futures = (
+        batch.publish({"data": b"This is my message."}),
+        batch.publish({"data": b"This is another message."}),
+    )
+
+    # Set up the underlying API publish method to return a PublishResponse.
+    publish_response = gapic_types.PublishResponse(message_ids=["a", "b"])
+    patch = mock.patch.object(
+        type(batch.client), "_gapic_publish", return_value=publish_response
+    )
+    with patch as publish:
+        batch._commit()
+
+    # Establish that the underlying API call was made with expected
+    # arguments.
+    publish.assert_called_once_with(
+        topic="topic_name",
+        messages=[
+            gapic_types.PubsubMessage(data=b"This is my message."),
+            gapic_types.PubsubMessage(data=b"This is another message."),
+        ],
+        retry=gapic_v1.method.DEFAULT,
+        timeout=gapic_v1.method.DEFAULT,
+        compression=grpc.Compression.Gzip,
+    )
+
+    # Establish that all of the futures are done, and that they have the
+    # expected values.
+    assert futures[0].done()
+    assert futures[0].result() == "a"
+    assert futures[1].done()
+    assert futures[1].result() == "b"
+
+
+def test_blocking__commit_with_disabled_compression_at_zero_bytes():
+    batch = create_batch(
+        client_options=types.PublisherOptions(
+            enable_grpc_compression=False, compression_bytes_threshold=0
+        )
+    )
+    futures = (
+        batch.publish({"data": b"This is my message."}),
+        batch.publish({"data": b"This is another message."}),
+    )
+
+    # Set up the underlying API publish method to return a PublishResponse.
+    publish_response = gapic_types.PublishResponse(message_ids=["a", "b"])
+    patch = mock.patch.object(
+        type(batch.client), "_gapic_publish", return_value=publish_response
+    )
+    with patch as publish:
+        batch._commit()
+
+    # Establish that the underlying API call was made with expected
+    # arguments.
+    publish.assert_called_once_with(
+        topic="topic_name",
+        messages=[
+            gapic_types.PubsubMessage(data=b"This is my message."),
+            gapic_types.PubsubMessage(data=b"This is another message."),
+        ],
+        retry=gapic_v1.method.DEFAULT,
+        timeout=gapic_v1.method.DEFAULT,
+        compression=None,
+    )
+
+    # Establish that all of the futures are done, and that they have the
+    # expected values.
+    assert futures[0].done()
+    assert futures[0].result() == "a"
+    assert futures[1].done()
+    assert futures[1].result() == "b"
+
+
+def test_blocking__commit_with_compression_at_default():
+    batch = create_batch(
+        client_options=types.PublisherOptions(enable_grpc_compression=True)
+    )
+    futures = (
+        batch.publish({"data": b"This is my message."}),
+        batch.publish({"data": b"This is another message."}),
+    )
+
+    # Set up the underlying API publish method to return a PublishResponse.
+    publish_response = gapic_types.PublishResponse(message_ids=["a", "b"])
+    patch = mock.patch.object(
+        type(batch.client), "_gapic_publish", return_value=publish_response
+    )
+    with patch as publish:
+        batch._commit()
+
+    # Establish that the underlying API call was made with expected
+    # arguments.
+    publish.assert_called_once_with(
+        topic="topic_name",
+        messages=[
+            gapic_types.PubsubMessage(data=b"This is my message."),
+            gapic_types.PubsubMessage(data=b"This is another message."),
+        ],
+        retry=gapic_v1.method.DEFAULT,
+        timeout=gapic_v1.method.DEFAULT,
+        compression=None,
     )
 
     # Establish that all of the futures are done, and that they have the
@@ -178,6 +311,7 @@ def test_blocking__commit_custom_retry():
         messages=[gapic_types.PubsubMessage(data=b"This is my message.")],
         retry=mock.sentinel.custom_retry,
         timeout=gapic_v1.method.DEFAULT,
+        compression=None,
     )
 
 
@@ -200,6 +334,7 @@ def test_blocking__commit_custom_timeout():
         messages=[gapic_types.PubsubMessage(data=b"This is my message.")],
         retry=gapic_v1.method.DEFAULT,
         timeout=mock.sentinel.custom_timeout,
+        compression=None,
     )
 
 
@@ -207,7 +342,9 @@ def test_client_api_publish_not_blocking_additional_publish_calls():
     batch = create_batch(max_messages=1)
     api_publish_called = threading.Event()
 
-    def api_publish_delay(topic="", messages=(), retry=None, timeout=None):
+    def api_publish_delay(
+        topic="", messages=(), retry=None, timeout=None, compression=None
+    ):
         api_publish_called.set()
         time.sleep(1.0)
         message_ids = [str(i) for i in range(len(messages))]

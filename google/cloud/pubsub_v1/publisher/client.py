@@ -153,6 +153,11 @@ class Client(publisher_client.PublisherClient):
         # The object controlling the message publishing flow
         self._flow_controller = FlowController(self.publisher_options.flow_control)
 
+        self._enable_grpc_compression = self.publisher_options.enable_grpc_compression
+        self._compression_bytes_threshold = (
+            self.publisher_options.compression_bytes_threshold
+        )
+
     @classmethod
     def from_service_account_file(  # type: ignore[override]
         cls,

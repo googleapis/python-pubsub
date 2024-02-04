@@ -26,6 +26,7 @@ from google.cloud.pubsub_v1.publisher import exceptions
 from google.cloud.pubsub_v1.publisher import futures
 from google.cloud.pubsub_v1.publisher._batch import base
 from google.pubsub_v1 import types as gapic_types
+import grpc
 
 if typing.TYPE_CHECKING:  # pragma: NO COVER
     from google.cloud import pubsub_v1
@@ -118,6 +119,12 @@ class Batch(base.Batch):
 
         self._commit_retry = commit_retry
         self._commit_timeout = commit_timeout
+        self._enable_grpc_compression = (
+            self.client.publisher_options.enable_grpc_compression
+        )
+        self._compression_bytes_threshold = (
+            self.client.publisher_options.compression_bytes_threshold
+        )
 
     @staticmethod
     def make_lock() -> threading.Lock:
@@ -269,6 +276,17 @@ class Batch(base.Batch):
         start = time.time()
 
         batch_transport_succeeded = True
+
+        # Set compression if enabled.
+        compression = None
+
+        if (
+            self._enable_grpc_compression
+            and gapic_types.PublishRequest(messages=self._messages)._pb.ByteSize()
+            >= self._compression_bytes_threshold
+        ):
+            compression = grpc.Compression.Gzip
+
         try:
             # Performs retries for errors defined by the retry configuration.
             response = self._client._gapic_publish(
@@ -276,6 +294,7 @@ class Batch(base.Batch):
                 messages=self._messages,
                 retry=self._commit_retry,
                 timeout=self._commit_timeout,
+                compression=compression,
             )
         except google.api_core.exceptions.GoogleAPIError as exc:
             # We failed to publish, even after retries, so set the exception on

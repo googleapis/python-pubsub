@@ -61,6 +61,13 @@ typed_flaky = cast(Callable[[C], C], flaky(max_runs=3, min_passes=1))
 def publisher_client() -> Generator[pubsub_v1.PublisherClient, None, None]:
     yield pubsub_v1.PublisherClient()
 
+@pytest.fixture(scope="module")
+def publisher_client_with_default_compression() -> Generator[pubsub_v1.PublisherClient, None, None]:
+    yield pubsub_v1.PublisherClient(publisher_options=pubsub_v1.types.PublisherOptions(enable_grpc_compression=True)) 
+
+@pytest.fixture(scope="module")
+def publisher_client_with_low_compression() -> Generator[pubsub_v1.PublisherClient, None, None]:
+    yield pubsub_v1.PublisherClient(publisher_options=pubsub_v1.types.PublisherOptions(enable_grpc_compression=True, compression_bytes_threshold=0))
 
 @pytest.fixture(scope="module")
 def regional_publisher_client() -> Generator[pubsub_v1.PublisherClient, None, None]:
@@ -972,6 +979,36 @@ def test_listen_for_errors(
 
     # Clean up.
     subscriber_client.delete_subscription(request={"subscription": subscription_path})
+
+
+def test_listen_for_errors_default_compression(
+    publisher_client_with_default_compression: pubsub_v1.PublisherClient,
+    topic: str,
+    subscription_async: str,
+    capsys: CaptureFixture[str],
+) -> None:
+    _ = _publish_messages(publisher_client_with_default_compression, topic)
+
+    subscriber.listen_for_errors(PROJECT_ID, SUBSCRIPTION_ASYNC, 5)
+
+    out, _ = capsys.readouterr()
+    assert subscription_async in out
+    assert "threw an exception" in out
+
+
+def test_listen_for_errors_low_compression(
+    publisher_client_with_low_compression: pubsub_v1.PublisherClient,
+    topic: str,
+    subscription_async: str,
+    capsys: CaptureFixture[str],
+) -> None:
+    _ = _publish_messages(publisher_client_with_low_compression, topic)
+
+    subscriber.listen_for_errors(PROJECT_ID, SUBSCRIPTION_ASYNC, 5)
+
+    out, _ = capsys.readouterr()
+    assert subscription_async in out
+    assert "threw an exception" in out
 
 
 def test_receive_synchronously(
