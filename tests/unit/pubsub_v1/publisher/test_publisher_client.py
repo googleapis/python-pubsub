@@ -448,7 +448,7 @@ def test_gapic_instance_method(creds):
     client = publisher.Client(credentials=creds)
 
     topic = gapic_types.Topic(name="projects/foo/topics/bar")
-    with mock.patch.object(client, 'create_topic') as patched:
+    with mock.patch.object(client, "create_topic") as patched:
         client.create_topic(topic)
 
     assert patched.call_count == 1
