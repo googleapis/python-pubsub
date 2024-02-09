@@ -316,6 +316,33 @@ def test_publish_with_ordering_key_uses_extended_retry_deadline(creds):
     expected_retry = custom_retry.with_deadline(2.0**32)
     _assert_retries_equal(batch_commit_retry, expected_retry)
 
+def test_publish_with_ordering_key_with_no_retry(creds):
+    client = publisher.Client(
+        credentials=creds,
+        publisher_options=types.PublisherOptions(enable_message_ordering=True),
+    )
+
+    # Use mocks in lieu of the actual batch class.
+    batch = mock.Mock(spec=client._batch_class)
+    future = mock.sentinel.future
+    future.add_done_callback = mock.Mock(spec=["__call__"])
+    batch.publish.return_value = future
+
+    topic = "topic/path"
+    client._set_batch(topic, batch)
+
+    # Actually mock the batch class now.
+    batch_class = mock.Mock(spec=(), return_value=batch)
+    client._set_batch_class(batch_class)
+
+    future = client.publish(topic, b"foo", ordering_key="first", retry=None)
+    assert future is mock.sentinel.future
+
+    # Check the retry settings used for the batch.
+    batch_class.assert_called_once()
+
+    
+
 
 def test_publish_attrs_bytestring(creds):
     client = publisher.Client(credentials=creds)
