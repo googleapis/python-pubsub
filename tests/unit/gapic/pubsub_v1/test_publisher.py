@@ -1739,7 +1739,7 @@ def test_publish_flattened():
         # using the keyword arguments to the method.
         client.publish(
             topic="topic_value",
-            messages=[pubsub.PubsubMessage(data=b"data_blob")],
+            messages=[pubsub.PubsubMessage(data=b"data_blob")]
         )
 
         # Establish that the underlying call was made with the expected
