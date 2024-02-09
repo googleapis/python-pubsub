@@ -316,6 +316,7 @@ def test_publish_with_ordering_key_uses_extended_retry_deadline(creds):
     expected_retry = custom_retry.with_deadline(2.0**32)
     _assert_retries_equal(batch_commit_retry, expected_retry)
 
+
 def test_publish_with_ordering_key_with_no_retry(creds):
     client = publisher.Client(
         credentials=creds,
@@ -340,8 +341,6 @@ def test_publish_with_ordering_key_with_no_retry(creds):
 
     # Check the retry settings used for the batch.
     batch_class.assert_called_once()
-
-    
 
 
 def test_publish_attrs_bytestring(creds):
