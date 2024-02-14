@@ -1738,7 +1738,8 @@ def test_publish_flattened():
         # Call the method with a truthy value for each flattened field,
         # using the keyword arguments to the method.
         client.publish(
-            topic="topic_value", messages=[pubsub.PubsubMessage(data=b"data_blob")]
+            topic="topic_value",
+            messages=[pubsub.PubsubMessage(data=b"data_blob")],
         )
 
         # Establish that the underlying call was made with the expected
