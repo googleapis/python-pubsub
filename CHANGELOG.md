@@ -5,6 +5,27 @@
 [1]: https://pypi.org/project/google-cloud-pubsub/#history
 
 
+## [2.19.4](https://github.com/googleapis/python-pubsub/compare/v2.19.3...v2.19.4) (2024-02-09)
+
+
+### Bug Fixes
+
+* **diregapic:** S/bazel/bazelisk/ in DIREGAPIC build GitHub action ([#1064](https://github.com/googleapis/python-pubsub/issues/1064)) ([d56ad12](https://github.com/googleapis/python-pubsub/commit/d56ad12f197e9e379d2a4a0a38be108808985c23))
+
+## [2.19.3](https://github.com/googleapis/python-pubsub/compare/v2.19.2...v2.19.3) (2024-02-08)
+
+
+### Bug Fixes
+
+* Add google-auth as a direct dependency ([#1076](https://github.com/googleapis/python-pubsub/issues/1076)) ([5ce7301](https://github.com/googleapis/python-pubsub/commit/5ce7301b3056191203bc89bbcf1f33083de72a2d))
+
+## [2.19.2](https://github.com/googleapis/python-pubsub/compare/v2.19.1...v2.19.2) (2024-02-08)
+
+
+### Bug Fixes
+
+* Unit test failures in https://github.com/googleapis/python-pubsu… ([#1074](https://github.com/googleapis/python-pubsub/issues/1074)) ([3c6d128](https://github.com/googleapis/python-pubsub/commit/3c6d128a53d83439036aaec1f1fd48331152935b))
+
 ## [2.19.1](https://github.com/googleapis/python-pubsub/compare/v2.19.0...v2.19.1) (2024-02-02)
 
 
