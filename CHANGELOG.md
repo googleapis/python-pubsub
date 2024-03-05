@@ -5,6 +5,27 @@
 [1]: https://pypi.org/project/google-cloud-pubsub/#history
 
 
+## [2.19.7](https://github.com/googleapis/python-pubsub/compare/v2.19.6...v2.19.7) (2024-02-24)
+
+
+### Bug Fixes
+
+* **deps:** Require `google-api-core&gt;=1.34.1` ([#1080](https://github.com/googleapis/python-pubsub/issues/1080)) ([1a5a134](https://github.com/googleapis/python-pubsub/commit/1a5a1342de8736c6a2b1ac63476667f8a02b5bb8))
+
+## [2.19.6](https://github.com/googleapis/python-pubsub/compare/v2.19.5...v2.19.6) (2024-02-23)
+
+
+### Bug Fixes
+
+* Remove LOGGER.exception() line ([#1087](https://github.com/googleapis/python-pubsub/issues/1087)) ([a395d26](https://github.com/googleapis/python-pubsub/commit/a395d26ed0fffaee8662f988da97dd35c480af4f))
+
+## [2.19.5](https://github.com/googleapis/python-pubsub/compare/v2.19.4...v2.19.5) (2024-02-22)
+
+
+### Bug Fixes
+
+* Update system_test_python_versions ([#1096](https://github.com/googleapis/python-pubsub/issues/1096)) ([c659ac7](https://github.com/googleapis/python-pubsub/commit/c659ac777f177e54d7272a8de93fa9f554b15d46))
+
 ## [2.19.4](https://github.com/googleapis/python-pubsub/compare/v2.19.3...v2.19.4) (2024-02-09)
 
 
