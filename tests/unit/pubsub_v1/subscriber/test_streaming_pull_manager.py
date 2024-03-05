@@ -85,7 +85,6 @@ def test__wrap_callback_errors_no_error():
     ],
 )
 def test__wrap_callback_errors_error(callback_error):
-
     msg = mock.create_autospec(message.Message, instance=True)
     callback = mock.Mock(side_effect=callback_error)
     on_callback_error = mock.Mock()
