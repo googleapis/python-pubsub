@@ -69,8 +69,8 @@ def create_topic_kinesis_ingestion(
     gcp_service_account: str,
 ) -> None:
     """Create a new Pub/Sub topic with AWS Kinesis Ingestion Settings."""
-    # [START pubsub_quickstart_create_topic]
-    # [START pubsub_create_topic]
+    # [START pubsub_quickstart_create_topic_kinesis_ingestion]
+    # [START pubsub_create_topic_kinesis_ingestion]
     from google.cloud import pubsub_v1
     from google.pubsub_v1.types import Topic
     from google.pubsub_v1.types import IngestionDataSourceSettings
@@ -101,8 +101,8 @@ def create_topic_kinesis_ingestion(
     topic = publisher.create_topic(request=request)
 
     print(f"Created topic: {topic.name} with AWS Kinesis Ingestion Settings")
-    # [END pubsub_quickstart_create_topic]
-    # [END pubsub_create_topic]
+    # [END pubsub_quickstart_create_topic_kinesis_ingestion]
+    # [END pubsub_create_topic_kinesis_ingestion]
 
 
 def delete_topic(project_id: str, topic_id: str) -> None:
