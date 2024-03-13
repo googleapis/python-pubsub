@@ -60,8 +60,14 @@ def create_topic(project_id: str, topic_id: str) -> None:
     # [END pubsub_create_topic]
 
 
-def create_topic_kinesis_ingestion(project_id: str, topic_id: str, stream_arn: str,
-                                   consumer_arn: str, aws_role_arn: str, gcp_service_account: str) -> None:
+def create_topic_kinesis_ingestion(
+    project_id: str,
+    topic_id: str,
+    stream_arn: str,
+    consumer_arn: str,
+    aws_role_arn: str,
+    gcp_service_account: str,
+) -> None:
     """Create a new Pub/Sub topic with AWS Kinesis Ingestion Settings."""
     # [START pubsub_quickstart_create_topic]
     # [START pubsub_create_topic]
@@ -89,7 +95,7 @@ def create_topic_kinesis_ingestion(project_id: str, topic_id: str, stream_arn: s
                 aws_role_arn=aws_role_arn,
                 gcp_service_account=gcp_service_account,
             )
-        )
+        ),
     )
 
     topic = publisher.create_topic(request=request)
@@ -469,7 +475,9 @@ if __name__ == "__main__":
     create_parser = subparsers.add_parser("create", help=create_topic.__doc__)
     create_parser.add_argument("topic_id")
 
-    create_topic_kinesis_ingestion_parser = subparsers.add_parser("create_kinesis_ingestion", help=create_topic_kinesis_ingestion.__doc__)
+    create_topic_kinesis_ingestion_parser = subparsers.add_parser(
+        "create_kinesis_ingestion", help=create_topic_kinesis_ingestion.__doc__
+    )
     create_topic_kinesis_ingestion_parser.add_argument("topic_id")
     create_topic_kinesis_ingestion_parser.add_argument("stream_arn")
     create_topic_kinesis_ingestion_parser.add_argument("consumer_arn")
@@ -543,7 +551,7 @@ if __name__ == "__main__":
             args.stream_arn,
             args.consumer_arn,
             args.aws_role_arn,
-            args.gcp_service_account
+            args.gcp_service_account,
         )
     elif args.command == "delete":
         delete_topic(args.project_id, args.topic_id)
