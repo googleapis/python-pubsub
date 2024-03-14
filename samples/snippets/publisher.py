@@ -142,8 +142,7 @@ def update_topic_kinesis_ingestion(
                 )
             ),
         ),
-        update_mask=field_mask_pb2.FieldMask(
-            paths=["ingestion_data_source_settings"]),
+        update_mask=field_mask_pb2.FieldMask(paths=["ingestion_data_source_settings"]),
     )
 
     topic = publisher.update_topic(request=update_request)
@@ -531,7 +530,7 @@ if __name__ == "__main__":
     create_topic_kinesis_ingestion_parser.add_argument("consumer_arn")
     create_topic_kinesis_ingestion_parser.add_argument("aws_role_arn")
     create_topic_kinesis_ingestion_parser.add_argument("gcp_service_account")
-    
+
     update_topic_kinesis_ingestion_parser = subparsers.add_parser(
         "update_kinesis_ingestion", help=update_topic_kinesis_ingestion.__doc__
     )

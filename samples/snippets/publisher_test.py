@@ -160,7 +160,8 @@ def test_create_kinesis_ingestion(
 
     # Clean up resource created for the test.
     publisher_client.delete_topic(request={"topic": topic_path})
-    
+
+
 def test_update_kinesis_ingestion(
     publisher_client: pubsub_v1.PublisherClient, capsys: CaptureFixture[str]
 ) -> None:
@@ -184,7 +185,7 @@ def test_update_kinesis_ingestion(
 
     out, _ = capsys.readouterr()
     assert f"Created topic: {topic_path}" in out
-    
+
     publisher.update_topic_kinesis_ingestion(
         PROJECT_ID,
         TOPIC_ID,
@@ -193,10 +194,10 @@ def test_update_kinesis_ingestion(
         aws_role_arn,
         gcp_service_account,
     )
-    
+
     out, _ = capsys.readouterr()
     assert f"Updated topic: {topic_path} with AWS Kinesis Ingestion Settings" in out
-    
+
     # Clean up resource created for the test.
     publisher_client.delete_topic(request={"topic": topic_path})
 
