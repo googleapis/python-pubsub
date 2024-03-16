@@ -5,6 +5,40 @@
 [1]: https://pypi.org/project/google-cloud-pubsub/#history
 
 
+## [2.20.2](https://github.com/googleapis/python-pubsub/compare/v2.20.1...v2.20.2) (2024-03-15)
+
+
+### Documentation
+
+* **samples:** Add Create Topic with Kinesis IngestionDataSourceSettings Sample ([#1120](https://github.com/googleapis/python-pubsub/issues/1120)) ([83dc9ff](https://github.com/googleapis/python-pubsub/commit/83dc9fff13aa35518fb9b6a73472816da852d975))
+* **samples:** Update Topic with Kinesis Ingestion Settings ([#1123](https://github.com/googleapis/python-pubsub/issues/1123)) ([e0e2d83](https://github.com/googleapis/python-pubsub/commit/e0e2d831da8d17288c3ae8900bea2388ce8758af))
+
+## [2.20.1](https://github.com/googleapis/python-pubsub/compare/v2.20.0...v2.20.1) (2024-03-06)
+
+
+### Bug Fixes
+
+* Catch and surface BaseException() ([#1108](https://github.com/googleapis/python-pubsub/issues/1108)) ([07e427f](https://github.com/googleapis/python-pubsub/commit/07e427f675464b9aa79c68dede67082529054980))
+
+## [2.20.0](https://github.com/googleapis/python-pubsub/compare/v2.19.8...v2.20.0) (2024-03-05)
+
+
+### Features
+
+* Add include_recaptcha_script for as a new action in firewall policies ([#1109](https://github.com/googleapis/python-pubsub/issues/1109)) ([54041a5](https://github.com/googleapis/python-pubsub/commit/54041a527398eb0ec5daa97a346ba3202ce349f3))
+
+
+### Documentation
+
+* **samples:** Correct type and description of `timeout` parameter in subscriber quickstart ([#1051](https://github.com/googleapis/python-pubsub/issues/1051)) ([141a473](https://github.com/googleapis/python-pubsub/commit/141a473561bd0e45d3137a02cbefddb454ab3af4))
+
+## [2.19.8](https://github.com/googleapis/python-pubsub/compare/v2.19.7...v2.19.8) (2024-03-05)
+
+
+### Bug Fixes
+
+* **deps:** Exclude google-auth 2.24.0 and 2.25.0 ([#1102](https://github.com/googleapis/python-pubsub/issues/1102)) ([165c983](https://github.com/googleapis/python-pubsub/commit/165c983803c48a17141765395cf9ec2e6a7056fa))
+
 ## [2.19.7](https://github.com/googleapis/python-pubsub/compare/v2.19.6...v2.19.7) (2024-02-24)
 
 
