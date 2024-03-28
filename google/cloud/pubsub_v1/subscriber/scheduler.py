@@ -22,7 +22,7 @@ import abc
 import concurrent.futures
 import queue
 import typing
-from typing import Callable, List, Optional
+from typing import Callable, List, Optional, Iterable
 import warnings
 
 if typing.TYPE_CHECKING:  # pragma: NO COVER

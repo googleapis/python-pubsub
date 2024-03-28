@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import typing
-from typing import Optional
+from typing import Optional, Callable
 
 from google.api_core import gapic_v1
 
@@ -93,6 +93,7 @@ class UnorderedSequencer(base.Sequencer):
         self,
         commit_retry: "OptionalRetry" = gapic_v1.method.DEFAULT,
         commit_timeout: "types.OptionalTimeout" = gapic_v1.method.DEFAULT,
+        batch_done_callback = Callable[[bool], any],
     ) -> "_batch.thread.Batch":
         """Create a new batch using the client's batch class and other stored
             settings.
@@ -107,7 +108,7 @@ class UnorderedSequencer(base.Sequencer):
             client=self._client,
             topic=self._topic,
             settings=self._client.batch_settings,
-            batch_done_callback=None,
+            batch_done_callback = batch_done_callback,
             commit_when_full=True,
             commit_retry=commit_retry,
             commit_timeout=commit_timeout,
