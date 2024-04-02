@@ -101,7 +101,7 @@ for library in s.get_staging_dirs(default_version):
 
     count = s.replace(
         clients_to_patch,
-        r"Transport = type\(self\)\.get_transport_class\(transport\)",
+        r"Transport = type\(self\)\.get_transport_class\(cast\(str, transport\)\)",
         """\g<0>
 
             emulator_host = os.environ.get("PUBSUB_EMULATOR_HOST")
@@ -324,7 +324,7 @@ for library in s.get_staging_dirs(default_version):
     if count < 1:
         raise Exception(".coveragerc replacement failed.")
 
-    s.move([library], excludes=["**/gapic_version.py", "README.rst", "docs/**/*", "setup.py", "testing/constraints-3.7.txt"])
+    s.move([library], excludes=["**/gapic_version.py", "README.rst", "docs/**/*", "setup.py", "testing/constraints-3.7.txt", "testing/constraints-3.8.txt"])
 s.remove_staging_dirs()
 
 # ----------------------------------------------------------------------------
@@ -337,7 +337,7 @@ templated_files = gcp.CommonTemplates().py_library(
     cov_level=100,
     versions=gcp.common.detect_versions(path="./google", default_first=True),
     unit_test_python_versions=["3.7", "3.8", "3.9", "3.10", "3.11", "3.12"],
-    system_test_python_versions=["3.10"],
+    system_test_python_versions=["3.12"],
     system_test_external_dependencies=["psutil","flaky"],
 )
 s.move(templated_files, excludes=[".coveragerc", ".github/release-please.yml", "README.rst", "docs/index.rst"])
@@ -366,16 +366,18 @@ s.replace(
         session.install("-e", ".[all]")
         session.install(MYPY_VERSION)
 
-        # Just install the type info directly, since "mypy --install-types" might
-        # require an additional pass.
-        session.install("types-protobuf", "types-setuptools")
-
         # Version 2.1.1 of google-api-core version is the first type-checked release.
         # Version 2.2.0 of google-cloud-core version is the first type-checked release.
         session.install(
             "google-api-core[grpc]>=2.1.1",
             "google-cloud-core>=2.2.0",
         )
+
+        # Just install the type info directly, since "mypy --install-types" might
+        # require an additional pass.
+        # Exclude types-protobuf==4.24.0.20240106
+        # See https://github.com/python/typeshed/issues/11254
+        session.install("types-protobuf!=4.24.0.20240106", "types-setuptools")
 
         # TODO: Only check the hand-written layer, the generated code does not pass
         # mypy checks yet.

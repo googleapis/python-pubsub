@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2023 Google LLC
+# Copyright 2024 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ from google.protobuf import json_format
 import json
 import math
 import pytest
+from google.api_core import api_core_version
 from proto.marshal.rules.dates import DurationRule, TimestampRule
 from proto.marshal.rules import wrappers
 from requests import Response
@@ -75,6 +76,17 @@ def modify_default_endpoint(client):
     )
 
 
+# If default endpoint template is localhost, then default mtls endpoint will be the same.
+# This method modifies the default endpoint template so the client can produce a different
+# mtls endpoint for endpoint testing purposes.
+def modify_default_endpoint_template(client):
+    return (
+        "test.{UNIVERSE_DOMAIN}"
+        if ("localhost" in client._DEFAULT_ENDPOINT_TEMPLATE)
+        else client._DEFAULT_ENDPOINT_TEMPLATE
+    )
+
+
 def test__get_default_mtls_endpoint():
     api_endpoint = "example.googleapis.com"
     api_mtls_endpoint = "example.mtls.googleapis.com"
@@ -99,6 +111,254 @@ def test__get_default_mtls_endpoint():
         == sandbox_mtls_endpoint
     )
     assert SubscriberClient._get_default_mtls_endpoint(non_googleapi) == non_googleapi
+
+
+def test__read_environment_variables():
+    assert SubscriberClient._read_environment_variables() == (False, "auto", None)
+
+    with mock.patch.dict(os.environ, {"GOOGLE_API_USE_CLIENT_CERTIFICATE": "true"}):
+        assert SubscriberClient._read_environment_variables() == (True, "auto", None)
+
+    with mock.patch.dict(os.environ, {"GOOGLE_API_USE_CLIENT_CERTIFICATE": "false"}):
+        assert SubscriberClient._read_environment_variables() == (False, "auto", None)
+
+    with mock.patch.dict(
+        os.environ, {"GOOGLE_API_USE_CLIENT_CERTIFICATE": "Unsupported"}
+    ):
+        with pytest.raises(ValueError) as excinfo:
+            SubscriberClient._read_environment_variables()
+    assert (
+        str(excinfo.value)
+        == "Environment variable `GOOGLE_API_USE_CLIENT_CERTIFICATE` must be either `true` or `false`"
+    )
+
+    with mock.patch.dict(os.environ, {"GOOGLE_API_USE_MTLS_ENDPOINT": "never"}):
+        assert SubscriberClient._read_environment_variables() == (False, "never", None)
+
+    with mock.patch.dict(os.environ, {"GOOGLE_API_USE_MTLS_ENDPOINT": "always"}):
+        assert SubscriberClient._read_environment_variables() == (False, "always", None)
+
+    with mock.patch.dict(os.environ, {"GOOGLE_API_USE_MTLS_ENDPOINT": "auto"}):
+        assert SubscriberClient._read_environment_variables() == (False, "auto", None)
+
+    with mock.patch.dict(os.environ, {"GOOGLE_API_USE_MTLS_ENDPOINT": "Unsupported"}):
+        with pytest.raises(MutualTLSChannelError) as excinfo:
+            SubscriberClient._read_environment_variables()
+    assert (
+        str(excinfo.value)
+        == "Environment variable `GOOGLE_API_USE_MTLS_ENDPOINT` must be `never`, `auto` or `always`"
+    )
+
+    with mock.patch.dict(os.environ, {"GOOGLE_CLOUD_UNIVERSE_DOMAIN": "foo.com"}):
+        assert SubscriberClient._read_environment_variables() == (
+            False,
+            "auto",
+            "foo.com",
+        )
+
+
+def test__get_client_cert_source():
+    mock_provided_cert_source = mock.Mock()
+    mock_default_cert_source = mock.Mock()
+
+    assert SubscriberClient._get_client_cert_source(None, False) is None
+    assert (
+        SubscriberClient._get_client_cert_source(mock_provided_cert_source, False)
+        is None
+    )
+    assert (
+        SubscriberClient._get_client_cert_source(mock_provided_cert_source, True)
+        == mock_provided_cert_source
+    )
+
+    with mock.patch(
+        "google.auth.transport.mtls.has_default_client_cert_source", return_value=True
+    ):
+        with mock.patch(
+            "google.auth.transport.mtls.default_client_cert_source",
+            return_value=mock_default_cert_source,
+        ):
+            assert (
+                SubscriberClient._get_client_cert_source(None, True)
+                is mock_default_cert_source
+            )
+            assert (
+                SubscriberClient._get_client_cert_source(
+                    mock_provided_cert_source, "true"
+                )
+                is mock_provided_cert_source
+            )
+
+
+@mock.patch.object(
+    SubscriberClient,
+    "_DEFAULT_ENDPOINT_TEMPLATE",
+    modify_default_endpoint_template(SubscriberClient),
+)
+@mock.patch.object(
+    SubscriberAsyncClient,
+    "_DEFAULT_ENDPOINT_TEMPLATE",
+    modify_default_endpoint_template(SubscriberAsyncClient),
+)
+def test__get_api_endpoint():
+    api_override = "foo.com"
+    mock_client_cert_source = mock.Mock()
+    default_universe = SubscriberClient._DEFAULT_UNIVERSE
+    default_endpoint = SubscriberClient._DEFAULT_ENDPOINT_TEMPLATE.format(
+        UNIVERSE_DOMAIN=default_universe
+    )
+    mock_universe = "bar.com"
+    mock_endpoint = SubscriberClient._DEFAULT_ENDPOINT_TEMPLATE.format(
+        UNIVERSE_DOMAIN=mock_universe
+    )
+
+    assert (
+        SubscriberClient._get_api_endpoint(
+            api_override, mock_client_cert_source, default_universe, "always"
+        )
+        == api_override
+    )
+    assert (
+        SubscriberClient._get_api_endpoint(
+            None, mock_client_cert_source, default_universe, "auto"
+        )
+        == SubscriberClient.DEFAULT_MTLS_ENDPOINT
+    )
+    assert (
+        SubscriberClient._get_api_endpoint(None, None, default_universe, "auto")
+        == default_endpoint
+    )
+    assert (
+        SubscriberClient._get_api_endpoint(None, None, default_universe, "always")
+        == SubscriberClient.DEFAULT_MTLS_ENDPOINT
+    )
+    assert (
+        SubscriberClient._get_api_endpoint(
+            None, mock_client_cert_source, default_universe, "always"
+        )
+        == SubscriberClient.DEFAULT_MTLS_ENDPOINT
+    )
+    assert (
+        SubscriberClient._get_api_endpoint(None, None, mock_universe, "never")
+        == mock_endpoint
+    )
+    assert (
+        SubscriberClient._get_api_endpoint(None, None, default_universe, "never")
+        == default_endpoint
+    )
+
+    with pytest.raises(MutualTLSChannelError) as excinfo:
+        SubscriberClient._get_api_endpoint(
+            None, mock_client_cert_source, mock_universe, "auto"
+        )
+    assert (
+        str(excinfo.value)
+        == "mTLS is not supported in any universe other than googleapis.com."
+    )
+
+
+def test__get_universe_domain():
+    client_universe_domain = "foo.com"
+    universe_domain_env = "bar.com"
+
+    assert (
+        SubscriberClient._get_universe_domain(
+            client_universe_domain, universe_domain_env
+        )
+        == client_universe_domain
+    )
+    assert (
+        SubscriberClient._get_universe_domain(None, universe_domain_env)
+        == universe_domain_env
+    )
+    assert (
+        SubscriberClient._get_universe_domain(None, None)
+        == SubscriberClient._DEFAULT_UNIVERSE
+    )
+
+    with pytest.raises(ValueError) as excinfo:
+        SubscriberClient._get_universe_domain("", None)
+    assert str(excinfo.value) == "Universe Domain cannot be an empty string."
+
+
+@pytest.mark.parametrize(
+    "client_class,transport_class,transport_name",
+    [
+        (SubscriberClient, transports.SubscriberGrpcTransport, "grpc"),
+        (SubscriberClient, transports.SubscriberRestTransport, "rest"),
+    ],
+)
+def test__validate_universe_domain(client_class, transport_class, transport_name):
+    client = client_class(
+        transport=transport_class(credentials=ga_credentials.AnonymousCredentials())
+    )
+    assert client._validate_universe_domain() == True
+
+    # Test the case when universe is already validated.
+    assert client._validate_universe_domain() == True
+
+    if transport_name == "grpc":
+        # Test the case where credentials are provided by the
+        # `local_channel_credentials`. The default universes in both match.
+        channel = grpc.secure_channel(
+            "http://localhost/", grpc.local_channel_credentials()
+        )
+        client = client_class(transport=transport_class(channel=channel))
+        assert client._validate_universe_domain() == True
+
+        # Test the case where credentials do not exist: e.g. a transport is provided
+        # with no credentials. Validation should still succeed because there is no
+        # mismatch with non-existent credentials.
+        channel = grpc.secure_channel(
+            "http://localhost/", grpc.local_channel_credentials()
+        )
+        transport = transport_class(channel=channel)
+        transport._credentials = None
+        client = client_class(transport=transport)
+        assert client._validate_universe_domain() == True
+
+    # TODO: This is needed to cater for older versions of google-auth
+    # Make this test unconditional once the minimum supported version of
+    # google-auth becomes 2.23.0 or higher.
+    google_auth_major, google_auth_minor = [
+        int(part) for part in google.auth.__version__.split(".")[0:2]
+    ]
+    if google_auth_major > 2 or (google_auth_major == 2 and google_auth_minor >= 23):
+        credentials = ga_credentials.AnonymousCredentials()
+        credentials._universe_domain = "foo.com"
+        # Test the case when there is a universe mismatch from the credentials.
+        client = client_class(transport=transport_class(credentials=credentials))
+        with pytest.raises(ValueError) as excinfo:
+            client._validate_universe_domain()
+        assert (
+            str(excinfo.value)
+            == "The configured universe domain (googleapis.com) does not match the universe domain found in the credentials (foo.com). If you haven't configured the universe domain explicitly, `googleapis.com` is the default."
+        )
+
+        # Test the case when there is a universe mismatch from the client.
+        #
+        # TODO: Make this test unconditional once the minimum supported version of
+        # google-api-core becomes 2.15.0 or higher.
+        api_core_major, api_core_minor = [
+            int(part) for part in api_core_version.__version__.split(".")[0:2]
+        ]
+        if api_core_major > 2 or (api_core_major == 2 and api_core_minor >= 15):
+            client = client_class(
+                client_options={"universe_domain": "bar.com"},
+                transport=transport_class(
+                    credentials=ga_credentials.AnonymousCredentials(),
+                ),
+            )
+            with pytest.raises(ValueError) as excinfo:
+                client._validate_universe_domain()
+            assert (
+                str(excinfo.value)
+                == "The configured universe domain (bar.com) does not match the universe domain found in the credentials (googleapis.com). If you haven't configured the universe domain explicitly, `googleapis.com` is the default."
+            )
+
+    # Test that ValueError is raised if universe_domain is provided via client options and credentials is None
+    with pytest.raises(ValueError):
+        client._compare_universes("foo.bar", None)
 
 
 @pytest.mark.parametrize(
@@ -211,12 +471,14 @@ def test_subscriber_client_get_transport_class():
     ],
 )
 @mock.patch.object(
-    SubscriberClient, "DEFAULT_ENDPOINT", modify_default_endpoint(SubscriberClient)
+    SubscriberClient,
+    "_DEFAULT_ENDPOINT_TEMPLATE",
+    modify_default_endpoint_template(SubscriberClient),
 )
 @mock.patch.object(
     SubscriberAsyncClient,
-    "DEFAULT_ENDPOINT",
-    modify_default_endpoint(SubscriberAsyncClient),
+    "_DEFAULT_ENDPOINT_TEMPLATE",
+    modify_default_endpoint_template(SubscriberAsyncClient),
 )
 def test_subscriber_client_client_options(
     client_class, transport_class, transport_name
@@ -258,7 +520,9 @@ def test_subscriber_client_client_options(
             patched.assert_called_once_with(
                 credentials=None,
                 credentials_file=None,
-                host=client.DEFAULT_ENDPOINT,
+                host=client._DEFAULT_ENDPOINT_TEMPLATE.format(
+                    UNIVERSE_DOMAIN=client._DEFAULT_UNIVERSE
+                ),
                 scopes=None,
                 client_cert_source_for_mtls=None,
                 quota_project_id=None,
@@ -288,15 +552,23 @@ def test_subscriber_client_client_options(
     # Check the case api_endpoint is not provided and GOOGLE_API_USE_MTLS_ENDPOINT has
     # unsupported value.
     with mock.patch.dict(os.environ, {"GOOGLE_API_USE_MTLS_ENDPOINT": "Unsupported"}):
-        with pytest.raises(MutualTLSChannelError):
+        with pytest.raises(MutualTLSChannelError) as excinfo:
             client = client_class(transport=transport_name)
+    assert (
+        str(excinfo.value)
+        == "Environment variable `GOOGLE_API_USE_MTLS_ENDPOINT` must be `never`, `auto` or `always`"
+    )
 
     # Check the case GOOGLE_API_USE_CLIENT_CERTIFICATE has unsupported value.
     with mock.patch.dict(
         os.environ, {"GOOGLE_API_USE_CLIENT_CERTIFICATE": "Unsupported"}
     ):
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError) as excinfo:
             client = client_class(transport=transport_name)
+    assert (
+        str(excinfo.value)
+        == "Environment variable `GOOGLE_API_USE_CLIENT_CERTIFICATE` must be either `true` or `false`"
+    )
 
     # Check the case quota_project_id is provided
     options = client_options.ClientOptions(quota_project_id="octopus")
@@ -306,7 +578,9 @@ def test_subscriber_client_client_options(
         patched.assert_called_once_with(
             credentials=None,
             credentials_file=None,
-            host=client.DEFAULT_ENDPOINT,
+            host=client._DEFAULT_ENDPOINT_TEMPLATE.format(
+                UNIVERSE_DOMAIN=client._DEFAULT_UNIVERSE
+            ),
             scopes=None,
             client_cert_source_for_mtls=None,
             quota_project_id="octopus",
@@ -324,7 +598,9 @@ def test_subscriber_client_client_options(
         patched.assert_called_once_with(
             credentials=None,
             credentials_file=None,
-            host=client.DEFAULT_ENDPOINT,
+            host=client._DEFAULT_ENDPOINT_TEMPLATE.format(
+                UNIVERSE_DOMAIN=client._DEFAULT_UNIVERSE
+            ),
             scopes=None,
             client_cert_source_for_mtls=None,
             quota_project_id=None,
@@ -356,12 +632,14 @@ def test_subscriber_client_client_options(
     ],
 )
 @mock.patch.object(
-    SubscriberClient, "DEFAULT_ENDPOINT", modify_default_endpoint(SubscriberClient)
+    SubscriberClient,
+    "_DEFAULT_ENDPOINT_TEMPLATE",
+    modify_default_endpoint_template(SubscriberClient),
 )
 @mock.patch.object(
     SubscriberAsyncClient,
-    "DEFAULT_ENDPOINT",
-    modify_default_endpoint(SubscriberAsyncClient),
+    "_DEFAULT_ENDPOINT_TEMPLATE",
+    modify_default_endpoint_template(SubscriberAsyncClient),
 )
 @mock.patch.dict(os.environ, {"GOOGLE_API_USE_MTLS_ENDPOINT": "auto"})
 def test_subscriber_client_mtls_env_auto(
@@ -384,7 +662,9 @@ def test_subscriber_client_mtls_env_auto(
 
             if use_client_cert_env == "false":
                 expected_client_cert_source = None
-                expected_host = client.DEFAULT_ENDPOINT
+                expected_host = client._DEFAULT_ENDPOINT_TEMPLATE.format(
+                    UNIVERSE_DOMAIN=client._DEFAULT_UNIVERSE
+                )
             else:
                 expected_client_cert_source = client_cert_source_callback
                 expected_host = client.DEFAULT_MTLS_ENDPOINT
@@ -416,7 +696,9 @@ def test_subscriber_client_mtls_env_auto(
                     return_value=client_cert_source_callback,
                 ):
                     if use_client_cert_env == "false":
-                        expected_host = client.DEFAULT_ENDPOINT
+                        expected_host = client._DEFAULT_ENDPOINT_TEMPLATE.format(
+                            UNIVERSE_DOMAIN=client._DEFAULT_UNIVERSE
+                        )
                         expected_client_cert_source = None
                     else:
                         expected_host = client.DEFAULT_MTLS_ENDPOINT
@@ -450,7 +732,9 @@ def test_subscriber_client_mtls_env_auto(
                 patched.assert_called_once_with(
                     credentials=None,
                     credentials_file=None,
-                    host=client.DEFAULT_ENDPOINT,
+                    host=client._DEFAULT_ENDPOINT_TEMPLATE.format(
+                        UNIVERSE_DOMAIN=client._DEFAULT_UNIVERSE
+                    ),
                     scopes=None,
                     client_cert_source_for_mtls=None,
                     quota_project_id=None,
@@ -536,6 +820,113 @@ def test_subscriber_client_get_mtls_endpoint_and_cert_source(client_class):
                 assert api_endpoint == client_class.DEFAULT_MTLS_ENDPOINT
                 assert cert_source == mock_client_cert_source
 
+    # Check the case api_endpoint is not provided and GOOGLE_API_USE_MTLS_ENDPOINT has
+    # unsupported value.
+    with mock.patch.dict(os.environ, {"GOOGLE_API_USE_MTLS_ENDPOINT": "Unsupported"}):
+        with pytest.raises(MutualTLSChannelError) as excinfo:
+            client_class.get_mtls_endpoint_and_cert_source()
+
+        assert (
+            str(excinfo.value)
+            == "Environment variable `GOOGLE_API_USE_MTLS_ENDPOINT` must be `never`, `auto` or `always`"
+        )
+
+    # Check the case GOOGLE_API_USE_CLIENT_CERTIFICATE has unsupported value.
+    with mock.patch.dict(
+        os.environ, {"GOOGLE_API_USE_CLIENT_CERTIFICATE": "Unsupported"}
+    ):
+        with pytest.raises(ValueError) as excinfo:
+            client_class.get_mtls_endpoint_and_cert_source()
+
+        assert (
+            str(excinfo.value)
+            == "Environment variable `GOOGLE_API_USE_CLIENT_CERTIFICATE` must be either `true` or `false`"
+        )
+
+
+@pytest.mark.parametrize("client_class", [SubscriberClient, SubscriberAsyncClient])
+@mock.patch.object(
+    SubscriberClient,
+    "_DEFAULT_ENDPOINT_TEMPLATE",
+    modify_default_endpoint_template(SubscriberClient),
+)
+@mock.patch.object(
+    SubscriberAsyncClient,
+    "_DEFAULT_ENDPOINT_TEMPLATE",
+    modify_default_endpoint_template(SubscriberAsyncClient),
+)
+def test_subscriber_client_client_api_endpoint(client_class):
+    mock_client_cert_source = client_cert_source_callback
+    api_override = "foo.com"
+    default_universe = SubscriberClient._DEFAULT_UNIVERSE
+    default_endpoint = SubscriberClient._DEFAULT_ENDPOINT_TEMPLATE.format(
+        UNIVERSE_DOMAIN=default_universe
+    )
+    mock_universe = "bar.com"
+    mock_endpoint = SubscriberClient._DEFAULT_ENDPOINT_TEMPLATE.format(
+        UNIVERSE_DOMAIN=mock_universe
+    )
+
+    # If ClientOptions.api_endpoint is set and GOOGLE_API_USE_CLIENT_CERTIFICATE="true",
+    # use ClientOptions.api_endpoint as the api endpoint regardless.
+    with mock.patch.dict(os.environ, {"GOOGLE_API_USE_CLIENT_CERTIFICATE": "true"}):
+        with mock.patch(
+            "google.auth.transport.requests.AuthorizedSession.configure_mtls_channel"
+        ):
+            options = client_options.ClientOptions(
+                client_cert_source=mock_client_cert_source, api_endpoint=api_override
+            )
+            client = client_class(
+                client_options=options,
+                credentials=ga_credentials.AnonymousCredentials(),
+            )
+            assert client.api_endpoint == api_override
+
+    # If ClientOptions.api_endpoint is not set and GOOGLE_API_USE_MTLS_ENDPOINT="never",
+    # use the _DEFAULT_ENDPOINT_TEMPLATE populated with GDU as the api endpoint.
+    with mock.patch.dict(os.environ, {"GOOGLE_API_USE_MTLS_ENDPOINT": "never"}):
+        client = client_class(credentials=ga_credentials.AnonymousCredentials())
+        assert client.api_endpoint == default_endpoint
+
+    # If ClientOptions.api_endpoint is not set and GOOGLE_API_USE_MTLS_ENDPOINT="always",
+    # use the DEFAULT_MTLS_ENDPOINT as the api endpoint.
+    with mock.patch.dict(os.environ, {"GOOGLE_API_USE_MTLS_ENDPOINT": "always"}):
+        client = client_class(credentials=ga_credentials.AnonymousCredentials())
+        assert client.api_endpoint == client_class.DEFAULT_MTLS_ENDPOINT
+
+    # If ClientOptions.api_endpoint is not set, GOOGLE_API_USE_MTLS_ENDPOINT="auto" (default),
+    # GOOGLE_API_USE_CLIENT_CERTIFICATE="false" (default), default cert source doesn't exist,
+    # and ClientOptions.universe_domain="bar.com",
+    # use the _DEFAULT_ENDPOINT_TEMPLATE populated with universe domain as the api endpoint.
+    options = client_options.ClientOptions()
+    universe_exists = hasattr(options, "universe_domain")
+    if universe_exists:
+        options = client_options.ClientOptions(universe_domain=mock_universe)
+        client = client_class(
+            client_options=options, credentials=ga_credentials.AnonymousCredentials()
+        )
+    else:
+        client = client_class(
+            client_options=options, credentials=ga_credentials.AnonymousCredentials()
+        )
+    assert client.api_endpoint == (
+        mock_endpoint if universe_exists else default_endpoint
+    )
+    assert client.universe_domain == (
+        mock_universe if universe_exists else default_universe
+    )
+
+    # If ClientOptions does not have a universe domain attribute and GOOGLE_API_USE_MTLS_ENDPOINT="never",
+    # use the _DEFAULT_ENDPOINT_TEMPLATE populated with GDU as the api endpoint.
+    options = client_options.ClientOptions()
+    if hasattr(options, "universe_domain"):
+        delattr(options, "universe_domain")
+    with mock.patch.dict(os.environ, {"GOOGLE_API_USE_MTLS_ENDPOINT": "never"}):
+        client = client_class(
+            client_options=options, credentials=ga_credentials.AnonymousCredentials()
+        )
+        assert client.api_endpoint == default_endpoint
+
 
 @pytest.mark.parametrize(
     "client_class,transport_class,transport_name",
@@ -562,7 +953,9 @@ def test_subscriber_client_client_options_scopes(
         patched.assert_called_once_with(
             credentials=None,
             credentials_file=None,
-            host=client.DEFAULT_ENDPOINT,
+            host=client._DEFAULT_ENDPOINT_TEMPLATE.format(
+                UNIVERSE_DOMAIN=client._DEFAULT_UNIVERSE
+            ),
             scopes=["1", "2"],
             client_cert_source_for_mtls=None,
             quota_project_id=None,
@@ -597,7 +990,9 @@ def test_subscriber_client_client_options_credentials_file(
         patched.assert_called_once_with(
             credentials=None,
             credentials_file="credentials.json",
-            host=client.DEFAULT_ENDPOINT,
+            host=client._DEFAULT_ENDPOINT_TEMPLATE.format(
+                UNIVERSE_DOMAIN=client._DEFAULT_UNIVERSE
+            ),
             scopes=None,
             client_cert_source_for_mtls=None,
             quota_project_id=None,
@@ -650,7 +1045,9 @@ def test_subscriber_client_create_channel_credentials_file(
         patched.assert_called_once_with(
             credentials=None,
             credentials_file="credentials.json",
-            host=client.DEFAULT_ENDPOINT,
+            host=client._DEFAULT_ENDPOINT_TEMPLATE.format(
+                UNIVERSE_DOMAIN=client._DEFAULT_UNIVERSE
+            ),
             scopes=None,
             client_cert_source_for_mtls=None,
             quota_project_id=None,
@@ -731,7 +1128,8 @@ def test_create_subscription(request_type, transport: str = "grpc"):
         # Establish that the underlying gRPC stub method was called.
         assert len(call.mock_calls) == 1
         _, args, _ = call.mock_calls[0]
-        assert args[0] == pubsub.Subscription()
+        request = pubsub.Subscription()
+        assert args[0] == request
 
     # Establish that the response is the type that we expect.
     assert isinstance(response, pubsub.Subscription)
@@ -759,6 +1157,70 @@ def test_create_subscription_empty_call():
         type(client.transport.create_subscription), "__call__"
     ) as call:
         client.create_subscription()
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        assert args[0] == pubsub.Subscription()
+
+
+def test_create_subscription_non_empty_request_with_auto_populated_field():
+    # This test is a coverage failsafe to make sure that UUID4 fields are
+    # automatically populated, according to AIP-4235, with non-empty requests.
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="grpc",
+    )
+
+    # Populate all string fields in the request which are not UUID4
+    # since we want to check that UUID4 are populated automatically
+    # if they meet the requirements of AIP 4235.
+    request = pubsub.Subscription(
+        name="name_value",
+        topic="topic_value",
+        filter="filter_value",
+    )
+
+    # Mock the actual call within the gRPC stub, and fake the request.
+    with mock.patch.object(
+        type(client.transport.create_subscription), "__call__"
+    ) as call:
+        client.create_subscription(request=request)
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        assert args[0] == pubsub.Subscription(
+            name="name_value",
+            topic="topic_value",
+            filter="filter_value",
+        )
+
+
+@pytest.mark.asyncio
+async def test_create_subscription_empty_call_async():
+    # This test is a coverage failsafe to make sure that totally empty calls,
+    # i.e. request == None and no flattened fields passed, work.
+    client = SubscriberAsyncClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="grpc_asyncio",
+    )
+
+    # Mock the actual call within the gRPC stub, and fake the request.
+    with mock.patch.object(
+        type(client.transport.create_subscription), "__call__"
+    ) as call:
+        # Designate an appropriate return value for the call.
+        call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(
+            pubsub.Subscription(
+                name="name_value",
+                topic="topic_value",
+                ack_deadline_seconds=2066,
+                retain_acked_messages=True,
+                enable_message_ordering=True,
+                filter="filter_value",
+                detached=True,
+                enable_exactly_once_delivery=True,
+                state=pubsub.Subscription.State.ACTIVE,
+            )
+        )
+        response = await client.create_subscription()
         call.assert_called()
         _, args, _ = call.mock_calls[0]
         assert args[0] == pubsub.Subscription()
@@ -800,7 +1262,8 @@ async def test_create_subscription_async(
         # Establish that the underlying gRPC stub method was called.
         assert len(call.mock_calls)
         _, args, _ = call.mock_calls[0]
-        assert args[0] == pubsub.Subscription()
+        request = pubsub.Subscription()
+        assert args[0] == request
 
     # Establish that the response is the type that we expect.
     assert isinstance(response, pubsub.Subscription)
@@ -1033,7 +1496,8 @@ def test_get_subscription(request_type, transport: str = "grpc"):
         # Establish that the underlying gRPC stub method was called.
         assert len(call.mock_calls) == 1
         _, args, _ = call.mock_calls[0]
-        assert args[0] == pubsub.GetSubscriptionRequest()
+        request = pubsub.GetSubscriptionRequest()
+        assert args[0] == request
 
     # Establish that the response is the type that we expect.
     assert isinstance(response, pubsub.Subscription)
@@ -1059,6 +1523,62 @@ def test_get_subscription_empty_call():
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(type(client.transport.get_subscription), "__call__") as call:
         client.get_subscription()
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        assert args[0] == pubsub.GetSubscriptionRequest()
+
+
+def test_get_subscription_non_empty_request_with_auto_populated_field():
+    # This test is a coverage failsafe to make sure that UUID4 fields are
+    # automatically populated, according to AIP-4235, with non-empty requests.
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="grpc",
+    )
+
+    # Populate all string fields in the request which are not UUID4
+    # since we want to check that UUID4 are populated automatically
+    # if they meet the requirements of AIP 4235.
+    request = pubsub.GetSubscriptionRequest(
+        subscription="subscription_value",
+    )
+
+    # Mock the actual call within the gRPC stub, and fake the request.
+    with mock.patch.object(type(client.transport.get_subscription), "__call__") as call:
+        client.get_subscription(request=request)
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        assert args[0] == pubsub.GetSubscriptionRequest(
+            subscription="subscription_value",
+        )
+
+
+@pytest.mark.asyncio
+async def test_get_subscription_empty_call_async():
+    # This test is a coverage failsafe to make sure that totally empty calls,
+    # i.e. request == None and no flattened fields passed, work.
+    client = SubscriberAsyncClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="grpc_asyncio",
+    )
+
+    # Mock the actual call within the gRPC stub, and fake the request.
+    with mock.patch.object(type(client.transport.get_subscription), "__call__") as call:
+        # Designate an appropriate return value for the call.
+        call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(
+            pubsub.Subscription(
+                name="name_value",
+                topic="topic_value",
+                ack_deadline_seconds=2066,
+                retain_acked_messages=True,
+                enable_message_ordering=True,
+                filter="filter_value",
+                detached=True,
+                enable_exactly_once_delivery=True,
+                state=pubsub.Subscription.State.ACTIVE,
+            )
+        )
+        response = await client.get_subscription()
         call.assert_called()
         _, args, _ = call.mock_calls[0]
         assert args[0] == pubsub.GetSubscriptionRequest()
@@ -1098,7 +1618,8 @@ async def test_get_subscription_async(
         # Establish that the underlying gRPC stub method was called.
         assert len(call.mock_calls)
         _, args, _ = call.mock_calls[0]
-        assert args[0] == pubsub.GetSubscriptionRequest()
+        request = pubsub.GetSubscriptionRequest()
+        assert args[0] == request
 
     # Establish that the response is the type that we expect.
     assert isinstance(response, pubsub.Subscription)
@@ -1295,7 +1816,8 @@ def test_update_subscription(request_type, transport: str = "grpc"):
         # Establish that the underlying gRPC stub method was called.
         assert len(call.mock_calls) == 1
         _, args, _ = call.mock_calls[0]
-        assert args[0] == pubsub.UpdateSubscriptionRequest()
+        request = pubsub.UpdateSubscriptionRequest()
+        assert args[0] == request
 
     # Establish that the response is the type that we expect.
     assert isinstance(response, pubsub.Subscription)
@@ -1323,6 +1845,62 @@ def test_update_subscription_empty_call():
         type(client.transport.update_subscription), "__call__"
     ) as call:
         client.update_subscription()
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        assert args[0] == pubsub.UpdateSubscriptionRequest()
+
+
+def test_update_subscription_non_empty_request_with_auto_populated_field():
+    # This test is a coverage failsafe to make sure that UUID4 fields are
+    # automatically populated, according to AIP-4235, with non-empty requests.
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="grpc",
+    )
+
+    # Populate all string fields in the request which are not UUID4
+    # since we want to check that UUID4 are populated automatically
+    # if they meet the requirements of AIP 4235.
+    request = pubsub.UpdateSubscriptionRequest()
+
+    # Mock the actual call within the gRPC stub, and fake the request.
+    with mock.patch.object(
+        type(client.transport.update_subscription), "__call__"
+    ) as call:
+        client.update_subscription(request=request)
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        assert args[0] == pubsub.UpdateSubscriptionRequest()
+
+
+@pytest.mark.asyncio
+async def test_update_subscription_empty_call_async():
+    # This test is a coverage failsafe to make sure that totally empty calls,
+    # i.e. request == None and no flattened fields passed, work.
+    client = SubscriberAsyncClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="grpc_asyncio",
+    )
+
+    # Mock the actual call within the gRPC stub, and fake the request.
+    with mock.patch.object(
+        type(client.transport.update_subscription), "__call__"
+    ) as call:
+        # Designate an appropriate return value for the call.
+        call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(
+            pubsub.Subscription(
+                name="name_value",
+                topic="topic_value",
+                ack_deadline_seconds=2066,
+                retain_acked_messages=True,
+                enable_message_ordering=True,
+                filter="filter_value",
+                detached=True,
+                enable_exactly_once_delivery=True,
+                state=pubsub.Subscription.State.ACTIVE,
+            )
+        )
+        response = await client.update_subscription()
         call.assert_called()
         _, args, _ = call.mock_calls[0]
         assert args[0] == pubsub.UpdateSubscriptionRequest()
@@ -1364,7 +1942,8 @@ async def test_update_subscription_async(
         # Establish that the underlying gRPC stub method was called.
         assert len(call.mock_calls)
         _, args, _ = call.mock_calls[0]
-        assert args[0] == pubsub.UpdateSubscriptionRequest()
+        request = pubsub.UpdateSubscriptionRequest()
+        assert args[0] == request
 
     # Establish that the response is the type that we expect.
     assert isinstance(response, pubsub.Subscription)
@@ -1571,7 +2150,8 @@ def test_list_subscriptions(request_type, transport: str = "grpc"):
         # Establish that the underlying gRPC stub method was called.
         assert len(call.mock_calls) == 1
         _, args, _ = call.mock_calls[0]
-        assert args[0] == pubsub.ListSubscriptionsRequest()
+        request = pubsub.ListSubscriptionsRequest()
+        assert args[0] == request
 
     # Establish that the response is the type that we expect.
     assert isinstance(response, pagers.ListSubscriptionsPager)
@@ -1591,6 +2171,60 @@ def test_list_subscriptions_empty_call():
         type(client.transport.list_subscriptions), "__call__"
     ) as call:
         client.list_subscriptions()
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        assert args[0] == pubsub.ListSubscriptionsRequest()
+
+
+def test_list_subscriptions_non_empty_request_with_auto_populated_field():
+    # This test is a coverage failsafe to make sure that UUID4 fields are
+    # automatically populated, according to AIP-4235, with non-empty requests.
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="grpc",
+    )
+
+    # Populate all string fields in the request which are not UUID4
+    # since we want to check that UUID4 are populated automatically
+    # if they meet the requirements of AIP 4235.
+    request = pubsub.ListSubscriptionsRequest(
+        project="project_value",
+        page_token="page_token_value",
+    )
+
+    # Mock the actual call within the gRPC stub, and fake the request.
+    with mock.patch.object(
+        type(client.transport.list_subscriptions), "__call__"
+    ) as call:
+        client.list_subscriptions(request=request)
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        assert args[0] == pubsub.ListSubscriptionsRequest(
+            project="project_value",
+            page_token="page_token_value",
+        )
+
+
+@pytest.mark.asyncio
+async def test_list_subscriptions_empty_call_async():
+    # This test is a coverage failsafe to make sure that totally empty calls,
+    # i.e. request == None and no flattened fields passed, work.
+    client = SubscriberAsyncClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="grpc_asyncio",
+    )
+
+    # Mock the actual call within the gRPC stub, and fake the request.
+    with mock.patch.object(
+        type(client.transport.list_subscriptions), "__call__"
+    ) as call:
+        # Designate an appropriate return value for the call.
+        call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(
+            pubsub.ListSubscriptionsResponse(
+                next_page_token="next_page_token_value",
+            )
+        )
+        response = await client.list_subscriptions()
         call.assert_called()
         _, args, _ = call.mock_calls[0]
         assert args[0] == pubsub.ListSubscriptionsRequest()
@@ -1624,7 +2258,8 @@ async def test_list_subscriptions_async(
         # Establish that the underlying gRPC stub method was called.
         assert len(call.mock_calls)
         _, args, _ = call.mock_calls[0]
-        assert args[0] == pubsub.ListSubscriptionsRequest()
+        request = pubsub.ListSubscriptionsRequest()
+        assert args[0] == request
 
     # Establish that the response is the type that we expect.
     assert isinstance(response, pagers.ListSubscriptionsAsyncPager)
@@ -1789,7 +2424,7 @@ async def test_list_subscriptions_flattened_error_async():
 
 def test_list_subscriptions_pager(transport_name: str = "grpc"):
     client = SubscriberClient(
-        credentials=ga_credentials.AnonymousCredentials,
+        credentials=ga_credentials.AnonymousCredentials(),
         transport=transport_name,
     )
 
@@ -1841,7 +2476,7 @@ def test_list_subscriptions_pager(transport_name: str = "grpc"):
 
 def test_list_subscriptions_pages(transport_name: str = "grpc"):
     client = SubscriberClient(
-        credentials=ga_credentials.AnonymousCredentials,
+        credentials=ga_credentials.AnonymousCredentials(),
         transport=transport_name,
     )
 
@@ -1885,7 +2520,7 @@ def test_list_subscriptions_pages(transport_name: str = "grpc"):
 @pytest.mark.asyncio
 async def test_list_subscriptions_async_pager():
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials,
+        credentials=ga_credentials.AnonymousCredentials(),
     )
 
     # Mock the actual call within the gRPC stub, and fake the request.
@@ -1937,7 +2572,7 @@ async def test_list_subscriptions_async_pager():
 @pytest.mark.asyncio
 async def test_list_subscriptions_async_pages():
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials,
+        credentials=ga_credentials.AnonymousCredentials(),
     )
 
     # Mock the actual call within the gRPC stub, and fake the request.
@@ -2013,7 +2648,8 @@ def test_delete_subscription(request_type, transport: str = "grpc"):
         # Establish that the underlying gRPC stub method was called.
         assert len(call.mock_calls) == 1
         _, args, _ = call.mock_calls[0]
-        assert args[0] == pubsub.DeleteSubscriptionRequest()
+        request = pubsub.DeleteSubscriptionRequest()
+        assert args[0] == request
 
     # Establish that the response is the type that we expect.
     assert response is None
@@ -2032,6 +2668,54 @@ def test_delete_subscription_empty_call():
         type(client.transport.delete_subscription), "__call__"
     ) as call:
         client.delete_subscription()
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        assert args[0] == pubsub.DeleteSubscriptionRequest()
+
+
+def test_delete_subscription_non_empty_request_with_auto_populated_field():
+    # This test is a coverage failsafe to make sure that UUID4 fields are
+    # automatically populated, according to AIP-4235, with non-empty requests.
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="grpc",
+    )
+
+    # Populate all string fields in the request which are not UUID4
+    # since we want to check that UUID4 are populated automatically
+    # if they meet the requirements of AIP 4235.
+    request = pubsub.DeleteSubscriptionRequest(
+        subscription="subscription_value",
+    )
+
+    # Mock the actual call within the gRPC stub, and fake the request.
+    with mock.patch.object(
+        type(client.transport.delete_subscription), "__call__"
+    ) as call:
+        client.delete_subscription(request=request)
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        assert args[0] == pubsub.DeleteSubscriptionRequest(
+            subscription="subscription_value",
+        )
+
+
+@pytest.mark.asyncio
+async def test_delete_subscription_empty_call_async():
+    # This test is a coverage failsafe to make sure that totally empty calls,
+    # i.e. request == None and no flattened fields passed, work.
+    client = SubscriberAsyncClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="grpc_asyncio",
+    )
+
+    # Mock the actual call within the gRPC stub, and fake the request.
+    with mock.patch.object(
+        type(client.transport.delete_subscription), "__call__"
+    ) as call:
+        # Designate an appropriate return value for the call.
+        call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(None)
+        response = await client.delete_subscription()
         call.assert_called()
         _, args, _ = call.mock_calls[0]
         assert args[0] == pubsub.DeleteSubscriptionRequest()
@@ -2061,7 +2745,8 @@ async def test_delete_subscription_async(
         # Establish that the underlying gRPC stub method was called.
         assert len(call.mock_calls)
         _, args, _ = call.mock_calls[0]
-        assert args[0] == pubsub.DeleteSubscriptionRequest()
+        request = pubsub.DeleteSubscriptionRequest()
+        assert args[0] == request
 
     # Establish that the response is the type that we expect.
     assert response is None
@@ -2247,7 +2932,8 @@ def test_modify_ack_deadline(request_type, transport: str = "grpc"):
         # Establish that the underlying gRPC stub method was called.
         assert len(call.mock_calls) == 1
         _, args, _ = call.mock_calls[0]
-        assert args[0] == pubsub.ModifyAckDeadlineRequest()
+        request = pubsub.ModifyAckDeadlineRequest()
+        assert args[0] == request
 
     # Establish that the response is the type that we expect.
     assert response is None
@@ -2266,6 +2952,54 @@ def test_modify_ack_deadline_empty_call():
         type(client.transport.modify_ack_deadline), "__call__"
     ) as call:
         client.modify_ack_deadline()
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        assert args[0] == pubsub.ModifyAckDeadlineRequest()
+
+
+def test_modify_ack_deadline_non_empty_request_with_auto_populated_field():
+    # This test is a coverage failsafe to make sure that UUID4 fields are
+    # automatically populated, according to AIP-4235, with non-empty requests.
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="grpc",
+    )
+
+    # Populate all string fields in the request which are not UUID4
+    # since we want to check that UUID4 are populated automatically
+    # if they meet the requirements of AIP 4235.
+    request = pubsub.ModifyAckDeadlineRequest(
+        subscription="subscription_value",
+    )
+
+    # Mock the actual call within the gRPC stub, and fake the request.
+    with mock.patch.object(
+        type(client.transport.modify_ack_deadline), "__call__"
+    ) as call:
+        client.modify_ack_deadline(request=request)
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        assert args[0] == pubsub.ModifyAckDeadlineRequest(
+            subscription="subscription_value",
+        )
+
+
+@pytest.mark.asyncio
+async def test_modify_ack_deadline_empty_call_async():
+    # This test is a coverage failsafe to make sure that totally empty calls,
+    # i.e. request == None and no flattened fields passed, work.
+    client = SubscriberAsyncClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="grpc_asyncio",
+    )
+
+    # Mock the actual call within the gRPC stub, and fake the request.
+    with mock.patch.object(
+        type(client.transport.modify_ack_deadline), "__call__"
+    ) as call:
+        # Designate an appropriate return value for the call.
+        call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(None)
+        response = await client.modify_ack_deadline()
         call.assert_called()
         _, args, _ = call.mock_calls[0]
         assert args[0] == pubsub.ModifyAckDeadlineRequest()
@@ -2295,7 +3029,8 @@ async def test_modify_ack_deadline_async(
         # Establish that the underlying gRPC stub method was called.
         assert len(call.mock_calls)
         _, args, _ = call.mock_calls[0]
-        assert args[0] == pubsub.ModifyAckDeadlineRequest()
+        request = pubsub.ModifyAckDeadlineRequest()
+        assert args[0] == request
 
     # Establish that the response is the type that we expect.
     assert response is None
@@ -2499,7 +3234,8 @@ def test_acknowledge(request_type, transport: str = "grpc"):
         # Establish that the underlying gRPC stub method was called.
         assert len(call.mock_calls) == 1
         _, args, _ = call.mock_calls[0]
-        assert args[0] == pubsub.AcknowledgeRequest()
+        request = pubsub.AcknowledgeRequest()
+        assert args[0] == request
 
     # Establish that the response is the type that we expect.
     assert response is None
@@ -2516,6 +3252,50 @@ def test_acknowledge_empty_call():
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(type(client.transport.acknowledge), "__call__") as call:
         client.acknowledge()
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        assert args[0] == pubsub.AcknowledgeRequest()
+
+
+def test_acknowledge_non_empty_request_with_auto_populated_field():
+    # This test is a coverage failsafe to make sure that UUID4 fields are
+    # automatically populated, according to AIP-4235, with non-empty requests.
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="grpc",
+    )
+
+    # Populate all string fields in the request which are not UUID4
+    # since we want to check that UUID4 are populated automatically
+    # if they meet the requirements of AIP 4235.
+    request = pubsub.AcknowledgeRequest(
+        subscription="subscription_value",
+    )
+
+    # Mock the actual call within the gRPC stub, and fake the request.
+    with mock.patch.object(type(client.transport.acknowledge), "__call__") as call:
+        client.acknowledge(request=request)
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        assert args[0] == pubsub.AcknowledgeRequest(
+            subscription="subscription_value",
+        )
+
+
+@pytest.mark.asyncio
+async def test_acknowledge_empty_call_async():
+    # This test is a coverage failsafe to make sure that totally empty calls,
+    # i.e. request == None and no flattened fields passed, work.
+    client = SubscriberAsyncClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="grpc_asyncio",
+    )
+
+    # Mock the actual call within the gRPC stub, and fake the request.
+    with mock.patch.object(type(client.transport.acknowledge), "__call__") as call:
+        # Designate an appropriate return value for the call.
+        call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(None)
+        response = await client.acknowledge()
         call.assert_called()
         _, args, _ = call.mock_calls[0]
         assert args[0] == pubsub.AcknowledgeRequest()
@@ -2543,7 +3323,8 @@ async def test_acknowledge_async(
         # Establish that the underlying gRPC stub method was called.
         assert len(call.mock_calls)
         _, args, _ = call.mock_calls[0]
-        assert args[0] == pubsub.AcknowledgeRequest()
+        request = pubsub.AcknowledgeRequest()
+        assert args[0] == request
 
     # Establish that the response is the type that we expect.
     assert response is None
@@ -2729,7 +3510,8 @@ def test_pull(request_type, transport: str = "grpc"):
         # Establish that the underlying gRPC stub method was called.
         assert len(call.mock_calls) == 1
         _, args, _ = call.mock_calls[0]
-        assert args[0] == pubsub.PullRequest()
+        request = pubsub.PullRequest()
+        assert args[0] == request
 
     # Establish that the response is the type that we expect.
     assert isinstance(response, pubsub.PullResponse)
@@ -2746,6 +3528,50 @@ def test_pull_empty_call():
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(type(client.transport.pull), "__call__") as call:
         client.pull()
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        assert args[0] == pubsub.PullRequest()
+
+
+def test_pull_non_empty_request_with_auto_populated_field():
+    # This test is a coverage failsafe to make sure that UUID4 fields are
+    # automatically populated, according to AIP-4235, with non-empty requests.
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="grpc",
+    )
+
+    # Populate all string fields in the request which are not UUID4
+    # since we want to check that UUID4 are populated automatically
+    # if they meet the requirements of AIP 4235.
+    request = pubsub.PullRequest(
+        subscription="subscription_value",
+    )
+
+    # Mock the actual call within the gRPC stub, and fake the request.
+    with mock.patch.object(type(client.transport.pull), "__call__") as call:
+        client.pull(request=request)
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        assert args[0] == pubsub.PullRequest(
+            subscription="subscription_value",
+        )
+
+
+@pytest.mark.asyncio
+async def test_pull_empty_call_async():
+    # This test is a coverage failsafe to make sure that totally empty calls,
+    # i.e. request == None and no flattened fields passed, work.
+    client = SubscriberAsyncClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="grpc_asyncio",
+    )
+
+    # Mock the actual call within the gRPC stub, and fake the request.
+    with mock.patch.object(type(client.transport.pull), "__call__") as call:
+        # Designate an appropriate return value for the call.
+        call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(pubsub.PullResponse())
+        response = await client.pull()
         call.assert_called()
         _, args, _ = call.mock_calls[0]
         assert args[0] == pubsub.PullRequest()
@@ -2773,7 +3599,8 @@ async def test_pull_async(
         # Establish that the underlying gRPC stub method was called.
         assert len(call.mock_calls)
         _, args, _ = call.mock_calls[0]
-        assert args[0] == pubsub.PullRequest()
+        request = pubsub.PullRequest()
+        assert args[0] == request
 
     # Establish that the response is the type that we expect.
     assert isinstance(response, pubsub.PullResponse)
@@ -2888,6 +3715,7 @@ def test_pull_flattened_error():
         client.pull(
             pubsub.PullRequest(),
             subscription="subscription_value",
+            return_immediately=True,
             max_messages=1277,
         )
 
@@ -2941,6 +3769,7 @@ async def test_pull_flattened_error_async():
         await client.pull(
             pubsub.PullRequest(),
             subscription="subscription_value",
+            return_immediately=True,
             max_messages=1277,
         )
 
@@ -3045,7 +3874,8 @@ def test_modify_push_config(request_type, transport: str = "grpc"):
         # Establish that the underlying gRPC stub method was called.
         assert len(call.mock_calls) == 1
         _, args, _ = call.mock_calls[0]
-        assert args[0] == pubsub.ModifyPushConfigRequest()
+        request = pubsub.ModifyPushConfigRequest()
+        assert args[0] == request
 
     # Establish that the response is the type that we expect.
     assert response is None
@@ -3064,6 +3894,54 @@ def test_modify_push_config_empty_call():
         type(client.transport.modify_push_config), "__call__"
     ) as call:
         client.modify_push_config()
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        assert args[0] == pubsub.ModifyPushConfigRequest()
+
+
+def test_modify_push_config_non_empty_request_with_auto_populated_field():
+    # This test is a coverage failsafe to make sure that UUID4 fields are
+    # automatically populated, according to AIP-4235, with non-empty requests.
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="grpc",
+    )
+
+    # Populate all string fields in the request which are not UUID4
+    # since we want to check that UUID4 are populated automatically
+    # if they meet the requirements of AIP 4235.
+    request = pubsub.ModifyPushConfigRequest(
+        subscription="subscription_value",
+    )
+
+    # Mock the actual call within the gRPC stub, and fake the request.
+    with mock.patch.object(
+        type(client.transport.modify_push_config), "__call__"
+    ) as call:
+        client.modify_push_config(request=request)
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        assert args[0] == pubsub.ModifyPushConfigRequest(
+            subscription="subscription_value",
+        )
+
+
+@pytest.mark.asyncio
+async def test_modify_push_config_empty_call_async():
+    # This test is a coverage failsafe to make sure that totally empty calls,
+    # i.e. request == None and no flattened fields passed, work.
+    client = SubscriberAsyncClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="grpc_asyncio",
+    )
+
+    # Mock the actual call within the gRPC stub, and fake the request.
+    with mock.patch.object(
+        type(client.transport.modify_push_config), "__call__"
+    ) as call:
+        # Designate an appropriate return value for the call.
+        call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(None)
+        response = await client.modify_push_config()
         call.assert_called()
         _, args, _ = call.mock_calls[0]
         assert args[0] == pubsub.ModifyPushConfigRequest()
@@ -3093,7 +3971,8 @@ async def test_modify_push_config_async(
         # Establish that the underlying gRPC stub method was called.
         assert len(call.mock_calls)
         _, args, _ = call.mock_calls[0]
-        assert args[0] == pubsub.ModifyPushConfigRequest()
+        request = pubsub.ModifyPushConfigRequest()
+        assert args[0] == request
 
     # Establish that the response is the type that we expect.
     assert response is None
@@ -3290,7 +4169,8 @@ def test_get_snapshot(request_type, transport: str = "grpc"):
         # Establish that the underlying gRPC stub method was called.
         assert len(call.mock_calls) == 1
         _, args, _ = call.mock_calls[0]
-        assert args[0] == pubsub.GetSnapshotRequest()
+        request = pubsub.GetSnapshotRequest()
+        assert args[0] == request
 
     # Establish that the response is the type that we expect.
     assert isinstance(response, pubsub.Snapshot)
@@ -3309,6 +4189,55 @@ def test_get_snapshot_empty_call():
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(type(client.transport.get_snapshot), "__call__") as call:
         client.get_snapshot()
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        assert args[0] == pubsub.GetSnapshotRequest()
+
+
+def test_get_snapshot_non_empty_request_with_auto_populated_field():
+    # This test is a coverage failsafe to make sure that UUID4 fields are
+    # automatically populated, according to AIP-4235, with non-empty requests.
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="grpc",
+    )
+
+    # Populate all string fields in the request which are not UUID4
+    # since we want to check that UUID4 are populated automatically
+    # if they meet the requirements of AIP 4235.
+    request = pubsub.GetSnapshotRequest(
+        snapshot="snapshot_value",
+    )
+
+    # Mock the actual call within the gRPC stub, and fake the request.
+    with mock.patch.object(type(client.transport.get_snapshot), "__call__") as call:
+        client.get_snapshot(request=request)
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        assert args[0] == pubsub.GetSnapshotRequest(
+            snapshot="snapshot_value",
+        )
+
+
+@pytest.mark.asyncio
+async def test_get_snapshot_empty_call_async():
+    # This test is a coverage failsafe to make sure that totally empty calls,
+    # i.e. request == None and no flattened fields passed, work.
+    client = SubscriberAsyncClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="grpc_asyncio",
+    )
+
+    # Mock the actual call within the gRPC stub, and fake the request.
+    with mock.patch.object(type(client.transport.get_snapshot), "__call__") as call:
+        # Designate an appropriate return value for the call.
+        call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(
+            pubsub.Snapshot(
+                name="name_value",
+                topic="topic_value",
+            )
+        )
+        response = await client.get_snapshot()
         call.assert_called()
         _, args, _ = call.mock_calls[0]
         assert args[0] == pubsub.GetSnapshotRequest()
@@ -3341,7 +4270,8 @@ async def test_get_snapshot_async(
         # Establish that the underlying gRPC stub method was called.
         assert len(call.mock_calls)
         _, args, _ = call.mock_calls[0]
-        assert args[0] == pubsub.GetSnapshotRequest()
+        request = pubsub.GetSnapshotRequest()
+        assert args[0] == request
 
     # Establish that the response is the type that we expect.
     assert isinstance(response, pubsub.Snapshot)
@@ -3521,7 +4451,8 @@ def test_list_snapshots(request_type, transport: str = "grpc"):
         # Establish that the underlying gRPC stub method was called.
         assert len(call.mock_calls) == 1
         _, args, _ = call.mock_calls[0]
-        assert args[0] == pubsub.ListSnapshotsRequest()
+        request = pubsub.ListSnapshotsRequest()
+        assert args[0] == request
 
     # Establish that the response is the type that we expect.
     assert isinstance(response, pagers.ListSnapshotsPager)
@@ -3539,6 +4470,56 @@ def test_list_snapshots_empty_call():
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(type(client.transport.list_snapshots), "__call__") as call:
         client.list_snapshots()
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        assert args[0] == pubsub.ListSnapshotsRequest()
+
+
+def test_list_snapshots_non_empty_request_with_auto_populated_field():
+    # This test is a coverage failsafe to make sure that UUID4 fields are
+    # automatically populated, according to AIP-4235, with non-empty requests.
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="grpc",
+    )
+
+    # Populate all string fields in the request which are not UUID4
+    # since we want to check that UUID4 are populated automatically
+    # if they meet the requirements of AIP 4235.
+    request = pubsub.ListSnapshotsRequest(
+        project="project_value",
+        page_token="page_token_value",
+    )
+
+    # Mock the actual call within the gRPC stub, and fake the request.
+    with mock.patch.object(type(client.transport.list_snapshots), "__call__") as call:
+        client.list_snapshots(request=request)
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        assert args[0] == pubsub.ListSnapshotsRequest(
+            project="project_value",
+            page_token="page_token_value",
+        )
+
+
+@pytest.mark.asyncio
+async def test_list_snapshots_empty_call_async():
+    # This test is a coverage failsafe to make sure that totally empty calls,
+    # i.e. request == None and no flattened fields passed, work.
+    client = SubscriberAsyncClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="grpc_asyncio",
+    )
+
+    # Mock the actual call within the gRPC stub, and fake the request.
+    with mock.patch.object(type(client.transport.list_snapshots), "__call__") as call:
+        # Designate an appropriate return value for the call.
+        call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(
+            pubsub.ListSnapshotsResponse(
+                next_page_token="next_page_token_value",
+            )
+        )
+        response = await client.list_snapshots()
         call.assert_called()
         _, args, _ = call.mock_calls[0]
         assert args[0] == pubsub.ListSnapshotsRequest()
@@ -3570,7 +4551,8 @@ async def test_list_snapshots_async(
         # Establish that the underlying gRPC stub method was called.
         assert len(call.mock_calls)
         _, args, _ = call.mock_calls[0]
-        assert args[0] == pubsub.ListSnapshotsRequest()
+        request = pubsub.ListSnapshotsRequest()
+        assert args[0] == request
 
     # Establish that the response is the type that we expect.
     assert isinstance(response, pagers.ListSnapshotsAsyncPager)
@@ -3727,7 +4709,7 @@ async def test_list_snapshots_flattened_error_async():
 
 def test_list_snapshots_pager(transport_name: str = "grpc"):
     client = SubscriberClient(
-        credentials=ga_credentials.AnonymousCredentials,
+        credentials=ga_credentials.AnonymousCredentials(),
         transport=transport_name,
     )
 
@@ -3777,7 +4759,7 @@ def test_list_snapshots_pager(transport_name: str = "grpc"):
 
 def test_list_snapshots_pages(transport_name: str = "grpc"):
     client = SubscriberClient(
-        credentials=ga_credentials.AnonymousCredentials,
+        credentials=ga_credentials.AnonymousCredentials(),
         transport=transport_name,
     )
 
@@ -3819,7 +4801,7 @@ def test_list_snapshots_pages(transport_name: str = "grpc"):
 @pytest.mark.asyncio
 async def test_list_snapshots_async_pager():
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials,
+        credentials=ga_credentials.AnonymousCredentials(),
     )
 
     # Mock the actual call within the gRPC stub, and fake the request.
@@ -3869,7 +4851,7 @@ async def test_list_snapshots_async_pager():
 @pytest.mark.asyncio
 async def test_list_snapshots_async_pages():
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials,
+        credentials=ga_credentials.AnonymousCredentials(),
     )
 
     # Mock the actual call within the gRPC stub, and fake the request.
@@ -3944,7 +4926,8 @@ def test_create_snapshot(request_type, transport: str = "grpc"):
         # Establish that the underlying gRPC stub method was called.
         assert len(call.mock_calls) == 1
         _, args, _ = call.mock_calls[0]
-        assert args[0] == pubsub.CreateSnapshotRequest()
+        request = pubsub.CreateSnapshotRequest()
+        assert args[0] == request
 
     # Establish that the response is the type that we expect.
     assert isinstance(response, pubsub.Snapshot)
@@ -3963,6 +4946,57 @@ def test_create_snapshot_empty_call():
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(type(client.transport.create_snapshot), "__call__") as call:
         client.create_snapshot()
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        assert args[0] == pubsub.CreateSnapshotRequest()
+
+
+def test_create_snapshot_non_empty_request_with_auto_populated_field():
+    # This test is a coverage failsafe to make sure that UUID4 fields are
+    # automatically populated, according to AIP-4235, with non-empty requests.
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="grpc",
+    )
+
+    # Populate all string fields in the request which are not UUID4
+    # since we want to check that UUID4 are populated automatically
+    # if they meet the requirements of AIP 4235.
+    request = pubsub.CreateSnapshotRequest(
+        name="name_value",
+        subscription="subscription_value",
+    )
+
+    # Mock the actual call within the gRPC stub, and fake the request.
+    with mock.patch.object(type(client.transport.create_snapshot), "__call__") as call:
+        client.create_snapshot(request=request)
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        assert args[0] == pubsub.CreateSnapshotRequest(
+            name="name_value",
+            subscription="subscription_value",
+        )
+
+
+@pytest.mark.asyncio
+async def test_create_snapshot_empty_call_async():
+    # This test is a coverage failsafe to make sure that totally empty calls,
+    # i.e. request == None and no flattened fields passed, work.
+    client = SubscriberAsyncClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="grpc_asyncio",
+    )
+
+    # Mock the actual call within the gRPC stub, and fake the request.
+    with mock.patch.object(type(client.transport.create_snapshot), "__call__") as call:
+        # Designate an appropriate return value for the call.
+        call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(
+            pubsub.Snapshot(
+                name="name_value",
+                topic="topic_value",
+            )
+        )
+        response = await client.create_snapshot()
         call.assert_called()
         _, args, _ = call.mock_calls[0]
         assert args[0] == pubsub.CreateSnapshotRequest()
@@ -3995,7 +5029,8 @@ async def test_create_snapshot_async(
         # Establish that the underlying gRPC stub method was called.
         assert len(call.mock_calls)
         _, args, _ = call.mock_calls[0]
-        assert args[0] == pubsub.CreateSnapshotRequest()
+        request = pubsub.CreateSnapshotRequest()
+        assert args[0] == request
 
     # Establish that the response is the type that we expect.
     assert isinstance(response, pubsub.Snapshot)
@@ -4186,7 +5221,8 @@ def test_update_snapshot(request_type, transport: str = "grpc"):
         # Establish that the underlying gRPC stub method was called.
         assert len(call.mock_calls) == 1
         _, args, _ = call.mock_calls[0]
-        assert args[0] == pubsub.UpdateSnapshotRequest()
+        request = pubsub.UpdateSnapshotRequest()
+        assert args[0] == request
 
     # Establish that the response is the type that we expect.
     assert isinstance(response, pubsub.Snapshot)
@@ -4205,6 +5241,51 @@ def test_update_snapshot_empty_call():
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(type(client.transport.update_snapshot), "__call__") as call:
         client.update_snapshot()
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        assert args[0] == pubsub.UpdateSnapshotRequest()
+
+
+def test_update_snapshot_non_empty_request_with_auto_populated_field():
+    # This test is a coverage failsafe to make sure that UUID4 fields are
+    # automatically populated, according to AIP-4235, with non-empty requests.
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="grpc",
+    )
+
+    # Populate all string fields in the request which are not UUID4
+    # since we want to check that UUID4 are populated automatically
+    # if they meet the requirements of AIP 4235.
+    request = pubsub.UpdateSnapshotRequest()
+
+    # Mock the actual call within the gRPC stub, and fake the request.
+    with mock.patch.object(type(client.transport.update_snapshot), "__call__") as call:
+        client.update_snapshot(request=request)
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        assert args[0] == pubsub.UpdateSnapshotRequest()
+
+
+@pytest.mark.asyncio
+async def test_update_snapshot_empty_call_async():
+    # This test is a coverage failsafe to make sure that totally empty calls,
+    # i.e. request == None and no flattened fields passed, work.
+    client = SubscriberAsyncClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="grpc_asyncio",
+    )
+
+    # Mock the actual call within the gRPC stub, and fake the request.
+    with mock.patch.object(type(client.transport.update_snapshot), "__call__") as call:
+        # Designate an appropriate return value for the call.
+        call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(
+            pubsub.Snapshot(
+                name="name_value",
+                topic="topic_value",
+            )
+        )
+        response = await client.update_snapshot()
         call.assert_called()
         _, args, _ = call.mock_calls[0]
         assert args[0] == pubsub.UpdateSnapshotRequest()
@@ -4237,7 +5318,8 @@ async def test_update_snapshot_async(
         # Establish that the underlying gRPC stub method was called.
         assert len(call.mock_calls)
         _, args, _ = call.mock_calls[0]
-        assert args[0] == pubsub.UpdateSnapshotRequest()
+        request = pubsub.UpdateSnapshotRequest()
+        assert args[0] == request
 
     # Establish that the response is the type that we expect.
     assert isinstance(response, pubsub.Snapshot)
@@ -4425,7 +5507,8 @@ def test_delete_snapshot(request_type, transport: str = "grpc"):
         # Establish that the underlying gRPC stub method was called.
         assert len(call.mock_calls) == 1
         _, args, _ = call.mock_calls[0]
-        assert args[0] == pubsub.DeleteSnapshotRequest()
+        request = pubsub.DeleteSnapshotRequest()
+        assert args[0] == request
 
     # Establish that the response is the type that we expect.
     assert response is None
@@ -4442,6 +5525,50 @@ def test_delete_snapshot_empty_call():
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(type(client.transport.delete_snapshot), "__call__") as call:
         client.delete_snapshot()
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        assert args[0] == pubsub.DeleteSnapshotRequest()
+
+
+def test_delete_snapshot_non_empty_request_with_auto_populated_field():
+    # This test is a coverage failsafe to make sure that UUID4 fields are
+    # automatically populated, according to AIP-4235, with non-empty requests.
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="grpc",
+    )
+
+    # Populate all string fields in the request which are not UUID4
+    # since we want to check that UUID4 are populated automatically
+    # if they meet the requirements of AIP 4235.
+    request = pubsub.DeleteSnapshotRequest(
+        snapshot="snapshot_value",
+    )
+
+    # Mock the actual call within the gRPC stub, and fake the request.
+    with mock.patch.object(type(client.transport.delete_snapshot), "__call__") as call:
+        client.delete_snapshot(request=request)
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        assert args[0] == pubsub.DeleteSnapshotRequest(
+            snapshot="snapshot_value",
+        )
+
+
+@pytest.mark.asyncio
+async def test_delete_snapshot_empty_call_async():
+    # This test is a coverage failsafe to make sure that totally empty calls,
+    # i.e. request == None and no flattened fields passed, work.
+    client = SubscriberAsyncClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="grpc_asyncio",
+    )
+
+    # Mock the actual call within the gRPC stub, and fake the request.
+    with mock.patch.object(type(client.transport.delete_snapshot), "__call__") as call:
+        # Designate an appropriate return value for the call.
+        call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(None)
+        response = await client.delete_snapshot()
         call.assert_called()
         _, args, _ = call.mock_calls[0]
         assert args[0] == pubsub.DeleteSnapshotRequest()
@@ -4469,7 +5596,8 @@ async def test_delete_snapshot_async(
         # Establish that the underlying gRPC stub method was called.
         assert len(call.mock_calls)
         _, args, _ = call.mock_calls[0]
-        assert args[0] == pubsub.DeleteSnapshotRequest()
+        request = pubsub.DeleteSnapshotRequest()
+        assert args[0] == request
 
     # Establish that the response is the type that we expect.
     assert response is None
@@ -4645,7 +5773,8 @@ def test_seek(request_type, transport: str = "grpc"):
         # Establish that the underlying gRPC stub method was called.
         assert len(call.mock_calls) == 1
         _, args, _ = call.mock_calls[0]
-        assert args[0] == pubsub.SeekRequest()
+        request = pubsub.SeekRequest()
+        assert args[0] == request
 
     # Establish that the response is the type that we expect.
     assert isinstance(response, pubsub.SeekResponse)
@@ -4662,6 +5791,52 @@ def test_seek_empty_call():
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(type(client.transport.seek), "__call__") as call:
         client.seek()
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        assert args[0] == pubsub.SeekRequest()
+
+
+def test_seek_non_empty_request_with_auto_populated_field():
+    # This test is a coverage failsafe to make sure that UUID4 fields are
+    # automatically populated, according to AIP-4235, with non-empty requests.
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="grpc",
+    )
+
+    # Populate all string fields in the request which are not UUID4
+    # since we want to check that UUID4 are populated automatically
+    # if they meet the requirements of AIP 4235.
+    request = pubsub.SeekRequest(
+        subscription="subscription_value",
+        snapshot="snapshot_value",
+    )
+
+    # Mock the actual call within the gRPC stub, and fake the request.
+    with mock.patch.object(type(client.transport.seek), "__call__") as call:
+        client.seek(request=request)
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        assert args[0] == pubsub.SeekRequest(
+            subscription="subscription_value",
+            snapshot="snapshot_value",
+        )
+
+
+@pytest.mark.asyncio
+async def test_seek_empty_call_async():
+    # This test is a coverage failsafe to make sure that totally empty calls,
+    # i.e. request == None and no flattened fields passed, work.
+    client = SubscriberAsyncClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="grpc_asyncio",
+    )
+
+    # Mock the actual call within the gRPC stub, and fake the request.
+    with mock.patch.object(type(client.transport.seek), "__call__") as call:
+        # Designate an appropriate return value for the call.
+        call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(pubsub.SeekResponse())
+        response = await client.seek()
         call.assert_called()
         _, args, _ = call.mock_calls[0]
         assert args[0] == pubsub.SeekRequest()
@@ -4689,7 +5864,8 @@ async def test_seek_async(
         # Establish that the underlying gRPC stub method was called.
         assert len(call.mock_calls)
         _, args, _ = call.mock_calls[0]
-        assert args[0] == pubsub.SeekRequest()
+        request = pubsub.SeekRequest()
+        assert args[0] == request
 
     # Establish that the response is the type that we expect.
     assert isinstance(response, pubsub.SeekResponse)
@@ -4824,11 +6000,7 @@ def test_create_subscription_rest_required_fields(request_type=pubsub.Subscripti
     request = request_type(**request_init)
     pb_request = request_type.pb(request)
     jsonified_request = json.loads(
-        json_format.MessageToJson(
-            pb_request,
-            including_default_value_fields=False,
-            use_integers_for_enums=False,
-        )
+        json_format.MessageToJson(pb_request, use_integers_for_enums=False)
     )
 
     # verify fields with default values are dropped
@@ -5123,11 +6295,7 @@ def test_get_subscription_rest_required_fields(
     request = request_type(**request_init)
     pb_request = request_type.pb(request)
     jsonified_request = json.loads(
-        json_format.MessageToJson(
-            pb_request,
-            including_default_value_fields=False,
-            use_integers_for_enums=False,
-        )
+        json_format.MessageToJson(pb_request, use_integers_for_enums=False)
     )
 
     # verify fields with default values are dropped
@@ -5404,11 +6572,7 @@ def test_update_subscription_rest_required_fields(
     request = request_type(**request_init)
     pb_request = request_type.pb(request)
     jsonified_request = json.loads(
-        json_format.MessageToJson(
-            pb_request,
-            including_default_value_fields=False,
-            use_integers_for_enums=False,
-        )
+        json_format.MessageToJson(pb_request, use_integers_for_enums=False)
     )
 
     # verify fields with default values are dropped
@@ -5682,11 +6846,7 @@ def test_list_subscriptions_rest_required_fields(
     request = request_type(**request_init)
     pb_request = request_type.pb(request)
     jsonified_request = json.loads(
-        json_format.MessageToJson(
-            pb_request,
-            including_default_value_fields=False,
-            use_integers_for_enums=False,
-        )
+        json_format.MessageToJson(pb_request, use_integers_for_enums=False)
     )
 
     # verify fields with default values are dropped
@@ -6016,11 +7176,7 @@ def test_delete_subscription_rest_required_fields(
     request = request_type(**request_init)
     pb_request = request_type.pb(request)
     jsonified_request = json.loads(
-        json_format.MessageToJson(
-            pb_request,
-            including_default_value_fields=False,
-            use_integers_for_enums=False,
-        )
+        json_format.MessageToJson(pb_request, use_integers_for_enums=False)
     )
 
     # verify fields with default values are dropped
@@ -6270,11 +7426,7 @@ def test_modify_ack_deadline_rest_required_fields(
     request = request_type(**request_init)
     pb_request = request_type.pb(request)
     jsonified_request = json.loads(
-        json_format.MessageToJson(
-            pb_request,
-            including_default_value_fields=False,
-            use_integers_for_enums=False,
-        )
+        json_format.MessageToJson(pb_request, use_integers_for_enums=False)
     )
 
     # verify fields with default values are dropped
@@ -6542,11 +7694,7 @@ def test_acknowledge_rest_required_fields(request_type=pubsub.AcknowledgeRequest
     request = request_type(**request_init)
     pb_request = request_type.pb(request)
     jsonified_request = json.loads(
-        json_format.MessageToJson(
-            pb_request,
-            including_default_value_fields=False,
-            use_integers_for_enums=False,
-        )
+        json_format.MessageToJson(pb_request, use_integers_for_enums=False)
     )
 
     # verify fields with default values are dropped
@@ -6808,11 +7956,7 @@ def test_pull_rest_required_fields(request_type=pubsub.PullRequest):
     request = request_type(**request_init)
     pb_request = request_type.pb(request)
     jsonified_request = json.loads(
-        json_format.MessageToJson(
-            pb_request,
-            including_default_value_fields=False,
-            use_integers_for_enums=False,
-        )
+        json_format.MessageToJson(pb_request, use_integers_for_enums=False)
     )
 
     # verify fields with default values are dropped
@@ -6991,6 +8135,7 @@ def test_pull_rest_flattened():
         # get truthy value for each flattened field
         mock_args = dict(
             subscription="subscription_value",
+            return_immediately=True,
             max_messages=1277,
         )
         mock_args.update(sample_request)
@@ -7029,6 +8174,7 @@ def test_pull_rest_flattened_error(transport: str = "rest"):
         client.pull(
             pubsub.PullRequest(),
             subscription="subscription_value",
+            return_immediately=True,
             max_messages=1277,
         )
 
@@ -7095,11 +8241,7 @@ def test_modify_push_config_rest_required_fields(
     request = request_type(**request_init)
     pb_request = request_type.pb(request)
     jsonified_request = json.loads(
-        json_format.MessageToJson(
-            pb_request,
-            including_default_value_fields=False,
-            use_integers_for_enums=False,
-        )
+        json_format.MessageToJson(pb_request, use_integers_for_enums=False)
     )
 
     # verify fields with default values are dropped
@@ -7362,11 +8504,7 @@ def test_get_snapshot_rest_required_fields(request_type=pubsub.GetSnapshotReques
     request = request_type(**request_init)
     pb_request = request_type.pb(request)
     jsonified_request = json.loads(
-        json_format.MessageToJson(
-            pb_request,
-            including_default_value_fields=False,
-            use_integers_for_enums=False,
-        )
+        json_format.MessageToJson(pb_request, use_integers_for_enums=False)
     )
 
     # verify fields with default values are dropped
@@ -7625,11 +8763,7 @@ def test_list_snapshots_rest_required_fields(request_type=pubsub.ListSnapshotsRe
     request = request_type(**request_init)
     pb_request = request_type.pb(request)
     jsonified_request = json.loads(
-        json_format.MessageToJson(
-            pb_request,
-            including_default_value_fields=False,
-            use_integers_for_enums=False,
-        )
+        json_format.MessageToJson(pb_request, use_integers_for_enums=False)
     )
 
     # verify fields with default values are dropped
@@ -7965,11 +9099,7 @@ def test_create_snapshot_rest_required_fields(
     request = request_type(**request_init)
     pb_request = request_type.pb(request)
     jsonified_request = json.loads(
-        json_format.MessageToJson(
-            pb_request,
-            including_default_value_fields=False,
-            use_integers_for_enums=False,
-        )
+        json_format.MessageToJson(pb_request, use_integers_for_enums=False)
     )
 
     # verify fields with default values are dropped
@@ -8245,11 +9375,7 @@ def test_update_snapshot_rest_required_fields(
     request = request_type(**request_init)
     pb_request = request_type.pb(request)
     jsonified_request = json.loads(
-        json_format.MessageToJson(
-            pb_request,
-            including_default_value_fields=False,
-            use_integers_for_enums=False,
-        )
+        json_format.MessageToJson(pb_request, use_integers_for_enums=False)
     )
 
     # verify fields with default values are dropped
@@ -8513,11 +9639,7 @@ def test_delete_snapshot_rest_required_fields(
     request = request_type(**request_init)
     pb_request = request_type.pb(request)
     jsonified_request = json.loads(
-        json_format.MessageToJson(
-            pb_request,
-            including_default_value_fields=False,
-            use_integers_for_enums=False,
-        )
+        json_format.MessageToJson(pb_request, use_integers_for_enums=False)
     )
 
     # verify fields with default values are dropped
@@ -8762,11 +9884,7 @@ def test_seek_rest_required_fields(request_type=pubsub.SeekRequest):
     request = request_type(**request_init)
     pb_request = request_type.pb(request)
     jsonified_request = json.loads(
-        json_format.MessageToJson(
-            pb_request,
-            including_default_value_fields=False,
-            use_integers_for_enums=False,
-        )
+        json_format.MessageToJson(pb_request, use_integers_for_enums=False)
     )
 
     # verify fields with default values are dropped
@@ -8970,7 +10088,7 @@ def test_credentials_transport_error():
         )
 
     # It is an error to provide an api_key and a credential.
-    options = mock.Mock()
+    options = client_options.ClientOptions()
     options.api_key = "api_key"
     with pytest.raises(ValueError):
         client = SubscriberClient(
@@ -10484,7 +11602,9 @@ def test_api_key_credentials(client_class, transport_class):
             patched.assert_called_once_with(
                 credentials=mock_cred,
                 credentials_file=None,
-                host=client.DEFAULT_ENDPOINT,
+                host=client._DEFAULT_ENDPOINT_TEMPLATE.format(
+                    UNIVERSE_DOMAIN=client._DEFAULT_UNIVERSE
+                ),
                 scopes=None,
                 client_cert_source_for_mtls=None,
                 quota_project_id=None,
