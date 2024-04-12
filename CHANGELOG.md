@@ -5,6 +5,27 @@
 [1]: https://pypi.org/project/google-cloud-pubsub/#history
 
 
+## [2.21.1](https://github.com/googleapis/python-pubsub/compare/v2.21.0...v2.21.1) (2024-04-04)
+
+
+### Bug Fixes
+
+* Set timeout to infinite for publishing with ordering keys enabled ([#1134](https://github.com/googleapis/python-pubsub/issues/1134)) ([67daf3c](https://github.com/googleapis/python-pubsub/commit/67daf3c64239d22eabe59c3df214057a4e59a39e))
+
+## [2.21.0](https://github.com/googleapis/python-pubsub/compare/v2.20.3...v2.21.0) (2024-03-26)
+
+
+### Features
+
+* Add custom datetime format for Cloud Storage subscriptions ([#1131](https://github.com/googleapis/python-pubsub/issues/1131)) ([4da6744](https://github.com/googleapis/python-pubsub/commit/4da67441ddab01a173620d8c03bc640271c785c6))
+
+## [2.20.3](https://github.com/googleapis/python-pubsub/compare/v2.20.2...v2.20.3) (2024-03-21)
+
+
+### Documentation
+
+* **samples:** Update Region Tags ([#1128](https://github.com/googleapis/python-pubsub/issues/1128)) ([e3bc89e](https://github.com/googleapis/python-pubsub/commit/e3bc89eaa51337c93144d6c3100486353d494ad9))
+
 ## [2.20.2](https://github.com/googleapis/python-pubsub/compare/v2.20.1...v2.20.2) (2024-03-15)
 
 
