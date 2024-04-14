@@ -286,7 +286,7 @@ class Batch(base.Batch):
             if self._batch_done_callback is not None:
                 # Failed to publish batch.
                 self._batch_done_callback(batch_transport_succeeded)
-                
+
             for future in self._futures:
                 future.set_exception(exc)
 
