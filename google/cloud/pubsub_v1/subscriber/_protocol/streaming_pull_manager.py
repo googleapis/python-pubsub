@@ -22,7 +22,7 @@ import threading
 import typing
 from typing import Any, Dict, Callable, Iterable, List, Optional, Set, Tuple
 import uuid
-import datetime
+from google.protobuf.timestamp_pb2 import Timestamp
 
 import grpc  # type: ignore
 
@@ -1061,7 +1061,8 @@ class StreamingPullManager(object):
                 for ack_id in ack_ids
             ]
             #if len(items) > 0:
-                #print(f"mk:_send_lease_modacks items: {items}")
+            #    print(f"mk:_send_lease_modacks items: {items}")
+            #    print(f"mk:_send_lease_modacks items received at time: {datetime.datetime.now()}")
             assert self._dispatcher is not None
             self._dispatcher.modify_ack_deadline(items, ack_deadline)
             return set()
@@ -1093,6 +1094,11 @@ class StreamingPullManager(object):
         # IMPORTANT: Circumvent the wrapper class and operate on the raw underlying
         # protobuf message to significantly gain on attribute access performance.
         received_messages = response._pb.received_messages
+        
+        current_time = Timestamp()
+        current_time.GetCurrentTime()
+        for rm in received_messages:
+            rm.message.publish_time.CopyFrom(current_time)
 
         _LOGGER.debug(
             "Processing %s received message(s), currently on hold %s (bytes %s).",
