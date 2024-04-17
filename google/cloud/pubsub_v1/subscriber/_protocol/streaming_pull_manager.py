@@ -22,6 +22,7 @@ import threading
 import typing
 from typing import Any, Dict, Callable, Iterable, List, Optional, Set, Tuple
 import uuid
+import datetime
 
 import grpc  # type: ignore
 
@@ -32,6 +33,7 @@ from google.cloud.pubsub_v1.subscriber._protocol import dispatcher
 from google.cloud.pubsub_v1.subscriber._protocol import heartbeater
 from google.cloud.pubsub_v1.subscriber._protocol import histogram
 from google.cloud.pubsub_v1.subscriber._protocol import leaser
+from google.cloud.pubsub_v1.subscriber._protocol import initial_modack
 from google.cloud.pubsub_v1.subscriber._protocol import messages_on_hold
 from google.cloud.pubsub_v1.subscriber._protocol import requests
 from google.cloud.pubsub_v1.subscriber.exceptions import (
@@ -363,6 +365,7 @@ class StreamingPullManager(object):
         # The threads created in ``.open()``.
         self._dispatcher: Optional[dispatcher.Dispatcher] = None
         self._leaser: Optional[leaser.Leaser] = None
+        self._initial_modack: Optional[initial_modack.InitialModack] = None
         self._consumer: Optional[bidi.BackgroundConsumer] = None
         self._heartbeater: Optional[heartbeater.Heartbeater] = None
 
@@ -389,6 +392,11 @@ class StreamingPullManager(object):
     def leaser(self) -> Optional[leaser.Leaser]:
         """The leaser helper."""
         return self._leaser
+    
+    @property
+    def initial_modack(self) -> Optional[initial_modack.InitialModack]:
+        """The InitialModack helper."""
+        return self._initial_modack
 
     @property
     def ack_histogram(self) -> histogram.Histogram:
@@ -865,6 +873,7 @@ class StreamingPullManager(object):
         self._dispatcher = dispatcher.Dispatcher(self, scheduler_queue)
         self._consumer = bidi.BackgroundConsumer(self._rpc, self._on_response)
         self._leaser = leaser.Leaser(self)
+        self._initial_modack = initial_modack.InitialModack(self)
         self._heartbeater = heartbeater.Heartbeater(self)
 
         # Start the thread to pass the requests.
@@ -875,6 +884,9 @@ class StreamingPullManager(object):
 
         # Start the lease maintainer thread.
         self._leaser.start()
+        
+        # Start the InitialModack maintainer thread.
+        self._initial_modack.start()
 
         # Start the stream heartbeater thread.
         self._heartbeater.start()
@@ -940,6 +952,10 @@ class StreamingPullManager(object):
             _LOGGER.debug("Stopping leaser.")
             assert self._leaser is not None
             self._leaser.stop()
+            
+            # Stop the initial_modack thread.
+            assert self._initial_modack is not None
+            self._initial_modack.stop()
 
             total = len(dropped_messages) + len(
                 self._messages_on_hold._messages_on_hold
@@ -957,6 +973,7 @@ class StreamingPullManager(object):
             self._dispatcher = None
             # dispatcher terminated, OK to dispose the leaser reference now
             self._leaser = None
+            self._initial_modack = None
 
             _LOGGER.debug("Stopping heartbeater.")
             assert self._heartbeater is not None
@@ -1043,6 +1060,8 @@ class StreamingPullManager(object):
                 requests.ModAckRequest(ack_id, self.ack_deadline, None)
                 for ack_id in ack_ids
             ]
+            #if len(items) > 0:
+                #print(f"mk:_send_lease_modacks items: {items}")
             assert self._dispatcher is not None
             self._dispatcher.modify_ack_deadline(items, ack_deadline)
             return set()
@@ -1099,9 +1118,15 @@ class StreamingPullManager(object):
         # modack the messages we received, as this tells the server that we've
         # received them.
         ack_id_gen = (message.ack_id for message in received_messages)
-        expired_ack_ids = self._send_lease_modacks(
-            ack_id_gen, self.ack_deadline, warn_on_invalid=False
-        )
+        expired_ack_ids = set()
+        if self._exactly_once_delivery_enabled():
+            expired_ack_ids = self._send_lease_modacks(
+                ack_id_gen, self.ack_deadline, warn_on_invalid=False
+            )
+        else:
+            #print(f"mk: streaming_pull_manager: initial_modack called with: {list(ack_id_gen)}")
+            self._initial_modack.add(ack_id_gen)
+            #self._leaser.add2(ack_id_gen)
 
         with self._pause_resume_lock:
             assert self._scheduler is not None
