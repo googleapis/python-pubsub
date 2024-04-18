@@ -1075,7 +1075,7 @@ class StreamingPullManager(object):
         # IMPORTANT: Circumvent the wrapper class and operate on the raw underlying
         # protobuf message to significantly gain on attribute access performance.
         received_messages = response._pb.received_messages
-        
+
         current_time = Timestamp()
         current_time.GetCurrentTime()
         for rm in received_messages:
