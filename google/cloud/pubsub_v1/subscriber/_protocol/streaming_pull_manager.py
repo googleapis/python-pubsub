@@ -34,6 +34,7 @@ from google.cloud.pubsub_v1.subscriber._protocol import histogram
 from google.cloud.pubsub_v1.subscriber._protocol import leaser
 from google.cloud.pubsub_v1.subscriber._protocol import messages_on_hold
 from google.cloud.pubsub_v1.subscriber._protocol import requests
+from google.protobuf.timestamp_pb2 import Timestamp
 from google.cloud.pubsub_v1.subscriber.exceptions import (
     AcknowledgeError,
     AcknowledgeStatus,
@@ -1074,6 +1075,11 @@ class StreamingPullManager(object):
         # IMPORTANT: Circumvent the wrapper class and operate on the raw underlying
         # protobuf message to significantly gain on attribute access performance.
         received_messages = response._pb.received_messages
+        
+        current_time = Timestamp()
+        current_time.GetCurrentTime()
+        for rm in received_messages:
+            rm.message.publish_time.CopyFrom(current_time)
 
         _LOGGER.debug(
             "Processing %s received message(s), currently on hold %s (bytes %s).",
