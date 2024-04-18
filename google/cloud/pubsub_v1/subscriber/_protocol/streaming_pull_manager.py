@@ -1075,7 +1075,7 @@ class StreamingPullManager(object):
         # IMPORTANT: Circumvent the wrapper class and operate on the raw underlying
         # protobuf message to significantly gain on attribute access performance.
         received_messages = response._pb.received_messages
-        
+
         current_time = Timestamp()
         current_time.GetCurrentTime()
         for rm in received_messages:
@@ -1104,10 +1104,10 @@ class StreamingPullManager(object):
         # Immediately (i.e. without waiting for the auto lease management)
         # modack the messages we received, as this tells the server that we've
         # received them.
-        #ack_id_gen = (message.ack_id for message in received_messages)
-        #expired_ack_ids = self._send_lease_modacks(
+        # ack_id_gen = (message.ack_id for message in received_messages)
+        # expired_ack_ids = self._send_lease_modacks(
         #    ack_id_gen, self.ack_deadline, warn_on_invalid=False
-        #)
+        # )
 
         with self._pause_resume_lock:
             assert self._scheduler is not None
