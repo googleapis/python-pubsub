@@ -28,6 +28,7 @@ import grpc  # type: ignore
 from google.api_core import bidi
 from google.api_core import exceptions
 from google.cloud.pubsub_v1 import types
+import google.cloud.pubsub_v1.proto
 from google.cloud.pubsub_v1.subscriber._protocol import dispatcher
 from google.cloud.pubsub_v1.subscriber._protocol import heartbeater
 from google.cloud.pubsub_v1.subscriber._protocol import histogram
@@ -46,6 +47,8 @@ from grpc_status import rpc_status  # type: ignore
 from google.rpc.error_details_pb2 import ErrorInfo  # type: ignore
 from google.rpc import code_pb2  # type: ignore
 from google.rpc import status_pb2
+from google.protobuf.timestamp_pb2 import Timestamp
+from google.pubsub_v1.types import ReceivedMessage
 
 if typing.TYPE_CHECKING:  # pragma: NO COVER
     from google.cloud.pubsub_v1 import subscriber
@@ -1074,7 +1077,13 @@ class StreamingPullManager(object):
         # IMPORTANT: Circumvent the wrapper class and operate on the raw underlying
         # protobuf message to significantly gain on attribute access performance.
         received_messages = response._pb.received_messages
-
+        
+        current_time = Timestamp()
+        current_time.GetCurrentTime()
+        #print(f"current_time: {current_time.ToDatetime()}")
+        for rm in received_messages:
+            rm.message.publish_time.CopyFrom(current_time)
+        
         _LOGGER.debug(
             "Processing %s received message(s), currently on hold %s (bytes %s).",
             len(received_messages),
@@ -1099,9 +1108,19 @@ class StreamingPullManager(object):
         # modack the messages we received, as this tells the server that we've
         # received them.
         ack_id_gen = (message.ack_id for message in received_messages)
-        expired_ack_ids = self._send_lease_modacks(
-            ack_id_gen, self.ack_deadline, warn_on_invalid=False
-        )
+        expired_ack_ids = set()
+        if self._exactly_once_delivery_enabled():
+            expired_ack_ids = self._send_lease_modacks(
+                ack_id_gen, self.ack_deadline, warn_on_invalid=False
+            )
+        else:
+            items = [
+                requests.ModAckRequest(ack_id, self.ack_deadline, futures.Future())
+                for ack_id in ack_id_gen
+            ]
+            #print(f"mk: streaming_pull_manager: items = {items}")
+            assert self._dispatcher is not None
+            self._dispatcher.modify_ack_deadline(items, self.ack_deadline)
 
         with self._pause_resume_lock:
             assert self._scheduler is not None
