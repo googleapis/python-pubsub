@@ -87,7 +87,6 @@ class Leaser(object):
         """The total size, in bytes, of all leased messages."""
         return self._bytes
 
-
     def add(self, items: Iterable[requests.LeaseRequest]) -> None:
         """Add messages to be managed by the leaser."""
         with self._add_remove_lock:

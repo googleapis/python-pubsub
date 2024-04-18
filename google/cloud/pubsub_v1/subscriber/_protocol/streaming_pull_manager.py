@@ -392,7 +392,7 @@ class StreamingPullManager(object):
     def leaser(self) -> Optional[leaser.Leaser]:
         """The leaser helper."""
         return self._leaser
-    
+
     @property
     def initial_modack(self) -> Optional[initial_modack.InitialModack]:
         """The InitialModack helper."""
@@ -884,7 +884,7 @@ class StreamingPullManager(object):
 
         # Start the lease maintainer thread.
         self._leaser.start()
-        
+
         # Start the InitialModack maintainer thread.
         self._initial_modack.start()
 
@@ -952,7 +952,7 @@ class StreamingPullManager(object):
             _LOGGER.debug("Stopping leaser.")
             assert self._leaser is not None
             self._leaser.stop()
-            
+
             # Stop the initial_modack thread.
             assert self._initial_modack is not None
             self._initial_modack.stop()
@@ -1060,7 +1060,7 @@ class StreamingPullManager(object):
                 requests.ModAckRequest(ack_id, self.ack_deadline, None)
                 for ack_id in ack_ids
             ]
-            #if len(items) > 0:
+            # if len(items) > 0:
             #    print(f"mk:_send_lease_modacks items: {items}")
             #    print(f"mk:_send_lease_modacks items received at time: {datetime.datetime.now()}")
             assert self._dispatcher is not None
@@ -1094,7 +1094,7 @@ class StreamingPullManager(object):
         # IMPORTANT: Circumvent the wrapper class and operate on the raw underlying
         # protobuf message to significantly gain on attribute access performance.
         received_messages = response._pb.received_messages
-        
+
         current_time = Timestamp()
         current_time.GetCurrentTime()
         for rm in received_messages:
@@ -1130,9 +1130,9 @@ class StreamingPullManager(object):
                 ack_id_gen, self.ack_deadline, warn_on_invalid=False
             )
         else:
-            #print(f"mk: streaming_pull_manager: initial_modack called with: {list(ack_id_gen)}")
+            # print(f"mk: streaming_pull_manager: initial_modack called with: {list(ack_id_gen)}")
             self._initial_modack.add(ack_id_gen)
-            #self._leaser.add2(ack_id_gen)
+            # self._leaser.add2(ack_id_gen)
 
         with self._pause_resume_lock:
             assert self._scheduler is not None
