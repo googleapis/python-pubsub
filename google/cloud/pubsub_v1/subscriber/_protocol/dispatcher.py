@@ -331,6 +331,8 @@ class Dispatcher(object):
         """
         # We must potentially split the request into multiple smaller requests
         # to avoid the server-side max request size limit.
+        #if len(items) > 0:
+        #    print(f"mk: dispatcher.modify_ack_deadline() called with items={items}")
         items_gen = iter(items)
         ack_ids_gen = (item.ack_id for item in items)
         deadline_seconds_gen = (item.seconds for item in items)
