@@ -1075,7 +1075,7 @@ class StreamingPullManager(object):
         # IMPORTANT: Circumvent the wrapper class and operate on the raw underlying
         # protobuf message to significantly gain on attribute access performance.
         received_messages = response._pb.received_messages
-        
+
         current_time = Timestamp()
         current_time.GetCurrentTime()
         for rm in received_messages:
@@ -1107,9 +1107,9 @@ class StreamingPullManager(object):
         exactly_once_enabled = False
         with self._exactly_once_enabled_lock:
             exactly_once_enabled = self._exactly_once_enabled
-        
+
         expired_ack_ids = set()
-        if exactly_once_enabled:            
+        if exactly_once_enabled:
             ack_id_gen = (message.ack_id for message in received_messages)
             expired_ack_ids = self._send_lease_modacks(
                 ack_id_gen, self.ack_deadline, warn_on_invalid=False
@@ -1117,14 +1117,18 @@ class StreamingPullManager(object):
         else:
             items = []
             for message in received_messages:
-                request = requests.ModAckRequest(message.ack_id, self.ack_deadline, None)           
+                request = requests.ModAckRequest(
+                    message.ack_id, self.ack_deadline, None
+                )
                 items.append(request)
             assert self._dispatcher is not None
             assert self._scheduler is not None
-            #print(f"mk: streaming_pull_manager: calling scheduler.schedule() with items: {items} and deadline={self.ack_deadline}")
-            self._scheduler.schedule(self._dispatcher.modify_ack_deadline,items, self.ack_deadline)            
+            # print(f"mk: streaming_pull_manager: calling scheduler.schedule() with items: {items} and deadline={self.ack_deadline}")
+            self._scheduler.schedule(
+                self._dispatcher.modify_ack_deadline, items, self.ack_deadline
+            )
 
-        #print("mk:streaming pull manager: proceeding with remaining on_response code")
+        # print("mk:streaming pull manager: proceeding with remaining on_response code")
         with self._pause_resume_lock:
             assert self._scheduler is not None
             assert self._leaser is not None
