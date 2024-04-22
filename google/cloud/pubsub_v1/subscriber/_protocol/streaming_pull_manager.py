@@ -41,6 +41,7 @@ from google.cloud.pubsub_v1.subscriber.exceptions import (
 import google.cloud.pubsub_v1.subscriber.message
 from google.cloud.pubsub_v1.subscriber import futures
 from google.cloud.pubsub_v1.subscriber.scheduler import ThreadScheduler
+from datetime import datetime
 from google.pubsub_v1 import types as gapic_types
 from grpc_status import rpc_status  # type: ignore
 from google.rpc.error_details_pb2 import ErrorInfo  # type: ignore
@@ -1098,10 +1099,15 @@ class StreamingPullManager(object):
         # Immediately (i.e. without waiting for the auto lease management)
         # modack the messages we received, as this tells the server that we've
         # received them.
+        before_acks = datetime.now()
         ack_id_gen = (message.ack_id for message in received_messages)
         expired_ack_ids = self._send_lease_modacks(
             ack_id_gen, self.ack_deadline, warn_on_invalid=False
         )
+        after_acks = datetime.now()
+        sync_modack_time_diff = after_acks - before_acks
+        print(f"time for sync modacking = {sync_modack_time_diff.total_seconds()*1000}")
+        
 
         with self._pause_resume_lock:
             assert self._scheduler is not None
