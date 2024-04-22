@@ -1107,7 +1107,6 @@ class StreamingPullManager(object):
         after_acks = datetime.now()
         sync_modack_time_diff = after_acks - before_acks
         print(f"time for sync modacking = {sync_modack_time_diff.total_seconds()*1000}")
-        
 
         with self._pause_resume_lock:
             assert self._scheduler is not None
