@@ -1299,6 +1299,14 @@ class BigQueryConfig(proto.Message):
             Optional. When true, use the BigQuery table's schema as the
             columns to write to in BigQuery. ``use_table_schema`` and
             ``use_topic_schema`` cannot be enabled at the same time.
+        service_account_email (str):
+            Optional. The service account to use to write to BigQuery.
+            The subscription creator or updater that specifies this
+            field must have ``iam.serviceAccounts.actAs`` permission on
+            the service account. If not specified, the Pub/Sub `service
+            agent <https://cloud.google.com/iam/docs/service-agents>`__,
+            service-{project_number}@gcp-sa-pubsub.iam.gserviceaccount.com,
+            is used.
     """
     class State(proto.Enum):
         r"""Possible states for a BigQuery subscription.
@@ -1362,6 +1370,10 @@ class BigQueryConfig(proto.Message):
         proto.BOOL,
         number=6,
     )
+    service_account_email: str = proto.Field(
+        proto.STRING,
+        number=7,
+    )
 
 
 class CloudStorageConfig(proto.Message):
@@ -1420,6 +1432,15 @@ class CloudStorageConfig(proto.Message):
             Output only. An output-only field that
             indicates whether or not the subscription can
             receive messages.
+        service_account_email (str):
+            Optional. The service account to use to write to Cloud
+            Storage. The subscription creator or updater that specifies
+            this field must have ``iam.serviceAccounts.actAs``
+            permission on the service account. If not specified, the
+            Pub/Sub `service
+            agent <https://cloud.google.com/iam/docs/service-agents>`__,
+            service-{project_number}@gcp-sa-pubsub.iam.gserviceaccount.com,
+            is used.
     """
     class State(proto.Enum):
         r"""Possible states for a Cloud Storage subscription.
@@ -1516,6 +1537,10 @@ class CloudStorageConfig(proto.Message):
         proto.ENUM,
         number=9,
         enum=State,
+    )
+    service_account_email: str = proto.Field(
+        proto.STRING,
+        number=11,
     )
 
 
