@@ -35,6 +35,7 @@ LINT_PATHS = ["docs", "google", "tests", "noxfile.py", "setup.py"]
 MYPY_VERSION = "mypy==1.10.0"
 
 DEFAULT_PYTHON_VERSION = "3.8"
+
 UNIT_TEST_PYTHON_VERSIONS: List[str] = ["3.7", "3.8", "3.9", "3.10", "3.11", "3.12"]
 UNIT_TEST_STANDARD_DEPENDENCIES = [
     "mock",
