@@ -22,6 +22,9 @@ import time
 import typing
 from typing import Any, Dict, Optional, Sequence, Tuple, Type, Union
 import warnings
+import sys
+from datetime import datetime
+from opentelemetry import trace
 
 from google.api_core import gapic_v1
 from google.auth.credentials import AnonymousCredentials  # type: ignore
@@ -55,6 +58,9 @@ _raw_proto_pubbsub_message = gapic_types.PubsubMessage.pb()
 SequencerType = Union[
     ordered_sequencer.OrderedSequencer, unordered_sequencer.UnorderedSequencer
 ]
+
+_OPEN_TELEMETRY_TRACER_NAME = "com.google.cloud.pubsub.v1"
+_OPEN_TELEMETRY_MESSAGING_SYSTEM = "gcp_pubsub"
 
 
 class Client(publisher_client.PublisherClient):
@@ -152,6 +158,11 @@ class Client(publisher_client.PublisherClient):
 
         # The object controlling the message publishing flow
         self._flow_controller = FlowController(self.publisher_options.flow_control)
+
+        # Option indicating whether open telemetry is enabled or not.
+        self._open_telemetry_enabled = (
+            self.publisher_options.enable_open_telemetry_tracing
+        )
 
     @classmethod
     def from_service_account_file(  # type: ignore[override]
@@ -335,6 +346,7 @@ class Client(publisher_client.PublisherClient):
             pubsub_v1.publisher.exceptions.MessageTooLargeError: If publishing
                 the ``message`` would exceed the max size limit on the backend.
         """
+
         # Sanity check: Is the data being sent as a bytestring?
         # If it is literally anything else, complain loudly about it.
         if not isinstance(data, bytes):
@@ -367,6 +379,31 @@ class Client(publisher_client.PublisherClient):
             data=data, ordering_key=ordering_key, attributes=attrs
         )
         message = gapic_types.PubsubMessage.wrap(vanilla_pb)
+
+        if self._open_telemetry_enabled:
+            tracer = trace.get_tracer(_OPEN_TELEMETRY_TRACER_NAME)
+            with tracer.start_as_current_span(
+                name=f"{topic} create",
+                attributes={
+                    "messaging.system": _OPEN_TELEMETRY_MESSAGING_SYSTEM,
+                    "messaging.destination.name": topic,
+                    "code.function": "google.cloud.pubsub.PublisherClient.publish",
+                    "messaging.gcp_pubsub.message.ordering_key": ordering_key,
+                    "messaging.operation": "create",
+                    "gcp.project_id": topic.split("/")[1],
+                    "messaging.message.envelope.size": sys.getsizeof(message),
+                },
+                kind=trace.SpanKind.PRODUCER,
+                # TODO(mk): set end_on_exit=False. So that span
+                # ends only when publich RPC call is made.
+                # end_on_exit=False,
+            ) as span:
+                span.add_event(
+                    name="publish start",
+                    attributes={
+                        "timestamp": str(datetime.now()),
+                    },
+                )
 
         # Messages should go through flow control to prevent excessive
         # queuing on the client side (depending on the settings).

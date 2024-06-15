@@ -43,6 +43,12 @@ from google.pubsub_v1.services.publisher import client as publisher_client
 from google.pubsub_v1.services.publisher.transports.grpc import PublisherGrpcTransport
 
 
+from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+from opentelemetry import trace
+
+
 def _assert_retries_equal(retry, retry2):
     # Retry instances cannot be directly compared, because their predicates are
     # different instances of the same function. We thus manually compare their other
@@ -246,6 +252,51 @@ def test_publish(creds):
             ),
         ]
     )
+
+
+def test_publish_otel(creds):
+    TOPIC = "projects/projectID/topics/topicID"
+    client = publisher.Client(
+        credentials=creds,
+        publisher_options=types.PublisherOptions(
+            enable_open_telemetry_tracing=True,
+        ),
+    )
+
+    # Trace Provider setup.
+    provider = TracerProvider()
+    memory_exporter = InMemorySpanExporter()
+    processor = SimpleSpanProcessor(memory_exporter)
+    provider.add_span_processor(processor)
+    trace.set_tracer_provider(provider)
+
+    client.publish(TOPIC, b"message")
+    spans = memory_exporter.get_finished_spans()
+
+    assert len(spans) == 1
+
+    assert spans[0].name == f"{TOPIC} create"
+
+    # Verify attribute values
+    attributes = spans[0].attributes
+    assert attributes["messaging.system"] == "gcp_pubsub"
+    assert attributes["messaging.destination.name"] == TOPIC
+    assert attributes["code.function"] == "google.cloud.pubsub.PublisherClient.publish"
+    assert attributes["messaging.gcp_pubsub.message.ordering_key"] == ""
+    assert attributes["messaging.operation"] == "create"
+    assert attributes["gcp.project_id"] == "projectID"
+    assert "messaging.message.envelope.size" in attributes
+
+    # Verify span kind
+    assert spans[0].kind == trace.SpanKind.PRODUCER
+
+    # Verify events
+    assert len(spans[0].events) == 1
+
+    # Verify start event
+    start_event = spans[0].events[0]
+    assert start_event.name == "publish start"
+    assert "timestamp" in start_event.attributes
 
 
 def test_publish_error_exceeding_flow_control_limits(creds):
