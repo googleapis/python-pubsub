@@ -238,14 +238,10 @@ def test_optimistic_subscribe(
     subscriber_client: pubsub_v1.SubscriberClient,
     topic: str,
     publisher_client: pubsub_v1.PublisherClient,
-    capsys: CaptureFixture[str]
+    capsys: CaptureFixture[str],
 ) -> None:
-    subscription_id = (
-        f"subscription_for_optimistic_subscribe-{PY_VERSION}-{UUID}"
-    )
-    subscription_path = subscriber_client.subscription_path(
-        PROJECT_ID, subscription_id
-    )
+    subscription_id = f"subscription_for_optimistic_subscribe-{PY_VERSION}-{UUID}"
+    subscription_path = subscriber_client.subscription_path(PROJECT_ID, subscription_id)
     # Ensure there is no pre-existing subscription.
     # So that we can test the case where optimistic subscribe fails.
     try:

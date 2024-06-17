@@ -95,7 +95,10 @@ def create_subscription(project_id: str, topic_id: str, subscription_id: str) ->
 
 
 def optimistic_subscribe(
-    project_id: str, topic_id: str, subscription_id: str, timeout: Optional[float] = None
+    project_id: str,
+    topic_id: str,
+    subscription_id: str,
+    timeout: Optional[float] = None,
 ) -> None:
     """Optimistically subscribe to messages instead of making calls to verify existence
     of a subscription first and then subscribing to messages from it. This avoids admin
@@ -129,7 +132,9 @@ def optimistic_subscribe(
     with subscriber:
         try:
             # Optimistically subscribe to messages on the subscription.
-            streaming_pull_future = subscriber.subscribe(subscription_path, callback=callback)
+            streaming_pull_future = subscriber.subscribe(
+                subscription_path, callback=callback
+            )
             streaming_pull_future.result(timeout=timeout)
         except TimeoutError:
             print("Successfully subscribed until the timeout passed.")
@@ -153,13 +158,17 @@ def optimistic_subscribe(
 
                 # Subscribe on the created subscription.
                 try:
-                    streaming_pull_future = subscriber.subscribe(subscription.name, callback=callback)
+                    streaming_pull_future = subscriber.subscribe(
+                        subscription.name, callback=callback
+                    )
                     streaming_pull_future.result(timeout=timeout)
                 except TimeoutError:
                     streaming_pull_future.cancel()  # Trigger the shutdown.
                     streaming_pull_future.result()  # Block until the shutdown is complete.
             except Exception as e:
-                print(f"Exception occurred when creating subscription and subscribing to it: {e}")
+                print(
+                    f"Exception occurred when creating subscription and subscribing to it: {e}"
+                )
         except Exception as e:
             print(f"Exception occurred when attempting optimistic subscribe: {e}")
     # [END pubsub_optimistic_subscribe]
@@ -1380,7 +1389,9 @@ if __name__ == "__main__":  # noqa
     elif args.command == "remove-dead-letter-policy":
         remove_dead_letter_policy(args.project_id, args.topic_id, args.subscription_id)
     elif args.command == "optimistic-subscribe":
-        optimistic_subscribe(args.project_id, args.topic_id, args.subscription_id, args.timeout)
+        optimistic_subscribe(
+            args.project_id, args.topic_id, args.subscription_id, args.timeout
+        )
     elif args.command == "receive":
         receive_messages(args.project_id, args.subscription_id, args.timeout)
     elif args.command == "receive-custom-attributes":
