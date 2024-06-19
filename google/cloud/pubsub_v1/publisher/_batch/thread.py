@@ -90,7 +90,7 @@ class Batch(base.Batch):
         client: "PublisherClient",
         topic: str,
         settings: "types.BatchSettings",
-        batch_done_callback: Callable[[bool], Any] = None,
+        batch_done_callback: Optional[Callable[[bool], Any]] = None,
         commit_when_full: bool = True,
         commit_retry: "OptionalRetry" = gapic_v1.method.DEFAULT,
         commit_timeout: "types.OptionalTimeout" = gapic_v1.method.DEFAULT,
@@ -282,13 +282,13 @@ class Batch(base.Batch):
             # all futures and exit.
             self._status = base.BatchStatus.ERROR
 
-            for future in self._futures:
-                future.set_exception(exc)
-
             batch_transport_succeeded = False
             if self._batch_done_callback is not None:
                 # Failed to publish batch.
                 self._batch_done_callback(batch_transport_succeeded)
+
+            for future in self._futures:
+                future.set_exception(exc)
 
             return
 
