@@ -25,6 +25,7 @@ import warnings
 import sys
 from datetime import datetime
 from opentelemetry import trace
+from opentelemetry.trace.propagation import set_span_in_context
 
 from google.api_core import gapic_v1
 from google.auth.credentials import AnonymousCredentials  # type: ignore
@@ -394,11 +395,10 @@ class Client(publisher_client.PublisherClient):
                     "messaging.message.envelope.size": sys.getsizeof(message),
                 },
                 kind=trace.SpanKind.PRODUCER,
-                # TODO(mk): set end_on_exit=False. So that span
-                # ends only when publich RPC call is made.
+                # TODO(mk): end_on_exit=False
                 # end_on_exit=False,
-            ) as span:
-                span.add_event(
+            ) as publish_create_span:
+                publish_create_span.add_event(
                     name="publish start",
                     attributes={
                         "timestamp": str(datetime.now()),
@@ -408,7 +408,17 @@ class Client(publisher_client.PublisherClient):
         # Messages should go through flow control to prevent excessive
         # queuing on the client side (depending on the settings).
         try:
+            if self._open_telemetry_enabled:
+                with tracer.start_as_current_span(
+                    name="publisher flow control",
+                    kind=trace.SpanKind.INTERNAL,
+                    context=set_span_in_context(publish_create_span),
+                    end_on_exit=False,
+                ) as publish_flow_control_span:
+                    self._publish_flow_control_span = publish_flow_control_span
             self._flow_controller.add(message)
+            if self._open_telemetry_enabled:
+                self._publish_flow_control_span.end()
         except exceptions.FlowControlLimitError as exc:
             future = futures.Future()
             future.set_exception(exc)

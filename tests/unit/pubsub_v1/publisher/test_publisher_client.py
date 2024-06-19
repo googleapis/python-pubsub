@@ -271,10 +271,12 @@ def test_publish_otel(creds):
     trace.set_tracer_provider(provider)
 
     client.publish(TOPIC, b"message")
+
     spans = memory_exporter.get_finished_spans()
 
-    assert len(spans) == 1
+    assert len(spans) == 2
 
+    # Verify create span
     assert spans[0].name == f"{TOPIC} create"
 
     # Verify attribute values
@@ -297,6 +299,14 @@ def test_publish_otel(creds):
     start_event = spans[0].events[0]
     assert start_event.name == "publish start"
     assert "timestamp" in start_event.attributes
+
+    # Verify flow control span.
+    flow_control_span = spans[1]
+    assert flow_control_span.name == "publisher flow control"
+    assert flow_control_span.kind == trace.SpanKind.INTERNAL
+
+    # Verify that flow control span is a child of the publish create span.
+    assert flow_control_span._parent[1] == spans[0]._context[1]
 
 
 def test_publish_error_exceeding_flow_control_limits(creds):
