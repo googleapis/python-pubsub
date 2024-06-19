@@ -44,7 +44,6 @@ from google.pubsub_v1.services.publisher.transports.grpc import PublisherGrpcTra
 
 
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
-from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from opentelemetry import trace
 
@@ -219,6 +218,47 @@ def test_message_ordering_enabled(creds):
     assert client._enable_message_ordering
 
 
+def test_publish_otel_batching_exception(creds, provider):
+    client = publisher.Client(
+        credentials=creds,
+        publisher_options=types.PublisherOptions(
+            enable_open_telemetry_tracing=True,
+        ),
+    )
+
+    # Setup Open Telemetry tracing
+    memory_exporter = InMemorySpanExporter()
+    processor = SimpleSpanProcessor(memory_exporter)
+    provider.add_span_processor(processor)
+    trace.set_tracer_provider(provider)
+
+    # Throw an exception when sequencer.publish() is called
+    sequencer = mock.Mock(spec=ordered_sequencer.OrderedSequencer)
+    sequencer.publish = mock.Mock(side_effect=RuntimeError("some error"))
+    client._get_or_create_sequencer = mock.Mock(return_value=sequencer)
+
+    TOPIC = "projects/projectID/topics/topicID"
+    with pytest.raises(RuntimeError):
+        client.publish(TOPIC, b"message")
+
+    spans = memory_exporter.get_finished_spans()
+
+    # Span 1: Create Publish span
+    # Span 2: Publisher Flow Control span
+    # Span 3: Publisher Batching span
+    assert len(spans) == 3
+
+    publish_batching_span = spans[2]
+    assert publish_batching_span.name == "publisher batching"
+    assert publish_batching_span.kind == trace.SpanKind.INTERNAL
+    assert publish_batching_span._parent[1] == spans[0]._context[1]
+
+    # Verify exception recorded by the Publisher Batching span.
+    assert publish_batching_span.status.status_code == trace.StatusCode.ERROR
+    assert len(publish_batching_span.events) == 1
+    assert publish_batching_span.events[0].name == "exception"
+
+
 def test_publish(creds):
     client = publisher.Client(credentials=creds)
 
@@ -254,7 +294,7 @@ def test_publish(creds):
     )
 
 
-def test_publish_otel(creds):
+def test_publish_otel(creds, provider):
     TOPIC = "projects/projectID/topics/topicID"
     client = publisher.Client(
         credentials=creds,
@@ -263,8 +303,6 @@ def test_publish_otel(creds):
         ),
     )
 
-    # Trace Provider setup.
-    provider = TracerProvider()
     memory_exporter = InMemorySpanExporter()
     processor = SimpleSpanProcessor(memory_exporter)
     provider.add_span_processor(processor)
@@ -339,6 +377,52 @@ def test_publish_error_exceeding_flow_control_limits(creds):
     future1.result()  # no error, still within flow control limits
     with pytest.raises(exceptions.FlowControlLimitError):
         future2.result()
+
+
+def test_publish_otel_flow_control_exception(creds, provider):
+    publisher_options = types.PublisherOptions(
+        flow_control=types.PublishFlowControl(
+            message_limit=10,
+            byte_limit=150,
+            limit_exceeded_behavior=types.LimitExceededBehavior.ERROR,
+        ),
+        enable_open_telemetry_tracing=True,
+    )
+    client = publisher.Client(credentials=creds, publisher_options=publisher_options)
+
+    mock_batch = mock.Mock(spec=client._batch_class)
+    topic = "topic/path"
+    client._set_batch(topic, mock_batch)
+
+    # Trace Provider setup.
+    memory_exporter = InMemorySpanExporter()
+    processor = SimpleSpanProcessor(memory_exporter)
+    provider.add_span_processor(processor)
+    trace.set_tracer_provider(provider)
+
+    future1 = client.publish(topic, b"a" * 100)
+    future2 = client.publish(topic, b"b" * 100)
+
+    future1.result()  # no error, still within flow control limits
+    with pytest.raises(exceptions.FlowControlLimitError):
+        future2.result()
+
+    spans = memory_exporter.get_finished_spans()
+    # Span 1 = Publish Create Span of first publish
+    # Span 2 = Publisher Flow Control Span of first publish
+    # Span 3 = Publisher Batching Span of first publish
+    # Span 4 = Publish Create Span of second publish
+    # Span 5 = Publisher Flow Control Span of second publish
+    assert len(spans) == 5
+
+    failed_flow_control_span = spans[4]
+    assert failed_flow_control_span.name == "publisher flow control"
+    assert failed_flow_control_span.kind == trace.SpanKind.INTERNAL
+    assert failed_flow_control_span._parent[1] == spans[3]._context[1]
+    assert failed_flow_control_span.status.status_code == trace.StatusCode.ERROR
+
+    assert len(failed_flow_control_span.events) == 1
+    assert failed_flow_control_span.events[0].name == "exception"
 
 
 def test_publish_data_not_bytestring_error(creds):

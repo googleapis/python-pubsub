@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from opentelemetry.sdk.trace import TracerProvider
+
 import google.auth.credentials
 import pytest
 
@@ -23,3 +25,11 @@ def creds():
     GOOGLE_APPLICATION_CREDENTIALS set.
     """
     yield google.auth.credentials.AnonymousCredentials()
+
+
+@pytest.fixture(scope="session", autouse=True)
+def provider():
+    """
+    Provide an Open Telemetry Tracer that can be re-used across tests.
+    """
+    yield TracerProvider()
