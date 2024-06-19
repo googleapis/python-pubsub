@@ -62,6 +62,7 @@ SequencerType = Union[
 
 _OPEN_TELEMETRY_TRACER_NAME = "com.google.cloud.pubsub.v1"
 _OPEN_TELEMETRY_MESSAGING_SYSTEM = "gcp_pubsub"
+_OPEN_TELEMETRY_PUBLISHER_BATCHING = "publisher batching"
 
 
 class Client(publisher_client.PublisherClient):
@@ -456,8 +457,32 @@ class Client(publisher_client.PublisherClient):
 
             # Delegate the publishing to the sequencer.
             sequencer = self._get_or_create_sequencer(topic, ordering_key)
-            future = sequencer.publish(message, retry=retry, timeout=timeout)
-            future.add_done_callback(on_publish_done)
+            if self._open_telemetry_enabled:
+                with tracer.start_as_current_span(
+                    name=_OPEN_TELEMETRY_PUBLISHER_BATCHING,
+                    kind=trace.SpanKind.INTERNAL,
+                    context=set_span_in_context(publish_create_span),
+                    end_on_exit=False,
+                ) as publisher_batching_span:
+                    self._publisher_batching_span = publisher_batching_span
+            try:
+                future = sequencer.publish(message, retry=retry, timeout=timeout)
+                future.add_done_callback(on_publish_done)
+            except BaseException as be:
+                # sequencer.publish() can throw Exceptions. If it does,
+                # record it in the publisher batching span before
+                # allowing it to bubble up.
+                if self._open_telemetry_enabled:
+                    self._publisher_batching_span.end()
+                    self._publisher_batching_span.record_exception(
+                        exception=be,
+                    )
+                    self._publisher_batching_span.set_status(
+                        trace.Status(status_code=trace.StatusCode.ERROR))
+                raise be
+
+            if self._open_telemetry_enabled:
+                self._publisher_batching_span.end()
 
             # Create a timer thread if necessary to enforce the batching
             # timeout.

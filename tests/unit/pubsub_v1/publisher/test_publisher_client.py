@@ -274,7 +274,10 @@ def test_publish_otel(creds):
 
     spans = memory_exporter.get_finished_spans()
 
-    assert len(spans) == 2
+    # span1 = Publish Create Span
+    # span2 = Publisher Flow Control Span
+    # span3 = Publisher Batching Span
+    assert len(spans) == 3
 
     # Verify create span
     assert spans[0].name == f"{TOPIC} create"
@@ -307,6 +310,13 @@ def test_publish_otel(creds):
 
     # Verify that flow control span is a child of the publish create span.
     assert flow_control_span._parent[1] == spans[0]._context[1]
+
+    # Verify Publisher Batching Span
+    publisher_batching_span = spans[2]
+    assert publisher_batching_span.name == "publisher batching"
+    assert publisher_batching_span.kind == trace.SpanKind.INTERNAL
+    # Verify Publisher Batching Span is child of Publish Create Span
+    assert publisher_batching_span._parent[1] == spans[0]._context[1]
 
 
 def test_publish_error_exceeding_flow_control_limits(creds):
