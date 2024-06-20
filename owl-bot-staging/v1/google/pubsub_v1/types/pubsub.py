@@ -1461,12 +1461,17 @@ class CloudStorageConfig(proto.Message):
                 Cannot write to the destination because enforce_in_transit
                 is set to true and the destination locations are not in the
                 allowed regions.
+            SCHEMA_MISMATCH (5):
+                Cannot write to the Cloud Storage bucket due
+                to an incompatibility between the topic schema
+                and subscription settings.
         """
         STATE_UNSPECIFIED = 0
         ACTIVE = 1
         PERMISSION_DENIED = 2
         NOT_FOUND = 3
         IN_TRANSIT_LOCATION_RESTRICTION = 4
+        SCHEMA_MISMATCH = 5
 
     class TextConfig(proto.Message):
         r"""Configuration for writing message data in text format.
@@ -1489,11 +1494,19 @@ class CloudStorageConfig(proto.Message):
                 fields while all other message properties other than data
                 (for example, an ordering_key, if present) are added as
                 entries in the attributes map.
+            use_topic_schema (bool):
+                Optional. When true, the output Cloud Storage
+                file will be serialized using the topic schema,
+                if it exists.
         """
 
         write_metadata: bool = proto.Field(
             proto.BOOL,
             number=1,
+        )
+        use_topic_schema: bool = proto.Field(
+            proto.BOOL,
+            number=2,
         )
 
     bucket: str = proto.Field(
