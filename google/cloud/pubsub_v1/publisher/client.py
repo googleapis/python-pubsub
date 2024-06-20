@@ -416,21 +416,21 @@ class Client(publisher_client.PublisherClient):
                     context=set_span_in_context(publish_create_span),
                     end_on_exit=False,
                 ) as publish_flow_control_span:
-                    self._publish_flow_control_span = publish_flow_control_span
+                    pass
             self._flow_controller.add(message)
             if self._open_telemetry_enabled:
-                self._publish_flow_control_span.end()
+                publish_flow_control_span.end()
         except exceptions.FlowControlLimitError as exc:
             future = futures.Future()
             future.set_exception(exc)
             if self._open_telemetry_enabled:
-                self._publish_flow_control_span.record_exception(
+                publish_flow_control_span.record_exception(
                     exception=exc,
                 )
-                self._publish_flow_control_span.set_status(
+                publish_flow_control_span.set_status(
                     trace.Status(status_code=trace.StatusCode.ERROR)
                 )
-                self._publish_flow_control_span.end()
+                publish_flow_control_span.end()
             return future
 
         def on_publish_done(future):
@@ -472,7 +472,7 @@ class Client(publisher_client.PublisherClient):
                     context=set_span_in_context(publish_create_span),
                     end_on_exit=False,
                 ) as publisher_batching_span:
-                    self._publisher_batching_span = publisher_batching_span
+                    pass
             try:
                 future = sequencer.publish(message, retry=retry, timeout=timeout)
                 future.add_done_callback(on_publish_done)
@@ -481,17 +481,17 @@ class Client(publisher_client.PublisherClient):
                 # record it in the publisher batching span before
                 # allowing it to bubble up.
                 if self._open_telemetry_enabled:
-                    self._publisher_batching_span.record_exception(
+                    publisher_batching_span.record_exception(
                         exception=be,
                     )
-                    self._publisher_batching_span.set_status(
+                    publisher_batching_span.set_status(
                         trace.Status(status_code=trace.StatusCode.ERROR)
                     )
-                    self._publisher_batching_span.end()
+                    publisher_batching_span.end()
                 raise be
 
             if self._open_telemetry_enabled:
-                self._publisher_batching_span.end()
+                publisher_batching_span.end()
 
             # Create a timer thread if necessary to enforce the batching
             # timeout.
