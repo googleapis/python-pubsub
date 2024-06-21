@@ -294,6 +294,31 @@ def test_publish(creds):
     )
 
 
+def test_publish_otel_context_propagation(creds, provider):
+    TOPIC = "projects/projectID/topics/topicID"
+    client = publisher.Client(
+        credentials=creds,
+        publisher_options=types.PublisherOptions(
+            enable_open_telemetry_tracing=True,
+        ),
+    )
+
+    # Set up Open Telemetry tracing.
+    memory_exporter = InMemorySpanExporter()
+    processor = SimpleSpanProcessor(memory_exporter)
+    provider.add_span_processor(processor)
+    trace.set_tracer_provider(provider)
+
+    flow_controller_add_mock = mock.Mock(spec=publisher.flow_controller.FlowController.add)
+    client._flow_controller.add = flow_controller_add_mock
+    client.publish(TOPIC, b"message")
+
+    flow_controller_add_mock.assert_called_once()
+    args = flow_controller_add_mock.call_args.args
+    assert len(args) == 1
+    assert "googclient_traceparent" in args[0].attributes
+
+
 def test_publish_otel(creds, provider):
     TOPIC = "projects/projectID/topics/topicID"
     client = publisher.Client(

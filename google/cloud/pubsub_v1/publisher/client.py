@@ -26,6 +26,7 @@ import sys
 from datetime import datetime
 from opentelemetry import trace
 from opentelemetry.trace.propagation import set_span_in_context
+from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
 
 from google.api_core import gapic_v1
 from google.auth.credentials import AnonymousCredentials  # type: ignore
@@ -382,6 +383,18 @@ class Client(publisher_client.PublisherClient):
         )
         message = gapic_types.PubsubMessage.wrap(vanilla_pb)
 
+        class OTelContextSetter():
+            """
+            Used by Open Telemetry for context propagation.
+            """
+
+            def set(self, carrier: gapic_types.PubsubMessage, key: str, value: str):
+                """
+                Injects trace context into Pub/Sub message attributes with
+                "googclient_" prefix.
+                """
+                carrier.attributes["googclient_" + key] = value
+
         if self._open_telemetry_enabled:
             tracer = trace.get_tracer(_OPEN_TELEMETRY_TRACER_NAME)
             with tracer.start_as_current_span(
@@ -404,6 +417,10 @@ class Client(publisher_client.PublisherClient):
                     attributes={
                         "timestamp": str(datetime.now()),
                     },
+                )
+                TraceContextTextMapPropagator().inject(
+                    carrier=message,
+                    setter=OTelContextSetter(),
                 )
 
         # Messages should go through flow control to prevent excessive
