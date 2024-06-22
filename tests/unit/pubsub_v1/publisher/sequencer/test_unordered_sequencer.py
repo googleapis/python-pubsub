@@ -140,7 +140,9 @@ def test_publish_after_batch_error():
     batch = client._batch_class(
         client, "topic_name", types.BatchSettings(max_latency=float("inf"))
     )
-    batch._message_wrappers.append(mock.Mock(name="message"))  # Make batch truthy (non-empty).
+    batch._message_wrappers.append(
+        mock.Mock(name="message")
+    )  # Make batch truthy (non-empty).
 
     sequencer = unordered_sequencer.UnorderedSequencer(client, "topic_name")
     sequencer._set_batch(batch)

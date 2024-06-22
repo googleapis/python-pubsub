@@ -385,7 +385,7 @@ class Client(publisher_client.PublisherClient):
         )
         message = gapic_types.PubsubMessage.wrap(vanilla_pb)
 
-        class OTelContextSetter():
+        class OTelContextSetter:
             """
             Used by Open Telemetry for context propagation.
             """
@@ -486,7 +486,9 @@ class Client(publisher_client.PublisherClient):
                     if retry is gapic_v1.method.DEFAULT:
                         # use the default retry for the publish GRPC method as a base
                         transport = self._transport
-                        base_retry = transport._wrapped_methods[transport.publish]._retry
+                        base_retry = transport._wrapped_methods[
+                            transport.publish
+                        ]._retry
                         retry = base_retry.with_deadline(2.0**32)
                         # timeout needs to be overridden and set to infinite in
                         # addition to the retry deadline since both determine

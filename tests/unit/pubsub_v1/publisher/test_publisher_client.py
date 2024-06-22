@@ -296,7 +296,9 @@ def test_publish(creds):
             ),
             mock.call(
                 MessageWrapper(
-                    message=gapic_types.PubsubMessage(data=b"foo", attributes={"bar": "baz"}),
+                    message=gapic_types.PubsubMessage(
+                        data=b"foo", attributes={"bar": "baz"}
+                    ),
                     create_span=None,
                 )
             ),
@@ -319,7 +321,9 @@ def test_publish_otel_context_propagation(creds, provider):
     provider.add_span_processor(processor)
     trace.set_tracer_provider(provider)
 
-    flow_controller_add_mock = mock.Mock(spec=publisher.flow_controller.FlowController.add)
+    flow_controller_add_mock = mock.Mock(
+        spec=publisher.flow_controller.FlowController.add
+    )
     client._flow_controller.add = flow_controller_add_mock
     client.publish(TOPIC, b"message")
 
@@ -406,7 +410,9 @@ def test_publish_otel_flow_control_exception(creds, provider):
     trace.set_tracer_provider(provider)
 
     client._flow_controller = mock.Mock(spec=publisher.flow_controller.FlowController)
-    client._flow_controller.add = mock.Mock(side_effect=exceptions.FlowControlLimitError)
+    client._flow_controller.add = mock.Mock(
+        side_effect=exceptions.FlowControlLimitError
+    )
 
     TOPIC = "projects/projectID/topics/topicID"
     client.publish(TOPIC, b"message")

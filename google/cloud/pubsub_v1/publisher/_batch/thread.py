@@ -137,7 +137,7 @@ class Batch(base.Batch):
         return self._client
 
     @property
-    def message_wrappers(self) -> Sequence[gapic_types.PubsubMessage]:
+    def message_wrappers(self) -> Sequence[MessageWrapper]:
         """The messages currently in the batch."""
         return self._message_wrappers
 
@@ -295,9 +295,7 @@ class Batch(base.Batch):
                 ) as publish_rpc_span:
                     ctx = publish_rpc_span.get_span_context()
                     for wrapper in self._message_wrappers:
-                        wrapper.get_span().add_link(
-                            ctx
-                        )
+                        wrapper.get_span().add_link(ctx)
             # Performs retries for errors defined by the retry configuration.
             response = self._client._gapic_publish(
                 topic=self._topic,
@@ -374,7 +372,8 @@ class Batch(base.Batch):
             self._batch_done_callback(batch_transport_succeeded)
 
     def publish(
-        self, message_wrapper: MessageWrapper,
+        self,
+        message_wrapper: MessageWrapper,
     ) -> Optional["pubsub_v1.publisher.futures.Future"]:
         """Publish a single message.
 
@@ -404,7 +403,9 @@ class Batch(base.Batch):
             # using the raw protobuf class, and only then wrapping it into the
             # higher-level PubsubMessage class.
             vanilla_pb = _raw_proto_pubbsub_message(**message_wrapper.get_message())
-            message_wrapper.set_message(vanilla_pb.gapic_types.PubsubMessage.wrap(vanilla_pb))
+            message_wrapper.set_message(
+                vanilla_pb.gapic_types.PubsubMessage.wrap(vanilla_pb)
+            )
 
         future = None
 

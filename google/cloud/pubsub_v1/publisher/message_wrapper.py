@@ -3,7 +3,7 @@ from opentelemetry import trace
 from typing import Optional
 
 
-class MessageWrapper():
+class MessageWrapper:
     """
     Wraps Pub/Sub message with additional metadata required for
     Open Telemetry tracing.
@@ -25,4 +25,6 @@ class MessageWrapper():
     def __eq__(self, other: "MessageWrapper") -> bool:
         if not isinstance(other, MessageWrapper):
             return False
-        return self._message == other._message and self._create_span == other._create_span
+        return (
+            self._message == other._message and self._create_span == other._create_span
+        )
