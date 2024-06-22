@@ -39,9 +39,11 @@ from google.cloud.pubsub_v1.publisher._batch import thread
 from google.cloud.pubsub_v1.publisher._sequencer import ordered_sequencer
 from google.cloud.pubsub_v1.publisher._sequencer import unordered_sequencer
 from google.cloud.pubsub_v1.publisher.flow_controller import FlowController
+from google.cloud.pubsub_v1.publisher.message_wrapper import MessageWrapper
 from google.pubsub_v1 import gapic_version as package_version
 from google.pubsub_v1 import types as gapic_types
 from google.pubsub_v1.services.publisher import client as publisher_client
+
 
 __version__ = package_version.__version__
 
@@ -409,8 +411,7 @@ class Client(publisher_client.PublisherClient):
                     "messaging.message.envelope.size": sys.getsizeof(message),
                 },
                 kind=trace.SpanKind.PRODUCER,
-                # TODO(mk): end_on_exit=False
-                # end_on_exit=False,
+                end_on_exit=False,
             ) as publish_create_span:
                 publish_create_span.add_event(
                     name="publish start",
@@ -448,6 +449,12 @@ class Client(publisher_client.PublisherClient):
                     trace.Status(status_code=trace.StatusCode.ERROR)
                 )
                 publish_flow_control_span.end()
+
+                publish_create_span.record_exception(exc)
+                publish_create_span.set_status(
+                    trace.Status(status_code=trace.StatusCode.ERROR)
+                )
+                publish_create_span.end()
             return future
 
         def on_publish_done(future):
@@ -491,7 +498,16 @@ class Client(publisher_client.PublisherClient):
 
                 # Delegate the publishing to the sequencer.
                 sequencer = self._get_or_create_sequencer(topic, ordering_key)
-                future = sequencer.publish(message, retry=retry, timeout=timeout)
+
+                message_wrapper = MessageWrapper(
+                    message=message,
+                    create_span=publish_create_span,
+                )
+                future = sequencer.publish(
+                    message=message_wrapper,
+                    retry=retry,
+                    timeout=timeout,
+                )
                 future.add_done_callback(on_publish_done)
             except BaseException as be:
                 # Exceptions can be thrown when attempting to add messages to the batch.
@@ -505,6 +521,14 @@ class Client(publisher_client.PublisherClient):
                         trace.Status(status_code=trace.StatusCode.ERROR)
                     )
                     publisher_batching_span.end()
+
+                    publish_create_span.record_exception(
+                        exception=be,
+                    )
+                    publish_create_span.set_status(
+                        trace.Status(status_code=trace.StatusCode.ERROR)
+                    )
+                    publish_create_span.end()
                 raise be
 
             if self._open_telemetry_enabled:

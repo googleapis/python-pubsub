@@ -18,7 +18,8 @@ from typing import Optional
 from google.api_core import gapic_v1
 
 from google.cloud.pubsub_v1.publisher._sequencer import base
-from google.pubsub_v1 import types as gapic_types
+from google.cloud.pubsub_v1.publisher.message_wrapper import MessageWrapper
+
 
 if typing.TYPE_CHECKING:  # pragma: NO COVER
     from google.cloud.pubsub_v1.publisher import _batch
@@ -115,7 +116,7 @@ class UnorderedSequencer(base.Sequencer):
 
     def publish(
         self,
-        message: gapic_types.PubsubMessage,
+        message: MessageWrapper,
         retry: "OptionalRetry" = gapic_v1.method.DEFAULT,
         timeout: "types.OptionalTimeout" = gapic_v1.method.DEFAULT,
     ) -> "futures.Future":

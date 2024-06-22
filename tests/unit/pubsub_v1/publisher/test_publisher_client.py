@@ -37,6 +37,7 @@ from google.cloud.pubsub_v1 import types
 
 from google.cloud.pubsub_v1.publisher import exceptions
 from google.cloud.pubsub_v1.publisher._sequencer import ordered_sequencer
+from google.cloud.pubsub_v1.publisher.message_wrapper import MessageWrapper
 
 from google.pubsub_v1 import types as gapic_types
 from google.pubsub_v1.services.publisher import client as publisher_client
@@ -243,15 +244,16 @@ def test_publish_otel_batching_exception(creds, provider):
 
     spans = memory_exporter.get_finished_spans()
 
-    # Span 1: Create Publish span
-    # Span 2: Publisher Flow Control span
-    # Span 3: Publisher Batching span
+    # Span 1: Publisher Flow Control span
+    # Span 2: Publisher Batching span(ended after exception)
+    # Span 3: Create Publish span(ended after exception)
     assert len(spans) == 3
 
-    publish_batching_span = spans[2]
+    publish_batching_span = spans[1]
+    publish_create_span = spans[2]
     assert publish_batching_span.name == "publisher batching"
     assert publish_batching_span.kind == trace.SpanKind.INTERNAL
-    assert publish_batching_span._parent[1] == spans[0]._context[1]
+    assert publish_batching_span._parent[1] == publish_create_span._context[1]
 
     # Verify exception recorded by the Publisher Batching span.
     assert publish_batching_span.status.status_code == trace.StatusCode.ERROR
@@ -286,9 +288,17 @@ def test_publish(creds):
     # Check mock.
     batch.publish.assert_has_calls(
         [
-            mock.call(gapic_types.PubsubMessage(data=b"spam")),
             mock.call(
-                gapic_types.PubsubMessage(data=b"foo", attributes={"bar": "baz"})
+                MessageWrapper(
+                    message=gapic_types.PubsubMessage(data=b"spam"),
+                    create_span=None,
+                )
+            ),
+            mock.call(
+                MessageWrapper(
+                    message=gapic_types.PubsubMessage(data=b"foo", attributes={"bar": "baz"}),
+                    create_span=None,
+                )
             ),
         ]
     )
@@ -337,49 +347,26 @@ def test_publish_otel(creds, provider):
 
     spans = memory_exporter.get_finished_spans()
 
-    # span1 = Publish Create Span
-    # span2 = Publisher Flow Control Span
-    # span3 = Publisher Batching Span
-    assert len(spans) == 3
+    # Publish Create Span is still active, hence note returned
+    # by the exporter.
+    # span1 = Publisher Flow Control Span
+    # span2 = Publisher Batching Span
+    assert len(spans) == 2
 
-    # Verify create span
-    assert spans[0].name == f"{TOPIC} create"
-
-    # Verify attribute values
-    attributes = spans[0].attributes
-    assert attributes["messaging.system"] == "gcp_pubsub"
-    assert attributes["messaging.destination.name"] == TOPIC
-    assert attributes["code.function"] == "google.cloud.pubsub.PublisherClient.publish"
-    assert attributes["messaging.gcp_pubsub.message.ordering_key"] == ""
-    assert attributes["messaging.operation"] == "create"
-    assert attributes["gcp.project_id"] == "projectID"
-    assert "messaging.message.envelope.size" in attributes
-
-    # Verify span kind
-    assert spans[0].kind == trace.SpanKind.PRODUCER
-
-    # Verify events
-    assert len(spans[0].events) == 1
-
-    # Verify start event
-    start_event = spans[0].events[0]
-    assert start_event.name == "publish start"
-    assert "timestamp" in start_event.attributes
+    flow_control_span, batching_span = spans
 
     # Verify flow control span.
-    flow_control_span = spans[1]
     assert flow_control_span.name == "publisher flow control"
     assert flow_control_span.kind == trace.SpanKind.INTERNAL
 
     # Verify that flow control span is a child of the publish create span.
-    assert flow_control_span._parent[1] == spans[0]._context[1]
+    # assert flow_control_span._parent[1] == spans[0]._context[1]
 
     # Verify Publisher Batching Span
-    publisher_batching_span = spans[2]
-    assert publisher_batching_span.name == "publisher batching"
-    assert publisher_batching_span.kind == trace.SpanKind.INTERNAL
+    assert batching_span.name == "publisher batching"
+    assert batching_span.kind == trace.SpanKind.INTERNAL
     # Verify Publisher Batching Span is child of Publish Create Span
-    assert publisher_batching_span._parent[1] == spans[0]._context[1]
+    # assert batching_span._parent[1] == spans[0]._context[1]
 
 
 def test_publish_error_exceeding_flow_control_limits(creds):
@@ -405,49 +392,58 @@ def test_publish_error_exceeding_flow_control_limits(creds):
 
 
 def test_publish_otel_flow_control_exception(creds, provider):
-    publisher_options = types.PublisherOptions(
-        flow_control=types.PublishFlowControl(
-            message_limit=10,
-            byte_limit=150,
-            limit_exceeded_behavior=types.LimitExceededBehavior.ERROR,
+    client = publisher.Client(
+        credentials=creds,
+        publisher_options=types.PublisherOptions(
+            enable_open_telemetry_tracing=True,
         ),
-        enable_open_telemetry_tracing=True,
     )
-    client = publisher.Client(credentials=creds, publisher_options=publisher_options)
 
-    mock_batch = mock.Mock(spec=client._batch_class)
-    topic = "topic/path"
-    client._set_batch(topic, mock_batch)
-
-    # Trace Provider setup.
+    # Setup Open Telemetry tracing
     memory_exporter = InMemorySpanExporter()
     processor = SimpleSpanProcessor(memory_exporter)
     provider.add_span_processor(processor)
     trace.set_tracer_provider(provider)
 
-    future1 = client.publish(topic, b"a" * 100)
-    future2 = client.publish(topic, b"b" * 100)
+    client._flow_controller = mock.Mock(spec=publisher.flow_controller.FlowController)
+    client._flow_controller.add = mock.Mock(side_effect=exceptions.FlowControlLimitError)
 
-    future1.result()  # no error, still within flow control limits
-    with pytest.raises(exceptions.FlowControlLimitError):
-        future2.result()
+    TOPIC = "projects/projectID/topics/topicID"
+    client.publish(TOPIC, b"message")
 
     spans = memory_exporter.get_finished_spans()
-    # Span 1 = Publish Create Span of first publish
-    # Span 2 = Publisher Flow Control Span of first publish
-    # Span 3 = Publisher Batching Span of first publish
-    # Span 4 = Publish Create Span of second publish
-    # Span 5 = Publisher Flow Control Span of second publish
-    assert len(spans) == 5
 
-    failed_flow_control_span = spans[4]
-    assert failed_flow_control_span.name == "publisher flow control"
-    assert failed_flow_control_span.kind == trace.SpanKind.INTERNAL
-    assert failed_flow_control_span._parent[1] == spans[3]._context[1]
-    assert failed_flow_control_span.status.status_code == trace.StatusCode.ERROR
+    # Span 1: Publisher Flow Control Span(closed after exception)
+    # Span 2: Publisher Create Span(closed after exception)
+    assert len(spans) == 2
 
-    assert len(failed_flow_control_span.events) == 1
-    assert failed_flow_control_span.events[0].name == "exception"
+    flow_control_span, create_span = spans
+
+    assert create_span.name == f"{TOPIC} create"
+    assert create_span.status.status_code == trace.StatusCode.ERROR
+    attributes = create_span.attributes
+    assert attributes["messaging.system"] == "gcp_pubsub"
+    assert attributes["messaging.destination.name"] == TOPIC
+    assert attributes["code.function"] == "google.cloud.pubsub.PublisherClient.publish"
+    assert attributes["messaging.gcp_pubsub.message.ordering_key"] == ""
+    assert attributes["messaging.operation"] == "create"
+    assert attributes["gcp.project_id"] == "projectID"
+    assert "messaging.message.envelope.size" in attributes
+    assert create_span.kind == trace.SpanKind.PRODUCER
+
+    assert len(create_span.events) == 2
+    # Verify start event
+    start_event = create_span.events[0]
+    assert start_event.name == "publish start"
+    assert "timestamp" in start_event.attributes
+    assert create_span.events[1].name == "exception"
+
+    assert flow_control_span.name == "publisher flow control"
+    assert flow_control_span.status.status_code == trace.StatusCode.ERROR
+    assert flow_control_span.kind == trace.SpanKind.INTERNAL
+    assert len(flow_control_span.events) == 1
+    assert flow_control_span.events[0].name == "exception"
+    assert flow_control_span._parent[1] == create_span._context[1]
 
 
 def test_publish_data_not_bytestring_error(creds):
@@ -561,7 +557,14 @@ def test_publish_attrs_bytestring(creds):
 
     # The attributes should have been sent as text.
     batch.publish.assert_called_once_with(
-        gapic_types.PubsubMessage(data=b"foo", attributes={"bar": "baz"})
+        # gapic_types.PubsubMessage(data=b"foo", attributes={"bar": "baz"})
+        MessageWrapper(
+            message=gapic_types.PubsubMessage(
+                data=b"foo",
+                attributes={"bar": "baz"},
+            ),
+            create_span=None,
+        )
     )
 
 
@@ -601,8 +604,12 @@ def test_publish_new_batch_needed(creds):
         commit_timeout=gapic_v1.method.DEFAULT,
     )
     message_pb = gapic_types.PubsubMessage(data=b"foo", attributes={"bar": "baz"})
-    batch1.publish.assert_called_once_with(message_pb)
-    batch2.publish.assert_called_once_with(message_pb)
+    wrapper = MessageWrapper(
+        message=message_pb,
+        create_span=None,
+    )
+    batch1.publish.assert_called_once_with(wrapper)
+    batch2.publish.assert_called_once_with(wrapper)
 
 
 def test_publish_attrs_type_error(creds):
@@ -625,9 +632,9 @@ def test_publish_custom_retry_overrides_configured_retry(creds):
     client.publish(topic, b"hello!", retry=mock.sentinel.custom_retry)
 
     fake_sequencer.publish.assert_called_once_with(
-        mock.ANY, retry=mock.sentinel.custom_retry, timeout=mock.ANY
+        message=mock.ANY, retry=mock.sentinel.custom_retry, timeout=mock.ANY
     )
-    message = fake_sequencer.publish.call_args.args[0]
+    message = fake_sequencer.publish.call_args.kwargs["message"].get_message()
     assert message.data == b"hello!"
 
 
@@ -644,9 +651,9 @@ def test_publish_custom_timeout_overrides_configured_timeout(creds):
     client.publish(topic, b"hello!", timeout=mock.sentinel.custom_timeout)
 
     fake_sequencer.publish.assert_called_once_with(
-        mock.ANY, retry=mock.ANY, timeout=mock.sentinel.custom_timeout
+        message=mock.ANY, retry=mock.ANY, timeout=mock.sentinel.custom_timeout
     )
-    message = fake_sequencer.publish.call_args.args[0]
+    message = fake_sequencer.publish.call_args.kwargs["message"].get_message()
     assert message.data == b"hello!"
 
 
@@ -806,11 +813,21 @@ def test_publish_with_ordering_key(creds):
     # Check mock.
     batch.publish.assert_has_calls(
         [
-            mock.call(gapic_types.PubsubMessage(data=b"spam", ordering_key="k1")),
             mock.call(
-                gapic_types.PubsubMessage(
-                    data=b"foo", attributes={"bar": "baz"}, ordering_key="k1"
+                MessageWrapper(
+                    message=gapic_types.PubsubMessage(data=b"spam", ordering_key="k1"),
+                    create_span=None,
                 )
+            ),
+            mock.call(
+                MessageWrapper(
+                    message=gapic_types.PubsubMessage(
+                        data=b"foo",
+                        attributes={"bar": "baz"},
+                        ordering_key="k1",
+                    ),
+                    create_span=None,
+                ),
             ),
         ]
     )
