@@ -277,7 +277,7 @@ class Batch(base.Batch):
                 tracer = trace.get_tracer("com.google.cloud.pubsub.v1")
                 links = []
                 for wrapper in self._message_wrappers:
-                    span = wrapper.get_span()
+                    span = wrapper.create_span
                     if span.get_span_context().trace_flags.sampled:
                         links.append(trace.Link(span.get_span_context()))
                 with tracer.start_as_current_span(
@@ -295,18 +295,18 @@ class Batch(base.Batch):
                 ) as publish_rpc_span:
                     ctx = publish_rpc_span.get_span_context()
                     for wrapper in self._message_wrappers:
-                        wrapper.get_span().add_link(ctx)
+                        wrapper.create_span.add_link(ctx)
             # Performs retries for errors defined by the retry configuration.
             response = self._client._gapic_publish(
                 topic=self._topic,
-                messages=[wrapper.get_message() for wrapper in self._message_wrappers],
+                messages=[wrapper.message for wrapper in self._message_wrappers],
                 retry=self._commit_retry,
                 timeout=self._commit_timeout,
             )
             if self._client._open_telemetry_enabled:
                 publish_rpc_span.end()
                 for wrapper in self._message_wrappers:
-                    wrapper.get_span().end()
+                    wrapper.create_span.end()
         except google.api_core.exceptions.GoogleAPIError as exc:
             # We failed to publish, even after retries, so set the exception on
             # all futures and exit.
@@ -321,7 +321,7 @@ class Batch(base.Batch):
                 )
                 publish_rpc_span.end()
                 for wrapper in self._message_wrappers:
-                    span = wrapper.get_span()
+                    span = wrapper.create_span
                     span.record_exception(exception=exc)
                     span.set_status(
                         trace.Status(status_code=trace.StatusCode.ERROR),
@@ -398,13 +398,13 @@ class Batch(base.Batch):
         """
 
         # Coerce the type, just in case.
-        if not isinstance(message_wrapper.get_message(), gapic_types.PubsubMessage):
+        if not isinstance(message_wrapper.message, gapic_types.PubsubMessage):
             # For performance reasons, the message should be constructed by directly
             # using the raw protobuf class, and only then wrapping it into the
             # higher-level PubsubMessage class.
-            vanilla_pb = _raw_proto_pubbsub_message(**message_wrapper.get_message())
-            message_wrapper.set_message(
-                vanilla_pb.gapic_types.PubsubMessage.wrap(vanilla_pb)
+            vanilla_pb = _raw_proto_pubbsub_message(**message_wrapper.message)
+            message_wrapper.message = vanilla_pb.gapic_types.PubsubMessage.wrap(
+                vanilla_pb
             )
 
         future = None
@@ -418,7 +418,7 @@ class Batch(base.Batch):
                 return None
 
             size_increase = gapic_types.PublishRequest(
-                messages=[message_wrapper.get_message()]
+                messages=[message_wrapper.message]
             )._pb.ByteSize()
 
             if (self._base_request_size + size_increase) > _SERVER_PUBLISH_MAX_BYTES:

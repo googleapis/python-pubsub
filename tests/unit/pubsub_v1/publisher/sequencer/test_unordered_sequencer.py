@@ -27,10 +27,13 @@ from google.cloud.pubsub_v1 import types
 from google.cloud.pubsub_v1.publisher._batch import base
 from google.cloud.pubsub_v1.publisher._sequencer import unordered_sequencer
 from google.pubsub_v1 import types as gapic_types
+from google.cloud.pubsub_v1.publisher.message_wrapper import MessageWrapper
 
 
 def create_message():
-    return gapic_types.PubsubMessage(data=b"foo", attributes={"bar": "baz"})
+    return MessageWrapper(
+        gapic_types.PubsubMessage(data=b"foo", attributes={"bar": "baz"}), None
+    )
 
 
 def create_client():

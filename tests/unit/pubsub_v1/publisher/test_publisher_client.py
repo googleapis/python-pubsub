@@ -43,9 +43,6 @@ from google.pubsub_v1 import types as gapic_types
 from google.pubsub_v1.services.publisher import client as publisher_client
 from google.pubsub_v1.services.publisher.transports.grpc import PublisherGrpcTransport
 
-
-from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
-from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from opentelemetry import trace
 
 
@@ -219,7 +216,7 @@ def test_message_ordering_enabled(creds):
     assert client._enable_message_ordering
 
 
-def test_publish_otel_batching_exception(creds, provider):
+def test_publish_otel_batching_exception(creds, span_exporter):
     client = publisher.Client(
         credentials=creds,
         publisher_options=types.PublisherOptions(
@@ -228,10 +225,10 @@ def test_publish_otel_batching_exception(creds, provider):
     )
 
     # Setup Open Telemetry tracing
-    memory_exporter = InMemorySpanExporter()
-    processor = SimpleSpanProcessor(memory_exporter)
-    provider.add_span_processor(processor)
-    trace.set_tracer_provider(provider)
+    # memory_exporter = InMemorySpanExporter()
+    # processor = SimpleSpanProcessor(memory_exporter)
+    # provider.add_span_processor(processor)
+    # trace.set_tracer_provider(provider)
 
     # Throw an exception when sequencer.publish() is called
     sequencer = mock.Mock(spec=ordered_sequencer.OrderedSequencer)
@@ -242,7 +239,7 @@ def test_publish_otel_batching_exception(creds, provider):
     with pytest.raises(RuntimeError):
         client.publish(TOPIC, b"message")
 
-    spans = memory_exporter.get_finished_spans()
+    spans = span_exporter.get_finished_spans()
 
     # Span 1: Publisher Flow Control span
     # Span 2: Publisher Batching span(ended after exception)
@@ -306,7 +303,7 @@ def test_publish(creds):
     )
 
 
-def test_publish_otel_context_propagation(creds, provider):
+def test_publish_otel_context_propagation(creds):
     TOPIC = "projects/projectID/topics/topicID"
     client = publisher.Client(
         credentials=creds,
@@ -314,12 +311,6 @@ def test_publish_otel_context_propagation(creds, provider):
             enable_open_telemetry_tracing=True,
         ),
     )
-
-    # Set up Open Telemetry tracing.
-    memory_exporter = InMemorySpanExporter()
-    processor = SimpleSpanProcessor(memory_exporter)
-    provider.add_span_processor(processor)
-    trace.set_tracer_provider(provider)
 
     flow_controller_add_mock = mock.Mock(
         spec=publisher.flow_controller.FlowController.add
@@ -333,7 +324,7 @@ def test_publish_otel_context_propagation(creds, provider):
     assert "googclient_traceparent" in args[0].attributes
 
 
-def test_publish_otel(creds, provider):
+def test_publish_otel(creds, span_exporter):
     TOPIC = "projects/projectID/topics/topicID"
     client = publisher.Client(
         credentials=creds,
@@ -342,14 +333,15 @@ def test_publish_otel(creds, provider):
         ),
     )
 
-    memory_exporter = InMemorySpanExporter()
-    processor = SimpleSpanProcessor(memory_exporter)
-    provider.add_span_processor(processor)
-    trace.set_tracer_provider(provider)
+    # # Setup Open Telemetry tracing
+    # memory_exporter = InMemorySpanExporter()
+    # processor = SimpleSpanProcessor(memory_exporter)
+    # provider.add_span_processor(processor)
+    # trace.set_tracer_provider(provider)
 
     client.publish(TOPIC, b"message")
 
-    spans = memory_exporter.get_finished_spans()
+    spans = span_exporter.get_finished_spans()
 
     # Publish Create Span is still active, hence note returned
     # by the exporter.
@@ -395,7 +387,7 @@ def test_publish_error_exceeding_flow_control_limits(creds):
         future2.result()
 
 
-def test_publish_otel_flow_control_exception(creds, provider):
+def test_publish_otel_flow_control_exception(creds, span_exporter):
     client = publisher.Client(
         credentials=creds,
         publisher_options=types.PublisherOptions(
@@ -404,10 +396,10 @@ def test_publish_otel_flow_control_exception(creds, provider):
     )
 
     # Setup Open Telemetry tracing
-    memory_exporter = InMemorySpanExporter()
-    processor = SimpleSpanProcessor(memory_exporter)
-    provider.add_span_processor(processor)
-    trace.set_tracer_provider(provider)
+    # memory_exporter = InMemorySpanExporter()
+    # processor = SimpleSpanProcessor(memory_exporter)
+    # provider.add_span_processor(processor)
+    # trace.set_tracer_provider(provider)
 
     client._flow_controller = mock.Mock(spec=publisher.flow_controller.FlowController)
     client._flow_controller.add = mock.Mock(
@@ -417,7 +409,7 @@ def test_publish_otel_flow_control_exception(creds, provider):
     TOPIC = "projects/projectID/topics/topicID"
     client.publish(TOPIC, b"message")
 
-    spans = memory_exporter.get_finished_spans()
+    spans = span_exporter.get_finished_spans()
 
     # Span 1: Publisher Flow Control Span(closed after exception)
     # Span 2: Publisher Create Span(closed after exception)
@@ -640,7 +632,7 @@ def test_publish_custom_retry_overrides_configured_retry(creds):
     fake_sequencer.publish.assert_called_once_with(
         message=mock.ANY, retry=mock.sentinel.custom_retry, timeout=mock.ANY
     )
-    message = fake_sequencer.publish.call_args.kwargs["message"].get_message()
+    message = fake_sequencer.publish.call_args.kwargs["message"].message
     assert message.data == b"hello!"
 
 
@@ -659,7 +651,7 @@ def test_publish_custom_timeout_overrides_configured_timeout(creds):
     fake_sequencer.publish.assert_called_once_with(
         message=mock.ANY, retry=mock.ANY, timeout=mock.sentinel.custom_timeout
     )
-    message = fake_sequencer.publish.call_args.kwargs["message"].get_message()
+    message = fake_sequencer.publish.call_args.kwargs["message"].message
     assert message.data == b"hello!"
 
 

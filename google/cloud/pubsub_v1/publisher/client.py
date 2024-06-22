@@ -501,9 +501,12 @@ class Client(publisher_client.PublisherClient):
                 # Delegate the publishing to the sequencer.
                 sequencer = self._get_or_create_sequencer(topic, ordering_key)
 
+                create_span = None
+                if self._open_telemetry_enabled:
+                    create_span = publish_create_span
                 message_wrapper = MessageWrapper(
                     message=message,
-                    create_span=publish_create_span,
+                    create_span=create_span,
                 )
                 future = sequencer.publish(
                     message=message_wrapper,
