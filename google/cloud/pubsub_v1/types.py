@@ -131,6 +131,19 @@ class PublishFlowControl(NamedTuple):
     """The action to take when publish flow control limits are exceeded."""
 
 
+class SubscriberOptions(NamedTuple):
+    """
+    Options for the subscriber client.
+
+    Attributes:
+        enable_open_telemetry_tracing (bool):
+            Whether to enable OpenTelemetry tracing. Defaults to false.
+    """
+
+    enable_open_telemetry_tracing: bool = False
+    """Whether to enable OpenTelemetry tracing."""
+
+
 # Define the default publisher options.
 #
 # This class is used when creating a publisher client to pass in options
@@ -151,6 +164,8 @@ class PublisherOptions(NamedTuple):
         timeout (OptionalTimeout):
             Timeout settings for message publishing by the client. It should be
             compatible with :class:`~.pubsub_v1.types.TimeoutType`.
+        enable_open_telemetry_tracing (bool):
+            Whether to enable OpenTelemetry tracing. Defaults to false.
     """
 
     enable_message_ordering: bool = False

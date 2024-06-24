@@ -135,6 +135,17 @@ def test_init_emulator(monkeypatch):
     assert channel.target().decode("utf8") == _EXPECTED_TARGET
 
 
+def test_otel_subscriber_option(creds):
+    client = subscriber.Client(
+        credentials=creds,
+        subscriber_options=types.SubscriberOptions(enable_open_telemetry_tracing=True),
+    )
+    assert client._open_telemetry_enabled is True
+
+    client = subscriber.Client(credentials=creds)
+    assert client._open_telemetry_enabled is False
+
+
 def test_class_method_factory():
     patch = mock.patch(
         "google.oauth2.service_account.Credentials.from_service_account_file"
