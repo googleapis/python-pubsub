@@ -30,7 +30,7 @@ def creds():
     yield google.auth.credentials.AnonymousCredentials()
 
 
-@pytest.fixture(scope="function", autouse=True)
+@pytest.fixture(scope="session", autouse=True)
 def set_trace_provider():
     provider = TracerProvider()
     trace.set_tracer_provider(provider)

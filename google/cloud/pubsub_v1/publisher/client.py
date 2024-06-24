@@ -27,6 +27,7 @@ from datetime import datetime
 from opentelemetry import trace
 from opentelemetry.trace.propagation import set_span_in_context
 from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
+from opentelemetry.propagators.textmap import Setter
 
 from google.api_core import gapic_v1
 from google.auth.credentials import AnonymousCredentials  # type: ignore
@@ -385,7 +386,7 @@ class Client(publisher_client.PublisherClient):
         )
         message = gapic_types.PubsubMessage.wrap(vanilla_pb)
 
-        class OTelContextSetter:
+        class OTelContextSetter(Setter):
             """
             Used by Open Telemetry for context propagation.
             """

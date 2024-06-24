@@ -17,6 +17,7 @@ from __future__ import absolute_import
 import logging
 import threading
 import time
+from datetime import datetime
 import typing
 from typing import Any, Callable, List, Optional, Sequence
 
@@ -278,7 +279,7 @@ class Batch(base.Batch):
                 links = []
                 for wrapper in self._message_wrappers:
                     span = wrapper.create_span
-                    if span.get_span_context().trace_flags.sampled:
+                    if span and span.is_recording():
                         links.append(trace.Link(span.get_span_context()))
                 with tracer.start_as_current_span(
                     name=f"{self._topic} publish",
@@ -292,10 +293,13 @@ class Batch(base.Batch):
                     },
                     links=links if len(links) > 0 else None,
                     kind=trace.SpanKind.CLIENT,
+                    end_on_exit=False,
                 ) as publish_rpc_span:
                     ctx = publish_rpc_span.get_span_context()
                     for wrapper in self._message_wrappers:
-                        wrapper.create_span.add_link(ctx)
+                        span = wrapper.create_span
+                        if span and span.is_recording():
+                            span.add_link(ctx)
             # Performs retries for errors defined by the retry configuration.
             response = self._client._gapic_publish(
                 topic=self._topic,
@@ -306,7 +310,15 @@ class Batch(base.Batch):
             if self._client._open_telemetry_enabled:
                 publish_rpc_span.end()
                 for wrapper in self._message_wrappers:
-                    wrapper.create_span.end()
+                    span = wrapper.create_span
+                    if span:
+                        span.add_event(
+                            name="publish end",
+                            attributes={
+                                "timestamp": str(datetime.now()),
+                            },
+                        )
+                        span.end()
         except google.api_core.exceptions.GoogleAPIError as exc:
             # We failed to publish, even after retries, so set the exception on
             # all futures and exit.
@@ -322,11 +334,12 @@ class Batch(base.Batch):
                 publish_rpc_span.end()
                 for wrapper in self._message_wrappers:
                     span = wrapper.create_span
-                    span.record_exception(exception=exc)
-                    span.set_status(
-                        trace.Status(status_code=trace.StatusCode.ERROR),
-                    )
-                    span.end()
+                    if span:
+                        span.record_exception(exception=exc)
+                        span.set_status(
+                            trace.Status(status_code=trace.StatusCode.ERROR),
+                        )
+                        span.end()
 
             batch_transport_succeeded = False
             if self._batch_done_callback is not None:
@@ -398,7 +411,9 @@ class Batch(base.Batch):
         """
 
         # Coerce the type, just in case.
-        if not isinstance(message_wrapper.message, gapic_types.PubsubMessage):
+        if not isinstance(
+            message_wrapper.message, gapic_types.PubsubMessage
+        ):  # pragma: NO COVER
             # For performance reasons, the message should be constructed by directly
             # using the raw protobuf class, and only then wrapping it into the
             # higher-level PubsubMessage class.

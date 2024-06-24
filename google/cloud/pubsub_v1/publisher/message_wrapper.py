@@ -2,6 +2,8 @@ from google.pubsub_v1 import types as gapic_types
 from opentelemetry import trace
 from dataclasses import dataclass, field
 
+from typing import Optional
+
 
 @dataclass
 class MessageWrapper:
@@ -11,4 +13,4 @@ class MessageWrapper:
     """
 
     message: gapic_types.PubsubMessage
-    create_span: trace.Span = field(default=None)
+    create_span: Optional[trace.Span] = field(default=None)
