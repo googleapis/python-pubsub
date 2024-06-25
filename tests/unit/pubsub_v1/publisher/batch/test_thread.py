@@ -804,6 +804,13 @@ def test_commit_otel_publish_rpc_span(span_exporter):
     assert create_span1.end_time is not None
     assert create_span2.end_time is not None
 
+    # Verify message_ids returned from gapic publish are added as attributes
+    # to the publisher create spans of the messages.
+    assert "messaging.message.id" in create_span1.attributes
+    assert create_span1.attributes["messaging.message.id"] == "a"
+    assert "messaging.message.id" in create_span2.attributes
+    assert create_span2.attributes["messaging.message.id"] == "b"
+
     # Verify publish end event added to the span
     assert len(create_span1.events) == 1
     assert len(create_span2.events) == 1

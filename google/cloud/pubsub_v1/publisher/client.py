@@ -409,7 +409,7 @@ class Client(publisher_client.PublisherClient):
                     "messaging.gcp_pubsub.message.ordering_key": ordering_key,
                     "messaging.operation": "create",
                     "gcp.project_id": topic.split("/")[1],
-                    "messaging.message.envelope.size": sys.getsizeof(message),
+                    "messaging.message.body.size": sys.getsizeof(message.data),
                 },
                 kind=trace.SpanKind.PRODUCER,
                 end_on_exit=False,

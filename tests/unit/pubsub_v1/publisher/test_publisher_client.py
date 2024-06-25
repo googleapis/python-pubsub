@@ -395,12 +395,6 @@ def test_publish_otel_flow_control_exception(creds, span_exporter):
         ),
     )
 
-    # Setup Open Telemetry tracing
-    # memory_exporter = InMemorySpanExporter()
-    # processor = SimpleSpanProcessor(memory_exporter)
-    # provider.add_span_processor(processor)
-    # trace.set_tracer_provider(provider)
-
     client._flow_controller = mock.Mock(spec=publisher.flow_controller.FlowController)
     client._flow_controller.add = mock.Mock(
         side_effect=exceptions.FlowControlLimitError
@@ -426,7 +420,7 @@ def test_publish_otel_flow_control_exception(creds, span_exporter):
     assert attributes["messaging.gcp_pubsub.message.ordering_key"] == ""
     assert attributes["messaging.operation"] == "create"
     assert attributes["gcp.project_id"] == "projectID"
-    assert "messaging.message.envelope.size" in attributes
+    assert "messaging.message.body.size" in attributes
     assert create_span.kind == trace.SpanKind.PRODUCER
 
     assert len(create_span.events) == 2

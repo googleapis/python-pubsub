@@ -309,7 +309,9 @@ class Batch(base.Batch):
             )
             if self._client._open_telemetry_enabled:
                 publish_rpc_span.end()
-                for wrapper in self._message_wrappers:
+                for message_id, wrapper in zip(
+                    response.message_ids, self._message_wrappers
+                ):
                     span = wrapper.create_span
                     if span:
                         span.add_event(
@@ -318,6 +320,7 @@ class Batch(base.Batch):
                                 "timestamp": str(datetime.now()),
                             },
                         )
+                        span.set_attribute(key="messaging.message.id", value=message_id)
                         span.end()
         except google.api_core.exceptions.GoogleAPIError as exc:
             # We failed to publish, even after retries, so set the exception on
