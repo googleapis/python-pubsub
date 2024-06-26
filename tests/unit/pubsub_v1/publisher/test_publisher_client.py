@@ -224,12 +224,6 @@ def test_publish_otel_batching_exception(creds, span_exporter):
         ),
     )
 
-    # Setup Open Telemetry tracing
-    # memory_exporter = InMemorySpanExporter()
-    # processor = SimpleSpanProcessor(memory_exporter)
-    # provider.add_span_processor(processor)
-    # trace.set_tracer_provider(provider)
-
     # Throw an exception when sequencer.publish() is called
     sequencer = mock.Mock(spec=ordered_sequencer.OrderedSequencer)
     sequencer.publish = mock.Mock(side_effect=RuntimeError("some error"))
@@ -332,12 +326,6 @@ def test_publish_otel(creds, span_exporter):
             enable_open_telemetry_tracing=True,
         ),
     )
-
-    # # Setup Open Telemetry tracing
-    # memory_exporter = InMemorySpanExporter()
-    # processor = SimpleSpanProcessor(memory_exporter)
-    # provider.add_span_processor(processor)
-    # trace.set_tracer_provider(provider)
 
     client.publish(TOPIC, b"message")
 

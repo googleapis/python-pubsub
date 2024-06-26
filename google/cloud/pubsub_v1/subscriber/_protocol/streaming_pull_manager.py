@@ -22,8 +22,13 @@ import threading
 import typing
 from typing import Any, Dict, Callable, Iterable, List, Optional, Set, Tuple
 import uuid
+import sys
 
 import grpc  # type: ignore
+
+from opentelemetry import trace
+from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
+from opentelemetry.trace.propagation import set_span_in_context
 
 from google.api_core import bidi
 from google.api_core import exceptions
@@ -34,6 +39,7 @@ from google.cloud.pubsub_v1.subscriber._protocol import histogram
 from google.cloud.pubsub_v1.subscriber._protocol import leaser
 from google.cloud.pubsub_v1.subscriber._protocol import messages_on_hold
 from google.cloud.pubsub_v1.subscriber._protocol import requests
+from google.cloud.pubsub_v1.opentelemetry.context_propagation import OTelContextGetter
 from google.cloud.pubsub_v1.subscriber.exceptions import (
     AcknowledgeError,
     AcknowledgeStatus,
@@ -90,6 +96,10 @@ _EXACTLY_ONCE_DELIVERY_TEMPORARY_RETRY_ERRORS = {
     code_pb2.INTERNAL,
     code_pb2.UNAVAILABLE,
 }
+
+_OPEN_TELEMETRY_TRACER_NAME = "com.google.cloud.pubsub.v1"
+"""Open Telemetry Instrumenting module name."""
+_OPEN_TELEMETRY_MESSAGING_SYSTEM = "gcp_pubsub"
 
 
 def _wrap_as_exception(maybe_exception: Any) -> BaseException:
@@ -1075,6 +1085,35 @@ class StreamingPullManager(object):
         # protobuf message to significantly gain on attribute access performance.
         received_messages = response._pb.received_messages
 
+        if self._client._open_telemetry_enabled:
+            tracer = trace.get_tracer(_OPEN_TELEMETRY_TRACER_NAME)
+            for message in response.received_messages:
+                parent_span = TraceContextTextMapPropagator().extract(
+                    carrier=message.message,
+                    getter=OTelContextGetter(),
+                )
+                with tracer.start_as_current_span(
+                    name=f"{self._subscription} subscribe",
+                    kind=trace.SpanKind.CONSUMER,
+                    context=set_span_in_context(parent_span) if parent_span else None,
+                    attributes={
+                        "messaging.system": _OPEN_TELEMETRY_MESSAGING_SYSTEM,
+                        "messaging.destination.name": self._subscription,
+                        "gcp.project_id": self._subscription.split("/")[1],
+                        "messaging.message.id": message.message.message_id,
+                        "messaging.message.body.size": sys.getsizeof(
+                            message.message.data
+                        ),
+                        "messaging.gcp_pubsub.message.ack_id": message.ack_id,
+                        "messaging.gcp_pubsub.message.ordering_key": message.message.ordering_key,
+                        "messaging.gcp_pubsub.message.exactly_once_delivery": response.subscription_properties.exactly_once_delivery_enabled,
+                        "code.function": "_on_response",
+                        "messaging.gcp_pubsub.message.delivery_attempt": message.delivery_attempt,
+                    },
+                    end_on_exit=False,
+                ) as subscribe_span:
+                    pass
+
         _LOGGER.debug(
             "Processing %s received message(s), currently on hold %s (bytes %s).",
             len(received_messages),
@@ -1098,10 +1137,14 @@ class StreamingPullManager(object):
         # Immediately (i.e. without waiting for the auto lease management)
         # modack the messages we received, as this tells the server that we've
         # received them.
+        if self._client._open_telemetry_enabled:
+            subscribe_span.add_event(name="modack start")
         ack_id_gen = (message.ack_id for message in received_messages)
         expired_ack_ids = self._send_lease_modacks(
             ack_id_gen, self.ack_deadline, warn_on_invalid=False
         )
+        if self._client._open_telemetry_enabled:
+            subscribe_span.add_event(name="modack end")
 
         with self._pause_resume_lock:
             assert self._scheduler is not None
