@@ -28,7 +28,6 @@ import grpc  # type: ignore
 
 from opentelemetry import trace
 from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
-from opentelemetry.trace.propagation import set_span_in_context
 
 from google.api_core import bidi
 from google.api_core import exceptions
@@ -1087,28 +1086,28 @@ class StreamingPullManager(object):
 
         if self._client._open_telemetry_enabled:
             tracer = trace.get_tracer(_OPEN_TELEMETRY_TRACER_NAME)
-            for message in response.received_messages:
-                parent_span = TraceContextTextMapPropagator().extract(
-                    carrier=message.message,
+            for received_message in response.received_messages:
+                parent_span_context = TraceContextTextMapPropagator().extract(
+                    carrier=received_message.message,
                     getter=OTelContextGetter(),
                 )
                 with tracer.start_as_current_span(
                     name=f"{self._subscription} subscribe",
                     kind=trace.SpanKind.CONSUMER,
-                    context=set_span_in_context(parent_span) if parent_span else None,
+                    context=parent_span_context if parent_span_context else None,
                     attributes={
                         "messaging.system": _OPEN_TELEMETRY_MESSAGING_SYSTEM,
                         "messaging.destination.name": self._subscription,
                         "gcp.project_id": self._subscription.split("/")[1],
-                        "messaging.message.id": message.message.message_id,
+                        "messaging.message.id": received_message.message.message_id,
                         "messaging.message.body.size": sys.getsizeof(
-                            message.message.data
+                            received_message.message.data
                         ),
-                        "messaging.gcp_pubsub.message.ack_id": message.ack_id,
-                        "messaging.gcp_pubsub.message.ordering_key": message.message.ordering_key,
+                        "messaging.gcp_pubsub.message.ack_id": received_message.ack_id,
+                        "messaging.gcp_pubsub.message.ordering_key": received_message.message.ordering_key,
                         "messaging.gcp_pubsub.message.exactly_once_delivery": response.subscription_properties.exactly_once_delivery_enabled,
                         "code.function": "_on_response",
-                        "messaging.gcp_pubsub.message.delivery_attempt": message.delivery_attempt,
+                        "messaging.gcp_pubsub.message.delivery_attempt": received_message.delivery_attempt,
                     },
                     end_on_exit=False,
                 ) as subscribe_span:
