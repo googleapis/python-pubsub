@@ -37,7 +37,9 @@ from google.cloud.pubsub_v1 import types
 
 from google.cloud.pubsub_v1.publisher import exceptions
 from google.cloud.pubsub_v1.publisher._sequencer import ordered_sequencer
-from google.cloud.pubsub_v1.publisher.message_wrapper import MessageWrapper
+from google.cloud.pubsub_v1.opentelemetry.publish_message_wrapper import (
+    PublishMessageWrapper,
+)
 
 from google.pubsub_v1 import types as gapic_types
 from google.pubsub_v1.services.publisher import client as publisher_client
@@ -280,17 +282,17 @@ def test_publish(creds):
     batch.publish.assert_has_calls(
         [
             mock.call(
-                MessageWrapper(
+                PublishMessageWrapper(
                     message=gapic_types.PubsubMessage(data=b"spam"),
-                    create_span=None,
+                    span=None,
                 )
             ),
             mock.call(
-                MessageWrapper(
+                PublishMessageWrapper(
                     message=gapic_types.PubsubMessage(
                         data=b"foo", attributes={"bar": "baz"}
                     ),
-                    create_span=None,
+                    span=None,
                 )
             ),
         ]
@@ -538,12 +540,12 @@ def test_publish_attrs_bytestring(creds):
     # The attributes should have been sent as text.
     batch.publish.assert_called_once_with(
         # gapic_types.PubsubMessage(data=b"foo", attributes={"bar": "baz"})
-        MessageWrapper(
+        PublishMessageWrapper(
             message=gapic_types.PubsubMessage(
                 data=b"foo",
                 attributes={"bar": "baz"},
             ),
-            create_span=None,
+            span=None,
         )
     )
 
@@ -584,9 +586,9 @@ def test_publish_new_batch_needed(creds):
         commit_timeout=gapic_v1.method.DEFAULT,
     )
     message_pb = gapic_types.PubsubMessage(data=b"foo", attributes={"bar": "baz"})
-    wrapper = MessageWrapper(
+    wrapper = PublishMessageWrapper(
         message=message_pb,
-        create_span=None,
+        span=None,
     )
     batch1.publish.assert_called_once_with(wrapper)
     batch2.publish.assert_called_once_with(wrapper)
@@ -794,19 +796,19 @@ def test_publish_with_ordering_key(creds):
     batch.publish.assert_has_calls(
         [
             mock.call(
-                MessageWrapper(
+                PublishMessageWrapper(
                     message=gapic_types.PubsubMessage(data=b"spam", ordering_key="k1"),
-                    create_span=None,
+                    span=None,
                 )
             ),
             mock.call(
-                MessageWrapper(
+                PublishMessageWrapper(
                     message=gapic_types.PubsubMessage(
                         data=b"foo",
                         attributes={"bar": "baz"},
                         ordering_key="k1",
                     ),
-                    create_span=None,
+                    span=None,
                 ),
             ),
         ]

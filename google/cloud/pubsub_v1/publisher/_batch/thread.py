@@ -27,7 +27,9 @@ import google.api_core.exceptions
 from google.api_core import gapic_v1
 from google.cloud.pubsub_v1.publisher import exceptions
 from google.cloud.pubsub_v1.publisher import futures
-from google.cloud.pubsub_v1.publisher.message_wrapper import MessageWrapper
+from google.cloud.pubsub_v1.opentelemetry.publish_message_wrapper import (
+    PublishMessageWrapper,
+)
 from google.cloud.pubsub_v1.publisher._batch import base
 from google.pubsub_v1 import types as gapic_types
 
@@ -112,7 +114,7 @@ class Batch(base.Batch):
         # status changed from ACCEPTING_MESSAGES to any other
         # in order to avoid race conditions
         self._futures: List[futures.Future] = []
-        self._message_wrappers: List[MessageWrapper] = []
+        self._message_wrappers: List[PublishMessageWrapper] = []
         self._status = base.BatchStatus.ACCEPTING_MESSAGES
 
         # The initial size is not zero, we need to account for the size overhead
@@ -138,7 +140,7 @@ class Batch(base.Batch):
         return self._client
 
     @property
-    def message_wrappers(self) -> Sequence[MessageWrapper]:
+    def message_wrappers(self) -> Sequence[PublishMessageWrapper]:
         """The messages currently in the batch."""
         return self._message_wrappers
 
@@ -278,7 +280,7 @@ class Batch(base.Batch):
                 tracer = trace.get_tracer("com.google.cloud.pubsub.v1")
                 links = []
                 for wrapper in self._message_wrappers:
-                    span = wrapper.create_span
+                    span = wrapper.span
                     if span and span.is_recording():
                         links.append(trace.Link(span.get_span_context()))
                 with tracer.start_as_current_span(
@@ -297,7 +299,7 @@ class Batch(base.Batch):
                 ) as publish_rpc_span:
                     ctx = publish_rpc_span.get_span_context()
                     for wrapper in self._message_wrappers:
-                        span = wrapper.create_span
+                        span = wrapper.span
                         if span and span.is_recording():
                             span.add_link(ctx)
             # Performs retries for errors defined by the retry configuration.
@@ -312,7 +314,7 @@ class Batch(base.Batch):
                 for message_id, wrapper in zip(
                     response.message_ids, self._message_wrappers
                 ):
-                    span = wrapper.create_span
+                    span = wrapper.span
                     if span:
                         span.add_event(
                             name="publish end",
@@ -336,7 +338,7 @@ class Batch(base.Batch):
                 )
                 publish_rpc_span.end()
                 for wrapper in self._message_wrappers:
-                    span = wrapper.create_span
+                    span = wrapper.span
                     if span:
                         span.record_exception(exception=exc)
                         span.set_status(
@@ -389,7 +391,7 @@ class Batch(base.Batch):
 
     def publish(
         self,
-        message_wrapper: MessageWrapper,
+        message_wrapper: PublishMessageWrapper,
     ) -> Optional["pubsub_v1.publisher.futures.Future"]:
         """Publish a single message.
 

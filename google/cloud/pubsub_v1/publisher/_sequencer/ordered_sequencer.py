@@ -23,7 +23,9 @@ from google.cloud.pubsub_v1.publisher import futures
 from google.cloud.pubsub_v1.publisher import exceptions
 from google.cloud.pubsub_v1.publisher._sequencer import base as sequencer_base
 from google.cloud.pubsub_v1.publisher._batch import base as batch_base
-from google.cloud.pubsub_v1.publisher.message_wrapper import MessageWrapper
+from google.cloud.pubsub_v1.opentelemetry.publish_message_wrapper import (
+    PublishMessageWrapper,
+)
 
 if typing.TYPE_CHECKING:  # pragma: NO COVER
     from google.cloud.pubsub_v1 import types
@@ -262,7 +264,7 @@ class OrderedSequencer(sequencer_base.Sequencer):
 
     def publish(
         self,
-        message: MessageWrapper,
+        message: PublishMessageWrapper,
         retry: "OptionalRetry" = gapic_v1.method.DEFAULT,
         timeout: "types.OptionalTimeout" = gapic_v1.method.DEFAULT,
     ) -> futures.Future:

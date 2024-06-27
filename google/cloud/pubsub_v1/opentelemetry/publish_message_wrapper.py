@@ -6,11 +6,11 @@ from typing import Optional
 
 
 @dataclass
-class MessageWrapper:
+class PublishMessageWrapper:
     """
     Wraps Pub/Sub message with additional metadata required for
     Open Telemetry tracing.
     """
 
     message: gapic_types.PubsubMessage
-    create_span: Optional[trace.Span] = field(default=None)
+    span: Optional[trace.Span] = field(default=None)

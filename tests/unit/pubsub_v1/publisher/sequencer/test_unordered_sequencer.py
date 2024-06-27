@@ -27,11 +27,13 @@ from google.cloud.pubsub_v1 import types
 from google.cloud.pubsub_v1.publisher._batch import base
 from google.cloud.pubsub_v1.publisher._sequencer import unordered_sequencer
 from google.pubsub_v1 import types as gapic_types
-from google.cloud.pubsub_v1.publisher.message_wrapper import MessageWrapper
+from google.cloud.pubsub_v1.opentelemetry.publish_message_wrapper import (
+    PublishMessageWrapper,
+)
 
 
 def create_message():
-    return MessageWrapper(
+    return PublishMessageWrapper(
         gapic_types.PubsubMessage(data=b"foo", attributes={"bar": "baz"}), None
     )
 

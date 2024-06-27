@@ -96,7 +96,7 @@ _EXACTLY_ONCE_DELIVERY_TEMPORARY_RETRY_ERRORS = {
     code_pb2.UNAVAILABLE,
 }
 
-_OPEN_TELEMETRY_TRACER_NAME = "com.google.cloud.pubsub.v1"
+_OPEN_TELEMETRY_TRACER_NAME = "google.cloud.pubsub_v1.subscriber"
 """Open Telemetry Instrumenting module name."""
 _OPEN_TELEMETRY_MESSAGING_SYSTEM = "gcp_pubsub"
 

@@ -38,7 +38,9 @@ from google.cloud.pubsub_v1.publisher._batch.base import BatchCancellationReason
 from google.cloud.pubsub_v1.publisher._batch import thread
 from google.cloud.pubsub_v1.publisher._batch.thread import Batch
 from google.pubsub_v1 import types as gapic_types
-from google.cloud.pubsub_v1.publisher.message_wrapper import MessageWrapper
+from google.cloud.pubsub_v1.opentelemetry.publish_message_wrapper import (
+    PublishMessageWrapper,
+)
 
 
 def create_client(enable_open_telemetry=False):
@@ -136,15 +138,15 @@ def test_blocking__commit():
     batch = create_batch()
     futures = (
         batch.publish(
-            message_wrapper=MessageWrapper(
+            message_wrapper=PublishMessageWrapper(
                 message=gapic_types.PubsubMessage(data=b"This is my message."),
-                create_span=None,
+                span=None,
             )
         ),
         batch.publish(
-            message_wrapper=MessageWrapper(
+            message_wrapper=PublishMessageWrapper(
                 message=gapic_types.PubsubMessage(data=b"This is another message."),
-                create_span=None,
+                span=None,
             )
         ),
     )
@@ -180,9 +182,9 @@ def test_blocking__commit():
 def test_blocking__commit_custom_retry():
     batch = create_batch(commit_retry=mock.sentinel.custom_retry)
     batch.publish(
-        message_wrapper=MessageWrapper(
+        message_wrapper=PublishMessageWrapper(
             message=gapic_types.PubsubMessage(data=b"This is my message."),
-            create_span=None,
+            span=None,
         )
     )
 
@@ -207,9 +209,9 @@ def test_blocking__commit_custom_retry():
 def test_blocking__commit_custom_timeout():
     batch = create_batch(commit_timeout=mock.sentinel.custom_timeout)
     batch.publish(
-        message_wrapper=MessageWrapper(
+        message_wrapper=PublishMessageWrapper(
             message=gapic_types.PubsubMessage(data=b"This is my message."),
-            create_span=None,
+            span=None,
         )
     )
 
@@ -247,9 +249,9 @@ def test_client_api_publish_not_blocking_additional_publish_calls():
 
     with api_publish_patch:
         batch.publish(
-            message_wrapper=MessageWrapper(
+            message_wrapper=PublishMessageWrapper(
                 message=gapic_types.PubsubMessage(data=b"first message"),
-                create_span=None,
+                span=None,
             )
         )
 
@@ -258,9 +260,9 @@ def test_client_api_publish_not_blocking_additional_publish_calls():
         if not event_set:  # pragma: NO COVER
             pytest.fail("API publish was not called in time")
         batch.publish(
-            message_wrapper=MessageWrapper(
+            message_wrapper=PublishMessageWrapper(
                 message=gapic_types.PubsubMessage(data=b"second message"),
-                create_span=None,
+                span=None,
             )
         )
         end = datetime.datetime.now()
@@ -306,15 +308,15 @@ def test_blocking__commit_wrong_messageid_length():
     batch = create_batch()
     futures = (
         batch.publish(
-            message_wrapper=MessageWrapper(
+            message_wrapper=PublishMessageWrapper(
                 message=gapic_types.PubsubMessage(data=b"blah blah blah"),
-                create_span=None,
+                span=None,
             )
         ),
         batch.publish(
-            message_wrapper=MessageWrapper(
+            message_wrapper=PublishMessageWrapper(
                 message=gapic_types.PubsubMessage(data=b"blah blah blah blah"),
-                create_span=None,
+                span=None,
             )
         ),
     )
@@ -337,15 +339,15 @@ def test_block__commmit_api_error():
     batch = create_batch()
     futures = (
         batch.publish(
-            message_wrapper=MessageWrapper(
+            message_wrapper=PublishMessageWrapper(
                 message=gapic_types.PubsubMessage(data=b"blah blah blah"),
-                create_span=None,
+                span=None,
             )
         ),
         batch.publish(
-            message_wrapper=MessageWrapper(
+            message_wrapper=PublishMessageWrapper(
                 message=gapic_types.PubsubMessage(data=b"blah blah blah blah"),
-                create_span=None,
+                span=None,
             )
         ),
     )
@@ -366,15 +368,15 @@ def test_block__commmit_retry_error():
     batch = create_batch()
     futures = (
         batch.publish(
-            message_wrapper=MessageWrapper(
+            message_wrapper=PublishMessageWrapper(
                 message=gapic_types.PubsubMessage(data=b"blah blah blah"),
-                create_span=None,
+                span=None,
             )
         ),
         batch.publish(
-            message_wrapper=MessageWrapper(
+            message_wrapper=PublishMessageWrapper(
                 message=gapic_types.PubsubMessage(data=b"blah blah blah blah"),
-                create_span=None,
+                span=None,
             )
         ),
     )
@@ -394,14 +396,14 @@ def test_block__commmit_retry_error():
 def test_publish_updating_batch_size():
     batch = create_batch(topic="topic_foo")
     messages = (
-        MessageWrapper(
-            message=gapic_types.PubsubMessage(data=b"foobarbaz"), create_span=None
+        PublishMessageWrapper(
+            message=gapic_types.PubsubMessage(data=b"foobarbaz"), span=None
         ),
-        MessageWrapper(
-            message=gapic_types.PubsubMessage(data=b"spameggs"), create_span=None
+        PublishMessageWrapper(
+            message=gapic_types.PubsubMessage(data=b"spameggs"), span=None
         ),
-        MessageWrapper(
-            message=gapic_types.PubsubMessage(data=b"1335020400"), create_span=None
+        PublishMessageWrapper(
+            message=gapic_types.PubsubMessage(data=b"1335020400"), span=None
         ),
     )
 
@@ -426,7 +428,7 @@ def test_publish_updating_batch_size():
 
 def test_publish():
     batch = create_batch()
-    wrapper = MessageWrapper(gapic_types.PubsubMessage(), None)
+    wrapper = PublishMessageWrapper(gapic_types.PubsubMessage(), None)
     future = batch.publish(wrapper)
 
     assert len(batch.message_wrappers) == 1
@@ -436,7 +438,7 @@ def test_publish():
 def test_publish_max_messages_zero():
     batch = create_batch(topic="topic_foo", max_messages=0)
 
-    wrapper = MessageWrapper(gapic_types.PubsubMessage(data=b"foobarbaz"), None)
+    wrapper = PublishMessageWrapper(gapic_types.PubsubMessage(data=b"foobarbaz"), None)
     with mock.patch.object(batch, "commit") as commit:
         future = batch.publish(wrapper)
 
@@ -449,8 +451,10 @@ def test_publish_max_messages_zero():
 def test_publish_max_messages_enforced():
     batch = create_batch(topic="topic_foo", max_messages=1)
 
-    message = MessageWrapper(gapic_types.PubsubMessage(data=b"foobarbaz"), None)
-    message2 = MessageWrapper(gapic_types.PubsubMessage(data=b"foobarbaz2"), None)
+    message = PublishMessageWrapper(gapic_types.PubsubMessage(data=b"foobarbaz"), None)
+    message2 = PublishMessageWrapper(
+        gapic_types.PubsubMessage(data=b"foobarbaz2"), None
+    )
 
     future = batch.publish(message)
     future2 = batch.publish(message2)
@@ -464,8 +468,10 @@ def test_publish_max_messages_enforced():
 def test_publish_max_bytes_enforced():
     batch = create_batch(topic="topic_foo", max_bytes=15)
 
-    message = MessageWrapper(gapic_types.PubsubMessage(data=b"foobarbaz"), None)
-    message2 = MessageWrapper(gapic_types.PubsubMessage(data=b"foobarbaz2"), None)
+    message = PublishMessageWrapper(gapic_types.PubsubMessage(data=b"foobarbaz"), None)
+    message2 = PublishMessageWrapper(
+        gapic_types.PubsubMessage(data=b"foobarbaz2"), None
+    )
 
     future = batch.publish(message)
     future2 = batch.publish(message2)
@@ -480,9 +486,9 @@ def test_publish_exceed_max_messages():
     max_messages = 4
     batch = create_batch(max_messages=max_messages)
     messages = (
-        MessageWrapper(gapic_types.PubsubMessage(data=b"foobarbaz"), None),
-        MessageWrapper(gapic_types.PubsubMessage(data=b"spameggs"), None),
-        MessageWrapper(gapic_types.PubsubMessage(data=b"1335020400"), None),
+        PublishMessageWrapper(gapic_types.PubsubMessage(data=b"foobarbaz"), None),
+        PublishMessageWrapper(gapic_types.PubsubMessage(data=b"spameggs"), None),
+        PublishMessageWrapper(gapic_types.PubsubMessage(data=b"1335020400"), None),
     )
 
     # Publish each of the messages, which should save them to the batch.
@@ -497,7 +503,7 @@ def test_publish_exceed_max_messages():
         # When a fourth message is published, commit should be called.
         # No future will be returned in this case.
         future = batch.publish(
-            MessageWrapper(gapic_types.PubsubMessage(data=b"last one"), None)
+            PublishMessageWrapper(gapic_types.PubsubMessage(data=b"last one"), None)
         )
         commit.assert_called_once_with()
 
@@ -521,7 +527,7 @@ def test_publish_single_message_size_exceeds_server_size_limit():
     assert request_size == 1001  # sanity check, just above the (mocked) server limit
 
     with pytest.raises(exceptions.MessageTooLargeError):
-        batch.publish(MessageWrapper(big_message, None))
+        batch.publish(PublishMessageWrapper(big_message, None))
 
 
 @mock.patch.object(thread, "_SERVER_PUBLISH_MAX_BYTES", 1000)
@@ -541,8 +547,8 @@ def test_publish_total_messages_size_exceeds_server_size_limit():
     assert 1000 < request_size < 1500
 
     with mock.patch.object(batch, "commit") as fake_commit:
-        batch.publish(MessageWrapper(messages[0], None))
-        batch.publish(MessageWrapper(messages[1], None))
+        batch.publish(PublishMessageWrapper(messages[0], None))
+        batch.publish(PublishMessageWrapper(messages[1], None))
 
     # The server side limit should kick in and cause a commit.
     fake_commit.assert_called_once()
@@ -550,13 +556,13 @@ def test_publish_total_messages_size_exceeds_server_size_limit():
 
 def test_publish_dict():
     batch = create_batch()
-    message = MessageWrapper(
+    message = PublishMessageWrapper(
         gapic_types.PubsubMessage(data=b"foobarbaz", attributes={"spam": "eggs"}), None
     )
     future = batch.publish(message)
 
     # There should be one message on the batch.
-    expected_message = MessageWrapper(
+    expected_message = PublishMessageWrapper(
         gapic_types.PubsubMessage(data=b"foobarbaz", attributes={"spam": "eggs"}), None
     )
     assert batch.message_wrappers == [expected_message]
@@ -567,10 +573,12 @@ def test_cancel():
     batch = create_batch()
     futures = (
         batch.publish(
-            MessageWrapper(gapic_types.PubsubMessage(data=b"This is my message."), None)
+            PublishMessageWrapper(
+                gapic_types.PubsubMessage(data=b"This is my message."), None
+            )
         ),
         batch.publish(
-            MessageWrapper(
+            PublishMessageWrapper(
                 gapic_types.PubsubMessage(data=b"This is another message."), None
             )
         ),
@@ -590,9 +598,9 @@ def test_do_not_commit_when_full_when_flag_is_off():
     # Set commit_when_full flag to False
     batch = create_batch(max_messages=max_messages, commit_when_full=False)
     messages = (
-        MessageWrapper(gapic_types.PubsubMessage(data=b"foobarbaz"), None),
-        MessageWrapper(gapic_types.PubsubMessage(data=b"spameggs"), None),
-        MessageWrapper(gapic_types.PubsubMessage(data=b"1335020400"), None),
+        PublishMessageWrapper(gapic_types.PubsubMessage(data=b"foobarbaz"), None),
+        PublishMessageWrapper(gapic_types.PubsubMessage(data=b"spameggs"), None),
+        PublishMessageWrapper(gapic_types.PubsubMessage(data=b"1335020400"), None),
     )
 
     with mock.patch.object(batch, "commit") as commit:
@@ -602,7 +610,7 @@ def test_do_not_commit_when_full_when_flag_is_off():
 
         # When a fourth message is published, commit should not be called.
         future = batch.publish(
-            MessageWrapper(gapic_types.PubsubMessage(data=b"last one"), None)
+            PublishMessageWrapper(gapic_types.PubsubMessage(data=b"last one"), None)
         )
         assert commit.call_count == 0
         assert future is None
@@ -628,8 +636,8 @@ def test_commit_otel_publish_rpc_span_exception(span_exporter):
 
     tracer = trace.get_tracer_provider().get_tracer("com.google.cloud.pubsub.v1")
     with tracer.start_as_current_span(name="foo", end_on_exit=False) as create_span:
-        message = MessageWrapper(
-            message=gapic_types.PubsubMessage(data=b"foo"), create_span=create_span
+        message = PublishMessageWrapper(
+            message=gapic_types.PubsubMessage(data=b"foo"), span=create_span
         )
     batch.publish(message)
 
@@ -668,7 +676,7 @@ def test_commit_otel_null_span(span_exporter):
         enable_open_telemetry=True,
     )
 
-    msg = MessageWrapper(
+    msg = PublishMessageWrapper(
         message=gapic_types.PubsubMessage(data=b"foo"),
     )
 
@@ -714,8 +722,8 @@ def test_commit_otel_publish_non_sampled(span_exporter):
     tracer = trace.get_tracer_provider().get_tracer("com.google.cloud.pubsub.v1")
     with tracer.start_as_current_span(name="foo", end_on_exit=False) as span:
         span.is_recording = mock.Mock(return_value=False)
-        msg = MessageWrapper(
-            message=gapic_types.PubsubMessage(data=b"foo"), create_span=span
+        msg = PublishMessageWrapper(
+            message=gapic_types.PubsubMessage(data=b"foo"), span=span
         )
 
     batch.publish(msg)
@@ -749,15 +757,15 @@ def test_commit_otel_publish_rpc_span(span_exporter):
     # Simulate message 1 published with its own publisher create span.
     tracer = trace.get_tracer_provider().get_tracer("com.google.cloud.pubsub.v1")
     with tracer.start_as_current_span(name="foo", end_on_exit=False) as create_span1:
-        msg1 = MessageWrapper(
-            message=gapic_types.PubsubMessage(data=b"foo"), create_span=create_span1
+        msg1 = PublishMessageWrapper(
+            message=gapic_types.PubsubMessage(data=b"foo"), span=create_span1
         )
 
     # Simulate message 2 published with its own publisher create span.
     with tracer.start_as_current_span(name="bar", end_on_exit=False) as create_span2:
-        msg2 = MessageWrapper(
+        msg2 = PublishMessageWrapper(
             message=gapic_types.PubsubMessage(data=b"bar"),
-            create_span=create_span2,
+            span=create_span2,
         )
 
     # Add both messages to the batch.
@@ -823,7 +831,7 @@ def test_batch_done_callback_called_on_success():
     batch = create_batch(batch_done_callback=batch_done_callback_tracker)
 
     # Ensure messages exist.
-    message = MessageWrapper(gapic_types.PubsubMessage(data=b"foobarbaz"), None)
+    message = PublishMessageWrapper(gapic_types.PubsubMessage(data=b"foobarbaz"), None)
     batch.publish(message)
 
     # One response for one published message.
@@ -843,7 +851,7 @@ def test_batch_done_callback_called_on_publish_failure():
     batch = create_batch(batch_done_callback=batch_done_callback_tracker)
 
     # Ensure messages exist.
-    message = MessageWrapper(gapic_types.PubsubMessage(data=b"foobarbaz"), None)
+    message = PublishMessageWrapper(gapic_types.PubsubMessage(data=b"foobarbaz"), None)
     batch.publish(message)
 
     # One response for one published message.
@@ -869,7 +877,7 @@ def test_batch_done_callback_called_on_publish_response_invalid():
     batch = create_batch(batch_done_callback=batch_done_callback_tracker)
 
     # Ensure messages exist.
-    message = MessageWrapper(gapic_types.PubsubMessage(data=b"foobarbaz"), None)
+    message = PublishMessageWrapper(gapic_types.PubsubMessage(data=b"foobarbaz"), None)
     batch.publish(message)
 
     # No message ids returned in successful publish response -> invalid.

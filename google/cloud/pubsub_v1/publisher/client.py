@@ -40,7 +40,9 @@ from google.cloud.pubsub_v1.publisher._batch import thread
 from google.cloud.pubsub_v1.publisher._sequencer import ordered_sequencer
 from google.cloud.pubsub_v1.publisher._sequencer import unordered_sequencer
 from google.cloud.pubsub_v1.publisher.flow_controller import FlowController
-from google.cloud.pubsub_v1.publisher.message_wrapper import MessageWrapper
+from google.cloud.pubsub_v1.opentelemetry.publish_message_wrapper import (
+    PublishMessageWrapper,
+)
 from google.pubsub_v1 import gapic_version as package_version
 from google.pubsub_v1 import types as gapic_types
 from google.pubsub_v1.services.publisher import client as publisher_client
@@ -64,7 +66,7 @@ SequencerType = Union[
     ordered_sequencer.OrderedSequencer, unordered_sequencer.UnorderedSequencer
 ]
 
-_OPEN_TELEMETRY_TRACER_NAME = "com.google.cloud.pubsub.v1"
+_OPEN_TELEMETRY_TRACER_NAME = "google.cloud.pubsub_v1.publisher"
 _OPEN_TELEMETRY_MESSAGING_SYSTEM = "gcp_pubsub"
 _OPEN_TELEMETRY_PUBLISHER_BATCHING = "publisher batching"
 
@@ -505,9 +507,9 @@ class Client(publisher_client.PublisherClient):
                 create_span = None
                 if self._open_telemetry_enabled:
                     create_span = publish_create_span
-                message_wrapper = MessageWrapper(
+                message_wrapper = PublishMessageWrapper(
                     message=message,
-                    create_span=create_span,
+                    span=create_span,
                 )
                 future = sequencer.publish(
                     message=message_wrapper,
