@@ -16,6 +16,7 @@ import datetime
 import queue
 import sys
 import time
+import pytest
 
 # special case python < 3.8
 if sys.version_info.major == 3 and sys.version_info.minor < 8:
@@ -29,6 +30,8 @@ from google.cloud.pubsub_v1.subscriber._protocol import requests
 from google.protobuf import timestamp_pb2
 from google.pubsub_v1 import types as gapic_types
 from google.cloud.pubsub_v1.subscriber.exceptions import AcknowledgeStatus
+from google.cloud.pubsub_v1.opentelemetry.subscribe_spans_data import OpenTelemetryData
+from opentelemetry import trace
 
 
 RECEIVED = datetime.datetime(2012, 4, 21, 15, 0, tzinfo=datetime.timezone.utc)
@@ -44,6 +47,7 @@ def create_message(
     delivery_attempt=0,
     ordering_key="",
     exactly_once_delivery_enabled=False,
+    open_telemetry_data=None,
     **attrs
 ):
     with mock.patch.object(time, "time") as time_:
@@ -65,6 +69,7 @@ def create_message(
             delivery_attempt=delivery_attempt,
             request_queue=queue.Queue(),
             exactly_once_delivery_enabled_func=lambda: exactly_once_delivery_enabled,
+            open_telemetry_data=open_telemetry_data,
         )
         return msg
 
@@ -131,8 +136,44 @@ def check_call_types(mock, *args, **kwargs):
             assert isinstance(call_args[n], argtype)
 
 
-def test_ack():
-    msg = create_message(b"foo", ack_id="bogus_ack_id")
+# def test_ack_otel():
+#     otel_data = OpenTelemetryData(
+#         subscribe_span=mock.Mock(spec=trace.Span),
+#     )
+#     msg = create_message(
+#         data=b"foo",
+#         ack_id="ack_id",
+#         open_telemetry_data=otel_data,
+#     )
+#     with mock.patch.object(msg._request_queue, "put") as put:
+#         msg.ack()
+#         put.assert_called_once_with(
+#             requests.AckRequest(
+#                 ack_id="ack_id",
+#                 byte_size=30,
+#                 time_to_ack=mock.ANY,
+#                 ordering_key="",
+#                 future=None,
+#                 open_telemetry_data=otel_data,
+#             )
+#         )
+#         check_call_types(put, requests.AckRequest)
+
+
+@pytest.mark.parametrize(
+    "otel_data,",
+    [
+        None,
+        OpenTelemetryData(subscribe_span=mock.Mock(spec=trace.Span)),
+        OpenTelemetryData(),
+    ],
+)
+def test_ack(otel_data):
+    msg = create_message(
+        data=b"foo",
+        ack_id="bogus_ack_id",
+        open_telemetry_data=otel_data,
+    )
     with mock.patch.object(msg._request_queue, "put") as put:
         msg.ack()
         put.assert_called_once_with(
@@ -142,13 +183,28 @@ def test_ack():
                 time_to_ack=mock.ANY,
                 ordering_key="",
                 future=None,
+                open_telemetry_data=otel_data,
             )
         )
         check_call_types(put, requests.AckRequest)
+        if otel_data and otel_data.subscribe_span:
+            otel_data.subscribe_span.add_event.assert_called_with(name="ack start")
 
 
-def test_ack_with_response_exactly_once_delivery_disabled():
-    msg = create_message(b"foo", ack_id="bogus_ack_id")
+@pytest.mark.parametrize(
+    "otel_data",
+    [
+        None,
+        OpenTelemetryData(subscribe_span=mock.Mock(spec=trace.Span)),
+        OpenTelemetryData(),
+    ],
+)
+def test_ack_with_response_exactly_once_delivery_disabled(otel_data):
+    msg = create_message(
+        b"foo",
+        ack_id="bogus_ack_id",
+        open_telemetry_data=otel_data,
+    )
     with mock.patch.object(msg._request_queue, "put") as put:
         future = msg.ack_with_response()
         put.assert_called_once_with(
@@ -158,11 +214,15 @@ def test_ack_with_response_exactly_once_delivery_disabled():
                 time_to_ack=mock.ANY,
                 ordering_key="",
                 future=None,
+                open_telemetry_data=otel_data,
             )
         )
         assert future.result() == AcknowledgeStatus.SUCCESS
         assert future == message._SUCCESS_FUTURE
         check_call_types(put, requests.AckRequest)
+
+        if otel_data and otel_data.subscribe_span:
+            otel_data.subscribe_span.add_event.assert_called_with(name="ack start")
 
 
 def test_ack_with_response_exactly_once_delivery_enabled():
@@ -227,30 +287,66 @@ def test_modify_ack_deadline_with_response_exactly_once_delivery_enabled():
         check_call_types(put, requests.ModAckRequest)
 
 
-def test_nack():
-    msg = create_message(b"foo", ack_id="bogus_ack_id")
+@pytest.mark.parametrize(
+    "otel_data,",
+    [
+        None,
+        OpenTelemetryData(subscribe_span=mock.Mock(spec=trace.Span)),
+        OpenTelemetryData(),
+    ],
+)
+def test_nack(otel_data):
+    msg = create_message(
+        data=b"foo",
+        ack_id="bogus_ack_id",
+        open_telemetry_data=otel_data,
+    )
     with mock.patch.object(msg._request_queue, "put") as put:
         msg.nack()
         put.assert_called_once_with(
             requests.NackRequest(
-                ack_id="bogus_ack_id", byte_size=30, ordering_key="", future=None
+                ack_id="bogus_ack_id",
+                byte_size=30,
+                ordering_key="",
+                future=None,
+                open_telemetry_data=otel_data,
             )
         )
         check_call_types(put, requests.NackRequest)
+        if otel_data and otel_data.subscribe_span:
+            otel_data.subscribe_span.add_event.assert_called_with("nack start")
 
 
-def test_nack_with_response_exactly_once_delivery_disabled():
-    msg = create_message(b"foo", ack_id="bogus_ack_id")
+@pytest.mark.parametrize(
+    "otel_data",
+    [
+        None,
+        OpenTelemetryData(subscribe_span=mock.Mock(spec=trace.Span)),
+        OpenTelemetryData(),
+    ],
+)
+def test_nack_with_response_exactly_once_delivery_disabled(otel_data):
+    msg = create_message(
+        data=b"foo",
+        ack_id="bogus_ack_id",
+        open_telemetry_data=otel_data,
+    )
     with mock.patch.object(msg._request_queue, "put") as put:
         future = msg.nack_with_response()
         put.assert_called_once_with(
             requests.NackRequest(
-                ack_id="bogus_ack_id", byte_size=30, ordering_key="", future=None
+                ack_id="bogus_ack_id",
+                byte_size=30,
+                ordering_key="",
+                future=None,
+                open_telemetry_data=otel_data,
             )
         )
         assert future.result() == AcknowledgeStatus.SUCCESS
         assert future == message._SUCCESS_FUTURE
         check_call_types(put, requests.NackRequest)
+        if otel_data and otel_data.subscribe_span:
+            otel_data.subscribe_span.add_event.assert_called_with("nack start")
 
 
 def test_nack_with_response_exactly_once_delivery_enabled():

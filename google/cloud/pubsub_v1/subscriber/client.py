@@ -118,6 +118,11 @@ class Client(subscriber_client.SubscriberClient):
     from_service_account_json = from_service_account_file  # type: ignore[assignment]
 
     @property
+    def open_telemetry_enabled(self) -> bool:
+        """Returns whether Open Telemetry is enabled for the subscriber client."""
+        return self._open_telemetry_enabled
+
+    @property
     def target(self) -> str:
         """Return the target (where the API is).
 

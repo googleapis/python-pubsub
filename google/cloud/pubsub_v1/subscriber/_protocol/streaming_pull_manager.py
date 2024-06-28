@@ -22,12 +22,12 @@ import threading
 import typing
 from typing import Any, Dict, Callable, Iterable, List, Optional, Set, Tuple
 import uuid
-import sys
 
 import grpc  # type: ignore
 
 from opentelemetry import trace
 from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
+from google.cloud.pubsub_v1.opentelemetry.subscribe_spans_data import OpenTelemetryData
 
 from google.api_core import bidi
 from google.api_core import exceptions
@@ -281,6 +281,7 @@ class StreamingPullManager(object):
         await_callbacks_on_shutdown: bool = False,
     ):
         self._client = client
+        self._open_telemetry_enabled = client.open_telemetry_enabled
         self._subscription = subscription
         self._exactly_once_enabled = False
         self._flow_control = flow_control
@@ -374,6 +375,11 @@ class StreamingPullManager(object):
         self._leaser: Optional[leaser.Leaser] = None
         self._consumer: Optional[bidi.BackgroundConsumer] = None
         self._heartbeater: Optional[heartbeater.Heartbeater] = None
+
+    @property
+    def open_telemetry_enabled(self) -> bool:
+        """Whether open telemetry is enabled."""
+        return self._open_telemetry_enabled
 
     @property
     def is_active(self) -> bool:
@@ -1084,7 +1090,8 @@ class StreamingPullManager(object):
         # protobuf message to significantly gain on attribute access performance.
         received_messages = response._pb.received_messages
 
-        if self._client._open_telemetry_enabled:
+        subscribe_spans = []
+        if self.open_telemetry_enabled():
             tracer = trace.get_tracer(_OPEN_TELEMETRY_TRACER_NAME)
             for received_message in response.received_messages:
                 parent_span_context = TraceContextTextMapPropagator().extract(
@@ -1100,7 +1107,7 @@ class StreamingPullManager(object):
                         "messaging.destination.name": self._subscription,
                         "gcp.project_id": self._subscription.split("/")[1],
                         "messaging.message.id": received_message.message.message_id,
-                        "messaging.message.body.size": sys.getsizeof(
+                        "messaging.message.body.size": len(
                             received_message.message.data
                         ),
                         "messaging.gcp_pubsub.message.ack_id": received_message.ack_id,
@@ -1111,7 +1118,7 @@ class StreamingPullManager(object):
                     },
                     end_on_exit=False,
                 ) as subscribe_span:
-                    pass
+                    subscribe_spans.append(subscribe_span)
 
         _LOGGER.debug(
             "Processing %s received message(s), currently on hold %s (bytes %s).",
@@ -1136,19 +1143,22 @@ class StreamingPullManager(object):
         # Immediately (i.e. without waiting for the auto lease management)
         # modack the messages we received, as this tells the server that we've
         # received them.
-        if self._client._open_telemetry_enabled:
-            subscribe_span.add_event(name="modack start")
+        if self.open_telemetry_enabled():
+            for subscribe_span in subscribe_spans:
+                subscribe_span.add_event("modack start")
         ack_id_gen = (message.ack_id for message in received_messages)
         expired_ack_ids = self._send_lease_modacks(
             ack_id_gen, self.ack_deadline, warn_on_invalid=False
         )
-        if self._client._open_telemetry_enabled:
-            subscribe_span.add_event(name="modack end")
+        if self.open_telemetry_enabled():
+            for subscribe_span in subscribe_spans:
+                subscribe_span.add_event("modack end")
 
         with self._pause_resume_lock:
             assert self._scheduler is not None
             assert self._leaser is not None
 
+            i = 0
             for received_message in received_messages:
                 if (
                     not self._exactly_once_delivery_enabled()
@@ -1161,6 +1171,10 @@ class StreamingPullManager(object):
                         self._scheduler.queue,
                         self._exactly_once_delivery_enabled,
                     )
+                    if self.open_telemetry_enabled():
+                        message._open_telemetry_data = OpenTelemetryData(
+                            subscribe_span=subscribe_spans[i],
+                        )
                     self._messages_on_hold.put(message)
                     self._on_hold_bytes += message.size
                     req = requests.LeaseRequest(
@@ -1169,6 +1183,7 @@ class StreamingPullManager(object):
                         ordering_key=message.ordering_key,
                     )
                     self._leaser.add([req])
+                    i = i + 1
 
             self._maybe_release_messages()
 

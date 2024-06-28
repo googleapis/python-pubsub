@@ -46,6 +46,8 @@ from google.rpc import status_pb2
 from google.rpc import code_pb2
 from google.rpc import error_details_pb2
 
+from opentelemetry import trace
+
 
 @pytest.mark.parametrize(
     "exception,expected_cls",
@@ -97,6 +99,7 @@ def test__wrap_callback_errors_error(callback_error):
 
 def test_constructor_and_default_state():
     mock.sentinel.subscription = str()
+    mock.sentinel.client.open_telemetry_enabled = False
     manager = streaming_pull_manager.StreamingPullManager(
         mock.sentinel.client, mock.sentinel.subscription
     )
@@ -1234,7 +1237,7 @@ def make_running_manager(enable_open_telemetry=False, **kwargs):
     manager._dispatcher = mock.create_autospec(dispatcher.Dispatcher, instance=True)
     manager._leaser = mock.create_autospec(leaser.Leaser, instance=True)
     manager._heartbeater = mock.create_autospec(heartbeater.Heartbeater, instance=True)
-    manager._client._open_telemetry_enabled = enable_open_telemetry
+    manager._open_telemetry_enabled = mock.Mock(return_value=enable_open_telemetry)
     return (
         manager,
         manager._consumer,
@@ -1487,10 +1490,12 @@ def test__on_response_mod_ack_otel(span_exporter):
             gapic_types.ReceivedMessage(
                 ack_id="ack_1",
                 message=gapic_types.PubsubMessage(data=b"foo", message_id="1"),
+                delivery_attempt=1,
             ),
             gapic_types.ReceivedMessage(
                 ack_id="ack_2",
                 message=gapic_types.PubsubMessage(data=b"bar", message_id="2"),
+                delivery_attempt=1,
             ),
         ]
     )
@@ -1501,7 +1506,13 @@ def test__on_response_mod_ack_otel(span_exporter):
     # Actually run the method and chack that correct MODACK value is used.
     with mock.patch.object(
         type(manager), "ack_deadline", new=mock.PropertyMock(return_value=18)
-    ):
+    ), mock.patch("opentelemetry.trace.get_tracer") as mock_get_tracer:
+        mock_tracer = mock.MagicMock()
+        mock_get_tracer.return_value = mock_tracer
+        mock_span = mock.MagicMock()
+        mock_tracer.start_as_current_span.return_value = mock_span
+        mock_span.__enter__.return_value = mock_span
+        mock_span.__exit__.return_value = None
         manager._on_response(response)
 
     dispatcher.modify_ack_deadline.assert_called_once_with(
@@ -1515,6 +1526,52 @@ def test__on_response_mod_ack_otel(span_exporter):
     # Subscribe span would still be active, hence would not be exported.
     spans = span_exporter.get_finished_spans()
     assert len(spans) == 0
+    mock_get_tracer.assert_called_once_with("google.cloud.pubsub_v1.subscriber")
+
+    mock_tracer.start_as_current_span.assert_has_calls(
+        [
+            mock.call(
+                name="projects/projectID/subscriptions/subscriptionID subscribe",
+                kind=trace.SpanKind.CONSUMER,
+                context=None,
+                attributes={
+                    "messaging.system": "gcp_pubsub",
+                    "messaging.destination.name": "projects/projectID/subscriptions/subscriptionID",
+                    "gcp.project_id": "projectID",
+                    "messaging.message.id": "1",
+                    "messaging.message.body.size": 3,
+                    "messaging.gcp_pubsub.message.ack_id": "ack_1",
+                    "messaging.gcp_pubsub.message.ordering_key": "",
+                    "messaging.gcp_pubsub.message.exactly_once_delivery": False,
+                    "code.function": "_on_response",
+                    "messaging.gcp_pubsub.message.delivery_attempt": 1,
+                },
+                end_on_exit=False,
+            ),
+            mock.call().__enter__(),
+            mock.call().__exit__(None, None, None),
+            mock.call(
+                name="projects/projectID/subscriptions/subscriptionID subscribe",
+                kind=trace.SpanKind.CONSUMER,
+                context=None,
+                attributes={
+                    "messaging.system": "gcp_pubsub",
+                    "messaging.destination.name": "projects/projectID/subscriptions/subscriptionID",
+                    "gcp.project_id": "projectID",
+                    "messaging.message.id": "2",
+                    "messaging.message.body.size": 3,
+                    "messaging.gcp_pubsub.message.ack_id": "ack_2",
+                    "messaging.gcp_pubsub.message.ordering_key": "",
+                    "messaging.gcp_pubsub.message.exactly_once_delivery": False,
+                    "code.function": "_on_response",
+                    "messaging.gcp_pubsub.message.delivery_attempt": 1,
+                },
+                end_on_exit=False,
+            ),
+            mock.call().__enter__(),
+            mock.call().__exit__(None, None, None),
+        ],
+    )
 
 
 def test__on_response_modifies_ack_deadline():

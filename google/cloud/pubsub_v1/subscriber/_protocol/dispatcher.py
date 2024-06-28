@@ -79,6 +79,13 @@ class Dispatcher(object):
         self._thread: Optional[threading.Thread] = None
         self._operational_lock = threading.Lock()
 
+    @property
+    def manager(self) -> "StreamingPullManager":
+        """Returns the Streaming Pull Manager associated with this dispatcher
+        instance.
+        """
+        return self._manager
+
     def start(self) -> None:
         """Start a thread to dispatch requests queued up by callbacks.
 
@@ -179,7 +186,21 @@ class Dispatcher(object):
             self.lease(lease_requests)
 
         if modack_requests:
+            for req in modack_requests:
+                if (
+                    req
+                    and req.open_telemetry_data
+                    and req.open_telemetry_data.subscribe_span
+                ):
+                    req.open_telemetry_data.subscribe_span.add_event("modack start")
             self.modify_ack_deadline(modack_requests)
+            for req in modack_requests:
+                if (
+                    req
+                    and req.open_telemetry_data
+                    and req.open_telemetry_data.subscribe_span
+                ):
+                    req.open_telemetry_data.subscribe_span.add_event("modack end")
 
         # Note: Drop and ack *must* be after lease. It's possible to get both
         # the lease and the ack/drop request in the same batch.
@@ -243,6 +264,20 @@ class Dispatcher(object):
                 ack_reqs_dict=ack_reqs_dict,
             )
 
+            if self._manager.open_telemetry_enabled:
+                for completed_ack in requests_completed:
+                    if completed_ack.open_telemetry_data:
+                        subscribe_span = (
+                            completed_ack.open_telemetry_data.subscribe_span
+                        )
+                        if subscribe_span:
+                            subscribe_span.set_attribute(
+                                key="messaging.gcp_pubsub.result",
+                                value="ack",
+                            )
+                            subscribe_span.add_event("ack end")
+                            subscribe_span.end()
+
             # Remove the completed messages from lease management.
             self.drop(requests_completed)
 
@@ -289,6 +324,20 @@ class Dispatcher(object):
             assert (
                 len(requests_to_retry) <= _ACK_IDS_BATCH_SIZE
             ), "Too many requests to be retried."
+
+            if self._manager.open_telemetry_enabled:
+                for completed_ack in requests_completed:
+                    if completed_ack.open_telemetry_data:
+                        subscribe_span = (
+                            completed_ack.open_telemetry_data.subscribe_span
+                        )
+                        if subscribe_span:
+                            subscribe_span.set_attribute(
+                                key="messaging.gcp_pubsub.result",
+                                value="ack",
+                            )
+                            subscribe_span.add_event("ack end")
+                            subscribe_span.end()
             # Remove the completed messages from lease management.
             self.drop(requests_completed)
 
@@ -342,9 +391,10 @@ class Dispatcher(object):
                 for req in itertools.islice(items_gen, _ACK_IDS_BATCH_SIZE)
             }
             requests_to_retry: List[requests.ModAckRequest]
+            requests_completed: List[requests.ModAckRequest]
             if default_deadline is None:
                 # no further work needs to be done for `requests_to_retry`
-                _, requests_to_retry = self._manager.send_unary_modack(
+                requests_completed, requests_to_retry = self._manager.send_unary_modack(
                     modify_deadline_ack_ids=list(
                         itertools.islice(ack_ids_gen, _ACK_IDS_BATCH_SIZE)
                     ),
@@ -355,7 +405,7 @@ class Dispatcher(object):
                     default_deadline=None,
                 )
             else:
-                _, requests_to_retry = self._manager.send_unary_modack(
+                requests_completed, requests_to_retry = self._manager.send_unary_modack(
                     modify_deadline_ack_ids=itertools.islice(
                         ack_ids_gen, _ACK_IDS_BATCH_SIZE
                     ),
@@ -375,7 +425,7 @@ class Dispatcher(object):
                     functools.partial(self._retry_modacks, requests_to_retry),
                 )
 
-    def _retry_modacks(self, requests_to_retry):
+    def _retry_modacks(self, requests_to_retry: List[requests.ModAckRequest]):
         retry_delay_gen = exponential_sleep_generator(
             initial=_MIN_EXACTLY_ONCE_DELIVERY_ACK_MODACK_RETRY_DURATION_SECS,
             maximum=_MAX_EXACTLY_ONCE_DELIVERY_ACK_MODACK_RETRY_DURATION_SECS,
@@ -405,11 +455,25 @@ class Dispatcher(object):
         self.modify_ack_deadline(
             [
                 requests.ModAckRequest(
-                    ack_id=item.ack_id, seconds=0, future=item.future
+                    ack_id=item.ack_id,
+                    seconds=0,
+                    future=item.future,
+                    open_telemetry_data=item.open_telemetry_data,
                 )
                 for item in items
             ]
         )
+        if self._manager.open_telemetry_enabled:
+            for item in items:
+                if item.open_telemetry_data:
+                    subscribe_span = item.open_telemetry_data.subscribe_span
+                    if subscribe_span:
+                        subscribe_span.set_attribute(
+                            key="messaging.gcp_pubsub.result",
+                            value="nack",
+                        )
+                        subscribe_span.add_event("nack end")
+
         self.drop(
             [
                 requests.DropRequest(

@@ -25,6 +25,8 @@ from google.cloud.pubsub_v1.subscriber._protocol import requests
 from google.cloud.pubsub_v1.subscriber import futures
 from google.cloud.pubsub_v1.subscriber.exceptions import AcknowledgeStatus
 
+from google.cloud.pubsub_v1.opentelemetry.subscribe_spans_data import OpenTelemetryData
+
 
 if typing.TYPE_CHECKING:  # pragma: NO COVER
     import datetime
@@ -94,6 +96,7 @@ class Message(object):
         delivery_attempt: int,
         request_queue: "queue.Queue",
         exactly_once_delivery_enabled_func: Callable[[], bool] = lambda: False,
+        open_telemetry_data: Optional[OpenTelemetryData] = None,
     ):
         """Construct the Message.
 
@@ -119,6 +122,8 @@ class Message(object):
                 responsible for handling those requests.
             exactly_once_delivery_enabled_func (Callable[[], bool]):
                 A Callable that returns whether exactly-once delivery is currently-enabled. Defaults to a lambda that always returns False.
+            open_telemetry_data (Optional[OpenTelemetryData]):
+                Internal only. Contains Open Telemetry data associated with the mesage.
         """
         self._message = message
         self._ack_id = ack_id
@@ -126,6 +131,7 @@ class Message(object):
         self._request_queue = request_queue
         self._exactly_once_delivery_enabled_func = exactly_once_delivery_enabled_func
         self.message_id = message.message_id
+        self._open_telemetry_data = open_telemetry_data
 
         # The instantiation time is the time that this message
         # was received. Tracking this provides us a way to be smart about
@@ -253,6 +259,10 @@ class Message(object):
 
         """
         time_to_ack = math.ceil(time.time() - self._received_timestamp)
+        if self._open_telemetry_data:
+            subscriber_span = self._open_telemetry_data.subscribe_span
+            if subscriber_span:
+                subscriber_span.add_event(name="ack start")
         self._request_queue.put(
             requests.AckRequest(
                 ack_id=self._ack_id,
@@ -260,6 +270,7 @@ class Message(object):
                 time_to_ack=time_to_ack,
                 ordering_key=self.ordering_key,
                 future=None,
+                open_telemetry_data=self._open_telemetry_data,
             )
         )
 
@@ -302,6 +313,10 @@ class Message(object):
             pubsub_v1.subscriber.exceptions.AcknowledgeError exception
             will be thrown.
         """
+        if self._open_telemetry_data:
+            suscriber_span = self._open_telemetry_data.subscribe_span
+            if suscriber_span:
+                suscriber_span.add_event(name="ack start")
         req_future: Optional[futures.Future]
         if self._exactly_once_delivery_enabled_func():
             future = futures.Future()
@@ -317,6 +332,7 @@ class Message(object):
                 time_to_ack=time_to_ack,
                 ordering_key=self.ordering_key,
                 future=req_future,
+                open_telemetry_data=self._open_telemetry_data,
             )
         )
         return future
@@ -429,12 +445,17 @@ class Message(object):
         may take place immediately or after a delay, and may arrive at this subscriber
         or another.
         """
+        if self._open_telemetry_data:
+            subscriber_span = self._open_telemetry_data.subscribe_span
+            if subscriber_span:
+                subscriber_span.add_event("nack start")
         self._request_queue.put(
             requests.NackRequest(
                 ack_id=self._ack_id,
                 byte_size=self.size,
                 ordering_key=self.ordering_key,
                 future=None,
+                open_telemetry_data=self._open_telemetry_data,
             )
         )
 
@@ -472,6 +493,10 @@ class Message(object):
             will be thrown.
 
         """
+        if self._open_telemetry_data:
+            subscriber_span = self._open_telemetry_data.subscribe_span
+            if subscriber_span:
+                subscriber_span.add_event("nack start")
         req_future: Optional[futures.Future]
         if self._exactly_once_delivery_enabled_func():
             future = futures.Future()
@@ -486,6 +511,7 @@ class Message(object):
                 byte_size=self.size,
                 ordering_key=self.ordering_key,
                 future=req_future,
+                open_telemetry_data=self._open_telemetry_data,
             )
         )
 
