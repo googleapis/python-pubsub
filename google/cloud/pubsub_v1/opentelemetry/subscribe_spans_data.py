@@ -17,6 +17,6 @@ class OpenTelemetryData:
     """
 
     subscribe_span: Optional[Span] = None
-    concurrrency_control_span: Optional[Span] = None
+    concurrency_control_span: Optional[Span] = None
     scheduler_span: Optional[Span] = None
     process_span: Optional[Span] = None

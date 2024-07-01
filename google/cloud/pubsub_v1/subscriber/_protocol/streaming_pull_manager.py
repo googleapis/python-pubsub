@@ -28,6 +28,7 @@ import grpc  # type: ignore
 from opentelemetry import trace
 from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
 from google.cloud.pubsub_v1.opentelemetry.subscribe_spans_data import OpenTelemetryData
+from opentelemetry.trace.propagation import set_span_in_context
 
 from google.api_core import bidi
 from google.api_core import exceptions
@@ -132,6 +133,11 @@ def _wrap_callback_errors(
         message: The Pub/Sub message.
     """
     try:
+        if (
+            message.open_telemetry_data()
+            and message.open_telemetry_data().concurrrency_control_span
+        ):
+            message.open_telemetry_data().concurrrency_control_span.end()
         callback(message)
     except BaseException as exc:
         # Note: the likelihood of this failing is extremely low. This just adds
@@ -633,6 +639,21 @@ class StreamingPullManager(object):
         )
         assert self._scheduler is not None
         assert self._callback is not None
+        if (
+            self.open_telemetry_enabled()
+            and msg.open_telemetry_data
+            and msg.open_telemetry_data.subscribe_span
+        ):
+            tracer = trace.get_tracer(_OPEN_TELEMETRY_TRACER_NAME)
+            with tracer.start_as_current_span(
+                name="subscriber concurrency control",
+                kind=trace.SpanKind.INTERNAL,
+                context=set_span_in_context(msg.open_telemetry_data.subscribe_span),
+                end_on_exit=False,
+            ) as concurrency_control_span:
+                msg.open_telemetry_data.concurrency_control_span = (
+                    concurrency_control_span
+                )
         self._scheduler.schedule(self._callback, msg)
 
     def send_unary_ack(

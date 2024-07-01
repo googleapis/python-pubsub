@@ -238,6 +238,10 @@ class Message(object):
         """
         return self._delivery_attempt
 
+    @property
+    def open_telemetry_data(self) -> Optional[OpenTelemetryData]:
+        return self._open_telemetry_data
+
     def ack(self) -> None:
         """Acknowledge the given message.
 
