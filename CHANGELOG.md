@@ -5,6 +5,29 @@
 [1]: https://pypi.org/project/google-cloud-pubsub/#history
 
 
+## [2.21.5](https://github.com/googleapis/python-pubsub/compare/v2.21.4...v2.21.5) (2024-06-20)
+
+
+### Bug Fixes
+
+* Allow Protobuf 5.x ([a369f04](https://github.com/googleapis/python-pubsub/commit/a369f04c46e4b3db34dcf8cc2ef7cda4ea491e26))
+
+## [2.21.4](https://github.com/googleapis/python-pubsub/compare/v2.21.3...v2.21.4) (2024-06-18)
+
+
+### Documentation
+
+* **samples:** Add code sample for optimistic subscribe ([#1182](https://github.com/googleapis/python-pubsub/issues/1182)) ([d8e8aa5](https://github.com/googleapis/python-pubsub/commit/d8e8aa59ab0288fdaf5a1cc5e476581e73d0f82c))
+
+## [2.21.3](https://github.com/googleapis/python-pubsub/compare/v2.21.2...v2.21.3) (2024-06-10)
+
+
+### Bug Fixes
+
+* Race condition where future callbacks invoked before client is in paused state ([#1145](https://github.com/googleapis/python-pubsub/issues/1145)) ([d12bac6](https://github.com/googleapis/python-pubsub/commit/d12bac6d94b337aa8978006600fb00e5b13d741d))
+* Suppress warnings caused during pytest runs ([#1189](https://github.com/googleapis/python-pubsub/issues/1189)) ([cd51149](https://github.com/googleapis/python-pubsub/commit/cd51149c9e0d3c59d1c75395c05308e860908bf9))
+* Typecheck errors in samples/snippets/subscriber.py ([#1186](https://github.com/googleapis/python-pubsub/issues/1186)) ([3698450](https://github.com/googleapis/python-pubsub/commit/3698450041cb4db0e2957832c24450f674b89c11))
+
 ## [2.21.2](https://github.com/googleapis/python-pubsub/compare/v2.21.1...v2.21.2) (2024-05-30)
 
 
