@@ -133,11 +133,11 @@ def _wrap_callback_errors(
         message: The Pub/Sub message.
     """
     try:
-        if (
-            message.open_telemetry_data()
-            and message.open_telemetry_data().concurrrency_control_span
-        ):
-            message.open_telemetry_data().concurrrency_control_span.end()
+        if message.open_telemetry_data():
+            if message.open_telemetry_data().concurrrency_control_span:
+                message.open_telemetry_data().concurrrency_control_span.end()
+            if message.open_telemetry_data().scheduler_span:
+                message.open_telemetry_data().scheduler_span.end()
         callback(message)
     except BaseException as exc:
         # Note: the likelihood of this failing is extremely low. This just adds

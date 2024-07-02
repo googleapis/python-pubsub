@@ -13,13 +13,24 @@
 # limitations under the License.
 
 import queue
+import sys
 
 from google.cloud.pubsub_v1.subscriber import message
 from google.cloud.pubsub_v1.subscriber._protocol import messages_on_hold
 from google.pubsub_v1 import types as gapic_types
+from google.cloud.pubsub_v1.opentelemetry.subscribe_spans_data import OpenTelemetryData
+
+from opentelemetry.trace.span import SpanContext
+from opentelemetry import trace
+
+# special case python < 3.8
+if sys.version_info.major == 3 and sys.version_info.minor < 8:
+    import mock
+else:
+    from unittest import mock
 
 
-def make_message(ack_id, ordering_key):
+def make_message(ack_id, ordering_key, open_telemetry_data=None):
     proto_msg = gapic_types.PubsubMessage(data=b"Q", ordering_key=ordering_key)
     return message.Message(
         proto_msg._pb,
@@ -27,6 +38,7 @@ def make_message(ack_id, ordering_key):
         0,
         queue.Queue(),
         exactly_once_delivery_enabled_func=lambda: False,  # pragma: NO COVER
+        open_telemetry_data=open_telemetry_data,
     )
 
 
@@ -35,6 +47,25 @@ def test_init():
 
     assert moh.size == 0
     assert moh.get() is None
+
+
+def test_put_otel():
+    moh = messages_on_hold.MessagesOnHold()
+    subscribe_span = mock.Mock(spec=SpanContext)
+    msg = make_message(
+        ack_id="ack_id1",
+        ordering_key="key1",
+        open_telemetry_data=OpenTelemetryData(
+            subscribe_span=subscribe_span,
+        ),
+    )
+    moh.put(msg)
+
+    scheduler_span = msg.open_telemetry_data.scheduler_span
+    assert scheduler_span is not None
+    assert scheduler_span.name == "subscriber scheduler"
+    assert scheduler_span.kind == trace.SpanKind.INTERNAL
+    assert scheduler_span.is_recording()
 
 
 def test_put_and_get_unordered_messages():
