@@ -300,7 +300,9 @@ async def test_sync_pull_warning_if_return_immediately_async(creds):
     subscription_path = "projects/foo/subscriptions/bar"
 
     patcher = mock.patch.object(
-        type(client.transport.pull), "__call__", new_callable=mock.AsyncMock,
+        type(client.transport.pull),
+        "__call__",
+        new_callable=mock.AsyncMock,
     )
 
     with patcher, pytest.warns(
