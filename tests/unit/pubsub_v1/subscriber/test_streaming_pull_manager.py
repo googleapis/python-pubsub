@@ -91,7 +91,12 @@ def test__wrap_callback_errors_no_error_otel(otel_data):
     callback = mock.Mock()
     on_callback_error = mock.Mock()
 
-    streaming_pull_manager._wrap_callback_errors(callback, on_callback_error, msg)
+    streaming_pull_manager._wrap_callback_errors(
+        callback,
+        on_callback_error,
+        "projects/projectID/subscriptions/subscriptionID",
+        msg,
+    )
 
     callback.assert_called_once_with(msg)
     msg.nack.assert_not_called()
@@ -108,7 +113,12 @@ def test__wrap_callback_errors_no_error():
     callback = mock.Mock()
     on_callback_error = mock.Mock()
 
-    streaming_pull_manager._wrap_callback_errors(callback, on_callback_error, msg)
+    streaming_pull_manager._wrap_callback_errors(
+        callback,
+        on_callback_error,
+        "projects/projectID/subscriptions/subscriptionID",
+        msg,
+    )
 
     callback.assert_called_once_with(msg)
     msg.nack.assert_not_called()
@@ -127,7 +137,12 @@ def test__wrap_callback_errors_error(callback_error):
     callback = mock.Mock(side_effect=callback_error)
     on_callback_error = mock.Mock()
 
-    streaming_pull_manager._wrap_callback_errors(callback, on_callback_error, msg)
+    streaming_pull_manager._wrap_callback_errors(
+        callback,
+        on_callback_error,
+        "projects/projectID/subscriptions/subscriptionID",
+        msg,
+    )
 
     msg.nack.assert_called_once()
     on_callback_error.assert_called_once_with(callback_error)

@@ -123,6 +123,7 @@ def _wrap_as_exception(maybe_exception: Any) -> BaseException:
 def _wrap_callback_errors(
     callback: Callable[["google.cloud.pubsub_v1.subscriber.message.Message"], Any],
     on_callback_error: Callable[[BaseException], Any],
+    subscription: str,
     message: "google.cloud.pubsub_v1.subscriber.message.Message",
 ):
     """Wraps a user callback so that if an exception occurs the message is
@@ -138,6 +139,7 @@ def _wrap_callback_errors(
                 message.open_telemetry_data.concurrency_control_span.end()
             if message.open_telemetry_data.scheduler_span:
                 message.open_telemetry_data.scheduler_span.end()
+
         callback(message)
     except BaseException as exc:
         # Note: the likelihood of this failing is extremely low. This just adds
@@ -870,7 +872,10 @@ class StreamingPullManager(object):
             raise ValueError("This manager has been closed and can not be re-used.")
 
         self._callback = functools.partial(
-            _wrap_callback_errors, callback, on_callback_error
+            _wrap_callback_errors,
+            callback,
+            on_callback_error,
+            self._subscription,
         )
 
         # Create the RPC
