@@ -17,11 +17,17 @@ import logging
 import typing
 from typing import Any, Callable, Iterable, Optional
 
+from opentelemetry import trace
+from opentelemetry.trace.propagation import set_span_in_context
+
 if typing.TYPE_CHECKING:  # pragma: NO COVER
     from google.cloud.pubsub_v1 import subscriber
 
 
 _LOGGER = logging.getLogger(__name__)
+
+_OPEN_TELEMETRY_TRACER_NAME = "google.cloud.pubsub_v1.subscriber"
+"""Open Telemetry Instrumenting module name."""
 
 
 class MessagesOnHold(object):
@@ -47,6 +53,8 @@ class MessagesOnHold(object):
         # If the queue is empty, it means there's a message for that key in
         # flight, but there are no pending messages.
         self._pending_ordered_messages = {}
+
+        self._tracer = trace.get_tracer(_OPEN_TELEMETRY_TRACER_NAME)
 
     @property
     def size(self) -> int:
@@ -100,6 +108,18 @@ class MessagesOnHold(object):
         Args:
             message: The message to put on hold.
         """
+        if message.open_telemetry_data:
+            with self._tracer.start_as_current_span(
+                name="subscriber scheduler",
+                kind=trace.SpanKind.INTERNAL,
+                context=set_span_in_context(
+                    message.open_telemetry_data.subscribe_span
+                    if message.open_telemetry_data.subscribe_span
+                    else None
+                ),
+                end_on_exit=False,
+            ) as scheduler_span:
+                message.open_telemetry_data.scheduler_span = scheduler_span
         self._messages_on_hold.append(message)
         self._size = self._size + 1
 

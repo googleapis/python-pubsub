@@ -41,6 +41,8 @@ from google.cloud.pubsub_v1.subscriber._protocol import streaming_pull_manager
 from google.cloud.pubsub_v1.subscriber import exceptions as subscriber_exceptions
 from google.cloud.pubsub_v1.subscriber import futures
 from google.pubsub_v1 import types as gapic_types
+from google.cloud.pubsub_v1.opentelemetry.subscribe_spans_data import OpenTelemetryData
+from opentelemetry.trace import Span
 import grpc
 from google.rpc import status_pb2
 from google.rpc import code_pb2
@@ -65,9 +67,27 @@ def test__wrap_as_exception(exception, expected_cls):
     )
 
 
-def test__wrap_callback_errors_no_error_otel():
+@pytest.mark.parametrize(
+    "otel_data",
+    [
+        (
+            OpenTelemetryData(
+                concurrency_control_span=mock.Mock(spec=Span),
+                scheduler_span=mock.Mock(spec=Span),
+            )
+        ),
+        (
+            OpenTelemetryData(
+                concurrency_control_span=None,
+                scheduler_span=None,
+            )
+        ),
+        (None),
+    ],
+)
+def test__wrap_callback_errors_no_error_otel(otel_data):
     msg = mock.Mock()
-    msg.open_telemetry_data = mock.Mock(return_value=None)
+    msg.open_telemetry_data = otel_data
     callback = mock.Mock()
     on_callback_error = mock.Mock()
 
@@ -76,6 +96,11 @@ def test__wrap_callback_errors_no_error_otel():
     callback.assert_called_once_with(msg)
     msg.nack.assert_not_called()
     on_callback_error.assert_not_called()
+
+    if otel_data and otel_data.concurrency_control_span:
+        otel_data.concurrency_control_span.end.assert_called_once()
+    if otel_data and otel_data.scheduler_span:
+        otel_data.scheduler_span.end.assert_called_once()
 
 
 def test__wrap_callback_errors_no_error():

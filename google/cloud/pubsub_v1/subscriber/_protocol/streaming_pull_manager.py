@@ -133,11 +133,11 @@ def _wrap_callback_errors(
         message: The Pub/Sub message.
     """
     try:
-        if (
-            message.open_telemetry_data()
-            and message.open_telemetry_data().concurrrency_control_span
-        ):
-            message.open_telemetry_data().concurrrency_control_span.end()
+        if message.open_telemetry_data:
+            if message.open_telemetry_data.concurrency_control_span:
+                message.open_telemetry_data.concurrency_control_span.end()
+            if message.open_telemetry_data.scheduler_span:
+                message.open_telemetry_data.scheduler_span.end()
         callback(message)
     except BaseException as exc:
         # Note: the likelihood of this failing is extremely low. This just adds
@@ -381,6 +381,7 @@ class StreamingPullManager(object):
         self._leaser: Optional[leaser.Leaser] = None
         self._consumer: Optional[bidi.BackgroundConsumer] = None
         self._heartbeater: Optional[heartbeater.Heartbeater] = None
+        self._tracer = trace.get_tracer(_OPEN_TELEMETRY_TRACER_NAME)
 
     @property
     def open_telemetry_enabled(self) -> bool:
@@ -644,8 +645,7 @@ class StreamingPullManager(object):
             and msg.open_telemetry_data
             and msg.open_telemetry_data.subscribe_span
         ):
-            tracer = trace.get_tracer(_OPEN_TELEMETRY_TRACER_NAME)
-            with tracer.start_as_current_span(
+            with self._tracer.start_as_current_span(
                 name="subscriber concurrency control",
                 kind=trace.SpanKind.INTERNAL,
                 context=set_span_in_context(msg.open_telemetry_data.subscribe_span),
@@ -1113,13 +1113,12 @@ class StreamingPullManager(object):
 
         subscribe_spans = []
         if self.open_telemetry_enabled():
-            tracer = trace.get_tracer(_OPEN_TELEMETRY_TRACER_NAME)
             for received_message in response.received_messages:
                 parent_span_context = TraceContextTextMapPropagator().extract(
                     carrier=received_message.message,
                     getter=OTelContextGetter(),
                 )
-                with tracer.start_as_current_span(
+                with self._tracer.start_as_current_span(
                     name=f"{self._subscription} subscribe",
                     kind=trace.SpanKind.CONSUMER,
                     context=parent_span_context if parent_span_context else None,
