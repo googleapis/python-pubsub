@@ -22,6 +22,12 @@ import time
 import typing
 from typing import Any, Dict, Optional, Sequence, Tuple, Type, Union
 import warnings
+import sys
+from datetime import datetime
+from opentelemetry import trace
+from opentelemetry.trace.propagation import set_span_in_context
+from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
+from opentelemetry.propagators.textmap import Setter
 
 from google.api_core import gapic_v1
 from google.auth.credentials import AnonymousCredentials  # type: ignore
@@ -34,9 +40,13 @@ from google.cloud.pubsub_v1.publisher._batch import thread
 from google.cloud.pubsub_v1.publisher._sequencer import ordered_sequencer
 from google.cloud.pubsub_v1.publisher._sequencer import unordered_sequencer
 from google.cloud.pubsub_v1.publisher.flow_controller import FlowController
+from google.cloud.pubsub_v1.opentelemetry.publish_message_wrapper import (
+    PublishMessageWrapper,
+)
 from google.pubsub_v1 import gapic_version as package_version
 from google.pubsub_v1 import types as gapic_types
 from google.pubsub_v1.services.publisher import client as publisher_client
+
 
 __version__ = package_version.__version__
 
@@ -55,6 +65,10 @@ _raw_proto_pubbsub_message = gapic_types.PubsubMessage.pb()
 SequencerType = Union[
     ordered_sequencer.OrderedSequencer, unordered_sequencer.UnorderedSequencer
 ]
+
+_OPEN_TELEMETRY_TRACER_NAME = "google.cloud.pubsub_v1.publisher"
+_OPEN_TELEMETRY_MESSAGING_SYSTEM = "gcp_pubsub"
+_OPEN_TELEMETRY_PUBLISHER_BATCHING = "publisher batching"
 
 
 class Client(publisher_client.PublisherClient):
@@ -152,6 +166,11 @@ class Client(publisher_client.PublisherClient):
 
         # The object controlling the message publishing flow
         self._flow_controller = FlowController(self.publisher_options.flow_control)
+
+        # Option indicating whether open telemetry is enabled or not.
+        self._open_telemetry_enabled = (
+            self.publisher_options.enable_open_telemetry_tracing
+        )
 
     @classmethod
     def from_service_account_file(  # type: ignore[override]
@@ -335,6 +354,7 @@ class Client(publisher_client.PublisherClient):
             pubsub_v1.publisher.exceptions.MessageTooLargeError: If publishing
                 the ``message`` would exceed the max size limit on the backend.
         """
+
         # Sanity check: Is the data being sent as a bytestring?
         # If it is literally anything else, complain loudly about it.
         if not isinstance(data, bytes):
@@ -368,13 +388,76 @@ class Client(publisher_client.PublisherClient):
         )
         message = gapic_types.PubsubMessage.wrap(vanilla_pb)
 
+        class OTelContextSetter(Setter):
+            """
+            Used by Open Telemetry for context propagation.
+            """
+
+            def set(self, carrier: gapic_types.PubsubMessage, key: str, value: str):
+                """
+                Injects trace context into Pub/Sub message attributes with
+                "googclient_" prefix.
+                """
+                carrier.attributes["googclient_" + key] = value
+
+        if self._open_telemetry_enabled:
+            tracer = trace.get_tracer(_OPEN_TELEMETRY_TRACER_NAME)
+            with tracer.start_as_current_span(
+                name=f"{topic} create",
+                attributes={
+                    "messaging.system": _OPEN_TELEMETRY_MESSAGING_SYSTEM,
+                    "messaging.destination.name": topic,
+                    "code.function": "google.cloud.pubsub.PublisherClient.publish",
+                    "messaging.gcp_pubsub.message.ordering_key": ordering_key,
+                    "messaging.operation": "create",
+                    "gcp.project_id": topic.split("/")[1],
+                    "messaging.message.body.size": sys.getsizeof(message.data),
+                },
+                kind=trace.SpanKind.PRODUCER,
+                end_on_exit=False,
+            ) as publish_create_span:
+                publish_create_span.add_event(
+                    name="publish start",
+                    attributes={
+                        "timestamp": str(datetime.now()),
+                    },
+                )
+                TraceContextTextMapPropagator().inject(
+                    carrier=message,
+                    setter=OTelContextSetter(),
+                )
+
         # Messages should go through flow control to prevent excessive
         # queuing on the client side (depending on the settings).
         try:
+            if self._open_telemetry_enabled:
+                with tracer.start_as_current_span(
+                    name="publisher flow control",
+                    kind=trace.SpanKind.INTERNAL,
+                    context=set_span_in_context(publish_create_span),
+                    end_on_exit=False,
+                ) as publish_flow_control_span:
+                    pass
             self._flow_controller.add(message)
+            if self._open_telemetry_enabled:
+                publish_flow_control_span.end()
         except exceptions.FlowControlLimitError as exc:
             future = futures.Future()
             future.set_exception(exc)
+            if self._open_telemetry_enabled:
+                publish_flow_control_span.record_exception(
+                    exception=exc,
+                )
+                publish_flow_control_span.set_status(
+                    trace.Status(status_code=trace.StatusCode.ERROR)
+                )
+                publish_flow_control_span.end()
+
+                publish_create_span.record_exception(exc)
+                publish_create_span.set_status(
+                    trace.Status(status_code=trace.StatusCode.ERROR)
+                )
+                publish_create_span.end()
             return future
 
         def on_publish_done(future):
@@ -386,31 +469,78 @@ class Client(publisher_client.PublisherClient):
         if timeout is gapic_v1.method.DEFAULT:  # if custom timeout not passed in
             timeout = self.publisher_options.timeout
 
+        if self._open_telemetry_enabled:
+            with tracer.start_as_current_span(
+                name=_OPEN_TELEMETRY_PUBLISHER_BATCHING,
+                kind=trace.SpanKind.INTERNAL,
+                context=set_span_in_context(publish_create_span),
+                end_on_exit=False,
+            ) as publisher_batching_span:
+                pass
         with self._batch_lock:
-            if self._is_stopped:
-                raise RuntimeError("Cannot publish on a stopped publisher.")
+            try:
+                if self._is_stopped:
+                    raise RuntimeError("Cannot publish on a stopped publisher.")
 
-            # Set retry timeout to "infinite" when message ordering is enabled.
-            # Note that this then also impacts messages added with an empty
-            # ordering key.
-            if self._enable_message_ordering:
-                if retry is gapic_v1.method.DEFAULT:
-                    # use the default retry for the publish GRPC method as a base
-                    transport = self._transport
-                    base_retry = transport._wrapped_methods[transport.publish]._retry
-                    retry = base_retry.with_deadline(2.0**32)
-                    # timeout needs to be overridden and set to infinite in
-                    # addition to the retry deadline since both determine
-                    # the duration for which retries are attempted.
-                    timeout = 2.0**32
-                elif retry is not None:
-                    retry = retry.with_deadline(2.0**32)
-                    timeout = 2.0**32
+                # Set retry timeout to "infinite" when message ordering is enabled.
+                # Note that this then also impacts messages added with an empty
+                # ordering key.
+                if self._enable_message_ordering:
+                    if retry is gapic_v1.method.DEFAULT:
+                        # use the default retry for the publish GRPC method as a base
+                        transport = self._transport
+                        base_retry = transport._wrapped_methods[
+                            transport.publish
+                        ]._retry
+                        retry = base_retry.with_deadline(2.0**32)
+                        # timeout needs to be overridden and set to infinite in
+                        # addition to the retry deadline since both determine
+                        # the duration for which retries are attempted.
+                        timeout = 2.0**32
+                    elif retry is not None:
+                        retry = retry.with_deadline(2.0**32)
+                        timeout = 2.0**32
 
-            # Delegate the publishing to the sequencer.
-            sequencer = self._get_or_create_sequencer(topic, ordering_key)
-            future = sequencer.publish(message, retry=retry, timeout=timeout)
-            future.add_done_callback(on_publish_done)
+                # Delegate the publishing to the sequencer.
+                sequencer = self._get_or_create_sequencer(topic, ordering_key)
+
+                create_span = None
+                if self._open_telemetry_enabled:
+                    create_span = publish_create_span
+                message_wrapper = PublishMessageWrapper(
+                    message=message,
+                    span=create_span,
+                )
+                future = sequencer.publish(
+                    message=message_wrapper,
+                    retry=retry,
+                    timeout=timeout,
+                )
+                future.add_done_callback(on_publish_done)
+            except BaseException as be:
+                # Exceptions can be thrown when attempting to add messages to the batch.
+                # If they're thrown, record it in the publisher batching span before
+                # allowing it to bubble up.
+                if self._open_telemetry_enabled:
+                    publisher_batching_span.record_exception(
+                        exception=be,
+                    )
+                    publisher_batching_span.set_status(
+                        trace.Status(status_code=trace.StatusCode.ERROR)
+                    )
+                    publisher_batching_span.end()
+
+                    publish_create_span.record_exception(
+                        exception=be,
+                    )
+                    publish_create_span.set_status(
+                        trace.Status(status_code=trace.StatusCode.ERROR)
+                    )
+                    publish_create_span.end()
+                raise be
+
+            if self._open_telemetry_enabled:
+                publisher_batching_span.end()
 
             # Create a timer thread if necessary to enforce the batching
             # timeout.

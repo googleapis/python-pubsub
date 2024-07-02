@@ -65,6 +65,19 @@ def test__wrap_as_exception(exception, expected_cls):
     )
 
 
+def test__wrap_callback_errors_no_error_otel():
+    msg = mock.Mock()
+    msg.open_telemetry_data = mock.Mock(return_value=None)
+    callback = mock.Mock()
+    on_callback_error = mock.Mock()
+
+    streaming_pull_manager._wrap_callback_errors(callback, on_callback_error, msg)
+
+    callback.assert_called_once_with(msg)
+    msg.nack.assert_not_called()
+    on_callback_error.assert_not_called()
+
+
 def test__wrap_callback_errors_no_error():
     msg = mock.create_autospec(message.Message, instance=True)
     callback = mock.Mock()
@@ -97,6 +110,7 @@ def test__wrap_callback_errors_error(callback_error):
 
 def test_constructor_and_default_state():
     mock.sentinel.subscription = str()
+    mock.sentinel.client.open_telemetry_enabled = False
     manager = streaming_pull_manager.StreamingPullManager(
         mock.sentinel.client, mock.sentinel.subscription
     )
@@ -183,7 +197,10 @@ def make_manager(**kwargs):
     client_ = mock.create_autospec(client.Client, instance=True)
     scheduler_ = mock.create_autospec(scheduler.Scheduler, instance=True)
     return streaming_pull_manager.StreamingPullManager(
-        client_, "subscription-name", scheduler=scheduler_, **kwargs
+        client_,
+        "projects/projectID/subscriptions/subscriptionID",
+        scheduler=scheduler_,
+        **kwargs
     )
 
 
@@ -1224,14 +1241,14 @@ def test_open_has_been_closed():
         manager.open(mock.sentinel.callback, mock.sentinel.on_callback_error)
 
 
-def make_running_manager(**kwargs):
+def make_running_manager(enable_open_telemetry=False, **kwargs):
     manager = make_manager(**kwargs)
     manager._consumer = mock.create_autospec(bidi.BackgroundConsumer, instance=True)
     manager._consumer.is_active = True
     manager._dispatcher = mock.create_autospec(dispatcher.Dispatcher, instance=True)
     manager._leaser = mock.create_autospec(leaser.Leaser, instance=True)
     manager._heartbeater = mock.create_autospec(heartbeater.Heartbeater, instance=True)
-
+    manager._open_telemetry_enabled = mock.Mock(return_value=enable_open_telemetry)
     return (
         manager,
         manager._consumer,
@@ -1415,7 +1432,10 @@ def test__get_initial_request():
     initial_request = manager._get_initial_request(123)
 
     assert isinstance(initial_request, gapic_types.StreamingPullRequest)
-    assert initial_request.subscription == "subscription-name"
+    assert (
+        initial_request.subscription
+        == "projects/projectID/subscriptions/subscriptionID"
+    )
     assert initial_request.stream_ack_deadline_seconds == 123
     assert initial_request.modify_deadline_ack_ids == []
     assert initial_request.modify_deadline_seconds == []
@@ -1428,7 +1448,10 @@ def test__get_initial_request_wo_leaser():
     initial_request = manager._get_initial_request(123)
 
     assert isinstance(initial_request, gapic_types.StreamingPullRequest)
-    assert initial_request.subscription == "subscription-name"
+    assert (
+        initial_request.subscription
+        == "projects/projectID/subscriptions/subscriptionID"
+    )
     assert initial_request.stream_ack_deadline_seconds == 123
     assert initial_request.modify_deadline_ack_ids == []
     assert initial_request.modify_deadline_seconds == []
@@ -1464,6 +1487,56 @@ def test__on_response_delivery_attempt():
     assert msg1.delivery_attempt is None
     msg2 = schedule_calls[1][1][1]
     assert msg2.delivery_attempt == 6
+
+
+def test__on_response_mod_ack_otel(span_exporter):
+    manager, _, dispatcher, leaser, _, scheduler = make_running_manager(
+        enable_open_telemetry=True
+    )
+    manager._callback = mock.sentinel.callback
+
+    # Set up the messages.
+    response = gapic_types.StreamingPullResponse(
+        received_messages=[
+            gapic_types.ReceivedMessage(
+                ack_id="ack_1",
+                message=gapic_types.PubsubMessage(data=b"foo", message_id="1"),
+                delivery_attempt=1,
+            ),
+            gapic_types.ReceivedMessage(
+                ack_id="ack_2",
+                message=gapic_types.PubsubMessage(data=b"bar", message_id="2"),
+                delivery_attempt=1,
+            ),
+        ]
+    )
+
+    # adjust message bookkeeping in leaser
+    fake_leaser_add(leaser, init_msg_count=0, assumed_msg_size=80)
+
+    # Actually run the method and chack that correct MODACK value is used.
+    with mock.patch.object(
+        type(manager), "ack_deadline", new=mock.PropertyMock(return_value=18)
+    ), mock.patch("opentelemetry.trace.get_tracer") as mock_get_tracer:
+        mock_tracer = mock.MagicMock()
+        mock_get_tracer.return_value = mock_tracer
+        mock_span = mock.MagicMock()
+        mock_tracer.start_as_current_span.return_value = mock_span
+        mock_span.__enter__.return_value = mock_span
+        mock_span.__exit__.return_value = None
+        manager._on_response(response)
+
+    dispatcher.modify_ack_deadline.assert_called_once_with(
+        [
+            requests.ModAckRequest("ack_1", 18, None),
+            requests.ModAckRequest("ack_2", 18, None),
+        ],
+        18,
+    )
+
+    # Subscribe span would still be active, hence would not be exported.
+    spans = span_exporter.get_finished_spans()
+    assert len(spans) == 0
 
 
 def test__on_response_modifies_ack_deadline():

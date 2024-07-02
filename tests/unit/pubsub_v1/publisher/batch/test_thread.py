@@ -25,6 +25,8 @@ else:
 
 import pytest
 
+from opentelemetry import trace
+
 import google.api_core.exceptions
 from google.api_core import gapic_v1
 from google.auth import credentials
@@ -36,10 +38,18 @@ from google.cloud.pubsub_v1.publisher._batch.base import BatchCancellationReason
 from google.cloud.pubsub_v1.publisher._batch import thread
 from google.cloud.pubsub_v1.publisher._batch.thread import Batch
 from google.pubsub_v1 import types as gapic_types
+from google.cloud.pubsub_v1.opentelemetry.publish_message_wrapper import (
+    PublishMessageWrapper,
+)
 
 
-def create_client():
-    return publisher.Client(credentials=credentials.AnonymousCredentials())
+def create_client(enable_open_telemetry=False):
+    return publisher.Client(
+        credentials=credentials.AnonymousCredentials(),
+        publisher_options=types.PublisherOptions(
+            enable_open_telemetry_tracing=enable_open_telemetry,
+        ),
+    )
 
 
 def create_batch(
@@ -48,7 +58,8 @@ def create_batch(
     commit_when_full=True,
     commit_retry=gapic_v1.method.DEFAULT,
     commit_timeout: gapic_types.TimeoutType = gapic_v1.method.DEFAULT,
-    **batch_settings
+    enable_open_telemetry: bool = False,
+    **batch_settings,
 ):
     """Return a batch object suitable for testing.
 
@@ -68,7 +79,7 @@ def create_batch(
     Returns:
         ~.pubsub_v1.publisher.batch.thread.Batch: A batch object.
     """
-    client = create_client()
+    client = create_client(enable_open_telemetry=enable_open_telemetry)
     settings = types.BatchSettings(**batch_settings)
     return Batch(
         client,
@@ -126,8 +137,18 @@ def test_commit_no_op():
 def test_blocking__commit():
     batch = create_batch()
     futures = (
-        batch.publish({"data": b"This is my message."}),
-        batch.publish({"data": b"This is another message."}),
+        batch.publish(
+            message_wrapper=PublishMessageWrapper(
+                message=gapic_types.PubsubMessage(data=b"This is my message."),
+                span=None,
+            )
+        ),
+        batch.publish(
+            message_wrapper=PublishMessageWrapper(
+                message=gapic_types.PubsubMessage(data=b"This is another message."),
+                span=None,
+            )
+        ),
     )
 
     # Set up the underlying API publish method to return a PublishResponse.
@@ -160,7 +181,12 @@ def test_blocking__commit():
 
 def test_blocking__commit_custom_retry():
     batch = create_batch(commit_retry=mock.sentinel.custom_retry)
-    batch.publish({"data": b"This is my message."})
+    batch.publish(
+        message_wrapper=PublishMessageWrapper(
+            message=gapic_types.PubsubMessage(data=b"This is my message."),
+            span=None,
+        )
+    )
 
     # Set up the underlying API publish method to return a PublishResponse.
     publish_response = gapic_types.PublishResponse(message_ids=["a"])
@@ -182,7 +208,12 @@ def test_blocking__commit_custom_retry():
 
 def test_blocking__commit_custom_timeout():
     batch = create_batch(commit_timeout=mock.sentinel.custom_timeout)
-    batch.publish({"data": b"This is my message."})
+    batch.publish(
+        message_wrapper=PublishMessageWrapper(
+            message=gapic_types.PubsubMessage(data=b"This is my message."),
+            span=None,
+        )
+    )
 
     # Set up the underlying API publish method to return a PublishResponse.
     publish_response = gapic_types.PublishResponse(message_ids=["a"])
@@ -217,13 +248,23 @@ def test_client_api_publish_not_blocking_additional_publish_calls():
     )
 
     with api_publish_patch:
-        batch.publish({"data": b"first message"})
+        batch.publish(
+            message_wrapper=PublishMessageWrapper(
+                message=gapic_types.PubsubMessage(data=b"first message"),
+                span=None,
+            )
+        )
 
         start = datetime.datetime.now()
         event_set = api_publish_called.wait(timeout=1.0)
         if not event_set:  # pragma: NO COVER
             pytest.fail("API publish was not called in time")
-        batch.publish({"data": b"second message"})
+        batch.publish(
+            message_wrapper=PublishMessageWrapper(
+                message=gapic_types.PubsubMessage(data=b"second message"),
+                span=None,
+            )
+        )
         end = datetime.datetime.now()
 
     # While a batch commit in progress, waiting for the API publish call to
@@ -266,8 +307,18 @@ def test_blocking__commit_no_messages():
 def test_blocking__commit_wrong_messageid_length():
     batch = create_batch()
     futures = (
-        batch.publish({"data": b"blah blah blah"}),
-        batch.publish({"data": b"blah blah blah blah"}),
+        batch.publish(
+            message_wrapper=PublishMessageWrapper(
+                message=gapic_types.PubsubMessage(data=b"blah blah blah"),
+                span=None,
+            )
+        ),
+        batch.publish(
+            message_wrapper=PublishMessageWrapper(
+                message=gapic_types.PubsubMessage(data=b"blah blah blah blah"),
+                span=None,
+            )
+        ),
     )
 
     # Set up a PublishResponse that only returns one message ID.
@@ -287,8 +338,18 @@ def test_blocking__commit_wrong_messageid_length():
 def test_block__commmit_api_error():
     batch = create_batch()
     futures = (
-        batch.publish({"data": b"blah blah blah"}),
-        batch.publish({"data": b"blah blah blah blah"}),
+        batch.publish(
+            message_wrapper=PublishMessageWrapper(
+                message=gapic_types.PubsubMessage(data=b"blah blah blah"),
+                span=None,
+            )
+        ),
+        batch.publish(
+            message_wrapper=PublishMessageWrapper(
+                message=gapic_types.PubsubMessage(data=b"blah blah blah blah"),
+                span=None,
+            )
+        ),
     )
 
     # Make the API throw an error when publishing.
@@ -306,8 +367,18 @@ def test_block__commmit_api_error():
 def test_block__commmit_retry_error():
     batch = create_batch()
     futures = (
-        batch.publish({"data": b"blah blah blah"}),
-        batch.publish({"data": b"blah blah blah blah"}),
+        batch.publish(
+            message_wrapper=PublishMessageWrapper(
+                message=gapic_types.PubsubMessage(data=b"blah blah blah"),
+                span=None,
+            )
+        ),
+        batch.publish(
+            message_wrapper=PublishMessageWrapper(
+                message=gapic_types.PubsubMessage(data=b"blah blah blah blah"),
+                span=None,
+            )
+        ),
     )
 
     # Make the API throw an error when publishing.
@@ -325,23 +396,30 @@ def test_block__commmit_retry_error():
 def test_publish_updating_batch_size():
     batch = create_batch(topic="topic_foo")
     messages = (
-        gapic_types.PubsubMessage(data=b"foobarbaz"),
-        gapic_types.PubsubMessage(data=b"spameggs"),
-        gapic_types.PubsubMessage(data=b"1335020400"),
+        PublishMessageWrapper(
+            message=gapic_types.PubsubMessage(data=b"foobarbaz"), span=None
+        ),
+        PublishMessageWrapper(
+            message=gapic_types.PubsubMessage(data=b"spameggs"), span=None
+        ),
+        PublishMessageWrapper(
+            message=gapic_types.PubsubMessage(data=b"1335020400"), span=None
+        ),
     )
 
     # Publish each of the messages, which should save them to the batch.
     futures = [batch.publish(message) for message in messages]
 
     # There should be three messages on the batch, and three futures.
-    assert len(batch.messages) == 3
+    assert len(batch.message_wrappers) == 3
     assert batch._futures == futures
 
     # The size should have been incremented by the sum of the size
     # contributions of each message to the PublishRequest.
     base_request_size = gapic_types.PublishRequest(topic="topic_foo")._pb.ByteSize()
     expected_request_size = base_request_size + sum(
-        gapic_types.PublishRequest(messages=[msg])._pb.ByteSize() for msg in messages
+        gapic_types.PublishRequest(messages=[msg.message])._pb.ByteSize()
+        for msg in messages
     )
 
     assert batch.size == expected_request_size
@@ -350,22 +428,22 @@ def test_publish_updating_batch_size():
 
 def test_publish():
     batch = create_batch()
-    message = gapic_types.PubsubMessage()
-    future = batch.publish(message)
+    wrapper = PublishMessageWrapper(gapic_types.PubsubMessage(), None)
+    future = batch.publish(wrapper)
 
-    assert len(batch.messages) == 1
+    assert len(batch.message_wrappers) == 1
     assert batch._futures == [future]
 
 
 def test_publish_max_messages_zero():
     batch = create_batch(topic="topic_foo", max_messages=0)
 
-    message = gapic_types.PubsubMessage(data=b"foobarbaz")
+    wrapper = PublishMessageWrapper(gapic_types.PubsubMessage(data=b"foobarbaz"), None)
     with mock.patch.object(batch, "commit") as commit:
-        future = batch.publish(message)
+        future = batch.publish(wrapper)
 
     assert future is not None
-    assert len(batch.messages) == 1
+    assert len(batch.message_wrappers) == 1
     assert batch._futures == [future]
     commit.assert_called_once()
 
@@ -373,30 +451,34 @@ def test_publish_max_messages_zero():
 def test_publish_max_messages_enforced():
     batch = create_batch(topic="topic_foo", max_messages=1)
 
-    message = gapic_types.PubsubMessage(data=b"foobarbaz")
-    message2 = gapic_types.PubsubMessage(data=b"foobarbaz2")
+    message = PublishMessageWrapper(gapic_types.PubsubMessage(data=b"foobarbaz"), None)
+    message2 = PublishMessageWrapper(
+        gapic_types.PubsubMessage(data=b"foobarbaz2"), None
+    )
 
     future = batch.publish(message)
     future2 = batch.publish(message2)
 
     assert future is not None
     assert future2 is None
-    assert len(batch.messages) == 1
+    assert len(batch.message_wrappers) == 1
     assert len(batch._futures) == 1
 
 
 def test_publish_max_bytes_enforced():
     batch = create_batch(topic="topic_foo", max_bytes=15)
 
-    message = gapic_types.PubsubMessage(data=b"foobarbaz")
-    message2 = gapic_types.PubsubMessage(data=b"foobarbaz2")
+    message = PublishMessageWrapper(gapic_types.PubsubMessage(data=b"foobarbaz"), None)
+    message2 = PublishMessageWrapper(
+        gapic_types.PubsubMessage(data=b"foobarbaz2"), None
+    )
 
     future = batch.publish(message)
     future2 = batch.publish(message2)
 
     assert future is not None
     assert future2 is None
-    assert len(batch.messages) == 1
+    assert len(batch.message_wrappers) == 1
     assert len(batch._futures) == 1
 
 
@@ -404,9 +486,9 @@ def test_publish_exceed_max_messages():
     max_messages = 4
     batch = create_batch(max_messages=max_messages)
     messages = (
-        gapic_types.PubsubMessage(data=b"foobarbaz"),
-        gapic_types.PubsubMessage(data=b"spameggs"),
-        gapic_types.PubsubMessage(data=b"1335020400"),
+        PublishMessageWrapper(gapic_types.PubsubMessage(data=b"foobarbaz"), None),
+        PublishMessageWrapper(gapic_types.PubsubMessage(data=b"spameggs"), None),
+        PublishMessageWrapper(gapic_types.PubsubMessage(data=b"1335020400"), None),
     )
 
     # Publish each of the messages, which should save them to the batch.
@@ -420,7 +502,9 @@ def test_publish_exceed_max_messages():
 
         # When a fourth message is published, commit should be called.
         # No future will be returned in this case.
-        future = batch.publish(gapic_types.PubsubMessage(data=b"last one"))
+        future = batch.publish(
+            PublishMessageWrapper(gapic_types.PubsubMessage(data=b"last one"), None)
+        )
         commit.assert_called_once_with()
 
         assert future is None
@@ -443,7 +527,7 @@ def test_publish_single_message_size_exceeds_server_size_limit():
     assert request_size == 1001  # sanity check, just above the (mocked) server limit
 
     with pytest.raises(exceptions.MessageTooLargeError):
-        batch.publish(big_message)
+        batch.publish(PublishMessageWrapper(big_message, None))
 
 
 @mock.patch.object(thread, "_SERVER_PUBLISH_MAX_BYTES", 1000)
@@ -463,8 +547,8 @@ def test_publish_total_messages_size_exceeds_server_size_limit():
     assert 1000 < request_size < 1500
 
     with mock.patch.object(batch, "commit") as fake_commit:
-        batch.publish(messages[0])
-        batch.publish(messages[1])
+        batch.publish(PublishMessageWrapper(messages[0], None))
+        batch.publish(PublishMessageWrapper(messages[1], None))
 
     # The server side limit should kick in and cause a commit.
     fake_commit.assert_called_once()
@@ -472,21 +556,32 @@ def test_publish_total_messages_size_exceeds_server_size_limit():
 
 def test_publish_dict():
     batch = create_batch()
-    future = batch.publish({"data": b"foobarbaz", "attributes": {"spam": "eggs"}})
+    message = PublishMessageWrapper(
+        gapic_types.PubsubMessage(data=b"foobarbaz", attributes={"spam": "eggs"}), None
+    )
+    future = batch.publish(message)
 
     # There should be one message on the batch.
-    expected_message = gapic_types.PubsubMessage(
-        data=b"foobarbaz", attributes={"spam": "eggs"}
+    expected_message = PublishMessageWrapper(
+        gapic_types.PubsubMessage(data=b"foobarbaz", attributes={"spam": "eggs"}), None
     )
-    assert batch.messages == [expected_message]
+    assert batch.message_wrappers == [expected_message]
     assert batch._futures == [future]
 
 
 def test_cancel():
     batch = create_batch()
     futures = (
-        batch.publish({"data": b"This is my message."}),
-        batch.publish({"data": b"This is another message."}),
+        batch.publish(
+            PublishMessageWrapper(
+                gapic_types.PubsubMessage(data=b"This is my message."), None
+            )
+        ),
+        batch.publish(
+            PublishMessageWrapper(
+                gapic_types.PubsubMessage(data=b"This is another message."), None
+            )
+        ),
     )
 
     batch.cancel(BatchCancellationReason.PRIOR_ORDERED_MESSAGE_FAILED)
@@ -503,9 +598,9 @@ def test_do_not_commit_when_full_when_flag_is_off():
     # Set commit_when_full flag to False
     batch = create_batch(max_messages=max_messages, commit_when_full=False)
     messages = (
-        gapic_types.PubsubMessage(data=b"foobarbaz"),
-        gapic_types.PubsubMessage(data=b"spameggs"),
-        gapic_types.PubsubMessage(data=b"1335020400"),
+        PublishMessageWrapper(gapic_types.PubsubMessage(data=b"foobarbaz"), None),
+        PublishMessageWrapper(gapic_types.PubsubMessage(data=b"spameggs"), None),
+        PublishMessageWrapper(gapic_types.PubsubMessage(data=b"1335020400"), None),
     )
 
     with mock.patch.object(batch, "commit") as commit:
@@ -514,7 +609,9 @@ def test_do_not_commit_when_full_when_flag_is_off():
         assert len(futures) == 3
 
         # When a fourth message is published, commit should not be called.
-        future = batch.publish(gapic_types.PubsubMessage(data=b"last one"))
+        future = batch.publish(
+            PublishMessageWrapper(gapic_types.PubsubMessage(data=b"last one"), None)
+        )
         assert commit.call_count == 0
         assert future is None
 
@@ -529,12 +626,212 @@ class BatchDoneCallbackTracker(object):
         self.success = success
 
 
+# Refer https://opentelemetry.io/docs/languages/python/#version-support
+@pytest.mark.skipif(
+    sys.version_info < (3, 8), reason="Open Telemetry requires python3.8 or higher"
+)
+def test_commit_otel_publish_rpc_span_exception(span_exporter):
+    TOPIC = "projects/projectID/topics/topicID"
+    batch = create_batch(topic=TOPIC, enable_open_telemetry=True)
+
+    tracer = trace.get_tracer_provider().get_tracer("com.google.cloud.pubsub.v1")
+    with tracer.start_as_current_span(name="foo", end_on_exit=False) as create_span:
+        message = PublishMessageWrapper(
+            message=gapic_types.PubsubMessage(data=b"foo"), span=create_span
+        )
+    batch.publish(message)
+
+    # Mock publish error.
+    error = google.api_core.exceptions.InternalServerError("error")
+
+    with mock.patch.object(
+        type(batch.client),
+        "_gapic_publish",
+        side_effect=error,
+    ):
+        batch._commit()
+
+    spans = span_exporter.get_finished_spans()
+    # Span 1: publish RPC Span
+    # Span 2: create span of message.
+    assert len(spans) == 2
+
+    # Verify status of both spans recorded error and exception event.
+    for span in spans:
+        assert span.status.status_code == trace.status.StatusCode.ERROR
+        assert len(span.events) == 1
+        assert span.events[0].name == "exception"
+        assert span.end_time is not None
+
+
+def test_commit_otel_null_span(span_exporter):
+    """
+    Test case checks the null case check scenario and appeases code coverage.
+    This scenario where open telemetry is enabled, yet the message added to the
+    batch does not contain a span should not arise in the library.
+    """
+    TOPIC = "projects/projectID/topics/topic"
+    batch = create_batch(
+        topic=TOPIC,
+        enable_open_telemetry=True,
+    )
+
+    msg = PublishMessageWrapper(
+        message=gapic_types.PubsubMessage(data=b"foo"),
+    )
+
+    batch.publish(msg)
+
+    publish_response = gapic_types.PublishResponse(message_ids=["a"])
+    with mock.patch.object(
+        type(batch.client), "_gapic_publish", return_value=publish_response
+    ):
+        batch._commit()
+
+    spans = span_exporter.get_finished_spans()
+    assert len(spans) == 1
+    assert spans[0].name == f"{TOPIC} publish"
+    assert spans[0].end_time is not None
+
+    error = google.api_core.exceptions.InternalServerError("error")
+    batch = create_batch(
+        topic=TOPIC,
+        enable_open_telemetry=True,
+    )
+    batch.publish(msg)
+
+    with mock.patch.object(
+        type(batch.client),
+        "_gapic_publish",
+        side_effect=error,
+    ):
+        batch._commit()
+
+    assert len(spans) == 1
+    assert spans[0].name == f"{TOPIC} publish"
+    assert spans[0].end_time is not None
+
+
+def test_commit_otel_publish_non_sampled(span_exporter):
+    TOPIC = "projects/projectID/topics/topic"
+    batch = create_batch(
+        topic=TOPIC,
+        enable_open_telemetry=True,
+    )
+
+    tracer = trace.get_tracer_provider().get_tracer("com.google.cloud.pubsub.v1")
+    with tracer.start_as_current_span(name="foo", end_on_exit=False) as span:
+        span.is_recording = mock.Mock(return_value=False)
+        msg = PublishMessageWrapper(
+            message=gapic_types.PubsubMessage(data=b"foo"), span=span
+        )
+
+    batch.publish(msg)
+
+    publish_response = gapic_types.PublishResponse(message_ids=["a"])
+    with mock.patch.object(
+        type(batch.client), "_gapic_publish", return_value=publish_response
+    ):
+        batch._commit()
+
+    spans = span_exporter.get_finished_spans()
+
+    # Span 1: publish RPC Span
+    # Span 2: create span of message.
+    assert len(spans) == 2
+    publish_rpc_span, create_span = spans
+    assert len(publish_rpc_span.links) == 0
+    assert len(create_span.links) == 0
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 8), reason="Open Telemetry requires python3.8 or higher"
+)
+def test_commit_otel_publish_rpc_span(span_exporter):
+    TOPIC = "projects/projectID/topics/topic"
+    batch = create_batch(
+        topic=TOPIC,
+        enable_open_telemetry=True,
+    )
+
+    # Simulate message 1 published with its own publisher create span.
+    tracer = trace.get_tracer_provider().get_tracer("com.google.cloud.pubsub.v1")
+    with tracer.start_as_current_span(name="foo", end_on_exit=False) as create_span1:
+        msg1 = PublishMessageWrapper(
+            message=gapic_types.PubsubMessage(data=b"foo"), span=create_span1
+        )
+
+    # Simulate message 2 published with its own publisher create span.
+    with tracer.start_as_current_span(name="bar", end_on_exit=False) as create_span2:
+        msg2 = PublishMessageWrapper(
+            message=gapic_types.PubsubMessage(data=b"bar"),
+            span=create_span2,
+        )
+
+    # Add both messages to the batch.
+    batch.publish(msg1)
+    batch.publish(msg2)
+
+    publish_response = gapic_types.PublishResponse(message_ids=["a", "b"])
+    with mock.patch.object(
+        type(batch.client), "_gapic_publish", return_value=publish_response
+    ):
+        batch._commit()
+
+    spans = span_exporter.get_finished_spans()
+
+    # Span 1: publish RPC span - closed after publish RPC success.
+    # Span 2: publisher create span of message 1 - closed after publish RPC success.
+    # Span 3: publisher create span of message 2 - closed after publish RPC success.
+    assert len(spans) == 3
+    # publish_rpc_span, create_span_1, create_span2, non_sampled_span = spans
+    publish_rpc_span, create_span_1, create_span2 = spans
+
+    # Verify publish_rpc_span
+    assert publish_rpc_span.name == f"{TOPIC} publish"
+    assert publish_rpc_span.kind == trace.SpanKind.CLIENT
+    assert publish_rpc_span.end_time is not None
+    attributes = publish_rpc_span.attributes
+    assert attributes["messaging.system"] == "com.google.cloud.pubsub.v1"
+    assert attributes["messaging.destination.name"] == TOPIC
+    assert attributes["gcp.project_id"] == "projectID"
+    assert attributes["messaging.batch.message_count"] == 2
+    assert attributes["messaging.operation"] == "publish"
+    assert attributes["code.function"] == "_commit"
+    assert publish_rpc_span.parent is None
+    # Verify the links correspond to the spans of the published messages.
+    assert len(publish_rpc_span.links) == 2
+    assert publish_rpc_span.links[0].context[1] == create_span_1.context[1]
+    assert publish_rpc_span.links[1].context[1] == create_span2.context[1]
+
+    # Verify spans of the published messages.
+    assert create_span_1.name == "foo"
+    assert create_span2.name == "bar"
+
+    # Verify the publish create spans have been closed after publish success.
+    assert create_span1.end_time is not None
+    assert create_span2.end_time is not None
+
+    # Verify message_ids returned from gapic publish are added as attributes
+    # to the publisher create spans of the messages.
+    assert "messaging.message.id" in create_span1.attributes
+    assert create_span1.attributes["messaging.message.id"] == "a"
+    assert "messaging.message.id" in create_span2.attributes
+    assert create_span2.attributes["messaging.message.id"] == "b"
+
+    # Verify publish end event added to the span
+    assert len(create_span1.events) == 1
+    assert len(create_span2.events) == 1
+    assert create_span1.events[0].name == "publish end"
+    assert create_span2.events[0].name == "publish end"
+
+
 def test_batch_done_callback_called_on_success():
     batch_done_callback_tracker = BatchDoneCallbackTracker()
     batch = create_batch(batch_done_callback=batch_done_callback_tracker)
 
     # Ensure messages exist.
-    message = gapic_types.PubsubMessage(data=b"foobarbaz")
+    message = PublishMessageWrapper(gapic_types.PubsubMessage(data=b"foobarbaz"), None)
     batch.publish(message)
 
     # One response for one published message.
@@ -554,7 +851,7 @@ def test_batch_done_callback_called_on_publish_failure():
     batch = create_batch(batch_done_callback=batch_done_callback_tracker)
 
     # Ensure messages exist.
-    message = gapic_types.PubsubMessage(data=b"foobarbaz")
+    message = PublishMessageWrapper(gapic_types.PubsubMessage(data=b"foobarbaz"), None)
     batch.publish(message)
 
     # One response for one published message.
@@ -580,7 +877,7 @@ def test_batch_done_callback_called_on_publish_response_invalid():
     batch = create_batch(batch_done_callback=batch_done_callback_tracker)
 
     # Ensure messages exist.
-    message = gapic_types.PubsubMessage(data=b"foobarbaz")
+    message = PublishMessageWrapper(gapic_types.PubsubMessage(data=b"foobarbaz"), None)
     batch.publish(message)
 
     # No message ids returned in successful publish response -> invalid.

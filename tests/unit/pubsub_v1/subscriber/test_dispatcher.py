@@ -22,6 +22,9 @@ from google.cloud.pubsub_v1.subscriber._protocol import helper_threads
 from google.cloud.pubsub_v1.subscriber._protocol import requests
 from google.cloud.pubsub_v1.subscriber._protocol import streaming_pull_manager
 from google.cloud.pubsub_v1.subscriber import futures
+from google.cloud.pubsub_v1.opentelemetry.subscribe_spans_data import OpenTelemetryData
+
+from opentelemetry import trace
 
 # special case python < 3.8
 if sys.version_info.major == 3 and sys.version_info.minor < 8:
@@ -33,6 +36,34 @@ import pytest
 from google.cloud.pubsub_v1.subscriber.exceptions import (
     AcknowledgeStatus,
 )
+
+
+def test_modack_otel():
+    manager = mock.create_autospec(
+        streaming_pull_manager.StreamingPullManager, instance=True
+    )
+    dispatcher_ = dispatcher.Dispatcher(manager, mock.sentinel.queue)
+    subscribe_span = mock.Mock(spec=trace.Span)
+    items = [
+        requests.ModAckRequest(
+            "0",
+            0,
+            None,
+            open_telemetry_data=OpenTelemetryData(subscribe_span=subscribe_span),
+        ),
+        requests.ModAckRequest("1", 0, None, open_telemetry_data=OpenTelemetryData()),
+    ]
+
+    with mock.patch.object(dispatcher_, "modify_ack_deadline"):
+        dispatcher_.dispatch_callback(items)
+
+    # Assert that modack start and end events were added to the subscribe span.
+    subscribe_span.add_event.assert_has_calls(
+        [
+            mock.call("modack start"),
+            mock.call("modack end"),
+        ]
+    )
 
 
 @pytest.mark.parametrize(
@@ -58,6 +89,14 @@ def test_dispatch_callback_active_manager(item, method_name):
 
     method.assert_called_once_with([item])
     manager._exactly_once_delivery_enabled.assert_called()
+
+
+def test_manager_property():
+    manager = mock.create_autospec(
+        streaming_pull_manager.StreamingPullManager, instance=True
+    )
+    dispatcher_ = dispatcher.Dispatcher(manager=manager, queue=mock.sentinel.queue)
+    assert dispatcher_.manager is manager
 
 
 @pytest.mark.parametrize(
@@ -365,10 +404,20 @@ def test_unknown_request_type():
         dispatcher_.dispatch_callback(items)
 
 
-def test_ack():
+@pytest.mark.parametrize(
+    "otel_enabled, otel_data",
+    [
+        (False, None),
+        (True, OpenTelemetryData(subscribe_span=mock.Mock(spec=trace.Span))),
+        (True, None),
+        (True, OpenTelemetryData()),
+    ],
+)
+def test_ack(otel_enabled, otel_data):
     manager = mock.create_autospec(
         streaming_pull_manager.StreamingPullManager, instance=True
     )
+    manager.open_telemetry_enabled = otel_enabled
     dispatcher_ = dispatcher.Dispatcher(manager, mock.sentinel.queue)
 
     items = [
@@ -378,7 +427,8 @@ def test_ack():
             time_to_ack=20,
             ordering_key="",
             future=None,
-        )
+            open_telemetry_data=otel_data,
+        ),
     ]
     manager.send_unary_ack.return_value = (items, [])
     dispatcher_.ack(items)
@@ -390,6 +440,12 @@ def test_ack():
     manager.leaser.remove.assert_called_once_with(items)
     manager.maybe_resume_consumer.assert_called_once()
     manager.ack_histogram.add.assert_called_once_with(20)
+    if otel_data and otel_data.subscribe_span:
+        otel_data.subscribe_span.set_attribute.assert_called_with(
+            key="messaging.gcp_pubsub.result",
+            value="ack",
+        )
+        otel_data.subscribe_span.add_event.assert_called_with("ack end")
 
 
 def test_ack_no_time():
@@ -481,10 +537,20 @@ def test_retry_acks_in_new_thread():
             assert ctor_call.kwargs["daemon"]
 
 
-def test_retry_acks():
+@pytest.mark.parametrize(
+    "otel_enabled,otel_data",
+    [
+        (False, None),
+        (True, OpenTelemetryData(subscribe_span=mock.Mock(spec=trace.Span))),
+        (True, OpenTelemetryData()),
+        (True, None),
+    ],
+)
+def test_retry_acks(otel_enabled, otel_data):
     manager = mock.create_autospec(
         streaming_pull_manager.StreamingPullManager, instance=True
     )
+    manager.open_telemetry_enabled = otel_enabled
     dispatcher_ = dispatcher.Dispatcher(manager, mock.sentinel.queue)
 
     f = futures.Future()
@@ -495,6 +561,7 @@ def test_retry_acks():
             time_to_ack=20,
             ordering_key="",
             future=f,
+            open_telemetry_data=otel_data,
         )
     ]
     # first and second `send_unary_ack` calls fail, third one succeeds
@@ -515,6 +582,13 @@ def test_retry_acks():
             ),
         ]
     )
+
+    if otel_data and otel_data.subscribe_span:
+        otel_data.subscribe_span.set_attribute.assert_called_with(
+            key="messaging.gcp_pubsub.result",
+            value="ack",
+        )
+        otel_data.subscribe_span.add_event.assert_called_with("ack end")
 
 
 def test_retry_modacks_in_new_thread():
@@ -633,15 +707,29 @@ def test_drop_ordered_messages():
     manager.maybe_resume_consumer.assert_called_once()
 
 
-def test_nack():
+@pytest.mark.parametrize(
+    "otel_enabled,otel_data",
+    [
+        (False, None),
+        (True, OpenTelemetryData(subscribe_span=mock.Mock(spec=trace.Span))),
+        (True, None),
+        (True, OpenTelemetryData()),
+    ],
+)
+def test_nack(otel_enabled, otel_data):
     manager = mock.create_autospec(
         streaming_pull_manager.StreamingPullManager, instance=True
     )
+    manager.open_telemetry_enabled = otel_enabled
     dispatcher_ = dispatcher.Dispatcher(manager, mock.sentinel.queue)
 
     items = [
         requests.NackRequest(
-            ack_id="ack_id_string", byte_size=10, ordering_key="", future=None
+            ack_id="ack_id_string",
+            byte_size=10,
+            ordering_key="",
+            future=None,
+            open_telemetry_data=otel_data,
         )
     ]
     manager.send_unary_modack.return_value = (items, [])
@@ -657,9 +745,19 @@ def test_nack():
         ack_reqs_dict = call[1]["ack_reqs_dict"]
         assert ack_reqs_dict == {
             "ack_id_string": requests.ModAckRequest(
-                ack_id="ack_id_string", seconds=0, future=None
+                ack_id="ack_id_string",
+                seconds=0,
+                future=None,
+                open_telemetry_data=otel_data,
             )
         }
+
+    if otel_data and otel_data.subscribe_span:
+        otel_data.subscribe_span.set_attribute.assert_called_with(
+            key="messaging.gcp_pubsub.result",
+            value="nack",
+        )
+        otel_data.subscribe_span.add_event.assert_called_with("nack end")
 
 
 def test_modify_ack_deadline():

@@ -17,13 +17,19 @@ from __future__ import absolute_import
 import logging
 import threading
 import time
+from datetime import datetime
 import typing
 from typing import Any, Callable, List, Optional, Sequence
+
+from opentelemetry import trace
 
 import google.api_core.exceptions
 from google.api_core import gapic_v1
 from google.cloud.pubsub_v1.publisher import exceptions
 from google.cloud.pubsub_v1.publisher import futures
+from google.cloud.pubsub_v1.opentelemetry.publish_message_wrapper import (
+    PublishMessageWrapper,
+)
 from google.cloud.pubsub_v1.publisher._batch import base
 from google.pubsub_v1 import types as gapic_types
 
@@ -108,7 +114,7 @@ class Batch(base.Batch):
         # status changed from ACCEPTING_MESSAGES to any other
         # in order to avoid race conditions
         self._futures: List[futures.Future] = []
-        self._messages: List[gapic_types.PubsubMessage] = []
+        self._message_wrappers: List[PublishMessageWrapper] = []
         self._status = base.BatchStatus.ACCEPTING_MESSAGES
 
         # The initial size is not zero, we need to account for the size overhead
@@ -134,9 +140,9 @@ class Batch(base.Batch):
         return self._client
 
     @property
-    def messages(self) -> Sequence[gapic_types.PubsubMessage]:
+    def message_wrappers(self) -> Sequence[PublishMessageWrapper]:
         """The messages currently in the batch."""
-        return self._messages
+        return self._message_wrappers
 
     @property
     def settings(self) -> "types.BatchSettings":
@@ -259,7 +265,7 @@ class Batch(base.Batch):
         # https://github.com/googleapis/google-cloud-python/issues/8036
 
         # Sanity check: If there are no messages, no-op.
-        if not self._messages:
+        if not self._message_wrappers:
             _LOGGER.debug("No messages to publish, exiting commit")
             self._status = base.BatchStatus.SUCCESS
             return
@@ -270,17 +276,75 @@ class Batch(base.Batch):
 
         batch_transport_succeeded = True
         try:
+            if self._client._open_telemetry_enabled:
+                tracer = trace.get_tracer("com.google.cloud.pubsub.v1")
+                links = []
+                for wrapper in self._message_wrappers:
+                    span = wrapper.span
+                    if span and span.is_recording():
+                        links.append(trace.Link(span.get_span_context()))
+                with tracer.start_as_current_span(
+                    name=f"{self._topic} publish",
+                    attributes={
+                        "messaging.system": "com.google.cloud.pubsub.v1",
+                        "messaging.destination.name": self._topic,
+                        "gcp.project_id": self._topic.split("/")[1],
+                        "messaging.batch.message_count": len(self._message_wrappers),
+                        "messaging.operation": "publish",
+                        "code.function": "_commit",
+                    },
+                    links=links if len(links) > 0 else None,
+                    kind=trace.SpanKind.CLIENT,
+                    end_on_exit=False,
+                ) as publish_rpc_span:
+                    ctx = publish_rpc_span.get_span_context()
+                    for wrapper in self._message_wrappers:
+                        span = wrapper.span
+                        if span and span.is_recording():
+                            span.add_link(ctx)
             # Performs retries for errors defined by the retry configuration.
             response = self._client._gapic_publish(
                 topic=self._topic,
-                messages=self._messages,
+                messages=[wrapper.message for wrapper in self._message_wrappers],
                 retry=self._commit_retry,
                 timeout=self._commit_timeout,
             )
+            if self._client._open_telemetry_enabled:
+                publish_rpc_span.end()
+                for message_id, wrapper in zip(
+                    response.message_ids, self._message_wrappers
+                ):
+                    span = wrapper.span
+                    if span:
+                        span.add_event(
+                            name="publish end",
+                            attributes={
+                                "timestamp": str(datetime.now()),
+                            },
+                        )
+                        span.set_attribute(key="messaging.message.id", value=message_id)
+                        span.end()
         except google.api_core.exceptions.GoogleAPIError as exc:
             # We failed to publish, even after retries, so set the exception on
             # all futures and exit.
             self._status = base.BatchStatus.ERROR
+
+            if self._client._open_telemetry_enabled:
+                publish_rpc_span.record_exception(
+                    exception=exc,
+                )
+                publish_rpc_span.set_status(
+                    trace.Status(status_code=trace.StatusCode.ERROR)
+                )
+                publish_rpc_span.end()
+                for wrapper in self._message_wrappers:
+                    span = wrapper.span
+                    if span:
+                        span.record_exception(exception=exc)
+                        span.set_status(
+                            trace.Status(status_code=trace.StatusCode.ERROR),
+                        )
+                        span.end()
 
             batch_transport_succeeded = False
             if self._batch_done_callback is not None:
@@ -326,7 +390,8 @@ class Batch(base.Batch):
             self._batch_done_callback(batch_transport_succeeded)
 
     def publish(
-        self, message: gapic_types.PubsubMessage
+        self,
+        message_wrapper: PublishMessageWrapper,
     ) -> Optional["pubsub_v1.publisher.futures.Future"]:
         """Publish a single message.
 
@@ -351,12 +416,16 @@ class Batch(base.Batch):
         """
 
         # Coerce the type, just in case.
-        if not isinstance(message, gapic_types.PubsubMessage):
+        if not isinstance(
+            message_wrapper.message, gapic_types.PubsubMessage
+        ):  # pragma: NO COVER
             # For performance reasons, the message should be constructed by directly
             # using the raw protobuf class, and only then wrapping it into the
             # higher-level PubsubMessage class.
-            vanilla_pb = _raw_proto_pubbsub_message(**message)
-            message = gapic_types.PubsubMessage.wrap(vanilla_pb)
+            vanilla_pb = _raw_proto_pubbsub_message(**message_wrapper.message)
+            message_wrapper.message = vanilla_pb.gapic_types.PubsubMessage.wrap(
+                vanilla_pb
+            )
 
         future = None
 
@@ -369,7 +438,7 @@ class Batch(base.Batch):
                 return None
 
             size_increase = gapic_types.PublishRequest(
-                messages=[message]
+                messages=[message_wrapper.message]
             )._pb.ByteSize()
 
             if (self._base_request_size + size_increase) > _SERVER_PUBLISH_MAX_BYTES:
@@ -381,16 +450,15 @@ class Batch(base.Batch):
                 raise exceptions.MessageTooLargeError(err_msg)
 
             new_size = self._size + size_increase
-            new_count = len(self._messages) + 1
+            new_count = len(self._message_wrappers) + 1
 
             size_limit = min(self.settings.max_bytes, _SERVER_PUBLISH_MAX_BYTES)
             overflow = new_size > size_limit or new_count >= self.settings.max_messages
 
-            if not self._messages or not overflow:
+            if not self._message_wrappers or not overflow:
                 # Store the actual message in the batch's message queue.
-                self._messages.append(message)
+                self._message_wrappers.append(message_wrapper)
                 self._size = new_size
-
                 # Track the future on this batch (so that the result of the
                 # future can be set).
                 future = futures.Future()

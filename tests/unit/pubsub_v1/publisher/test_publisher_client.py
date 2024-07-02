@@ -37,10 +37,15 @@ from google.cloud.pubsub_v1 import types
 
 from google.cloud.pubsub_v1.publisher import exceptions
 from google.cloud.pubsub_v1.publisher._sequencer import ordered_sequencer
+from google.cloud.pubsub_v1.opentelemetry.publish_message_wrapper import (
+    PublishMessageWrapper,
+)
 
 from google.pubsub_v1 import types as gapic_types
 from google.pubsub_v1.services.publisher import client as publisher_client
 from google.pubsub_v1.services.publisher.transports.grpc import PublisherGrpcTransport
+
+from opentelemetry import trace
 
 
 def _assert_retries_equal(retry, retry2):
@@ -213,6 +218,42 @@ def test_message_ordering_enabled(creds):
     assert client._enable_message_ordering
 
 
+def test_publish_otel_batching_exception(creds, span_exporter):
+    client = publisher.Client(
+        credentials=creds,
+        publisher_options=types.PublisherOptions(
+            enable_open_telemetry_tracing=True,
+        ),
+    )
+
+    # Throw an exception when sequencer.publish() is called
+    sequencer = mock.Mock(spec=ordered_sequencer.OrderedSequencer)
+    sequencer.publish = mock.Mock(side_effect=RuntimeError("some error"))
+    client._get_or_create_sequencer = mock.Mock(return_value=sequencer)
+
+    TOPIC = "projects/projectID/topics/topicID"
+    with pytest.raises(RuntimeError):
+        client.publish(TOPIC, b"message")
+
+    spans = span_exporter.get_finished_spans()
+
+    # Span 1: Publisher Flow Control span
+    # Span 2: Publisher Batching span(ended after exception)
+    # Span 3: Create Publish span(ended after exception)
+    assert len(spans) == 3
+
+    publish_batching_span = spans[1]
+    publish_create_span = spans[2]
+    assert publish_batching_span.name == "publisher batching"
+    assert publish_batching_span.kind == trace.SpanKind.INTERNAL
+    assert publish_batching_span._parent[1] == publish_create_span._context[1]
+
+    # Verify exception recorded by the Publisher Batching span.
+    assert publish_batching_span.status.status_code == trace.StatusCode.ERROR
+    assert len(publish_batching_span.events) == 1
+    assert publish_batching_span.events[0].name == "exception"
+
+
 def test_publish(creds):
     client = publisher.Client(credentials=creds)
 
@@ -240,12 +281,78 @@ def test_publish(creds):
     # Check mock.
     batch.publish.assert_has_calls(
         [
-            mock.call(gapic_types.PubsubMessage(data=b"spam")),
             mock.call(
-                gapic_types.PubsubMessage(data=b"foo", attributes={"bar": "baz"})
+                PublishMessageWrapper(
+                    message=gapic_types.PubsubMessage(data=b"spam"),
+                    span=None,
+                )
+            ),
+            mock.call(
+                PublishMessageWrapper(
+                    message=gapic_types.PubsubMessage(
+                        data=b"foo", attributes={"bar": "baz"}
+                    ),
+                    span=None,
+                )
             ),
         ]
     )
+
+
+def test_publish_otel_context_propagation(creds):
+    TOPIC = "projects/projectID/topics/topicID"
+    client = publisher.Client(
+        credentials=creds,
+        publisher_options=types.PublisherOptions(
+            enable_open_telemetry_tracing=True,
+        ),
+    )
+
+    flow_controller_add_mock = mock.Mock(
+        spec=publisher.flow_controller.FlowController.add
+    )
+    client._flow_controller.add = flow_controller_add_mock
+    client.publish(TOPIC, b"message")
+
+    flow_controller_add_mock.assert_called_once()
+    args = flow_controller_add_mock.call_args.args
+    assert len(args) == 1
+    assert "googclient_traceparent" in args[0].attributes
+
+
+def test_publish_otel(creds, span_exporter):
+    TOPIC = "projects/projectID/topics/topicID"
+    client = publisher.Client(
+        credentials=creds,
+        publisher_options=types.PublisherOptions(
+            enable_open_telemetry_tracing=True,
+        ),
+    )
+
+    client.publish(TOPIC, b"message")
+
+    spans = span_exporter.get_finished_spans()
+
+    # Publish Create Span is still active, hence note returned
+    # by the exporter.
+    # span1 = Publisher Flow Control Span
+    # span2 = Publisher Batching Span
+    assert len(spans) == 2
+
+    flow_control_span, batching_span = spans
+
+    # Verify flow control span.
+    assert flow_control_span.name == "publisher flow control"
+    assert flow_control_span.kind == trace.SpanKind.INTERNAL
+
+    # Verify that flow control span is a child of the publish create span.
+    # assert flow_control_span._parent[1] == spans[0]._context[1]
+
+    # Verify Publisher Batching Span
+    assert batching_span.name == "publisher batching"
+    assert batching_span.kind == trace.SpanKind.INTERNAL
+    # Verify Publisher Batching Span is child of Publish Create Span
+    # assert batching_span._parent[1] == spans[0]._context[1]
 
 
 def test_publish_error_exceeding_flow_control_limits(creds):
@@ -268,6 +375,57 @@ def test_publish_error_exceeding_flow_control_limits(creds):
     future1.result()  # no error, still within flow control limits
     with pytest.raises(exceptions.FlowControlLimitError):
         future2.result()
+
+
+def test_publish_otel_flow_control_exception(creds, span_exporter):
+    client = publisher.Client(
+        credentials=creds,
+        publisher_options=types.PublisherOptions(
+            enable_open_telemetry_tracing=True,
+        ),
+    )
+
+    client._flow_controller = mock.Mock(spec=publisher.flow_controller.FlowController)
+    client._flow_controller.add = mock.Mock(
+        side_effect=exceptions.FlowControlLimitError
+    )
+
+    TOPIC = "projects/projectID/topics/topicID"
+    client.publish(TOPIC, b"message")
+
+    spans = span_exporter.get_finished_spans()
+
+    # Span 1: Publisher Flow Control Span(closed after exception)
+    # Span 2: Publisher Create Span(closed after exception)
+    assert len(spans) == 2
+
+    flow_control_span, create_span = spans
+
+    assert create_span.name == f"{TOPIC} create"
+    assert create_span.status.status_code == trace.StatusCode.ERROR
+    attributes = create_span.attributes
+    assert attributes["messaging.system"] == "gcp_pubsub"
+    assert attributes["messaging.destination.name"] == TOPIC
+    assert attributes["code.function"] == "google.cloud.pubsub.PublisherClient.publish"
+    assert attributes["messaging.gcp_pubsub.message.ordering_key"] == ""
+    assert attributes["messaging.operation"] == "create"
+    assert attributes["gcp.project_id"] == "projectID"
+    assert "messaging.message.body.size" in attributes
+    assert create_span.kind == trace.SpanKind.PRODUCER
+
+    assert len(create_span.events) == 2
+    # Verify start event
+    start_event = create_span.events[0]
+    assert start_event.name == "publish start"
+    assert "timestamp" in start_event.attributes
+    assert create_span.events[1].name == "exception"
+
+    assert flow_control_span.name == "publisher flow control"
+    assert flow_control_span.status.status_code == trace.StatusCode.ERROR
+    assert flow_control_span.kind == trace.SpanKind.INTERNAL
+    assert len(flow_control_span.events) == 1
+    assert flow_control_span.events[0].name == "exception"
+    assert flow_control_span._parent[1] == create_span._context[1]
 
 
 def test_publish_data_not_bytestring_error(creds):
@@ -381,7 +539,14 @@ def test_publish_attrs_bytestring(creds):
 
     # The attributes should have been sent as text.
     batch.publish.assert_called_once_with(
-        gapic_types.PubsubMessage(data=b"foo", attributes={"bar": "baz"})
+        # gapic_types.PubsubMessage(data=b"foo", attributes={"bar": "baz"})
+        PublishMessageWrapper(
+            message=gapic_types.PubsubMessage(
+                data=b"foo",
+                attributes={"bar": "baz"},
+            ),
+            span=None,
+        )
     )
 
 
@@ -421,8 +586,12 @@ def test_publish_new_batch_needed(creds):
         commit_timeout=gapic_v1.method.DEFAULT,
     )
     message_pb = gapic_types.PubsubMessage(data=b"foo", attributes={"bar": "baz"})
-    batch1.publish.assert_called_once_with(message_pb)
-    batch2.publish.assert_called_once_with(message_pb)
+    wrapper = PublishMessageWrapper(
+        message=message_pb,
+        span=None,
+    )
+    batch1.publish.assert_called_once_with(wrapper)
+    batch2.publish.assert_called_once_with(wrapper)
 
 
 def test_publish_attrs_type_error(creds):
@@ -445,9 +614,9 @@ def test_publish_custom_retry_overrides_configured_retry(creds):
     client.publish(topic, b"hello!", retry=mock.sentinel.custom_retry)
 
     fake_sequencer.publish.assert_called_once_with(
-        mock.ANY, retry=mock.sentinel.custom_retry, timeout=mock.ANY
+        message=mock.ANY, retry=mock.sentinel.custom_retry, timeout=mock.ANY
     )
-    message = fake_sequencer.publish.call_args.args[0]
+    message = fake_sequencer.publish.call_args.kwargs["message"].message
     assert message.data == b"hello!"
 
 
@@ -464,9 +633,9 @@ def test_publish_custom_timeout_overrides_configured_timeout(creds):
     client.publish(topic, b"hello!", timeout=mock.sentinel.custom_timeout)
 
     fake_sequencer.publish.assert_called_once_with(
-        mock.ANY, retry=mock.ANY, timeout=mock.sentinel.custom_timeout
+        message=mock.ANY, retry=mock.ANY, timeout=mock.sentinel.custom_timeout
     )
-    message = fake_sequencer.publish.call_args.args[0]
+    message = fake_sequencer.publish.call_args.kwargs["message"].message
     assert message.data == b"hello!"
 
 
@@ -626,11 +795,21 @@ def test_publish_with_ordering_key(creds):
     # Check mock.
     batch.publish.assert_has_calls(
         [
-            mock.call(gapic_types.PubsubMessage(data=b"spam", ordering_key="k1")),
             mock.call(
-                gapic_types.PubsubMessage(
-                    data=b"foo", attributes={"bar": "baz"}, ordering_key="k1"
+                PublishMessageWrapper(
+                    message=gapic_types.PubsubMessage(data=b"spam", ordering_key="k1"),
+                    span=None,
                 )
+            ),
+            mock.call(
+                PublishMessageWrapper(
+                    message=gapic_types.PubsubMessage(
+                        data=b"foo",
+                        attributes={"bar": "baz"},
+                        ordering_key="k1",
+                    ),
+                    span=None,
+                ),
             ),
         ]
     )
