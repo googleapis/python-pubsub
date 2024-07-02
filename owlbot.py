@@ -101,7 +101,7 @@ for library in s.get_staging_dirs(default_version):
 
     count = s.replace(
         clients_to_patch,
-        r"Transport = type\(self\)\.get_transport_class\(cast\(str, transport\)\)",
+        r"if not transport_provided:",
         """\g<0>
 
             emulator_host = os.environ.get("PUBSUB_EMULATOR_HOST")
