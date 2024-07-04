@@ -43,6 +43,7 @@ from google.cloud.pubsub_v1.subscriber import futures
 from google.pubsub_v1 import types as gapic_types
 from google.cloud.pubsub_v1.opentelemetry.subscribe_spans_data import OpenTelemetryData
 from opentelemetry.trace import Span
+from opentelemetry import trace
 import grpc
 from google.rpc import status_pb2
 from google.rpc import code_pb2
@@ -64,6 +65,33 @@ from google.rpc import error_details_pb2
 def test__wrap_as_exception(exception, expected_cls):
     assert isinstance(
         streaming_pull_manager._wrap_as_exception(exception), expected_cls
+    )
+
+
+def test__wrap_callback_errors_otel_process_span():
+    msg = mock.Mock()
+    callback = mock.Mock()
+    tracer = trace.get_tracer("google.cloud.pubsub_v1.subscriber")
+    with tracer.start_as_current_span("publisher_create_span") as publisher_create_span:
+        with tracer.start_as_current_span("subscriber_span") as subscribe_span:
+            msg.open_telemetry_data.subscribe_span = subscribe_span
+            streaming_pull_manager._wrap_callback_errors(
+                callback,
+                mock.Mock(),
+                "projects/projectID/subscriptions/subscriptionID",
+                msg,
+            )
+
+    callback.assert_called_once()
+    process_span = msg.open_telemetry_data.process_span
+    assert process_span is not None
+    assert process_span.name == "subscriptionID process"
+    assert process_span.kind == trace.SpanKind.INTERNAL
+    assert process_span.parent.span_id == subscribe_span.context.span_id
+    # Verify that the link to create span of the associated message is present.
+    assert len(process_span.links) == 1
+    assert (
+        process_span.links[0].context.span_id == publisher_create_span.context.span_id
     )
 
 

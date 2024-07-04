@@ -139,7 +139,24 @@ def _wrap_callback_errors(
                 message.open_telemetry_data.concurrency_control_span.end()
             if message.open_telemetry_data.scheduler_span:
                 message.open_telemetry_data.scheduler_span.end()
-
+            tracer = trace.get_tracer(_OPEN_TELEMETRY_TRACER_NAME)
+            subscribe_span = message.open_telemetry_data.subscribe_span
+            publisher_create_span_link = None
+            if subscribe_span and subscribe_span.parent:
+                publisher_create_span_link = trace.Link(subscribe_span.parent)
+            with tracer.start_as_current_span(
+                name=f"{subscription.split('/')[3]} process",
+                attributes={
+                    "messaging.system": _OPEN_TELEMETRY_MESSAGING_SYSTEM,
+                },
+                kind=trace.SpanKind.INTERNAL,
+                context=set_span_in_context(subscribe_span) if subscribe_span else None,
+                links=[publisher_create_span_link]
+                if publisher_create_span_link
+                else None,
+                end_on_exit=False,
+            ) as process_span:
+                message.open_telemetry_data.process_span = process_span
         callback(message)
     except BaseException as exc:
         # Note: the likelihood of this failing is extremely low. This just adds
