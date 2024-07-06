@@ -459,6 +459,9 @@ class Message(object):
             subscriber_span = self._open_telemetry_data.subscribe_span
             if subscriber_span:
                 subscriber_span.add_event("nack start")
+            process_span = self._open_telemetry_data.process_span
+            if process_span:
+                process_span.add_event("nack called")
         self._request_queue.put(
             requests.NackRequest(
                 ack_id=self._ack_id,
@@ -507,6 +510,9 @@ class Message(object):
             subscriber_span = self._open_telemetry_data.subscribe_span
             if subscriber_span:
                 subscriber_span.add_event("nack start")
+            process_span = self._open_telemetry_data.process_span
+            if process_span:
+                process_span.add_event("nack called")
         req_future: Optional[futures.Future]
         if self._exactly_once_delivery_enabled_func():
             future = futures.Future()

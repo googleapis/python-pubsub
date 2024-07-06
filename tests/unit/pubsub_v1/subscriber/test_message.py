@@ -277,7 +277,10 @@ def test_modify_ack_deadline_with_response_exactly_once_delivery_enabled():
     "otel_data,",
     [
         None,
-        OpenTelemetryData(subscribe_span=mock.Mock(spec=trace.Span)),
+        OpenTelemetryData(
+            subscribe_span=mock.Mock(spec=trace.Span),
+            process_span=mock.Mock(spec=trace.Span),
+        ),
         OpenTelemetryData(),
     ],
 )
@@ -301,13 +304,18 @@ def test_nack(otel_data):
         check_call_types(put, requests.NackRequest)
         if otel_data and otel_data.subscribe_span:
             otel_data.subscribe_span.add_event.assert_called_with("nack start")
+        if otel_data and otel_data.process_span:
+            otel_data.process_span.add_event.assert_called_with("nack called")
 
 
 @pytest.mark.parametrize(
     "otel_data",
     [
         None,
-        OpenTelemetryData(subscribe_span=mock.Mock(spec=trace.Span)),
+        OpenTelemetryData(
+            subscribe_span=mock.Mock(spec=trace.Span),
+            process_span=mock.Mock(spec=trace.Span),
+        ),
         OpenTelemetryData(),
     ],
 )
@@ -333,6 +341,8 @@ def test_nack_with_response_exactly_once_delivery_disabled(otel_data):
         check_call_types(put, requests.NackRequest)
         if otel_data and otel_data.subscribe_span:
             otel_data.subscribe_span.add_event.assert_called_with("nack start")
+        if otel_data and otel_data.process_span:
+            otel_data.process_span.add_event.assert_called_with("nack called")
 
 
 def test_nack_with_response_exactly_once_delivery_enabled():
