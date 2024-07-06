@@ -1316,7 +1316,7 @@ def make_running_manager(enable_open_telemetry=False, **kwargs):
     manager._dispatcher = mock.create_autospec(dispatcher.Dispatcher, instance=True)
     manager._leaser = mock.create_autospec(leaser.Leaser, instance=True)
     manager._heartbeater = mock.create_autospec(heartbeater.Heartbeater, instance=True)
-    manager._open_telemetry_enabled = mock.Mock(return_value=enable_open_telemetry)
+    manager._open_telemetry_enabled = enable_open_telemetry
     return (
         manager,
         manager._consumer,
@@ -1557,9 +1557,10 @@ def test__on_response_delivery_attempt():
     assert msg2.delivery_attempt == 6
 
 
-def test__on_response_mod_ack_otel(span_exporter):
+@pytest.mark.parametrize("otel_enabled", [(True), (False)])
+def test__on_response_mod_ack_otel(span_exporter, otel_enabled):
     manager, _, dispatcher, leaser, _, scheduler = make_running_manager(
-        enable_open_telemetry=True
+        enable_open_telemetry=otel_enabled,
     )
     manager._callback = mock.sentinel.callback
 
@@ -1605,6 +1606,18 @@ def test__on_response_mod_ack_otel(span_exporter):
     # Subscribe span would still be active, hence would not be exported.
     spans = span_exporter.get_finished_spans()
     assert len(spans) == 0
+    if otel_enabled:
+        call_args = scheduler.schedule.call_args_list
+        assert len(call_args) == 2
+        for call_arg in call_args:
+            args, _ = call_arg
+            otel_data = args[1].open_telemetry_data
+            assert otel_data.concurrency_control_span is not None
+            assert otel_data.concurrency_control_span.kind == trace.SpanKind.INTERNAL
+            assert (
+                otel_data.concurrency_control_span.name
+                == "subscriber concurrency control"
+            )
 
 
 def test__on_response_modifies_ack_deadline():
