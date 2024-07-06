@@ -267,6 +267,9 @@ class Message(object):
             subscriber_span = self._open_telemetry_data.subscribe_span
             if subscriber_span:
                 subscriber_span.add_event(name="ack start")
+            process_span = self._open_telemetry_data.process_span
+            if process_span:
+                process_span.add_event(name="ack called")
         self._request_queue.put(
             requests.AckRequest(
                 ack_id=self._ack_id,

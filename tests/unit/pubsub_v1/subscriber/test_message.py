@@ -136,35 +136,14 @@ def check_call_types(mock, *args, **kwargs):
             assert isinstance(call_args[n], argtype)
 
 
-# def test_ack_otel():
-#     otel_data = OpenTelemetryData(
-#         subscribe_span=mock.Mock(spec=trace.Span),
-#     )
-#     msg = create_message(
-#         data=b"foo",
-#         ack_id="ack_id",
-#         open_telemetry_data=otel_data,
-#     )
-#     with mock.patch.object(msg._request_queue, "put") as put:
-#         msg.ack()
-#         put.assert_called_once_with(
-#             requests.AckRequest(
-#                 ack_id="ack_id",
-#                 byte_size=30,
-#                 time_to_ack=mock.ANY,
-#                 ordering_key="",
-#                 future=None,
-#                 open_telemetry_data=otel_data,
-#             )
-#         )
-#         check_call_types(put, requests.AckRequest)
-
-
 @pytest.mark.parametrize(
     "otel_data,",
     [
         None,
-        OpenTelemetryData(subscribe_span=mock.Mock(spec=trace.Span)),
+        OpenTelemetryData(
+            subscribe_span=mock.Mock(spec=trace.Span),
+            process_span=mock.Mock(spec=trace.Span),
+        ),
         OpenTelemetryData(),
     ],
 )
@@ -189,6 +168,8 @@ def test_ack(otel_data):
         check_call_types(put, requests.AckRequest)
         if otel_data and otel_data.subscribe_span:
             otel_data.subscribe_span.add_event.assert_called_with(name="ack start")
+        if otel_data and otel_data.process_span:
+            otel_data.process_span.add_event.assert_called_with(name="ack called")
 
 
 @pytest.mark.parametrize(
