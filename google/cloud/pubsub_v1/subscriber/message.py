@@ -324,6 +324,9 @@ class Message(object):
             suscriber_span = self._open_telemetry_data.subscribe_span
             if suscriber_span:
                 suscriber_span.add_event(name="ack start")
+            process_span = self._open_telemetry_data.process_span
+            if process_span:
+                process_span.add_event(name="ack called")
         req_future: Optional[futures.Future]
         if self._exactly_once_delivery_enabled_func():
             future = futures.Future()

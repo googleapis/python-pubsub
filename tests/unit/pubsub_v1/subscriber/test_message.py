@@ -176,7 +176,10 @@ def test_ack(otel_data):
     "otel_data",
     [
         None,
-        OpenTelemetryData(subscribe_span=mock.Mock(spec=trace.Span)),
+        OpenTelemetryData(
+            subscribe_span=mock.Mock(spec=trace.Span),
+            process_span=mock.Mock(spec=trace.Span),
+        ),
         OpenTelemetryData(),
     ],
 )
@@ -204,6 +207,8 @@ def test_ack_with_response_exactly_once_delivery_disabled(otel_data):
 
         if otel_data and otel_data.subscribe_span:
             otel_data.subscribe_span.add_event.assert_called_with(name="ack start")
+        if otel_data and otel_data.process_span:
+            otel_data.process_span.add_event.assert_called_with(name="ack called")
 
 
 def test_ack_with_response_exactly_once_delivery_enabled():
