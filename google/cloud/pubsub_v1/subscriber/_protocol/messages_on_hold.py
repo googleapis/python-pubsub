@@ -112,11 +112,9 @@ class MessagesOnHold(object):
             with self._tracer.start_as_current_span(
                 name="subscriber scheduler",
                 kind=trace.SpanKind.INTERNAL,
-                context=set_span_in_context(
-                    message.open_telemetry_data.subscribe_span
-                    if message.open_telemetry_data.subscribe_span
-                    else None
-                ),
+                context=set_span_in_context(message.open_telemetry_data.subscribe_span)
+                if message.open_telemetry_data.subscribe_span
+                else None,
                 end_on_exit=False,
             ) as scheduler_span:
                 message.open_telemetry_data.scheduler_span = scheduler_span

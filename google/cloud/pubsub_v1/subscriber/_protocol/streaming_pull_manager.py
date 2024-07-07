@@ -1134,7 +1134,7 @@ class StreamingPullManager(object):
         received_messages = response._pb.received_messages
 
         subscribe_spans = []
-        if self._open_telemetry_enabled:
+        if self.open_telemetry_enabled:
             for received_message in response.received_messages:
                 parent_span_context = TraceContextTextMapPropagator().extract(
                     carrier=received_message.message,
@@ -1185,14 +1185,14 @@ class StreamingPullManager(object):
         # Immediately (i.e. without waiting for the auto lease management)
         # modack the messages we received, as this tells the server that we've
         # received them.
-        if self._open_telemetry_enabled:
+        if self.open_telemetry_enabled:
             for subscribe_span in subscribe_spans:
                 subscribe_span.add_event("modack start")
         ack_id_gen = (message.ack_id for message in received_messages)
         expired_ack_ids = self._send_lease_modacks(
             ack_id_gen, self.ack_deadline, warn_on_invalid=False
         )
-        if self._open_telemetry_enabled:
+        if self.open_telemetry_enabled:
             for subscribe_span in subscribe_spans:
                 subscribe_span.add_event("modack end")
 
@@ -1213,7 +1213,7 @@ class StreamingPullManager(object):
                         self._scheduler.queue,
                         self._exactly_once_delivery_enabled,
                     )
-                    if self._open_telemetry_enabled:
+                    if self.open_telemetry_enabled:
                         message._open_telemetry_data = OpenTelemetryData(
                             subscribe_span=subscribe_spans[i],
                         )
