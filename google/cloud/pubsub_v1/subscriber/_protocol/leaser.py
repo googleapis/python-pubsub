@@ -22,6 +22,8 @@ import time
 import typing
 from typing import Dict, Iterable, Optional, Union
 
+from opentelemetry import trace
+
 from google.cloud.pubsub_v1.subscriber._protocol.dispatcher import _MAX_BATCH_LATENCY
 
 try:
@@ -50,6 +52,7 @@ class _LeasedMessage(typing.NamedTuple):
 
     size: int
     ordering_key: Optional[str]
+    subscribe_span: Optional[trace.Span]
 
 
 class Leaser(object):
@@ -98,6 +101,9 @@ class Leaser(object):
                         sent_time=float("inf"),
                         size=item.byte_size,
                         ordering_key=item.ordering_key,
+                        subscribe_span=item.subscribe_span
+                        if item.subscribe_span
+                        else None,
                     )
                     self._bytes += item.byte_size
                 else:

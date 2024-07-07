@@ -15,6 +15,8 @@
 import typing
 from typing import NamedTuple, Optional
 
+from opentelemetry import trace
+
 from google.cloud.pubsub_v1.opentelemetry.subscribe_spans_data import OpenTelemetryData
 
 if typing.TYPE_CHECKING:  # pragma: NO COVER
@@ -42,6 +44,7 @@ class LeaseRequest(NamedTuple):
     ack_id: str
     byte_size: int
     ordering_key: Optional[str]
+    subscribe_span: Optional[trace.Span] = None
 
 
 class ModAckRequest(NamedTuple):

@@ -1245,6 +1245,9 @@ class StreamingPullManager(object):
                         ack_id=message.ack_id,
                         byte_size=message.size,
                         ordering_key=message.ordering_key,
+                        subscribe_span=subscribe_spans[i]
+                        if self.open_telemetry_enabled
+                        else None,
                     )
                     self._leaser.add([req])
                     i = i + 1
