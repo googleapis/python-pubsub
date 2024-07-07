@@ -1186,8 +1186,29 @@ class StreamingPullManager(object):
         # modack the messages we received, as this tells the server that we've
         # received them.
         if self.open_telemetry_enabled:
+            subscriber_span_links = []
             for subscribe_span in subscribe_spans:
                 subscribe_span.add_event("modack start")
+                subscriber_span_links.append(
+                    trace.Link(subscribe_span.get_span_context())
+                )
+            with self._tracer.start_as_current_span(
+                name=f"{self._subscription.split('/')[3]} modack",
+                attributes={
+                    "messaging.system": _OPEN_TELEMETRY_MESSAGING_SYSTEM,
+                    "messaging.batch.message_count": len(received_messages),
+                    "messaging.gcp_pubsub.message.ack_deadline": self.ack_deadline,
+                    "messaging.gcp_pubsub.is_receipt_modack": True,
+                    "messaging.destination.name": self._subscription.split("/")[3],
+                    "gcp.project_id": self._subscription.split("/")[1],
+                    "messaging.operation.name": "modack",
+                    "code.function": "_on_response",
+                },
+                links=subscriber_span_links if subscriber_span_links else None,
+                kind=trace.SpanKind.CLIENT,
+                end_on_exit=False,
+            ) as receipt_modack_span:
+                pass
         ack_id_gen = (message.ack_id for message in received_messages)
         expired_ack_ids = self._send_lease_modacks(
             ack_id_gen, self.ack_deadline, warn_on_invalid=False
@@ -1195,6 +1216,7 @@ class StreamingPullManager(object):
         if self.open_telemetry_enabled:
             for subscribe_span in subscribe_spans:
                 subscribe_span.add_event("modack end")
+            receipt_modack_span.end()
 
         with self._pause_resume_lock:
             assert self._scheduler is not None

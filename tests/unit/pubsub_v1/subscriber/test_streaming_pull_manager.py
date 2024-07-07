@@ -1604,8 +1604,9 @@ def test__on_response_mod_ack_otel(span_exporter, otel_enabled):
     )
 
     # Subscribe span would still be active, hence would not be exported.
+    # Receipt modack span would be exported since it would be ended after receipt modacks are complete.
     spans = span_exporter.get_finished_spans()
-    assert len(spans) == 0
+    assert len(spans) == (1 if otel_enabled else 0)
     if otel_enabled:
         call_args = scheduler.schedule.call_args_list
         assert len(call_args) == 2
@@ -1618,6 +1619,21 @@ def test__on_response_mod_ack_otel(span_exporter, otel_enabled):
                 otel_data.concurrency_control_span.name
                 == "subscriber concurrency control"
             )
+
+        receipt_modack_span = spans[0]
+        assert receipt_modack_span.name == "subscriptionID modack"
+        assert receipt_modack_span.kind == trace.SpanKind.CLIENT
+        assert len(receipt_modack_span.links) == 2
+
+        attributes = receipt_modack_span.attributes
+        assert attributes["messaging.system"] == "gcp_pubsub"
+        assert attributes["messaging.batch.message_count"] == 2
+        assert attributes["messaging.gcp_pubsub.message.ack_deadline"] == 18
+        assert attributes["messaging.gcp_pubsub.is_receipt_modack"] is True
+        assert attributes["messaging.destination.name"] == "subscriptionID"
+        assert attributes["gcp.project_id"] == "projectID"
+        assert attributes["messaging.operation.name"] == "modack"
+        assert attributes["code.function"] == "_on_response"
 
 
 def test__on_response_modifies_ack_deadline():
