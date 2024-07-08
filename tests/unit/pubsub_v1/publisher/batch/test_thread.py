@@ -664,6 +664,10 @@ def test_commit_otel_publish_rpc_span_exception(span_exporter):
         assert span.end_time is not None
 
 
+# Refer https://opentelemetry.io/docs/languages/python/#version-support
+@pytest.mark.skipif(
+    sys.version_info < (3, 8), reason="Open Telemetry requires python3.8 or higher"
+)
 def test_commit_otel_null_span(span_exporter):
     """
     Test case checks the null case check scenario and appeases code coverage.
@@ -712,6 +716,10 @@ def test_commit_otel_null_span(span_exporter):
     assert spans[0].end_time is not None
 
 
+# Refer https://opentelemetry.io/docs/languages/python/#version-support
+@pytest.mark.skipif(
+    sys.version_info < (3, 8), reason="Open Telemetry requires python3.8 or higher"
+)
 def test_commit_otel_publish_non_sampled(span_exporter):
     TOPIC = "projects/projectID/topics/topic"
     batch = create_batch(

@@ -23,6 +23,8 @@ from google.cloud.pubsub_v1.subscriber._protocol import leaser
 from google.cloud.pubsub_v1.subscriber._protocol import requests
 from google.cloud.pubsub_v1.subscriber._protocol import streaming_pull_manager
 
+from opentelemetry import trace
+
 # special case python < 3.8
 if sys.version_info.major == 3 and sys.version_info.minor < 8:
     import mock
@@ -82,7 +84,7 @@ def test_remove_negative_bytes(caplog):
     assert "unexpectedly negative" in caplog.text
 
 
-def create_manager(flow_control=types.FlowControl()):
+def create_manager(flow_control=types.FlowControl(), open_telemetry_enabled=False):
     manager = mock.create_autospec(
         streaming_pull_manager.StreamingPullManager, instance=True
     )
@@ -92,6 +94,7 @@ def create_manager(flow_control=types.FlowControl()):
     manager.ack_histogram = histogram.Histogram()
     manager._obtain_ack_deadline.return_value = 10
     manager._subscription = "projects/projectID/subscriptions/subscriptionID"
+    manager.open_telemetry_enabled = open_telemetry_enabled
     return manager
 
 
@@ -137,12 +140,31 @@ def make_sleep_mark_event_as_done(leaser):
     leaser._stop_event.wait = trigger_done
 
 
-def test_maintain_leases_ack_ids():
-    manager = create_manager()
+@pytest.mark.parametrize(
+    "otel_enabled",
+    [
+        (False),
+        (True),
+    ],
+)
+def test_maintain_leases_ack_ids(otel_enabled, span_exporter):
+    manager = create_manager(open_telemetry_enabled=otel_enabled)
     leaser_ = leaser.Leaser(manager)
     make_sleep_mark_event_as_done(leaser_)
+    subscribe_span_mock = mock.Mock()
     leaser_.add(
         [requests.LeaseRequest(ack_id="my ack id", byte_size=50, ordering_key="")]
+    )
+
+    leaser_.add(
+        [
+            requests.LeaseRequest(
+                ack_id="my ack id2",
+                byte_size=50,
+                ordering_key="",
+                subscribe_span=subscribe_span_mock,
+            )
+        ]
     )
 
     manager._send_lease_modacks.return_value = set()
@@ -151,8 +173,26 @@ def test_maintain_leases_ack_ids():
     assert len(manager._send_lease_modacks.mock_calls) == 1
     call = manager._send_lease_modacks.mock_calls[0]
     ack_ids = list(call.args[0])
-    assert ack_ids == ["my ack id"]
+    assert ack_ids == ["my ack id", "my ack id2"]
     assert call.args[1] == 10
+
+    if otel_enabled:
+        spans = span_exporter.get_finished_spans()
+        assert len(spans) == 1
+        modack_span = spans[0]
+        assert (
+            modack_span.name == "projects/projectID/subscriptions/subscriptionID modack"
+        )
+        assert modack_span.kind == trace.SpanKind.CLIENT
+        attributes = modack_span.attributes
+        assert attributes["messaging.system"] == "gcp_pubsub"
+        assert attributes["messaging.batch.message_count"] == 2
+        assert attributes["messaging.gcp_pubsub.message.ack_deadline"] == 10
+        assert attributes["messaging.gcp_pubsub.is_receipt_modack"] is False
+        assert attributes["messaging.destination.name"] == "subscriptionID"
+        assert attributes["messaging.operation.name"] == "modack"
+        assert attributes["code.function"] == "maintain_leases"
+        assert len(modack_span.links) == 1
 
 
 def test_maintain_leases_expired_ack_ids_ignored():

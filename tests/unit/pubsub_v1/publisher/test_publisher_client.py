@@ -219,6 +219,19 @@ def test_message_ordering_enabled(creds):
 
 
 def test_publish_otel_batching_exception(creds, span_exporter):
+    if sys.version_info.major == 3 and sys.version_info.minor < 8:
+        with pytest.warns(
+            RuntimeWarning,
+            match="OpenTelemetry for Python version 3.7 or lower is not supported. Disabling open telemetry tracing.",
+        ):
+            client = publisher.Client(
+                credentials=creds,
+                publisher_options=types.PublisherOptions(
+                    enable_open_telemetry_tracing=True,
+                ),
+            )
+        assert client._open_telemetry_enabled is False
+        return
     client = publisher.Client(
         credentials=creds,
         publisher_options=types.PublisherOptions(
@@ -301,6 +314,19 @@ def test_publish(creds):
 
 def test_publish_otel_context_propagation(creds):
     TOPIC = "projects/projectID/topics/topicID"
+    if sys.version_info.major == 3 and sys.version_info.minor < 8:
+        with pytest.warns(
+            RuntimeWarning,
+            match="OpenTelemetry for Python version 3.7 or lower is not supported. Disabling open telemetry tracing.",
+        ):
+            client = publisher.Client(
+                credentials=creds,
+                publisher_options=types.PublisherOptions(
+                    enable_open_telemetry_tracing=True,
+                ),
+            )
+            assert client._open_telemetry_enabled is False
+            return
     client = publisher.Client(
         credentials=creds,
         publisher_options=types.PublisherOptions(
@@ -322,6 +348,19 @@ def test_publish_otel_context_propagation(creds):
 
 def test_publish_otel(creds, span_exporter):
     TOPIC = "projects/projectID/topics/topicID"
+    if sys.version_info.major == 3 and sys.version_info.minor < 8:
+        with pytest.warns(
+            RuntimeWarning,
+            match="OpenTelemetry for Python version 3.7 or lower is not supported. Disabling open telemetry tracing.",
+        ):
+            client = publisher.Client(
+                credentials=creds,
+                publisher_options=types.PublisherOptions(
+                    enable_open_telemetry_tracing=True,
+                ),
+            )
+            assert client._open_telemetry_enabled is False
+            return
     client = publisher.Client(
         credentials=creds,
         publisher_options=types.PublisherOptions(
@@ -378,6 +417,19 @@ def test_publish_error_exceeding_flow_control_limits(creds):
 
 
 def test_publish_otel_flow_control_exception(creds, span_exporter):
+    if sys.version_info.major == 3 and sys.version_info.minor < 8:
+        with pytest.warns(
+            RuntimeWarning,
+            match="OpenTelemetry for Python version 3.7 or lower is not supported. Disabling open telemetry tracing.",
+        ):
+            client = publisher.Client(
+                credentials=creds,
+                publisher_options=types.PublisherOptions(
+                    enable_open_telemetry_tracing=True,
+                ),
+            )
+            assert client._open_telemetry_enabled is False
+            return
     client = publisher.Client(
         credentials=creds,
         publisher_options=types.PublisherOptions(

@@ -167,10 +167,23 @@ class Client(publisher_client.PublisherClient):
         # The object controlling the message publishing flow
         self._flow_controller = FlowController(self.publisher_options.flow_control)
 
-        # Option indicating whether open telemetry is enabled or not.
-        self._open_telemetry_enabled = (
+        # OpenTelemetry features used by the library are not supported in Python versions <= 3.7.
+        # Refer https://github.com/open-telemetry/opentelemetry-python/issues/3993#issuecomment-2211976389
+        if (
             self.publisher_options.enable_open_telemetry_tracing
-        )
+            and sys.version_info.major == 3
+            and sys.version_info.minor < 8
+        ):
+            warnings.warn(
+                message="OpenTelemetry for Python version 3.7 or lower is not supported. Disabling open telemetry tracing.",
+                category=RuntimeWarning,
+            )
+            self._open_telemetry_enabled = False
+        else:
+            # Option indicating whether open telemetry is enabled or not.
+            self._open_telemetry_enabled = (
+                self.publisher_options.enable_open_telemetry_tracing
+            )
 
     @classmethod
     def from_service_account_file(  # type: ignore[override]
