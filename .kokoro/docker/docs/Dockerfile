@@ -71,6 +71,10 @@ RUN tar -xvf Python-3.9.13.tgz
 RUN ./Python-3.9.13/configure --enable-optimizations
 RUN make altinstall
 
+# Use python 3.9 by default
+RUN python3.9 -m venv /venv
+ENV PATH /venv/bin:$PATH
+
 ###################### Install pip
 RUN wget -O /tmp/get-pip.py 'https://bootstrap.pypa.io/get-pip.py' \
   && python3 /tmp/get-pip.py \
