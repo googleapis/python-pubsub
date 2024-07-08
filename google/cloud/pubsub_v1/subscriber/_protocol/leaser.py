@@ -44,6 +44,9 @@ if typing.TYPE_CHECKING:  # pragma: NO COVER
 
 _LOGGER = logging.getLogger(__name__)
 _LEASE_WORKER_NAME = "Thread-LeaseMaintainer"
+_OPEN_TELEMETRY_TRACER_NAME = "google.cloud.pubsub_v1.subscriber"
+"""Open Telemetry Instrumenting module name."""
+_OPEN_TELEMETRY_MESSAGING_SYSTEM = "gcp_pubsub"
 
 
 class _LeasedMessage(typing.NamedTuple):
@@ -196,7 +199,38 @@ class Leaser(object):
             expired_ack_ids = set()
             if ack_ids:
                 _LOGGER.debug("Renewing lease for %d ack IDs.", len(ack_ids))
-
+                if self._manager.open_telemetry_enabled:
+                    subscriber_span_links = []
+                    lease_requests = leased_messages.values()
+                    for lease_request in lease_requests:
+                        if lease_request.subscribe_span is not None:
+                            subscriber_span_links.append(
+                                trace.Link(
+                                    lease_request.subscribe_span.get_span_context()
+                                )
+                            )
+                    tracer = trace.get_tracer(_OPEN_TELEMETRY_TRACER_NAME)
+                    with tracer.start_as_current_span(
+                        name=f"{self._manager._subscription} modack",
+                        attributes={
+                            "messaging.system": _OPEN_TELEMETRY_MESSAGING_SYSTEM,
+                            "messaging.batch.message_count": len(ack_ids),
+                            "messaging.gcp_pubsub.message.ack_deadline": deadline,
+                            "messaging.gcp_pubsub.is_receipt_modack": False,
+                            "messaging.destination.name": self._manager._subscription.split(
+                                "/"
+                            )[
+                                3
+                            ],
+                            "gcp.project_id": self._manager._subscription.split("/")[1],
+                            "messaging.operation.name": "modack",
+                            "code.function": "maintain_leases",
+                        },
+                        links=subscriber_span_links if subscriber_span_links else None,
+                        kind=trace.SpanKind.CLIENT,
+                        end_on_exit=False,
+                    ) as modack_span:
+                        pass
                 # NOTE: This may not work as expected if ``consumer.active``
                 #       has changed since we checked it. An implementation
                 #       without any sort of race condition would require a
@@ -207,6 +241,9 @@ class Leaser(object):
                 expired_ack_ids = self._manager._send_lease_modacks(
                     ack_id_gen, deadline
                 )
+
+                if self._manager.open_telemetry_enabled:
+                    modack_span.end()
 
             start_time = time.time()
             # If exactly once delivery is enabled, we should drop all expired ack_ids from lease management.

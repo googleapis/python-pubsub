@@ -91,6 +91,7 @@ def create_manager(flow_control=types.FlowControl()):
     manager.flow_control = flow_control
     manager.ack_histogram = histogram.Histogram()
     manager._obtain_ack_deadline.return_value = 10
+    manager._subscription = "projects/projectID/subscriptions/subscriptionID"
     return manager
 
 
