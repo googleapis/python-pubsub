@@ -59,18 +59,6 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/* \
   && rm -f /var/cache/apt/archives/*.deb
 
-###################### Install python 3.9.19
-
-# Download python 3.9.19
-RUN wget https://www.python.org/ftp/python/3.9.19/Python-3.9.19.tgz
-
-# Extract files
-RUN tar -xvf Python-3.9.19.tgz
-
-# Install python 3.9.19
-RUN ./Python-3.9.19/configure --enable-optimizations
-RUN make altinstall
-
 ###################### Install python 3.10.14 for docfx session
 
 # Download python 3.10.14
@@ -83,9 +71,9 @@ RUN tar -xvf Python-3.10.14.tgz
 RUN ./Python-3.10.14/configure --enable-optimizations
 RUN make altinstall
 
-###################### Use python 3.9 by default
+###################### Use python 3.10 by default
 
-RUN python3.9 -m venv /venv
+RUN python3.10 -m venv /venv
 ENV PATH /venv/bin:$PATH
 
 ###################### Install pip
