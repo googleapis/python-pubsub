@@ -1284,8 +1284,6 @@ class PublisherClient(metaclass=PublisherClientMeta):
             method=rpc,
             request=request,
             response=response,
-            retry=retry,
-            timeout=timeout,
             metadata=metadata,
         )
 
@@ -1403,8 +1401,6 @@ class PublisherClient(metaclass=PublisherClientMeta):
             method=rpc,
             request=request,
             response=response,
-            retry=retry,
-            timeout=timeout,
             metadata=metadata,
         )
 
@@ -1526,8 +1522,6 @@ class PublisherClient(metaclass=PublisherClientMeta):
             method=rpc,
             request=request,
             response=response,
-            retry=retry,
-            timeout=timeout,
             metadata=metadata,
         )
 
