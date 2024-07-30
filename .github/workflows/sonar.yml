@@ -7,9 +7,9 @@ on:
       - main
       - develop
 
-  pull_request: 
+  pull_request:
     types: [opened, synchronize, reopened]
-    branches: 
+    branches:
       - '**'
   workflow_dispatch:
 
@@ -18,7 +18,7 @@ jobs:
     name: Sonarqube_CI
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -30,7 +30,7 @@ jobs:
 
       # Job will fail when the Quality Gate is red
       - name: Sonarqube quality gate check
-        id: sonarqube-quality-gate-check      
+        id: sonarqube-quality-gate-check
         uses: sonarsource/sonarqube-quality-gate-action@master
         timeout-minutes: 5
         env:
