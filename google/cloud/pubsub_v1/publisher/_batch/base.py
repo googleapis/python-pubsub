@@ -24,6 +24,9 @@ if typing.TYPE_CHECKING:  # pragma: NO COVER
     from google.cloud import pubsub_v1
     from google.cloud.pubsub_v1 import types
     from google.pubsub_v1 import types as gapic_types
+    from google.cloud.pubsub_v1.opentelemetry.publish_message_wrapper import (
+        PublishMessageWrapper,
+    )
 
 
 class Batch(metaclass=abc.ABCMeta):
@@ -54,7 +57,7 @@ class Batch(metaclass=abc.ABCMeta):
 
     def __len__(self):
         """Return the number of messages currently in the batch."""
-        return len(self.messages)
+        return len(self.message_wrappers)
 
     @staticmethod
     @abc.abstractmethod
@@ -68,7 +71,7 @@ class Batch(metaclass=abc.ABCMeta):
 
     @property
     @abc.abstractmethod
-    def messages(self) -> Sequence["gapic_types.PubsubMessage"]:  # pragma: NO COVER
+    def message_wrappers(self) -> Sequence["PublishMessageWrapper"]:  # pragma: NO COVER
         """Return the messages currently in the batch.
 
         Returns:

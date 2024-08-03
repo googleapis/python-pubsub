@@ -25,6 +25,11 @@ import uuid
 
 import grpc  # type: ignore
 
+from opentelemetry import trace
+from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
+from google.cloud.pubsub_v1.opentelemetry.subscribe_spans_data import OpenTelemetryData
+from opentelemetry.trace.propagation import set_span_in_context
+
 from google.api_core import bidi
 from google.api_core import exceptions
 from google.cloud.pubsub_v1 import types
@@ -34,6 +39,7 @@ from google.cloud.pubsub_v1.subscriber._protocol import histogram
 from google.cloud.pubsub_v1.subscriber._protocol import leaser
 from google.cloud.pubsub_v1.subscriber._protocol import messages_on_hold
 from google.cloud.pubsub_v1.subscriber._protocol import requests
+from google.cloud.pubsub_v1.opentelemetry.context_propagation import OTelContextGetter
 from google.cloud.pubsub_v1.subscriber.exceptions import (
     AcknowledgeError,
     AcknowledgeStatus,
@@ -91,6 +97,10 @@ _EXACTLY_ONCE_DELIVERY_TEMPORARY_RETRY_ERRORS = {
     code_pb2.UNAVAILABLE,
 }
 
+_OPEN_TELEMETRY_TRACER_NAME = "google.cloud.pubsub_v1.subscriber"
+"""Open Telemetry Instrumenting module name."""
+_OPEN_TELEMETRY_MESSAGING_SYSTEM = "gcp_pubsub"
+
 
 def _wrap_as_exception(maybe_exception: Any) -> BaseException:
     """Wrap an object as a Python exception, if needed.
@@ -113,6 +123,7 @@ def _wrap_as_exception(maybe_exception: Any) -> BaseException:
 def _wrap_callback_errors(
     callback: Callable[["google.cloud.pubsub_v1.subscriber.message.Message"], Any],
     on_callback_error: Callable[[BaseException], Any],
+    subscription: str,
     message: "google.cloud.pubsub_v1.subscriber.message.Message",
 ):
     """Wraps a user callback so that if an exception occurs the message is
@@ -123,6 +134,29 @@ def _wrap_callback_errors(
         message: The Pub/Sub message.
     """
     try:
+        if message.open_telemetry_data:
+            if message.open_telemetry_data.concurrency_control_span:
+                message.open_telemetry_data.concurrency_control_span.end()
+            if message.open_telemetry_data.scheduler_span:
+                message.open_telemetry_data.scheduler_span.end()
+            tracer = trace.get_tracer(_OPEN_TELEMETRY_TRACER_NAME)
+            subscribe_span = message.open_telemetry_data.subscribe_span
+            publisher_create_span_link = None
+            if subscribe_span and subscribe_span.parent:
+                publisher_create_span_link = trace.Link(subscribe_span.parent)
+            with tracer.start_as_current_span(
+                name=f"{subscription.split('/')[3]} process",
+                attributes={
+                    "messaging.system": _OPEN_TELEMETRY_MESSAGING_SYSTEM,
+                },
+                kind=trace.SpanKind.INTERNAL,
+                context=set_span_in_context(subscribe_span) if subscribe_span else None,
+                links=[publisher_create_span_link]
+                if publisher_create_span_link
+                else None,
+                end_on_exit=False,
+            ) as process_span:
+                message.open_telemetry_data.process_span = process_span
         callback(message)
     except BaseException as exc:
         # Note: the likelihood of this failing is extremely low. This just adds
@@ -272,6 +306,7 @@ class StreamingPullManager(object):
         await_callbacks_on_shutdown: bool = False,
     ):
         self._client = client
+        self._open_telemetry_enabled = client.open_telemetry_enabled
         self._subscription = subscription
         self._exactly_once_enabled = False
         self._flow_control = flow_control
@@ -365,6 +400,12 @@ class StreamingPullManager(object):
         self._leaser: Optional[leaser.Leaser] = None
         self._consumer: Optional[bidi.BackgroundConsumer] = None
         self._heartbeater: Optional[heartbeater.Heartbeater] = None
+        self._tracer = trace.get_tracer(_OPEN_TELEMETRY_TRACER_NAME)
+
+    @property
+    def open_telemetry_enabled(self) -> bool:
+        """Whether open telemetry is enabled."""
+        return self._open_telemetry_enabled
 
     @property
     def is_active(self) -> bool:
@@ -618,6 +659,20 @@ class StreamingPullManager(object):
         )
         assert self._scheduler is not None
         assert self._callback is not None
+        if (
+            self.open_telemetry_enabled
+            and msg.open_telemetry_data
+            and msg.open_telemetry_data.subscribe_span
+        ):
+            with self._tracer.start_as_current_span(
+                name="subscriber concurrency control",
+                kind=trace.SpanKind.INTERNAL,
+                context=set_span_in_context(msg.open_telemetry_data.subscribe_span),
+                end_on_exit=False,
+            ) as concurrency_control_span:
+                msg.open_telemetry_data.concurrency_control_span = (
+                    concurrency_control_span
+                )
         self._scheduler.schedule(self._callback, msg)
 
     def send_unary_ack(
@@ -834,7 +889,10 @@ class StreamingPullManager(object):
             raise ValueError("This manager has been closed and can not be re-used.")
 
         self._callback = functools.partial(
-            _wrap_callback_errors, callback, on_callback_error
+            _wrap_callback_errors,
+            callback,
+            on_callback_error,
+            self._subscription,
         )
 
         # Create the RPC
@@ -1075,6 +1133,35 @@ class StreamingPullManager(object):
         # protobuf message to significantly gain on attribute access performance.
         received_messages = response._pb.received_messages
 
+        subscribe_spans = []
+        if self.open_telemetry_enabled:
+            for received_message in response.received_messages:
+                parent_span_context = TraceContextTextMapPropagator().extract(
+                    carrier=received_message.message,
+                    getter=OTelContextGetter(),
+                )
+                with self._tracer.start_as_current_span(
+                    name=f"{self._subscription} subscribe",
+                    kind=trace.SpanKind.CONSUMER,
+                    context=parent_span_context if parent_span_context else None,
+                    attributes={
+                        "messaging.system": _OPEN_TELEMETRY_MESSAGING_SYSTEM,
+                        "messaging.destination.name": self._subscription,
+                        "gcp.project_id": self._subscription.split("/")[1],
+                        "messaging.message.id": received_message.message.message_id,
+                        "messaging.message.body.size": len(
+                            received_message.message.data
+                        ),
+                        "messaging.gcp_pubsub.message.ack_id": received_message.ack_id,
+                        "messaging.gcp_pubsub.message.ordering_key": received_message.message.ordering_key,
+                        "messaging.gcp_pubsub.message.exactly_once_delivery": response.subscription_properties.exactly_once_delivery_enabled,
+                        "code.function": "_on_response",
+                        "messaging.gcp_pubsub.message.delivery_attempt": received_message.delivery_attempt,
+                    },
+                    end_on_exit=False,
+                ) as subscribe_span:
+                    subscribe_spans.append(subscribe_span)
+
         _LOGGER.debug(
             "Processing %s received message(s), currently on hold %s (bytes %s).",
             len(received_messages),
@@ -1098,15 +1185,44 @@ class StreamingPullManager(object):
         # Immediately (i.e. without waiting for the auto lease management)
         # modack the messages we received, as this tells the server that we've
         # received them.
+        if self.open_telemetry_enabled:
+            subscriber_span_links = []
+            for subscribe_span in subscribe_spans:
+                subscribe_span.add_event("modack start")
+                subscriber_span_links.append(
+                    trace.Link(subscribe_span.get_span_context())
+                )
+            with self._tracer.start_as_current_span(
+                name=f"{self._subscription.split('/')[3]} modack",
+                attributes={
+                    "messaging.system": _OPEN_TELEMETRY_MESSAGING_SYSTEM,
+                    "messaging.batch.message_count": len(received_messages),
+                    "messaging.gcp_pubsub.message.ack_deadline": self.ack_deadline,
+                    "messaging.gcp_pubsub.is_receipt_modack": True,
+                    "messaging.destination.name": self._subscription.split("/")[3],
+                    "gcp.project_id": self._subscription.split("/")[1],
+                    "messaging.operation.name": "modack",
+                    "code.function": "_on_response",
+                },
+                links=subscriber_span_links if subscriber_span_links else None,
+                kind=trace.SpanKind.CLIENT,
+                end_on_exit=False,
+            ) as receipt_modack_span:
+                pass
         ack_id_gen = (message.ack_id for message in received_messages)
         expired_ack_ids = self._send_lease_modacks(
             ack_id_gen, self.ack_deadline, warn_on_invalid=False
         )
+        if self.open_telemetry_enabled:
+            for subscribe_span in subscribe_spans:
+                subscribe_span.add_event("modack end")
+            receipt_modack_span.end()
 
         with self._pause_resume_lock:
             assert self._scheduler is not None
             assert self._leaser is not None
 
+            i = 0
             for received_message in received_messages:
                 if (
                     not self._exactly_once_delivery_enabled()
@@ -1119,14 +1235,22 @@ class StreamingPullManager(object):
                         self._scheduler.queue,
                         self._exactly_once_delivery_enabled,
                     )
+                    if self.open_telemetry_enabled:
+                        message._open_telemetry_data = OpenTelemetryData(
+                            subscribe_span=subscribe_spans[i],
+                        )
                     self._messages_on_hold.put(message)
                     self._on_hold_bytes += message.size
                     req = requests.LeaseRequest(
                         ack_id=message.ack_id,
                         byte_size=message.size,
                         ordering_key=message.ordering_key,
+                        subscribe_span=subscribe_spans[i]
+                        if self.open_telemetry_enabled
+                        else None,
                     )
                     self._leaser.add([req])
+                    i = i + 1
 
             self._maybe_release_messages()
 

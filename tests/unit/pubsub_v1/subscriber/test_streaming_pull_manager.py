@@ -41,6 +41,9 @@ from google.cloud.pubsub_v1.subscriber._protocol import streaming_pull_manager
 from google.cloud.pubsub_v1.subscriber import exceptions as subscriber_exceptions
 from google.cloud.pubsub_v1.subscriber import futures
 from google.pubsub_v1 import types as gapic_types
+from google.cloud.pubsub_v1.opentelemetry.subscribe_spans_data import OpenTelemetryData
+from opentelemetry.trace import Span
+from opentelemetry import trace
 import grpc
 from google.rpc import status_pb2
 from google.rpc import code_pb2
@@ -65,12 +68,85 @@ def test__wrap_as_exception(exception, expected_cls):
     )
 
 
+def test__wrap_callback_errors_otel_process_span():
+    msg = mock.Mock()
+    callback = mock.Mock()
+    tracer = trace.get_tracer("google.cloud.pubsub_v1.subscriber")
+    with tracer.start_as_current_span("publisher_create_span") as publisher_create_span:
+        with tracer.start_as_current_span("subscriber_span") as subscribe_span:
+            msg.open_telemetry_data.subscribe_span = subscribe_span
+            streaming_pull_manager._wrap_callback_errors(
+                callback,
+                mock.Mock(),
+                "projects/projectID/subscriptions/subscriptionID",
+                msg,
+            )
+
+    callback.assert_called_once()
+    process_span = msg.open_telemetry_data.process_span
+    assert process_span is not None
+    assert process_span.name == "subscriptionID process"
+    assert process_span.kind == trace.SpanKind.INTERNAL
+    assert process_span.parent.span_id == subscribe_span.context.span_id
+    # Verify that the link to create span of the associated message is present.
+    assert len(process_span.links) == 1
+    assert (
+        process_span.links[0].context.span_id == publisher_create_span.context.span_id
+    )
+
+
+@pytest.mark.parametrize(
+    "otel_data",
+    [
+        (
+            OpenTelemetryData(
+                concurrency_control_span=mock.Mock(spec=Span),
+                scheduler_span=mock.Mock(spec=Span),
+            )
+        ),
+        (
+            OpenTelemetryData(
+                concurrency_control_span=None,
+                scheduler_span=None,
+            )
+        ),
+        (None),
+    ],
+)
+def test__wrap_callback_errors_no_error_otel(otel_data):
+    msg = mock.Mock()
+    msg.open_telemetry_data = otel_data
+    callback = mock.Mock()
+    on_callback_error = mock.Mock()
+
+    streaming_pull_manager._wrap_callback_errors(
+        callback,
+        on_callback_error,
+        "projects/projectID/subscriptions/subscriptionID",
+        msg,
+    )
+
+    callback.assert_called_once_with(msg)
+    msg.nack.assert_not_called()
+    on_callback_error.assert_not_called()
+
+    if otel_data and otel_data.concurrency_control_span:
+        otel_data.concurrency_control_span.end.assert_called_once()
+    if otel_data and otel_data.scheduler_span:
+        otel_data.scheduler_span.end.assert_called_once()
+
+
 def test__wrap_callback_errors_no_error():
     msg = mock.create_autospec(message.Message, instance=True)
     callback = mock.Mock()
     on_callback_error = mock.Mock()
 
-    streaming_pull_manager._wrap_callback_errors(callback, on_callback_error, msg)
+    streaming_pull_manager._wrap_callback_errors(
+        callback,
+        on_callback_error,
+        "projects/projectID/subscriptions/subscriptionID",
+        msg,
+    )
 
     callback.assert_called_once_with(msg)
     msg.nack.assert_not_called()
@@ -89,7 +165,12 @@ def test__wrap_callback_errors_error(callback_error):
     callback = mock.Mock(side_effect=callback_error)
     on_callback_error = mock.Mock()
 
-    streaming_pull_manager._wrap_callback_errors(callback, on_callback_error, msg)
+    streaming_pull_manager._wrap_callback_errors(
+        callback,
+        on_callback_error,
+        "projects/projectID/subscriptions/subscriptionID",
+        msg,
+    )
 
     msg.nack.assert_called_once()
     on_callback_error.assert_called_once_with(callback_error)
@@ -97,6 +178,7 @@ def test__wrap_callback_errors_error(callback_error):
 
 def test_constructor_and_default_state():
     mock.sentinel.subscription = str()
+    mock.sentinel.client.open_telemetry_enabled = False
     manager = streaming_pull_manager.StreamingPullManager(
         mock.sentinel.client, mock.sentinel.subscription
     )
@@ -183,7 +265,10 @@ def make_manager(**kwargs):
     client_ = mock.create_autospec(client.Client, instance=True)
     scheduler_ = mock.create_autospec(scheduler.Scheduler, instance=True)
     return streaming_pull_manager.StreamingPullManager(
-        client_, "subscription-name", scheduler=scheduler_, **kwargs
+        client_,
+        "projects/projectID/subscriptions/subscriptionID",
+        scheduler=scheduler_,
+        **kwargs
     )
 
 
@@ -1224,14 +1309,14 @@ def test_open_has_been_closed():
         manager.open(mock.sentinel.callback, mock.sentinel.on_callback_error)
 
 
-def make_running_manager(**kwargs):
+def make_running_manager(enable_open_telemetry=False, **kwargs):
     manager = make_manager(**kwargs)
     manager._consumer = mock.create_autospec(bidi.BackgroundConsumer, instance=True)
     manager._consumer.is_active = True
     manager._dispatcher = mock.create_autospec(dispatcher.Dispatcher, instance=True)
     manager._leaser = mock.create_autospec(leaser.Leaser, instance=True)
     manager._heartbeater = mock.create_autospec(heartbeater.Heartbeater, instance=True)
-
+    manager._open_telemetry_enabled = enable_open_telemetry
     return (
         manager,
         manager._consumer,
@@ -1415,7 +1500,10 @@ def test__get_initial_request():
     initial_request = manager._get_initial_request(123)
 
     assert isinstance(initial_request, gapic_types.StreamingPullRequest)
-    assert initial_request.subscription == "subscription-name"
+    assert (
+        initial_request.subscription
+        == "projects/projectID/subscriptions/subscriptionID"
+    )
     assert initial_request.stream_ack_deadline_seconds == 123
     assert initial_request.modify_deadline_ack_ids == []
     assert initial_request.modify_deadline_seconds == []
@@ -1428,7 +1516,10 @@ def test__get_initial_request_wo_leaser():
     initial_request = manager._get_initial_request(123)
 
     assert isinstance(initial_request, gapic_types.StreamingPullRequest)
-    assert initial_request.subscription == "subscription-name"
+    assert (
+        initial_request.subscription
+        == "projects/projectID/subscriptions/subscriptionID"
+    )
     assert initial_request.stream_ack_deadline_seconds == 123
     assert initial_request.modify_deadline_ack_ids == []
     assert initial_request.modify_deadline_seconds == []
@@ -1464,6 +1555,85 @@ def test__on_response_delivery_attempt():
     assert msg1.delivery_attempt is None
     msg2 = schedule_calls[1][1][1]
     assert msg2.delivery_attempt == 6
+
+
+@pytest.mark.parametrize("otel_enabled", [(True), (False)])
+def test__on_response_mod_ack_otel(span_exporter, otel_enabled):
+    manager, _, dispatcher, leaser, _, scheduler = make_running_manager(
+        enable_open_telemetry=otel_enabled,
+    )
+    manager._callback = mock.sentinel.callback
+
+    # Set up the messages.
+    response = gapic_types.StreamingPullResponse(
+        received_messages=[
+            gapic_types.ReceivedMessage(
+                ack_id="ack_1",
+                message=gapic_types.PubsubMessage(data=b"foo", message_id="1"),
+                delivery_attempt=1,
+            ),
+            gapic_types.ReceivedMessage(
+                ack_id="ack_2",
+                message=gapic_types.PubsubMessage(data=b"bar", message_id="2"),
+                delivery_attempt=1,
+            ),
+        ]
+    )
+
+    # adjust message bookkeeping in leaser
+    fake_leaser_add(leaser, init_msg_count=0, assumed_msg_size=80)
+
+    # Actually run the method and chack that correct MODACK value is used.
+    with mock.patch.object(
+        type(manager), "ack_deadline", new=mock.PropertyMock(return_value=18)
+    ), mock.patch("opentelemetry.trace.get_tracer") as mock_get_tracer:
+        mock_tracer = mock.MagicMock()
+        mock_get_tracer.return_value = mock_tracer
+        mock_span = mock.MagicMock()
+        mock_tracer.start_as_current_span.return_value = mock_span
+        mock_span.__enter__.return_value = mock_span
+        mock_span.__exit__.return_value = None
+        manager._on_response(response)
+
+    dispatcher.modify_ack_deadline.assert_called_once_with(
+        [
+            requests.ModAckRequest("ack_1", 18, None),
+            requests.ModAckRequest("ack_2", 18, None),
+        ],
+        18,
+    )
+
+    # Subscribe span would still be active, hence would not be exported.
+    # Receipt modack span would be exported since it would be ended after receipt modacks are complete.
+    spans = span_exporter.get_finished_spans()
+    assert len(spans) == (1 if otel_enabled else 0)
+    if otel_enabled:
+        call_args = scheduler.schedule.call_args_list
+        assert len(call_args) == 2
+        for call_arg in call_args:
+            args, _ = call_arg
+            otel_data = args[1].open_telemetry_data
+            assert otel_data.concurrency_control_span is not None
+            assert otel_data.concurrency_control_span.kind == trace.SpanKind.INTERNAL
+            assert (
+                otel_data.concurrency_control_span.name
+                == "subscriber concurrency control"
+            )
+
+        receipt_modack_span = spans[0]
+        assert receipt_modack_span.name == "subscriptionID modack"
+        assert receipt_modack_span.kind == trace.SpanKind.CLIENT
+        assert len(receipt_modack_span.links) == 2
+
+        attributes = receipt_modack_span.attributes
+        assert attributes["messaging.system"] == "gcp_pubsub"
+        assert attributes["messaging.batch.message_count"] == 2
+        assert attributes["messaging.gcp_pubsub.message.ack_deadline"] == 18
+        assert attributes["messaging.gcp_pubsub.is_receipt_modack"] is True
+        assert attributes["messaging.destination.name"] == "subscriptionID"
+        assert attributes["gcp.project_id"] == "projectID"
+        assert attributes["messaging.operation.name"] == "modack"
+        assert attributes["code.function"] == "_on_response"
 
 
 def test__on_response_modifies_ack_deadline():
