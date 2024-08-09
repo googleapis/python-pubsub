@@ -711,7 +711,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
             transport_init: Union[
                 Type[SubscriberTransport], Callable[..., SubscriberTransport]
             ] = (
-                type(self).get_transport_class(transport)
+                SubscriberClient.get_transport_class(transport)
                 if isinstance(transport, str) or transport is None
                 else cast(Callable[..., SubscriberTransport], transport)
             )

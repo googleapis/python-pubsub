@@ -14,7 +14,6 @@
 # limitations under the License.
 #
 from collections import OrderedDict
-import functools
 import re
 from typing import (
     Dict,
@@ -192,9 +191,7 @@ class PublisherAsyncClient:
         """
         return self._client._universe_domain
 
-    get_transport_class = functools.partial(
-        type(PublisherClient).get_transport_class, type(PublisherClient)
-    )
+    get_transport_class = PublisherClient.get_transport_class
 
     def __init__(
         self,
