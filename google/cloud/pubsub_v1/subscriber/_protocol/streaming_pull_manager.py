@@ -941,7 +941,12 @@ class StreamingPullManager(object):
             assert self._leaser is not None
             self._leaser.stop()
 
-            total = len(dropped_messages) + len(
+            if dropped_messages is not None:
+                total = len(dropped_messages)
+            else:
+                total = 0
+    
+            total = total + len(
                 self._messages_on_hold._messages_on_hold
             )
             _LOGGER.debug(f"NACK-ing all not-yet-dispatched messages (total: {total}).")
