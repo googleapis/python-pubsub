@@ -129,6 +129,38 @@ def test_init_w_custom_transport(creds):
     assert client.batch_settings.max_messages == 100
 
 
+@pytest.mark.parametrize(
+    "enable_open_telemetry",
+    [
+        True,
+        False,
+    ],
+)
+def test_open_telemetry_publisher_options(creds, enable_open_telemetry):
+    if sys.version_info >= (3, 8) or enable_open_telemetry is False:
+        client = publisher.Client(
+            publisher_options=types.PublisherOptions(
+                enable_open_telemetry_tracing=enable_open_telemetry
+            ),
+            credentials=creds,
+        )
+        assert client._open_telemetry_enabled == enable_open_telemetry
+    else:
+        # Open Telemetry is not supported and hence disabled for Python
+        # versions 3.7 or below
+        with pytest.warns(
+            RuntimeWarning,
+            match="Open Telemetry for Python version 3.7 or lower is not supported. Disabling Open Telemetry tracing.",
+        ):
+            client = publisher.Client(
+                publisher_options=types.PublisherOptions(
+                    enable_open_telemetry_tracing=enable_open_telemetry
+                ),
+                credentials=creds,
+            )
+            assert client._open_telemetry_enabled is False
+
+
 def test_init_w_api_endpoint(creds):
     client_options = {"api_endpoint": "testendpoint.google.com"}
     client = publisher.Client(client_options=client_options, credentials=creds)
