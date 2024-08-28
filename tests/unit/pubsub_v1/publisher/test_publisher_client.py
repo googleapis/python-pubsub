@@ -41,6 +41,9 @@ from google.cloud.pubsub_v1.publisher._sequencer import ordered_sequencer
 from google.pubsub_v1 import types as gapic_types
 from google.pubsub_v1.services.publisher import client as publisher_client
 from google.pubsub_v1.services.publisher.transports.grpc import PublisherGrpcTransport
+from google.cloud.pubsub_v1.open_telemetry.context_propagation import (
+    OpenTelemetryContextSetter,
+)
 
 
 def _assert_retries_equal(retry, retry2):
@@ -159,6 +162,13 @@ def test_open_telemetry_publisher_options(creds, enable_open_telemetry):
                 credentials=creds,
             )
             assert client._open_telemetry_enabled is False
+
+
+def test_opentelemetry_context_setter():
+    msg = gapic_types.PubsubMessage(data=b"foo")
+    OpenTelemetryContextSetter().set(carrier=msg, key="key", value="bar")
+
+    assert "googclient_key" in msg.attributes.keys()
 
 
 def test_init_w_api_endpoint(creds):
