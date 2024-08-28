@@ -23,6 +23,7 @@ import typing
 from typing import Any, Dict, Optional, Sequence, Tuple, Type, Union
 import warnings
 import sys
+from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
 
 from google.api_core import gapic_v1
 from google.auth.credentials import AnonymousCredentials  # type: ignore
@@ -38,6 +39,12 @@ from google.cloud.pubsub_v1.publisher.flow_controller import FlowController
 from google.pubsub_v1 import gapic_version as package_version
 from google.pubsub_v1 import types as gapic_types
 from google.pubsub_v1.services.publisher import client as publisher_client
+from google.cloud.pubsub_v1.open_telemetry.publish_message_wrapper import (
+    PublishMessageWrapper,
+)
+from google.cloud.pubsub_v1.open_telemetry.context_propagation import (
+    OpenTelemetryContextSetter,
+)
 
 __version__ = package_version.__version__
 
@@ -384,6 +391,16 @@ class Client(publisher_client.PublisherClient):
             data=data, ordering_key=ordering_key, attributes=attrs
         )
         message = gapic_types.PubsubMessage.wrap(vanilla_pb)
+
+        if self._open_telemetry_enabled:
+            wrapper = PublishMessageWrapper(message)
+            create_span = wrapper.start_create_span(
+                topic=topic, ordering_key=ordering_key
+            )
+            TraceContextTextMapPropagator().inject(
+                carrier=message,
+                setter=OpenTelemetryContextSetter(),
+            )
 
         # Messages should go through flow control to prevent excessive
         # queuing on the client side (depending on the settings).

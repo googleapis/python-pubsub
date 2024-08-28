@@ -28,6 +28,10 @@ else:
 
 import pytest
 import time
+from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+from opentelemetry import trace
 
 from google.api_core import gapic_v1
 from google.api_core import retry as retries
@@ -169,6 +173,38 @@ def test_opentelemetry_context_setter():
     OpenTelemetryContextSetter().set(carrier=msg, key="key", value="bar")
 
     assert "googclient_key" in msg.attributes.keys()
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 8),
+    reason="Open Telemetry not supported below Python version 3.8",
+)
+def test_opentelemetry_publisher_create_span(creds):
+    TOPIC = "projects/projectID/topics/topicID"
+    client = publisher.Client(
+        credentials=creds,
+        publisher_options=types.PublisherOptions(
+            enable_open_telemetry_tracing=True,
+        ),
+    )
+
+    # Trace Provider setup.
+    provider = TracerProvider()
+    memory_exporter = InMemorySpanExporter()
+    processor = SimpleSpanProcessor(memory_exporter)
+    provider.add_span_processor(processor)
+    trace.set_tracer_provider(provider)
+
+    client.publish(TOPIC, b"message")
+    spans = memory_exporter.get_finished_spans()
+
+    # Open Telemetry allows export of only finished spans. Since,
+    # publish create span is still not finished at this point of development
+    # it will not be exported. Hence, the number of exported spans will be 0.
+    # This test will be revisited when the create span is finished after making
+    # a publish RPC call and also when there create span is finished when
+    # an exception / error occurs before the publish RPC call is made.
+    assert len(spans) == 0
 
 
 def test_init_w_api_endpoint(creds):
