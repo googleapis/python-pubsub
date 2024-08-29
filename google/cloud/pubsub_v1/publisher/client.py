@@ -422,6 +422,16 @@ class Client(publisher_client.PublisherClient):
                         category=RuntimeWarning,
                     )
         except exceptions.FlowControlLimitError as exc:
+            if self._open_telemetry_enabled:
+                if wrapper:
+                    wrapper.end_publisher_flow_control_span(exc)
+                    wrapper.end_create_span(exc)
+                else:  # pragma: NO COVER
+                    warnings.warn(
+                        message="PubSubMessageWrapper is None. Not ending publisher create and flow control spans on FlowControlLimitError.",
+                        category=RuntimeWarning,
+                    )
+
             future = futures.Future()
             future.set_exception(exc)
             return future

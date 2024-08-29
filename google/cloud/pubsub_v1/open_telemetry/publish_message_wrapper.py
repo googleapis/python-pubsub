@@ -41,6 +41,20 @@ class PublishMessageWrapper:
             )
             self._create_span: trace.Span = create_span
 
+    def end_create_span(self, exc: Exception = None) -> None:
+        if self._create_span is None:  # pragma: NO COVER
+            warnings.warn(
+                message="publish create span is None. Hence, not ending it.",
+                category=RuntimeWarning,
+            )
+            return
+        if exc:
+            self._create_span.record_exception(exception=exc)
+            self._create_span.set_status(
+                trace.Status(status_code=trace.StatusCode.ERROR)
+            )
+        self._create_span.end()
+
     def start_publisher_flow_control_span(self) -> None:
         tracer = trace.get_tracer(self._OPEN_TELEMETRY_TRACER_NAME)
         if self._create_span is None:  # pragma: NO COVER
@@ -57,11 +71,16 @@ class PublishMessageWrapper:
         ) as flow_control_span:
             self._flow_control_span: trace.Span = flow_control_span
 
-    def end_publisher_flow_control_span(self) -> None:
+    def end_publisher_flow_control_span(self, exc: Exception = None) -> None:
         if self._flow_control_span is None:  # pragma: NO COVER
             warnings.warn(
                 message="publish flow control span is None. Hence, not ending it.",
                 category=RuntimeWarning,
             )
             return
+        if exc:
+            self._flow_control_span.record_exception(exception=exc)
+            self._flow_control_span.set_status(
+                trace.Status(status_code=trace.StatusCode.ERROR)
+            )
         self._flow_control_span.end()

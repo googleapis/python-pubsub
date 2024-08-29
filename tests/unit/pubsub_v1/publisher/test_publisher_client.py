@@ -29,7 +29,6 @@ else:
 import pytest
 import time
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
-from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from opentelemetry import trace
 
@@ -179,7 +178,58 @@ def test_opentelemetry_context_setter():
     sys.version_info < (3, 8),
     reason="Open Telemetry not supported below Python version 3.8",
 )
-def test_opentelemetry_publisher_create_span(creds):
+def test_opentelemetry_flow_control_exception(creds, provider):
+    publisher_options = types.PublisherOptions(
+        flow_control=types.PublishFlowControl(
+            message_limit=10,
+            byte_limit=150,
+            limit_exceeded_behavior=types.LimitExceededBehavior.ERROR,
+        ),
+        enable_open_telemetry_tracing=True,
+    )
+    client = publisher.Client(credentials=creds, publisher_options=publisher_options)
+
+    mock_batch = mock.Mock(spec=client._batch_class)
+    topic = "topic/path"
+    client._set_batch(topic, mock_batch)
+
+    # Trace Provider setup.
+    memory_exporter = InMemorySpanExporter()
+    processor = SimpleSpanProcessor(memory_exporter)
+    provider.add_span_processor(processor)
+    trace.set_tracer_provider(provider)
+
+    future1 = client.publish(topic, b"a" * 100)
+    future2 = client.publish(topic, b"b" * 100)
+
+    future1.result()  # no error, still within flow control limits
+    with pytest.raises(exceptions.FlowControlLimitError):
+        future2.result()
+
+    spans = memory_exporter.get_finished_spans()
+    # Span 1 = Publisher Flow Control Span of first publish
+    # Span 2 = Publisher Flow Control Span of second publish(raises FlowControlLimitError)
+    # Span 3 = Publish Create Span of second publish(raises FlowControlLimitError)
+    assert len(spans) == 3
+
+    failed_flow_control_span = spans[1]
+    finished_publish_create_span = spans[2]
+    assert failed_flow_control_span.name == "publisher flow control"
+    assert failed_flow_control_span.kind == trace.SpanKind.INTERNAL
+    assert (
+        failed_flow_control_span._parent[1] == finished_publish_create_span._context[1]
+    )
+    assert failed_flow_control_span.status.status_code == trace.StatusCode.ERROR
+
+    assert len(failed_flow_control_span.events) == 1
+    assert failed_flow_control_span.events[0].name == "exception"
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 8),
+    reason="Open Telemetry not supported below Python version 3.8",
+)
+def test_opentelemetry_publisher_create_span(creds, provider):
     TOPIC = "projects/projectID/topics/topicID"
     client = publisher.Client(
         credentials=creds,
@@ -189,7 +239,6 @@ def test_opentelemetry_publisher_create_span(creds):
     )
 
     # Trace Provider setup.
-    provider = TracerProvider()
     memory_exporter = InMemorySpanExporter()
     processor = SimpleSpanProcessor(memory_exporter)
     provider.add_span_processor(processor)
