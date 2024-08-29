@@ -392,11 +392,10 @@ class Client(publisher_client.PublisherClient):
         )
         message = gapic_types.PubsubMessage.wrap(vanilla_pb)
 
+        wrapper: PublishMessageWrapper = None
         if self._open_telemetry_enabled:
             wrapper = PublishMessageWrapper(message)
-            create_span = wrapper.start_create_span(
-                topic=topic, ordering_key=ordering_key
-            )
+            wrapper.start_create_span(topic=topic, ordering_key=ordering_key)
             TraceContextTextMapPropagator().inject(
                 carrier=message,
                 setter=OpenTelemetryContextSetter(),
@@ -405,7 +404,23 @@ class Client(publisher_client.PublisherClient):
         # Messages should go through flow control to prevent excessive
         # queuing on the client side (depending on the settings).
         try:
+            if self._open_telemetry_enabled:
+                if wrapper:
+                    wrapper.start_publisher_flow_control_span()
+                else:  # pragma: NO COVER
+                    warnings.warn(
+                        message="PubSubMessageWrapper is None. Not starting publisher flow control span.",
+                        category=RuntimeWarning,
+                    )
             self._flow_controller.add(message)
+            if self._open_telemetry_enabled:
+                if wrapper:
+                    wrapper.end_publisher_flow_control_span()
+                else:  # pragma: NO COVER
+                    warnings.warn(
+                        message="PubSubMessageWrapper is None. Not ending publisher flow control span.",
+                        category=RuntimeWarning,
+                    )
         except exceptions.FlowControlLimitError as exc:
             future = futures.Future()
             future.set_exception(exc)

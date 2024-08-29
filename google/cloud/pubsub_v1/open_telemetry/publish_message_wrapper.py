@@ -1,8 +1,10 @@
 import sys
 from datetime import datetime
+import warnings
 
 from google.pubsub_v1 import types as gapic_types
 from opentelemetry import trace
+from opentelemetry.trace.propagation import set_span_in_context
 
 
 class PublishMessageWrapper:
@@ -10,11 +12,12 @@ class PublishMessageWrapper:
     _OPEN_TELEMETRY_MESSAGING_SYSTEM: str = "gcp_pubsub"
 
     _PUBLISH_START_EVENT: str = "publish start"
+    _PUBLISH_FLOW_CONTROL: str = "publisher flow control"
 
     def __init__(self, message: gapic_types.PubsubMessage):
         self._message: gapic_types.PubsubMessage = message
 
-    def start_create_span(self, topic: str, ordering_key: str) -> trace.Span:
+    def start_create_span(self, topic: str, ordering_key: str) -> None:
         tracer = trace.get_tracer(self._OPEN_TELEMETRY_TRACER_NAME)
         with tracer.start_as_current_span(
             name=f"{topic} create",
@@ -36,4 +39,29 @@ class PublishMessageWrapper:
                     "timestamp": str(datetime.now()),
                 },
             )
-            return create_span
+            self._create_span: trace.Span = create_span
+
+    def start_publisher_flow_control_span(self) -> None:
+        tracer = trace.get_tracer(self._OPEN_TELEMETRY_TRACER_NAME)
+        if self._create_span is None:  # pragma: NO COVER
+            warnings.warn(
+                message="publish create span is None. Hence, not starting publish flow control span",
+                category=RuntimeWarning,
+            )
+            return
+        with tracer.start_as_current_span(
+            name=self._PUBLISH_FLOW_CONTROL,
+            kind=trace.SpanKind.INTERNAL,
+            context=set_span_in_context(self._create_span),
+            end_on_exit=False,
+        ) as flow_control_span:
+            self._flow_control_span: trace.Span = flow_control_span
+
+    def end_publisher_flow_control_span(self) -> None:
+        if self._flow_control_span is None:  # pragma: NO COVER
+            warnings.warn(
+                message="publish flow control span is None. Hence, not ending it.",
+                category=RuntimeWarning,
+            )
+            return
+        self._flow_control_span.end()

@@ -198,13 +198,15 @@ def test_opentelemetry_publisher_create_span(creds):
     client.publish(TOPIC, b"message")
     spans = memory_exporter.get_finished_spans()
 
-    # Open Telemetry allows export of only finished spans. Since,
-    # publish create span is still not finished at this point of development
-    # it will not be exported. Hence, the number of exported spans will be 0.
-    # This test will be revisited when the create span is finished after making
-    # a publish RPC call and also when there create span is finished when
-    # an exception / error occurs before the publish RPC call is made.
-    assert len(spans) == 0
+    # Publisher Flow Control Span should have ended and hence be the only
+    # exported span available for the test at this point in development.
+    assert len(spans) == 1
+    flow_control_span = spans[0]
+    assert flow_control_span.name == "publisher flow control"
+    assert flow_control_span.kind == trace.SpanKind.INTERNAL
+    # Assert the Publisher Flow Control Span has a parent - the Publish Create
+    # Span that is still not finished.
+    assert len(flow_control_span._parent) is not None
 
 
 def test_init_w_api_endpoint(creds):
