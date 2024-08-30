@@ -445,31 +445,66 @@ class Client(publisher_client.PublisherClient):
         if timeout is gapic_v1.method.DEFAULT:  # if custom timeout not passed in
             timeout = self.publisher_options.timeout
 
+        if self._open_telemetry_enabled:
+            if wrapper:
+                wrapper.start_publisher_batching_span()
+            else:  # pragma: NO COVER
+                warnings.warn(
+                    message="PublishMessageWrapper is None. Hence, not starting publisher batching span",
+                    category=RuntimeWarning,
+                )
         with self._batch_lock:
-            if self._is_stopped:
-                raise RuntimeError("Cannot publish on a stopped publisher.")
+            try:
+                if self._is_stopped:
+                    raise RuntimeError("Cannot publish on a stopped publisher.")
 
-            # Set retry timeout to "infinite" when message ordering is enabled.
-            # Note that this then also impacts messages added with an empty
-            # ordering key.
-            if self._enable_message_ordering:
-                if retry is gapic_v1.method.DEFAULT:
-                    # use the default retry for the publish GRPC method as a base
-                    transport = self._transport
-                    base_retry = transport._wrapped_methods[transport.publish]._retry
-                    retry = base_retry.with_deadline(2.0**32)
-                    # timeout needs to be overridden and set to infinite in
-                    # addition to the retry deadline since both determine
-                    # the duration for which retries are attempted.
-                    timeout = 2.0**32
-                elif retry is not None:
-                    retry = retry.with_deadline(2.0**32)
-                    timeout = 2.0**32
+                # Set retry timeout to "infinite" when message ordering is enabled.
+                # Note that this then also impacts messages added with an empty
+                # ordering key.
+                if self._enable_message_ordering:
+                    if retry is gapic_v1.method.DEFAULT:
+                        # use the default retry for the publish GRPC method as a base
+                        transport = self._transport
+                        base_retry = transport._wrapped_methods[
+                            transport.publish
+                        ]._retry
+                        retry = base_retry.with_deadline(2.0**32)
+                        # timeout needs to be overridden and set to infinite in
+                        # addition to the retry deadline since both determine
+                        # the duration for which retries are attempted.
+                        timeout = 2.0**32
+                    elif retry is not None:
+                        retry = retry.with_deadline(2.0**32)
+                        timeout = 2.0**32
 
-            # Delegate the publishing to the sequencer.
-            sequencer = self._get_or_create_sequencer(topic, ordering_key)
-            future = sequencer.publish(message, retry=retry, timeout=timeout)
-            future.add_done_callback(on_publish_done)
+                # Delegate the publishing to the sequencer.
+                sequencer = self._get_or_create_sequencer(topic, ordering_key)
+                future = sequencer.publish(message, retry=retry, timeout=timeout)
+                future.add_done_callback(on_publish_done)
+            except BaseException as be:
+                # Exceptions can be thrown when attempting to add messages to
+                # the batch. If they're thrown, record them in publisher
+                # batching and create span, end them and bubble
+                # the exception up.
+                if self._open_telemetry_enabled:
+                    if wrapper:
+                        wrapper.end_publisher_batching_span(be)
+                        wrapper.end_create_span(be)
+                    else:  # pragma: NO COVER
+                        warnings.warn(
+                            message="PublishMessageWrapper is None. Hence, not recording exception and ending publisher batching span and create span",
+                            category=RuntimeWarning,
+                        )
+                raise be
+
+            if self._open_telemetry_enabled:
+                if wrapper:
+                    wrapper.end_publisher_batching_span()
+                else:  # pragma: NO COVER
+                    warnings.warn(
+                        message="PublishMessageWrapper is None. Hence, not ending publisher batching span",
+                        category=RuntimeWarning,
+                    )
 
             # Create a timer thread if necessary to enforce the batching
             # timeout.

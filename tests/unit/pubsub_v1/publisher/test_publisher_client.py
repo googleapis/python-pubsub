@@ -178,6 +178,62 @@ def test_opentelemetry_context_setter():
     sys.version_info < (3, 8),
     reason="Open Telemetry not supported below Python version 3.8",
 )
+@pytest.mark.parametrize(
+    "enable_open_telemetry",
+    [
+        True,
+        False,  # for test code coverage - exception thrown but Open Telemetry disabled
+    ],
+)
+def test_opentelemetry_publisher_batching_exception(
+    creds, provider, enable_open_telemetry
+):
+    client = publisher.Client(
+        credentials=creds,
+        publisher_options=types.PublisherOptions(
+            enable_open_telemetry_tracing=enable_open_telemetry,
+        ),
+    )
+
+    # Setup Open Telemetry tracing
+    memory_exporter = InMemorySpanExporter()
+    processor = SimpleSpanProcessor(memory_exporter)
+    provider.add_span_processor(processor)
+    trace.set_tracer_provider(provider)
+
+    # Throw an exception when sequencer.publish() is called
+    sequencer = mock.Mock(spec=ordered_sequencer.OrderedSequencer)
+    sequencer.publish = mock.Mock(side_effect=RuntimeError("some error"))
+    client._get_or_create_sequencer = mock.Mock(return_value=sequencer)
+
+    TOPIC = "projects/projectID/topics/topicID"
+    with pytest.raises(RuntimeError):
+        client.publish(TOPIC, b"message")
+
+    spans = memory_exporter.get_finished_spans()
+
+    if enable_open_telemetry:
+        # Span 1: Publisher Flow Control span
+        # Span 2: Publisher Batching span
+        # Span 3: Create Publish span
+        assert len(spans) == 3
+
+        batching_span = spans[1]
+        create_span = spans[2]
+        assert batching_span.name == "publisher batching"
+        assert batching_span.kind == trace.SpanKind.INTERNAL
+        assert batching_span._parent[1] == create_span._context[1]
+
+        # Verify exception recorded by the Publisher Batching span.
+        assert batching_span.status.status_code == trace.StatusCode.ERROR
+        assert len(batching_span.events) == 1
+        assert batching_span.events[0].name == "exception"
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 8),
+    reason="Open Telemetry not supported below Python version 3.8",
+)
 def test_opentelemetry_flow_control_exception(creds, provider):
     publisher_options = types.PublisherOptions(
         flow_control=types.PublishFlowControl(
@@ -208,12 +264,13 @@ def test_opentelemetry_flow_control_exception(creds, provider):
 
     spans = memory_exporter.get_finished_spans()
     # Span 1 = Publisher Flow Control Span of first publish
+    # Span 2 = Publisher Batching Span of first publish
     # Span 2 = Publisher Flow Control Span of second publish(raises FlowControlLimitError)
     # Span 3 = Publish Create Span of second publish(raises FlowControlLimitError)
-    assert len(spans) == 3
+    assert len(spans) == 4
 
-    failed_flow_control_span = spans[1]
-    finished_publish_create_span = spans[2]
+    failed_flow_control_span = spans[2]
+    finished_publish_create_span = spans[3]
     assert failed_flow_control_span.name == "publisher flow control"
     assert failed_flow_control_span.kind == trace.SpanKind.INTERNAL
     assert (
@@ -229,7 +286,7 @@ def test_opentelemetry_flow_control_exception(creds, provider):
     sys.version_info < (3, 8),
     reason="Open Telemetry not supported below Python version 3.8",
 )
-def test_opentelemetry_publisher_create_span(creds, provider):
+def test_opentelemetry_publish(creds, provider):
     TOPIC = "projects/projectID/topics/topicID"
     client = publisher.Client(
         credentials=creds,
@@ -247,15 +304,24 @@ def test_opentelemetry_publisher_create_span(creds, provider):
     client.publish(TOPIC, b"message")
     spans = memory_exporter.get_finished_spans()
 
-    # Publisher Flow Control Span should have ended and hence be the only
-    # exported span available for the test at this point in development.
-    assert len(spans) == 1
+    # Span 1: Publisher Flow control span
+    # Span 2: Publisher Batching span
+    # Publish Create Span would still be active, and hence not exported
+    # at this point in development.
+    assert len(spans) == 2
+
     flow_control_span = spans[0]
     assert flow_control_span.name == "publisher flow control"
     assert flow_control_span.kind == trace.SpanKind.INTERNAL
-    # Assert the Publisher Flow Control Span has a parent - the Publish Create
-    # Span that is still not finished.
-    assert len(flow_control_span._parent) is not None
+    # Assert the Publisher Flow Control Span has a parent(the Publish Create
+    # Span is still not finished, and hence the value of parent cannot yet be
+    # asserted at this point in development)
+    assert flow_control_span._parent is not None
+
+    batching_span = spans[1]
+    assert batching_span.name == "publisher batching"
+    assert batching_span.kind == trace.SpanKind.INTERNAL
+    assert batching_span._parent is not None
 
 
 def test_init_w_api_endpoint(creds):

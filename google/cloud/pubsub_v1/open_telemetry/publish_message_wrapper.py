@@ -10,6 +10,7 @@ from opentelemetry.trace.propagation import set_span_in_context
 class PublishMessageWrapper:
     _OPEN_TELEMETRY_TRACER_NAME: str = "google.cloud.pubsub_v1.publisher"
     _OPEN_TELEMETRY_MESSAGING_SYSTEM: str = "gcp_pubsub"
+    _OPEN_TELEMETRY_PUBLISHER_BATCHING = "publisher batching"
 
     _PUBLISH_START_EVENT: str = "publish start"
     _PUBLISH_FLOW_CONTROL: str = "publisher flow control"
@@ -41,10 +42,10 @@ class PublishMessageWrapper:
             )
             self._create_span: trace.Span = create_span
 
-    def end_create_span(self, exc: Exception = None) -> None:
+    def end_create_span(self, exc: BaseException = None) -> None:
         if self._create_span is None:  # pragma: NO COVER
             warnings.warn(
-                message="publish create span is None. Hence, not ending it.",
+                message="publish create span is None. Hence, not ending it",
                 category=RuntimeWarning,
             )
             return
@@ -71,10 +72,10 @@ class PublishMessageWrapper:
         ) as flow_control_span:
             self._flow_control_span: trace.Span = flow_control_span
 
-    def end_publisher_flow_control_span(self, exc: Exception = None) -> None:
+    def end_publisher_flow_control_span(self, exc: BaseException = None) -> None:
         if self._flow_control_span is None:  # pragma: NO COVER
             warnings.warn(
-                message="publish flow control span is None. Hence, not ending it.",
+                message="publish flow control span is None. Hence, not ending it",
                 category=RuntimeWarning,
             )
             return
@@ -84,3 +85,33 @@ class PublishMessageWrapper:
                 trace.Status(status_code=trace.StatusCode.ERROR)
             )
         self._flow_control_span.end()
+
+    def start_publisher_batching_span(self) -> None:
+        if self._create_span is None:  # pragma: NO COVER
+            warnings.warn(
+                message="publish create span is None. Hence, not starting publisher batching span",
+                category=RuntimeWarning,
+            )
+            return
+        tracer = trace.get_tracer(self._OPEN_TELEMETRY_TRACER_NAME)
+        with tracer.start_as_current_span(
+            name=self._OPEN_TELEMETRY_PUBLISHER_BATCHING,
+            kind=trace.SpanKind.INTERNAL,
+            context=set_span_in_context(self._create_span),
+            end_on_exit=False,
+        ) as batching_span:
+            self._batching_span = batching_span
+
+    def end_publisher_batching_span(self, exc: BaseException = None) -> None:
+        if self._batching_span is None:  # pragma: NO COVER
+            warnings.warn(
+                message="publisher batching span is None. Hence, not ending it",
+                category=RuntimeWarning,
+            )
+            return
+        if exc:
+            self._batching_span.record_exception(exception=exc)
+            self._batching_span.set_status(
+                trace.Status(status_code=trace.StatusCode.ERROR)
+            )
+        self._batching_span.end()
