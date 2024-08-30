@@ -388,9 +388,8 @@ class Client(publisher_client.PublisherClient):
         )
         message = gapic_types.PubsubMessage.wrap(vanilla_pb)
 
-        wrapper: PublishMessageWrapper = None
+        wrapper: PublishMessageWrapper = PublishMessageWrapper(message)
         if self._open_telemetry_enabled:
-            wrapper = PublishMessageWrapper(message)
             wrapper.start_create_span(topic=topic, ordering_key=ordering_key)
 
         # Messages should go through flow control to prevent excessive
@@ -471,7 +470,9 @@ class Client(publisher_client.PublisherClient):
 
                 # Delegate the publishing to the sequencer.
                 sequencer = self._get_or_create_sequencer(topic, ordering_key)
-                future = sequencer.publish(message, retry=retry, timeout=timeout)
+                future = sequencer.publish(
+                    wrapper=wrapper, retry=retry, timeout=timeout
+                )
                 future.add_done_callback(on_publish_done)
             except BaseException as be:
                 # Exceptions can be thrown when attempting to add messages to

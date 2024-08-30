@@ -22,6 +22,20 @@ class PublishMessageWrapper:
     def __init__(self, message: gapic_types.PubsubMessage):
         self._message: gapic_types.PubsubMessage = message
 
+    @property
+    def message(self):
+        return self._message
+
+    @message.setter
+    def message(self, message: gapic_types.PubsubMessage):
+        self._message = message
+
+    def __eq__(self, other):
+        """Used for pytest asserts to compare two PublishMessageWrapper objects with the same message."""
+        if isinstance(self, other.__class__):
+            return self.message == other.message
+        return False
+
     def start_create_span(self, topic: str, ordering_key: str) -> None:
         tracer = trace.get_tracer(self._OPEN_TELEMETRY_TRACER_NAME)
         with tracer.start_as_current_span(
