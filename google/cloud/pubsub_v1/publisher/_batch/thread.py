@@ -355,7 +355,9 @@ class Batch(base.Batch):
         """
 
         # Coerce the type, just in case.
-        if not isinstance(wrapper.message, gapic_types.PubsubMessage):
+        if not isinstance(
+            wrapper.message, gapic_types.PubsubMessage
+        ):  # pragma: NO COVER
             # For performance reasons, the message should be constructed by directly
             # using the raw protobuf class, and only then wrapping it into the
             # higher-level PubsubMessage class.

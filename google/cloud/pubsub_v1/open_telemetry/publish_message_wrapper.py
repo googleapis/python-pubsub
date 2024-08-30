@@ -30,7 +30,7 @@ class PublishMessageWrapper:
     def message(self, message: gapic_types.PubsubMessage):
         self._message = message
 
-    def __eq__(self, other):
+    def __eq__(self, other):  # pragma: NO COVER
         """Used for pytest asserts to compare two PublishMessageWrapper objects with the same message."""
         if isinstance(self, other.__class__):
             return self.message == other.message
