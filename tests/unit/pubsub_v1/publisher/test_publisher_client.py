@@ -178,6 +178,35 @@ def test_opentelemetry_context_setter():
     sys.version_info < (3, 8),
     reason="Open Telemetry not supported below Python version 3.8",
 )
+def test_opentelemetry_context_propagation(creds, provider):
+    TOPIC = "projects/projectID/topics/topicID"
+    client = publisher.Client(
+        credentials=creds,
+        publisher_options=types.PublisherOptions(
+            enable_open_telemetry_tracing=True,
+        ),
+    )
+
+    # Set up Open Telemetry tracing.
+    memory_exporter = InMemorySpanExporter()
+    processor = SimpleSpanProcessor(memory_exporter)
+    provider.add_span_processor(processor)
+    trace.set_tracer_provider(provider)
+
+    message_mock = mock.Mock(spec=publisher.flow_controller.FlowController.add)
+    client._flow_controller.add = message_mock
+    client.publish(TOPIC, b"data")
+
+    message_mock.assert_called_once()
+    args = message_mock.call_args.args
+    assert len(args) == 1
+    assert "googclient_traceparent" in args[0].attributes
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 8),
+    reason="Open Telemetry not supported below Python version 3.8",
+)
 @pytest.mark.parametrize(
     "enable_open_telemetry",
     [
@@ -255,7 +284,7 @@ def test_opentelemetry_flow_control_exception(creds, provider):
     provider.add_span_processor(processor)
     trace.set_tracer_provider(provider)
 
-    future1 = client.publish(topic, b"a" * 100)
+    future1 = client.publish(topic, b"a" * 60)
     future2 = client.publish(topic, b"b" * 100)
 
     future1.result()  # no error, still within flow control limits

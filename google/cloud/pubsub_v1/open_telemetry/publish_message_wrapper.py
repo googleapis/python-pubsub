@@ -5,6 +5,10 @@ import warnings
 from google.pubsub_v1 import types as gapic_types
 from opentelemetry import trace
 from opentelemetry.trace.propagation import set_span_in_context
+from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
+from google.cloud.pubsub_v1.open_telemetry.context_propagation import (
+    OpenTelemetryContextSetter,
+)
 
 
 class PublishMessageWrapper:
@@ -41,6 +45,10 @@ class PublishMessageWrapper:
                 },
             )
             self._create_span: trace.Span = create_span
+            TraceContextTextMapPropagator().inject(
+                carrier=self._message,
+                setter=OpenTelemetryContextSetter(),
+            )
 
     def end_create_span(self, exc: BaseException = None) -> None:
         if self._create_span is None:  # pragma: NO COVER
