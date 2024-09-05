@@ -25,6 +25,8 @@ else:
 
 import pytest
 
+from opentelemetry import trace
+
 import google.api_core.exceptions
 from google.api_core import gapic_v1
 from google.auth import credentials
@@ -41,8 +43,13 @@ from google.cloud.pubsub_v1.open_telemetry.publish_message_wrapper import (
 )
 
 
-def create_client():
-    return publisher.Client(credentials=credentials.AnonymousCredentials())
+def create_client(enable_open_telemetry=False):
+    return publisher.Client(
+        credentials=credentials.AnonymousCredentials(),
+        publisher_options=types.PublisherOptions(
+            enable_open_telemetry_tracing=enable_open_telemetry,
+        ),
+    )
 
 
 def create_batch(
@@ -51,7 +58,8 @@ def create_batch(
     commit_when_full=True,
     commit_retry=gapic_v1.method.DEFAULT,
     commit_timeout: gapic_types.TimeoutType = gapic_v1.method.DEFAULT,
-    **batch_settings
+    enable_open_telemetry: bool = False,
+    **batch_settings,
 ):
     """Return a batch object suitable for testing.
 
@@ -65,13 +73,14 @@ def create_batch(
             for the batch commit call.
         commit_timeout (:class:`~.pubsub_v1.types.TimeoutType`):
             The timeout to apply to the batch commit call.
+        enable_open_telemetry (bool): Whether to enable OpenTelemetry.
         batch_settings (Mapping[str, str]): Arguments passed on to the
             :class:``~.pubsub_v1.types.BatchSettings`` constructor.
 
     Returns:
         ~.pubsub_v1.publisher.batch.thread.Batch: A batch object.
     """
-    client = create_client()
+    client = create_client(enable_open_telemetry=enable_open_telemetry)
     settings = types.BatchSettings(**batch_settings)
     return Batch(
         client,
@@ -708,3 +717,213 @@ def test_batch_done_callback_called_on_publish_response_invalid():
 
     assert batch_done_callback_tracker.called
     assert not batch_done_callback_tracker.success
+
+
+# Refer https://opentelemetry.io/docs/languages/python/#version-support
+@pytest.mark.skipif(
+    sys.version_info < (3, 8), reason="Open Telemetry requires python3.8 or higher"
+)
+def test_open_telemetry_commit_publish_rpc_span_none(span_exporter):
+    """
+    Test coverage for scenario where OpenTelemetry is enabled, publish RPC
+    span creation fails(unexpected) and hence batch._rpc_span is None.
+    Required for code coverage.
+    """
+    TOPIC = "projects/projectID/topics/topicID"
+    batch = create_batch(topic=TOPIC, enable_open_telemetry=True)
+
+    message = PublishMessageWrapper(
+        message=gapic_types.PubsubMessage(data=b"foo"),
+    )
+    message.start_create_span(topic=TOPIC, ordering_key=None)
+    batch.publish(message)
+
+    # Mock publish error.
+    error = google.api_core.exceptions.InternalServerError("error")
+
+    with mock.patch.object(
+        type(batch),
+        "_create_publish_rpc_span",
+        side_effect=error,
+    ):
+        batch._commit()
+
+    assert batch._rpc_span is None
+    spans = span_exporter.get_finished_spans()
+
+    # Create span (mock error thrown when publish RPC span creation is attempted)
+    assert len(spans) == 1
+
+    publish_create_span = spans[0]
+    assert publish_create_span.status.status_code == trace.status.StatusCode.ERROR
+    assert publish_create_span.end_time is not None
+
+    assert publish_create_span.name == f"{TOPIC} create"
+    # Publish start event and exception event should be present in publish
+    # create span.
+    assert len(publish_create_span.events) == 2
+    assert publish_create_span.events[0].name == "publish start"
+    assert publish_create_span.events[1].name == "exception"
+
+
+# Refer https://opentelemetry.io/docs/languages/python/#version-support
+@pytest.mark.skipif(
+    sys.version_info < (3, 8), reason="Open Telemetry requires python3.8 or higher"
+)
+def test_open_telemetry_commit_publish_rpc_exception(span_exporter):
+    TOPIC = "projects/projectID/topics/topicID"
+    batch = create_batch(topic=TOPIC, enable_open_telemetry=True)
+
+    message = PublishMessageWrapper(
+        message=gapic_types.PubsubMessage(data=b"foo"),
+    )
+    message.start_create_span(topic=TOPIC, ordering_key=None)
+    batch.publish(message)
+
+    # Mock publish error.
+    error = google.api_core.exceptions.InternalServerError("error")
+
+    with mock.patch.object(
+        type(batch.client),
+        "_gapic_publish",
+        side_effect=error,
+    ):
+        batch._commit()
+
+    spans = span_exporter.get_finished_spans()
+    # Span 1: Publish RPC span
+    # Span 2: Create span.
+    assert len(spans) == 2
+
+    # Verify both spans recorded error and have ended.
+    for span in spans:
+        assert span.status.status_code == trace.status.StatusCode.ERROR
+        assert span.end_time is not None
+
+    publish_rpc_span = spans[0]
+    assert publish_rpc_span.name == f"{TOPIC} publish"
+    assert len(publish_rpc_span.events) == 1
+    assert publish_rpc_span.events[0].name == "exception"
+
+    publish_create_span = spans[1]
+    assert publish_create_span.name == f"{TOPIC} create"
+    # Publish start event and exception event should be present in publish
+    # create span.
+    assert len(publish_create_span.events) == 2
+    assert publish_create_span.events[0].name == "publish start"
+    assert publish_create_span.events[1].name == "exception"
+
+
+# Refer https://opentelemetry.io/docs/languages/python/#version-support
+@pytest.mark.skipif(
+    sys.version_info < (3, 8), reason="Open Telemetry requires python3.8 or higher"
+)
+def test_opentelemetry_commit_sampling(span_exporter):
+    TOPIC = "projects/projectID/topics/topic"
+    batch = create_batch(
+        topic=TOPIC,
+        enable_open_telemetry=True,
+    )
+
+    message = PublishMessageWrapper(
+        message=gapic_types.PubsubMessage(data=b"foo"),
+    )
+    message.start_create_span(topic=TOPIC, ordering_key=None)
+    message.create_span.is_recording = mock.Mock(return_value=False)
+    batch.publish(message)
+
+    publish_response = gapic_types.PublishResponse(message_ids=["a"])
+    with mock.patch.object(
+        type(batch.client), "_gapic_publish", return_value=publish_response
+    ):
+        batch._commit()
+
+    spans = span_exporter.get_finished_spans()
+
+    # Span 1: Publish RPC span
+    # Span 2: Create span
+    assert len(spans) == 2
+
+    publish_rpc_span, create_span = spans
+
+    # Verify no links added when the spans are not sampled.
+    assert len(publish_rpc_span.links) == 0
+    assert len(create_span.links) == 0
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 8), reason="Open Telemetry requires python3.8 or higher"
+)
+def test_opentelemetry_commit(span_exporter):
+    TOPIC = "projects/projectID/topics/topic"
+    batch = create_batch(
+        topic=TOPIC,
+        enable_open_telemetry=True,
+    )
+
+    msg1 = PublishMessageWrapper(
+        message=gapic_types.PubsubMessage(data=b"foo"),
+    )
+    msg2 = PublishMessageWrapper(
+        message=gapic_types.PubsubMessage(data=b"bar"),
+    )
+    msg1.start_create_span(topic=TOPIC, ordering_key=None)
+    msg2.start_create_span(topic=TOPIC, ordering_key=None)
+
+    # Add both messages to the batch.
+    batch.publish(msg1)
+    batch.publish(msg2)
+
+    publish_response = gapic_types.PublishResponse(message_ids=["a", "b"])
+    with mock.patch.object(
+        type(batch.client), "_gapic_publish", return_value=publish_response
+    ):
+        batch._commit()
+
+    spans = span_exporter.get_finished_spans()
+
+    # Span 1: publish RPC span - closed after publish RPC success.
+    # Span 2: publisher create span of message 1 - closed after publish RPC success.
+    # Span 3: publisher create span of message 2 - closed after publish RPC success.
+    assert len(spans) == 3
+    publish_rpc_span, create_span1, create_span2 = spans
+
+    # Verify publish RPC span
+    assert publish_rpc_span.name == f"{TOPIC} publish"
+    assert publish_rpc_span.kind == trace.SpanKind.CLIENT
+    assert publish_rpc_span.end_time is not None
+    attributes = publish_rpc_span.attributes
+    assert attributes["messaging.system"] == "com.google.cloud.pubsub.v1"
+    assert attributes["messaging.destination.name"] == TOPIC
+    assert attributes["gcp.project_id"] == "projectID"
+    assert attributes["messaging.batch.message_count"] == 2
+    assert attributes["messaging.operation"] == "publish"
+    assert attributes["code.function"] == "_commit"
+    assert publish_rpc_span.parent is None
+    # Verify the links correspond to the spans of the published messages.
+    assert len(publish_rpc_span.links) == 2
+    assert publish_rpc_span.links[0].context == create_span1.context
+    assert publish_rpc_span.links[1].context == create_span2.context
+
+    # Verify spans of the published messages.
+    assert create_span1.name == f"{TOPIC} create"
+    assert create_span2.name == f"{TOPIC} create"
+
+    # Verify the publish create spans have been closed after publish success.
+    assert create_span1.end_time is not None
+    assert create_span2.end_time is not None
+
+    # Verify message IDs returned from gapic publish are added as attributes
+    # to the publisher create spans of the messages.
+    assert "messaging.message.id" in create_span1.attributes
+    assert create_span1.attributes["messaging.message.id"] == "a"
+    assert "messaging.message.id" in create_span2.attributes
+    assert create_span2.attributes["messaging.message.id"] == "b"
+
+    # Verify publish end event added to the span
+    assert len(create_span1.events) == 2
+    assert len(create_span2.events) == 2
+    assert create_span1.events[0].name == "publish start"
+    assert create_span1.events[1].name == "publish end"
+    assert create_span2.events[0].name == "publish start"
+    assert create_span2.events[1].name == "publish end"

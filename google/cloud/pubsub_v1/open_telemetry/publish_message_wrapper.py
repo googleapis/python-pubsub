@@ -26,6 +26,10 @@ class PublishMessageWrapper:
     def message(self):
         return self._message
 
+    @property
+    def create_span(self):
+        return self._create_span
+
     @message.setter
     def message(self, message: gapic_types.PubsubMessage):
         self._message = message

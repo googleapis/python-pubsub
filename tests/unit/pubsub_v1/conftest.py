@@ -13,6 +13,9 @@
 # limitations under the License.
 
 from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
+from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+from opentelemetry import trace
 
 import google.auth.credentials
 import pytest
@@ -28,8 +31,15 @@ def creds():
 
 
 @pytest.fixture(scope="session", autouse=True)
-def provider():
-    """
-    Provide an Open Telemetry Tracer that can be re-used across tests.
-    """
-    yield TracerProvider()
+def set_trace_provider():
+    provider = TracerProvider()
+    trace.set_tracer_provider(provider)
+
+
+@pytest.fixture(scope="function")
+def span_exporter():
+    exporter = InMemorySpanExporter()
+    processor = SimpleSpanProcessor(exporter)
+    provider = trace.get_tracer_provider()
+    provider.add_span_processor(processor)
+    yield exporter

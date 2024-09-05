@@ -28,8 +28,6 @@ else:
 
 import pytest
 import time
-from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
-from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from opentelemetry import trace
 
 from google.api_core import gapic_v1
@@ -181,7 +179,7 @@ def test_opentelemetry_context_setter():
     sys.version_info < (3, 8),
     reason="Open Telemetry not supported below Python version 3.8",
 )
-def test_opentelemetry_context_propagation(creds, provider):
+def test_opentelemetry_context_propagation(creds, span_exporter):
     TOPIC = "projects/projectID/topics/topicID"
     client = publisher.Client(
         credentials=creds,
@@ -189,12 +187,6 @@ def test_opentelemetry_context_propagation(creds, provider):
             enable_open_telemetry_tracing=True,
         ),
     )
-
-    # Set up Open Telemetry tracing.
-    memory_exporter = InMemorySpanExporter()
-    processor = SimpleSpanProcessor(memory_exporter)
-    provider.add_span_processor(processor)
-    trace.set_tracer_provider(provider)
 
     message_mock = mock.Mock(spec=publisher.flow_controller.FlowController.add)
     client._flow_controller.add = message_mock
@@ -218,7 +210,7 @@ def test_opentelemetry_context_propagation(creds, provider):
     ],
 )
 def test_opentelemetry_publisher_batching_exception(
-    creds, provider, enable_open_telemetry
+    creds, span_exporter, enable_open_telemetry
 ):
     client = publisher.Client(
         credentials=creds,
@@ -226,12 +218,6 @@ def test_opentelemetry_publisher_batching_exception(
             enable_open_telemetry_tracing=enable_open_telemetry,
         ),
     )
-
-    # Setup Open Telemetry tracing
-    memory_exporter = InMemorySpanExporter()
-    processor = SimpleSpanProcessor(memory_exporter)
-    provider.add_span_processor(processor)
-    trace.set_tracer_provider(provider)
 
     # Throw an exception when sequencer.publish() is called
     sequencer = mock.Mock(spec=ordered_sequencer.OrderedSequencer)
@@ -242,7 +228,7 @@ def test_opentelemetry_publisher_batching_exception(
     with pytest.raises(RuntimeError):
         client.publish(TOPIC, b"message")
 
-    spans = memory_exporter.get_finished_spans()
+    spans = span_exporter.get_finished_spans()
 
     if enable_open_telemetry:
         # Span 1: Publisher Flow Control span
@@ -266,7 +252,7 @@ def test_opentelemetry_publisher_batching_exception(
     sys.version_info < (3, 8),
     reason="Open Telemetry not supported below Python version 3.8",
 )
-def test_opentelemetry_flow_control_exception(creds, provider):
+def test_opentelemetry_flow_control_exception(creds, span_exporter):
     publisher_options = types.PublisherOptions(
         flow_control=types.PublishFlowControl(
             message_limit=10,
@@ -281,12 +267,6 @@ def test_opentelemetry_flow_control_exception(creds, provider):
     topic = "topic/path"
     client._set_batch(topic, mock_batch)
 
-    # Trace Provider setup.
-    memory_exporter = InMemorySpanExporter()
-    processor = SimpleSpanProcessor(memory_exporter)
-    provider.add_span_processor(processor)
-    trace.set_tracer_provider(provider)
-
     future1 = client.publish(topic, b"a" * 60)
     future2 = client.publish(topic, b"b" * 100)
 
@@ -294,7 +274,7 @@ def test_opentelemetry_flow_control_exception(creds, provider):
     with pytest.raises(exceptions.FlowControlLimitError):
         future2.result()
 
-    spans = memory_exporter.get_finished_spans()
+    spans = span_exporter.get_finished_spans()
     # Span 1 = Publisher Flow Control Span of first publish
     # Span 2 = Publisher Batching Span of first publish
     # Span 2 = Publisher Flow Control Span of second publish(raises FlowControlLimitError)
@@ -318,7 +298,7 @@ def test_opentelemetry_flow_control_exception(creds, provider):
     sys.version_info < (3, 8),
     reason="Open Telemetry not supported below Python version 3.8",
 )
-def test_opentelemetry_publish(creds, provider):
+def test_opentelemetry_publish(creds, span_exporter):
     TOPIC = "projects/projectID/topics/topicID"
     client = publisher.Client(
         credentials=creds,
@@ -327,14 +307,8 @@ def test_opentelemetry_publish(creds, provider):
         ),
     )
 
-    # Trace Provider setup.
-    memory_exporter = InMemorySpanExporter()
-    processor = SimpleSpanProcessor(memory_exporter)
-    provider.add_span_processor(processor)
-    trace.set_tracer_provider(provider)
-
     client.publish(TOPIC, b"message")
-    spans = memory_exporter.get_finished_spans()
+    spans = span_exporter.get_finished_spans()
 
     # Span 1: Publisher Flow control span
     # Span 2: Publisher Batching span

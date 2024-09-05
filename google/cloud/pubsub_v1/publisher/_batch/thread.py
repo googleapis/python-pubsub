@@ -19,6 +19,9 @@ import threading
 import time
 import typing
 from typing import Any, Callable, List, Optional, Sequence
+from datetime import datetime
+
+from opentelemetry import trace
 
 import google.api_core.exceptions
 from google.api_core import gapic_v1
@@ -88,6 +91,8 @@ class Batch(base.Batch):
             timeout is used.
     """
 
+    _OPEN_TELEMETRY_TRACER_NAME: str = "google.cloud.pubsub_v1.publisher"
+
     def __init__(
         self,
         client: "PublisherClient",
@@ -121,6 +126,10 @@ class Batch(base.Batch):
 
         self._commit_retry = commit_retry
         self._commit_timeout = commit_timeout
+
+        # Publish RPC Span that will be set by method `_create_publish_rpc_span`
+        # if Open Telemetry is enabled.
+        self._rpc_span: trace.Span = None
 
     @staticmethod
     def make_lock() -> threading.Lock:
@@ -229,6 +238,37 @@ class Batch(base.Batch):
         )
         commit_thread.start()
 
+    def _create_publish_rpc_span(self):
+        tracer = trace.get_tracer(self._OPEN_TELEMETRY_TRACER_NAME)
+        links = []
+
+        for wrapper in self._message_wrappers:
+            span = wrapper.create_span
+            # Add links only for sampled spans.
+            if span.is_recording():
+                links.append(trace.Link(span.get_span_context()))
+
+        with tracer.start_as_current_span(
+            name=f"{self._topic} publish",
+            attributes={
+                "messaging.system": "com.google.cloud.pubsub.v1",
+                "messaging.destination.name": self._topic,
+                "gcp.project_id": self._topic.split("/")[1],
+                "messaging.batch.message_count": len(self._message_wrappers),
+                "messaging.operation": "publish",
+                "code.function": "_commit",
+            },
+            links=links,
+            kind=trace.SpanKind.CLIENT,
+            end_on_exit=False,
+        ) as rpc_span:
+            ctx = rpc_span.get_span_context()
+            for wrapper in self._message_wrappers:
+                span = wrapper.create_span
+                if span.is_recording():
+                    span.add_link(ctx)
+            self._rpc_span = rpc_span
+
     def _commit(self) -> None:
         """Actually publish all of the messages on the active batch.
 
@@ -273,6 +313,9 @@ class Batch(base.Batch):
 
         batch_transport_succeeded = True
         try:
+            if self._client.open_telemetry_enabled:
+                self._create_publish_rpc_span()
+
             # Performs retries for errors defined by the retry configuration.
             response = self._client._gapic_publish(
                 topic=self._topic,
@@ -280,10 +323,39 @@ class Batch(base.Batch):
                 retry=self._commit_retry,
                 timeout=self._commit_timeout,
             )
+
+            if self._client.open_telemetry_enabled:
+                self._rpc_span.end()
+                end_time = str(datetime.now())
+                for message_id, wrapper in zip(
+                    response.message_ids, self._message_wrappers
+                ):
+                    span = wrapper.create_span
+                    span.add_event(
+                        name="publish end",
+                        attributes={
+                            "timestamp": end_time,
+                        },
+                    )
+                    span.set_attribute(key="messaging.message.id", value=message_id)
+                    wrapper.end_create_span()
         except google.api_core.exceptions.GoogleAPIError as exc:
             # We failed to publish, even after retries, so set the exception on
             # all futures and exit.
             self._status = base.BatchStatus.ERROR
+
+            if self._client.open_telemetry_enabled:
+                if self._rpc_span:
+                    self._rpc_span.record_exception(
+                        exception=exc,
+                    )
+                    self._rpc_span.set_status(
+                        trace.Status(status_code=trace.StatusCode.ERROR)
+                    )
+                    self._rpc_span.end()
+
+                for wrapper in self._message_wrappers:
+                    wrapper.end_create_span(exc=exc)
 
             batch_transport_succeeded = False
             if self._batch_done_callback is not None:

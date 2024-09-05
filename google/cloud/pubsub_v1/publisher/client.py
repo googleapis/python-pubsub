@@ -229,6 +229,10 @@ class Client(publisher_client.PublisherClient):
         warnings.warn(msg, category=DeprecationWarning)
         return super()
 
+    @property
+    def open_telemetry_enabled(self) -> bool:
+        return self._open_telemetry_enabled
+
     def _get_or_create_sequencer(self, topic: str, ordering_key: str) -> SequencerType:
         """Get an existing sequencer or create a new one given the (topic,
         ordering_key) pair.
