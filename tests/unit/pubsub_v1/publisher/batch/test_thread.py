@@ -825,14 +825,21 @@ def test_opentelemetry_commit_sampling(span_exporter):
         enable_open_telemetry=True,
     )
 
-    message = PublishMessageWrapper(
+    message1 = PublishMessageWrapper(
         message=gapic_types.PubsubMessage(data=b"foo"),
     )
-    message.start_create_span(topic=TOPIC, ordering_key=None)
-    message.create_span.is_recording = mock.Mock(return_value=False)
-    batch.publish(message)
+    message1.start_create_span(topic=TOPIC, ordering_key=None)
+    message1.create_span.is_recording = mock.Mock(return_value=False)
 
-    publish_response = gapic_types.PublishResponse(message_ids=["a"])
+    message2 = PublishMessageWrapper(
+        message=gapic_types.PubsubMessage(data=b"bar"),
+    )
+    message2.start_create_span(topic=TOPIC, ordering_key=None)
+
+    batch.publish(message1)
+    batch.publish(message2)
+
+    publish_response = gapic_types.PublishResponse(message_ids=["a", "b"])
     with mock.patch.object(
         type(batch.client), "_gapic_publish", return_value=publish_response
     ):
@@ -840,15 +847,20 @@ def test_opentelemetry_commit_sampling(span_exporter):
 
     spans = span_exporter.get_finished_spans()
 
-    # Span 1: Publish RPC span
-    # Span 2: Create span
-    assert len(spans) == 2
+    # Span 1: Publish RPC span of both messages
+    # Span 2: Create span of message 1
+    # Span 3: Create span of message 2
+    assert len(spans) == 3
 
-    publish_rpc_span, create_span = spans
+    publish_rpc_span, create_span1, create_span2 = spans
 
-    # Verify no links added when the spans are not sampled.
-    assert len(publish_rpc_span.links) == 0
-    assert len(create_span.links) == 0
+    # Verify publish RPC span has only one link corresponding to
+    # message 2 which is included in the sample.
+    assert len(publish_rpc_span.links) == 1
+    assert len(create_span1.links) == 0
+    assert len(create_span2.links) == 1
+    assert publish_rpc_span.links[0].context == create_span2.context
+    assert create_span2.links[0].context == publish_rpc_span.context
 
 
 @pytest.mark.skipif(
