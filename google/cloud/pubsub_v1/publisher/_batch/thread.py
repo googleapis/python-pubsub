@@ -129,7 +129,7 @@ class Batch(base.Batch):
 
         # Publish RPC Span that will be set by method `_create_publish_rpc_span`
         # if Open Telemetry is enabled.
-        self._rpc_span: trace.Span = None
+        self._rpc_span: Optional[trace.Span] = None
 
     @staticmethod
     def make_lock() -> threading.Lock:
@@ -325,6 +325,7 @@ class Batch(base.Batch):
             )
 
             if self._client.open_telemetry_enabled:
+                assert self._rpc_span is not None
                 self._rpc_span.end()
                 end_time = str(datetime.now())
                 for message_id, wrapper in zip(

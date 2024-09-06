@@ -1,6 +1,7 @@
 import sys
 from datetime import datetime
 import warnings
+from typing import Optional
 
 from google.pubsub_v1 import types as gapic_types
 from opentelemetry import trace
@@ -26,13 +27,13 @@ class PublishMessageWrapper:
     def message(self):
         return self._message
 
+    @message.setter  # type: ignore[no-redef]  # resetting message value is intentional here
+    def message(self, message: gapic_types.PubsubMessage):
+        self._message = message
+
     @property
     def create_span(self):
         return self._create_span
-
-    @message.setter
-    def message(self, message: gapic_types.PubsubMessage):
-        self._message = message
 
     def __eq__(self, other):  # pragma: NO COVER
         """Used for pytest asserts to compare two PublishMessageWrapper objects with the same message."""
@@ -68,7 +69,7 @@ class PublishMessageWrapper:
                 setter=OpenTelemetryContextSetter(),
             )
 
-    def end_create_span(self, exc: BaseException = None) -> None:
+    def end_create_span(self, exc: Optional[BaseException] = None) -> None:
         if self._create_span is None:  # pragma: NO COVER
             warnings.warn(
                 message="publish create span is None. Hence, not ending it",
@@ -98,7 +99,9 @@ class PublishMessageWrapper:
         ) as flow_control_span:
             self._flow_control_span: trace.Span = flow_control_span
 
-    def end_publisher_flow_control_span(self, exc: BaseException = None) -> None:
+    def end_publisher_flow_control_span(
+        self, exc: Optional[BaseException] = None
+    ) -> None:
         if self._flow_control_span is None:  # pragma: NO COVER
             warnings.warn(
                 message="publish flow control span is None. Hence, not ending it",
@@ -128,7 +131,7 @@ class PublishMessageWrapper:
         ) as batching_span:
             self._batching_span = batching_span
 
-    def end_publisher_batching_span(self, exc: BaseException = None) -> None:
+    def end_publisher_batching_span(self, exc: Optional[BaseException] = None) -> None:
         if self._batching_span is None:  # pragma: NO COVER
             warnings.warn(
                 message="publisher batching span is None. Hence, not ending it",
