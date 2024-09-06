@@ -247,12 +247,12 @@ class Batch(base.Batch):
             # Add links only for sampled spans.
             if span.is_recording():
                 links.append(trace.Link(span.get_span_context()))
-
+        topic_short_name = self._topic.split("/")[3]
         with tracer.start_as_current_span(
-            name=f"{self._topic} publish",
+            name=f"{topic_short_name} publish",
             attributes={
                 "messaging.system": "gcp_pubsub",
-                "messaging.destination.name": self._topic,
+                "messaging.destination.name": topic_short_name,
                 "gcp.project_id": self._topic.split("/")[1],
                 "messaging.batch.message_count": len(self._message_wrappers),
                 "messaging.operation": "publish",

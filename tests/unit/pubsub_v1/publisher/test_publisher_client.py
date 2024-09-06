@@ -264,7 +264,7 @@ def test_opentelemetry_flow_control_exception(creds, span_exporter):
     client = publisher.Client(credentials=creds, publisher_options=publisher_options)
 
     mock_batch = mock.Mock(spec=client._batch_class)
-    topic = "topic/path"
+    topic = "projects/projectID/topics/topicID"
     client._set_batch(topic, mock_batch)
 
     future1 = client.publish(topic, b"a" * 60)

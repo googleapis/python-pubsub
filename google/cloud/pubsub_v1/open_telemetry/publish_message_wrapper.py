@@ -43,11 +43,12 @@ class PublishMessageWrapper:
 
     def start_create_span(self, topic: str, ordering_key: str) -> None:
         tracer = trace.get_tracer(self._OPEN_TELEMETRY_TRACER_NAME)
+        topic_short_name = topic.split("/")[3]
         with tracer.start_as_current_span(
-            name=f"{topic} create",
+            name=f"{topic_short_name} create",
             attributes={
                 "messaging.system": self._OPEN_TELEMETRY_MESSAGING_SYSTEM,
-                "messaging.destination.name": topic,
+                "messaging.destination.name": topic_short_name,
                 "code.function": "google.cloud.pubsub.PublisherClient.publish",
                 "messaging.gcp_pubsub.message.ordering_key": ordering_key,
                 "messaging.operation": "create",

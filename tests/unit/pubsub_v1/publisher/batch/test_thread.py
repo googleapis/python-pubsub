@@ -758,7 +758,7 @@ def test_open_telemetry_commit_publish_rpc_span_none(span_exporter):
     assert publish_create_span.status.status_code == trace.status.StatusCode.ERROR
     assert publish_create_span.end_time is not None
 
-    assert publish_create_span.name == f"{TOPIC} create"
+    assert publish_create_span.name == "topicID create"
     # Publish start event and exception event should be present in publish
     # create span.
     assert len(publish_create_span.events) == 2
@@ -801,12 +801,12 @@ def test_open_telemetry_commit_publish_rpc_exception(span_exporter):
         assert span.end_time is not None
 
     publish_rpc_span = spans[0]
-    assert publish_rpc_span.name == f"{TOPIC} publish"
+    assert publish_rpc_span.name == "topicID publish"
     assert len(publish_rpc_span.events) == 1
     assert publish_rpc_span.events[0].name == "exception"
 
     publish_create_span = spans[1]
-    assert publish_create_span.name == f"{TOPIC} create"
+    assert publish_create_span.name == "topicID create"
     # Publish start event and exception event should be present in publish
     # create span.
     assert len(publish_create_span.events) == 2
@@ -901,12 +901,12 @@ def test_opentelemetry_commit(span_exporter):
     publish_rpc_span, create_span1, create_span2 = spans
 
     # Verify publish RPC span
-    assert publish_rpc_span.name == f"{TOPIC} publish"
+    assert publish_rpc_span.name == "topic publish"
     assert publish_rpc_span.kind == trace.SpanKind.CLIENT
     assert publish_rpc_span.end_time is not None
     attributes = publish_rpc_span.attributes
     assert attributes["messaging.system"] == "gcp_pubsub"
-    assert attributes["messaging.destination.name"] == TOPIC
+    assert attributes["messaging.destination.name"] == "topic"
     assert attributes["gcp.project_id"] == "projectID"
     assert attributes["messaging.batch.message_count"] == 2
     assert attributes["messaging.operation"] == "publish"
@@ -918,8 +918,8 @@ def test_opentelemetry_commit(span_exporter):
     assert publish_rpc_span.links[1].context == create_span2.context
 
     # Verify spans of the published messages.
-    assert create_span1.name == f"{TOPIC} create"
-    assert create_span2.name == f"{TOPIC} create"
+    assert create_span1.name == "topic create"
+    assert create_span2.name == "topic create"
 
     # Verify the publish create spans have been closed after publish success.
     assert create_span1.end_time is not None
