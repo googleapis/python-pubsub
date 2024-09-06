@@ -893,7 +893,7 @@ def test_opentelemetry_commit(span_exporter):
     assert publish_rpc_span.kind == trace.SpanKind.CLIENT
     assert publish_rpc_span.end_time is not None
     attributes = publish_rpc_span.attributes
-    assert attributes["messaging.system"] == "com.google.cloud.pubsub.v1"
+    assert attributes["messaging.system"] == "gcp_pubsub"
     assert attributes["messaging.destination.name"] == TOPIC
     assert attributes["gcp.project_id"] == "projectID"
     assert attributes["messaging.batch.message_count"] == 2

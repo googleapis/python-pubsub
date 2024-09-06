@@ -251,7 +251,7 @@ class Batch(base.Batch):
         with tracer.start_as_current_span(
             name=f"{self._topic} publish",
             attributes={
-                "messaging.system": "com.google.cloud.pubsub.v1",
+                "messaging.system": "gcp_pubsub",
                 "messaging.destination.name": self._topic,
                 "gcp.project_id": self._topic.split("/")[1],
                 "messaging.batch.message_count": len(self._message_wrappers),
