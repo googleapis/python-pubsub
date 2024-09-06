@@ -277,8 +277,8 @@ def test_opentelemetry_flow_control_exception(creds, span_exporter):
     spans = span_exporter.get_finished_spans()
     # Span 1 = Publisher Flow Control Span of first publish
     # Span 2 = Publisher Batching Span of first publish
-    # Span 2 = Publisher Flow Control Span of second publish(raises FlowControlLimitError)
-    # Span 3 = Publish Create Span of second publish(raises FlowControlLimitError)
+    # Span 3 = Publisher Flow Control Span of second publish(raises FlowControlLimitError)
+    # Span 4 = Publish Create Span of second publish(raises FlowControlLimitError)
     assert len(spans) == 4
 
     failed_flow_control_span = spans[2]
