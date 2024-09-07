@@ -481,8 +481,8 @@ class Client(publisher_client.PublisherClient):
             except BaseException as be:
                 # Exceptions can be thrown when attempting to add messages to
                 # the batch. If they're thrown, record them in publisher
-                # batching and create span, end them and bubble
-                # the exception up.
+                # batching and create span, end the spans and bubble the
+                # exception up.
                 if self._open_telemetry_enabled:
                     if wrapper:
                         wrapper.end_publisher_batching_span(be)

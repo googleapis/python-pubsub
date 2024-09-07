@@ -22,9 +22,9 @@ from typing import Any, Callable, List, Optional, Sequence
 from datetime import datetime
 
 from opentelemetry import trace
-
 import google.api_core.exceptions
 from google.api_core import gapic_v1
+
 from google.cloud.pubsub_v1.publisher import exceptions
 from google.cloud.pubsub_v1.publisher import futures
 from google.cloud.pubsub_v1.publisher._batch import base
@@ -92,6 +92,7 @@ class Batch(base.Batch):
     """
 
     _OPEN_TELEMETRY_TRACER_NAME: str = "google.cloud.pubsub_v1.publisher"
+    _OPEN_TELEMETRY_MESSAGING_SYSTEM: str = "gcp_pubsub"
 
     def __init__(
         self,
@@ -127,7 +128,7 @@ class Batch(base.Batch):
         self._commit_retry = commit_retry
         self._commit_timeout = commit_timeout
 
-        # Publish RPC Span that will be set by method `_create_publish_rpc_span`
+        # Publish RPC Span that will be set by method `_start_publish_rpc_span`
         # if Open Telemetry is enabled.
         self._rpc_span: Optional[trace.Span] = None
 
@@ -238,7 +239,7 @@ class Batch(base.Batch):
         )
         commit_thread.start()
 
-    def _create_publish_rpc_span(self):
+    def _start_publish_rpc_span(self) -> None:
         tracer = trace.get_tracer(self._OPEN_TELEMETRY_TRACER_NAME)
         links = []
 
@@ -251,7 +252,7 @@ class Batch(base.Batch):
         with tracer.start_as_current_span(
             name=f"{topic_short_name} publish",
             attributes={
-                "messaging.system": "gcp_pubsub",
+                "messaging.system": self._OPEN_TELEMETRY_MESSAGING_SYSTEM,
                 "messaging.destination.name": topic_short_name,
                 "gcp.project_id": self._topic.split("/")[1],
                 "messaging.batch.message_count": len(self._message_wrappers),
@@ -314,7 +315,7 @@ class Batch(base.Batch):
         batch_transport_succeeded = True
         try:
             if self._client.open_telemetry_enabled:
-                self._create_publish_rpc_span()
+                self._start_publish_rpc_span()
 
             # Performs retries for errors defined by the retry configuration.
             response = self._client._gapic_publish(

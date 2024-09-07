@@ -1,12 +1,27 @@
+# Copyright 2017, Google LLC All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import sys
 from datetime import datetime
 import warnings
 from typing import Optional
 
-from google.pubsub_v1 import types as gapic_types
 from opentelemetry import trace
 from opentelemetry.trace.propagation import set_span_in_context
 from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
+
+from google.pubsub_v1 import types as gapic_types
 from google.cloud.pubsub_v1.open_telemetry.context_propagation import (
     OpenTelemetryContextSetter,
 )
@@ -36,7 +51,7 @@ class PublishMessageWrapper:
         return self._create_span
 
     def __eq__(self, other):  # pragma: NO COVER
-        """Used for pytest asserts to compare two PublishMessageWrapper objects with the same message."""
+        """Used for pytest asserts to compare two PublishMessageWrapper objects with the same message"""
         if isinstance(self, other.__class__):
             return self.message == other.message
         return False
@@ -49,7 +64,7 @@ class PublishMessageWrapper:
             attributes={
                 "messaging.system": self._OPEN_TELEMETRY_MESSAGING_SYSTEM,
                 "messaging.destination.name": topic_short_name,
-                "code.function": "google.cloud.pubsub.PublisherClient.publish",
+                "code.function": "publish",
                 "messaging.gcp_pubsub.message.ordering_key": ordering_key,
                 "messaging.operation": "create",
                 "gcp.project_id": topic.split("/")[1],

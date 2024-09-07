@@ -43,7 +43,7 @@ from google.cloud.pubsub_v1.open_telemetry.publish_message_wrapper import (
 )
 
 
-def create_client(enable_open_telemetry=False):
+def create_client(enable_open_telemetry: bool = False):
     return publisher.Client(
         credentials=credentials.AnonymousCredentials(),
         publisher_options=types.PublisherOptions(
@@ -725,9 +725,9 @@ def test_batch_done_callback_called_on_publish_response_invalid():
 )
 def test_open_telemetry_commit_publish_rpc_span_none(span_exporter):
     """
-    Test coverage for scenario where OpenTelemetry is enabled, publish RPC
-    span creation fails(unexpected) and hence batch._rpc_span is None.
-    Required for code coverage.
+    Test scenario where OpenTelemetry is enabled, publish RPC
+    span creation fails(unexpected) and hence batch._rpc_span is None when
+    attempting to close it. Required for code coverage.
     """
     TOPIC = "projects/projectID/topics/topicID"
     batch = create_batch(topic=TOPIC, enable_open_telemetry=True)
@@ -738,12 +738,12 @@ def test_open_telemetry_commit_publish_rpc_span_none(span_exporter):
     message.start_create_span(topic=TOPIC, ordering_key=None)
     batch.publish(message)
 
-    # Mock publish error.
+    # Mock error when publish RPC span creation is attempted.
     error = google.api_core.exceptions.InternalServerError("error")
 
     with mock.patch.object(
         type(batch),
-        "_create_publish_rpc_span",
+        "_start_publish_rpc_span",
         side_effect=error,
     ):
         batch._commit()
@@ -751,7 +751,8 @@ def test_open_telemetry_commit_publish_rpc_span_none(span_exporter):
     assert batch._rpc_span is None
     spans = span_exporter.get_finished_spans()
 
-    # Create span (mock error thrown when publish RPC span creation is attempted)
+    # Only Create span should be exported, since publish RPC span creation
+    # should fail with a mock error.
     assert len(spans) == 1
 
     publish_create_span = spans[0]
@@ -862,6 +863,17 @@ def test_opentelemetry_commit_sampling(span_exporter):
     assert publish_rpc_span.links[0].context == create_span2.context
     assert create_span2.links[0].context == publish_rpc_span.context
 
+    # Verify all spans have ended.
+    for span in spans:
+        assert span.end_time is not None
+
+    # Verify both publish create spans have 2 events - publish start and publish
+    # end.
+    for span in spans[1:]:
+        assert len(span.events) == 2
+        assert span.events[0].name == "publish start"
+        assert span.events[1].name == "publish end"
+
 
 @pytest.mark.skipif(
     sys.version_info < (3, 8), reason="Open Telemetry requires python3.8 or higher"
@@ -916,6 +928,10 @@ def test_opentelemetry_commit(span_exporter):
     assert len(publish_rpc_span.links) == 2
     assert publish_rpc_span.links[0].context == create_span1.context
     assert publish_rpc_span.links[1].context == create_span2.context
+    assert len(create_span1.links) == 1
+    assert create_span1.links[0].context == publish_rpc_span.get_span_context()
+    assert len(create_span2.links) == 1
+    assert create_span2.links[0].context == publish_rpc_span.get_span_context()
 
     # Verify spans of the published messages.
     assert create_span1.name == "topic create"

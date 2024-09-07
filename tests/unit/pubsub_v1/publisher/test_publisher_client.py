@@ -28,17 +28,16 @@ else:
 
 import pytest
 import time
-from opentelemetry import trace
 
+from opentelemetry import trace
 from google.api_core import gapic_v1
 from google.api_core import retry as retries
 from google.api_core.gapic_v1.client_info import METRICS_METADATA_KEY
+
 from google.cloud.pubsub_v1 import publisher
 from google.cloud.pubsub_v1 import types
-
 from google.cloud.pubsub_v1.publisher import exceptions
 from google.cloud.pubsub_v1.publisher._sequencer import ordered_sequencer
-
 from google.pubsub_v1 import types as gapic_types
 from google.pubsub_v1.services.publisher import client as publisher_client
 from google.pubsub_v1.services.publisher.transports.grpc import PublisherGrpcTransport
@@ -206,7 +205,7 @@ def test_opentelemetry_context_propagation(creds, span_exporter):
     "enable_open_telemetry",
     [
         True,
-        False,  # for test code coverage - exception thrown but Open Telemetry disabled
+        False,
     ],
 )
 def test_opentelemetry_publisher_batching_exception(
@@ -236,16 +235,29 @@ def test_opentelemetry_publisher_batching_exception(
         # Span 3: Create Publish span
         assert len(spans) == 3
 
-        batching_span = spans[1]
-        create_span = spans[2]
+        flow_control_span, batching_span, create_span = spans
+
+        # Verify batching span contents.
         assert batching_span.name == "publisher batching"
         assert batching_span.kind == trace.SpanKind.INTERNAL
-        assert batching_span._parent[1] == create_span._context[1]
+        assert batching_span.parent.span_id == create_span.get_span_context().span_id
 
-        # Verify exception recorded by the Publisher Batching span.
+        # Verify exception recorded by the publisher batching span.
         assert batching_span.status.status_code == trace.StatusCode.ERROR
         assert len(batching_span.events) == 1
         assert batching_span.events[0].name == "exception"
+
+        # Verify exception recorded by the publisher create span.
+        assert create_span.status.status_code == trace.StatusCode.ERROR
+        assert len(create_span.events) == 2
+        assert create_span.events[0].name == "publish start"
+        assert create_span.events[1].name == "exception"
+
+        # Verify the finished flow control span.
+        assert flow_control_span.name == "publisher flow control"
+        assert len(flow_control_span.events) == 0
+    else:
+        assert len(spans) == 0
 
 
 @pytest.mark.skipif(
@@ -283,15 +295,25 @@ def test_opentelemetry_flow_control_exception(creds, span_exporter):
 
     failed_flow_control_span = spans[2]
     finished_publish_create_span = spans[3]
+
+    # Verify failed flow control span values.
     assert failed_flow_control_span.name == "publisher flow control"
     assert failed_flow_control_span.kind == trace.SpanKind.INTERNAL
     assert (
-        failed_flow_control_span._parent[1] == finished_publish_create_span._context[1]
+        failed_flow_control_span.parent.span_id
+        == finished_publish_create_span.get_span_context().span_id
     )
     assert failed_flow_control_span.status.status_code == trace.StatusCode.ERROR
 
     assert len(failed_flow_control_span.events) == 1
     assert failed_flow_control_span.events[0].name == "exception"
+
+    # Verify finished publish create span values
+    assert finished_publish_create_span.name == "topicID create"
+    assert finished_publish_create_span.status.status_code == trace.StatusCode.ERROR
+    assert len(finished_publish_create_span.events) == 2
+    assert finished_publish_create_span.events[0].name == "publish start"
+    assert finished_publish_create_span.events[1].name == "exception"
 
 
 @pytest.mark.skipif(
@@ -312,22 +334,21 @@ def test_opentelemetry_publish(creds, span_exporter):
 
     # Span 1: Publisher Flow control span
     # Span 2: Publisher Batching span
-    # Publish Create Span would still be active, and hence not exported
-    # at this point in development.
+    # Publish Create Span would still be active, and hence not exported.
     assert len(spans) == 2
 
     flow_control_span = spans[0]
     assert flow_control_span.name == "publisher flow control"
     assert flow_control_span.kind == trace.SpanKind.INTERNAL
     # Assert the Publisher Flow Control Span has a parent(the Publish Create
-    # Span is still not finished, and hence the value of parent cannot yet be
-    # asserted at this point in development)
-    assert flow_control_span._parent is not None
+    # span is still active, and hence unexported. So, the value of parent cannot
+    # be asserted)
+    assert flow_control_span.parent is not None
 
     batching_span = spans[1]
     assert batching_span.name == "publisher batching"
     assert batching_span.kind == trace.SpanKind.INTERNAL
-    assert batching_span._parent is not None
+    assert batching_span.parent is not None
 
 
 def test_init_w_api_endpoint(creds):

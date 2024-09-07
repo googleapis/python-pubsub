@@ -29,5 +29,7 @@ def test_message_setter():
 def test_eq():
     wrapper1 = PublishMessageWrapper(message=gapic_types.PubsubMessage(data=b"foo"))
     wrapper2 = PublishMessageWrapper(message=gapic_types.PubsubMessage(data=b"bar"))
+    wrapper3 = PublishMessageWrapper(message=gapic_types.PubsubMessage(data=b"foo"))
 
     assert wrapper1.__eq__(wrapper2) is False
+    assert wrapper1.__eq__(wrapper3) is True
