@@ -67,7 +67,16 @@ class Client(subscriber_client.SubscriberClient):
         )
     """
 
-    def __init__(self, **kwargs: Any):
+    def __init__(
+        self,
+        subscriber_options: Union[types.SubscriberOptions, Sequence] = (),
+        **kwargs: Any
+    ):
+        assert (
+            isinstance(subscriber_options, types.SubscriberOptions)
+            or len(subscriber_options) == 0
+        ), "subscriber_options must be of type SubscriberOptions or an empty sequence."
+
         # Sanity check: Is our goal to use the emulator?
         # If so, create a grpc insecure channel with the emulator host
         # as the target.
@@ -81,6 +90,8 @@ class Client(subscriber_client.SubscriberClient):
         super().__init__(**kwargs)
         self._target = self._transport._host
         self._closed = False
+
+        self.subscriber_options = types.SubscriberOptions(*subscriber_options)
 
     @classmethod
     def from_service_account_file(  # type: ignore[override]

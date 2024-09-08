@@ -317,3 +317,22 @@ async def test_sync_pull_warning_if_return_immediately_async(creds):
     warning_msg = str(warned[0].message)
     assert "return_immediately" in warning_msg
     assert "deprecated" in warning_msg
+
+
+@pytest.mark.parametrize(
+    "enable_open_telemetry_tracing",
+    [
+        True,
+        False,
+    ],
+)
+def test_subscriber_settings(creds, enable_open_telemetry_tracing):
+    options = types.SubscriberOptions(
+        enable_open_telemetry_tracing=enable_open_telemetry_tracing
+    )
+    client = subscriber.Client(subscriber_options=options, credentials=creds)
+
+    assert (
+        client.subscriber_options.enable_open_telemetry_tracing
+        == enable_open_telemetry_tracing
+    )

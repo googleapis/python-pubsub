@@ -131,6 +131,22 @@ class PublishFlowControl(NamedTuple):
     """The action to take when publish flow control limits are exceeded."""
 
 
+# Define the default subscriber options.
+#
+# This class is used when creating a subscriber client to pass in options
+# to enable/disable features.
+class SubscriberOptions(NamedTuple):
+    """
+    Options for the subscriber client.
+    Attributes:
+        enable_open_telemetry_tracing (bool):
+            Whether to enable OpenTelemetry tracing. Defaults to false.
+    """
+
+    enable_open_telemetry_tracing: bool = False
+    """Whether to enable OpenTelemetry tracing."""
+
+
 # Define the default publisher options.
 #
 # This class is used when creating a publisher client to pass in options
