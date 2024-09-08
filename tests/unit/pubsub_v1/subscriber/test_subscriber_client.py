@@ -320,19 +320,58 @@ async def test_sync_pull_warning_if_return_immediately_async(creds):
 
 
 @pytest.mark.parametrize(
-    "enable_open_telemetry_tracing",
+    "enable_open_telemetry",
     [
         True,
         False,
     ],
 )
-def test_subscriber_settings(creds, enable_open_telemetry_tracing):
+def test_subscriber_settings(creds, enable_open_telemetry):
     options = types.SubscriberOptions(
-        enable_open_telemetry_tracing=enable_open_telemetry_tracing
+        enable_open_telemetry_tracing=enable_open_telemetry
     )
-    client = subscriber.Client(subscriber_options=options, credentials=creds)
+    if sys.version_info >= (3, 8) or enable_open_telemetry is False:
+        client = subscriber.Client(subscriber_options=options, credentials=creds)
+        assert (
+            client.subscriber_options.enable_open_telemetry_tracing
+            == enable_open_telemetry
+        )
+    else:
+        with pytest.warns(
+            RuntimeWarning,
+            match="Open Telemetry for Python version 3.7 or lower is not supported. Disabling Open Telemetry tracing.",
+        ):
+            client = subscriber.Client(subscriber_options=options, credentials=creds)
+            assert client._open_telemetry_enabled is False
 
-    assert (
-        client.subscriber_options.enable_open_telemetry_tracing
-        == enable_open_telemetry_tracing
-    )
+
+@pytest.mark.parametrize(
+    "enable_open_telemetry",
+    [
+        True,
+        False,
+    ],
+)
+def test_open_telemetry_subscriber_options(creds, enable_open_telemetry):
+    if sys.version_info >= (3, 8) or enable_open_telemetry is False:
+        client = subscriber.Client(
+            subscriber_options=types.SubscriberOptions(
+                enable_open_telemetry_tracing=enable_open_telemetry
+            ),
+            credentials=creds,
+        )
+        assert client._open_telemetry_enabled == enable_open_telemetry
+    else:
+        # Open Telemetry is not supported and hence disabled for Python
+        # versions 3.7 or below
+        with pytest.warns(
+            RuntimeWarning,
+            match="Open Telemetry for Python version 3.7 or lower is not supported. Disabling Open Telemetry tracing.",
+        ):
+            client = subscriber.Client(
+                subscriber_options=types.SubscriberOptions(
+                    enable_open_telemetry_tracing=enable_open_telemetry
+                ),
+                credentials=creds,
+            )
+            assert client._open_telemetry_enabled is False
