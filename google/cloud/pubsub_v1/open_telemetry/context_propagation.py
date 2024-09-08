@@ -12,7 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Optional, List
+
 from opentelemetry.propagators.textmap import Setter
+from opentelemetry.propagators.textmap import Getter
 
 from google.pubsub_v1 import types as gapic_types
 
@@ -28,3 +31,17 @@ class OpenTelemetryContextSetter(Setter):
         "googclient_" prefix.
         """
         carrier.attributes["googclient_" + key] = value
+
+
+class OpenTelemetryContextGetter(Getter):
+    """
+    Used by Open Telemetry for context propagation.
+    """
+
+    def get(self, carrier: gapic_types.PubsubMessage, key: str) -> Optional[List[str]]:
+        if ("googclient_" + key) not in carrier.attributes:
+            return None
+        return [carrier.attributes["googclient_" + key]]
+
+    def keys(self, carrier: gapic_types.PubsubMessage) -> List[str]:
+        return list(map(str, carrier.attributes.keys()))

@@ -30,6 +30,10 @@ from google.cloud.pubsub_v1 import types
 from google.cloud.pubsub_v1.subscriber import futures
 from google.pubsub_v1.services.subscriber import client as subscriber_client
 from google.pubsub_v1.services.subscriber.transports.grpc import SubscriberGrpcTransport
+from google.cloud.pubsub_v1.open_telemetry.context_propagation import (
+    OpenTelemetryContextGetter,
+)
+from google.pubsub_v1 import types as gapic_types
 
 
 def test_init_default_client_info(creds):
@@ -352,7 +356,7 @@ def test_subscriber_settings(creds, enable_open_telemetry):
         False,
     ],
 )
-def test_open_telemetry_subscriber_options(creds, enable_open_telemetry):
+def test_opentelemetry_subscriber_options(creds, enable_open_telemetry):
     if sys.version_info >= (3, 8) or enable_open_telemetry is False:
         client = subscriber.Client(
             subscriber_options=types.SubscriberOptions(
@@ -375,3 +379,24 @@ def test_open_telemetry_subscriber_options(creds, enable_open_telemetry):
                 credentials=creds,
             )
             assert client._open_telemetry_enabled is False
+
+
+def test_opentelemetry_propagator_get():
+    message = gapic_types.PubsubMessage(data=b"foo")
+    message.attributes["key1"] = "value1"
+    message.attributes["googclient_key2"] = "value2"
+
+    assert OpenTelemetryContextGetter().get(message, "key2") == ["value2"]
+
+    assert OpenTelemetryContextGetter().get(message, "key1") is None
+
+
+def test_opentelemetry_propagator_keys():
+    message = gapic_types.PubsubMessage(data=b"foo")
+    message.attributes["key1"] = "value1"
+    message.attributes["googclient_key2"] = "value2"
+
+    assert sorted(OpenTelemetryContextGetter().keys(message)) == [
+        "googclient_key2",
+        "key1",
+    ]
