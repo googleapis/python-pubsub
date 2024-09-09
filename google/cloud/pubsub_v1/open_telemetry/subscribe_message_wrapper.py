@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Optional
+from datetime import datetime
 
 from opentelemetry import trace
 from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
@@ -29,10 +29,6 @@ class SubscribeMessageWrapper:
 
     def __init__(self, message: gapic_types.PubsubMessage):
         self._message: gapic_types.PubsubMessage = message
-
-        # subscribe span will be initialized by the `start_subscribe_span`
-        # method.
-        self._subscribe_span: Optional[trace.Span] = None
 
     def start_subscribe_span(
         self,
@@ -66,3 +62,11 @@ class SubscribeMessageWrapper:
             end_on_exit=False,
         ) as subscribe_span:
             self._subscribe_span = subscribe_span
+
+    def add_subscribe_span_event(self, event: str) -> None:
+        self._subscribe_span.add_event(
+            name=event,
+            attributes={
+                "timestamp": str(datetime.now()),
+            },
+        )

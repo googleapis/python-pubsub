@@ -1113,10 +1113,16 @@ class StreamingPullManager(object):
         # Immediately (i.e. without waiting for the auto lease management)
         # modack the messages we received, as this tells the server that we've
         # received them.
+        if self._client.open_telemetry_enabled:
+            for wrapper in wrappers:
+                wrapper.add_subscribe_span_event("modack start")
         ack_id_gen = (message.ack_id for message in received_messages)
         expired_ack_ids = self._send_lease_modacks(
             ack_id_gen, self.ack_deadline, warn_on_invalid=False
         )
+        if self._client.open_telemetry_enabled:
+            for wrapper in wrappers:
+                wrapper.add_subscribe_span_event("modack end")
 
         with self._pause_resume_lock:
             assert self._scheduler is not None
