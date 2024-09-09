@@ -111,6 +111,13 @@ class Client(subscriber_client.SubscriberClient):
             )
             self._open_telemetry_enabled = False
 
+    @property
+    def open_telemetry_enabled(self) -> bool:
+        """
+        Returns True if Open Telemetry is enabled. False otherwise.
+        """
+        return self._open_telemetry_enabled  # pragma: NO COVER
+
     @classmethod
     def from_service_account_file(  # type: ignore[override]
         cls, filename: str, **kwargs: Any
