@@ -20,6 +20,7 @@ import math
 import time
 import typing
 from typing import Optional, Callable
+import queue
 
 from google.cloud.pubsub_v1.subscriber._protocol import requests
 from google.cloud.pubsub_v1.subscriber import futures
@@ -28,7 +29,6 @@ from google.cloud.pubsub_v1.subscriber.exceptions import AcknowledgeStatus
 
 if typing.TYPE_CHECKING:  # pragma: NO COVER
     import datetime
-    import queue
     from google.cloud.pubsub_v1 import types
     from google.protobuf.internal import containers
 
@@ -92,7 +92,7 @@ class Message(object):
         message: "types.PubsubMessage._meta._pb",  # type: ignore
         ack_id: str,
         delivery_attempt: int,
-        request_queue: "queue.Queue",
+        request_queue: Optional[queue.Queue] = None,
         exactly_once_delivery_enabled_func: Callable[[], bool] = lambda: False,
     ):
         """Construct the Message.
@@ -157,6 +157,18 @@ class Message(object):
         # We don't actually want the first line indented.
         pretty_attrs = pretty_attrs.lstrip()
         return _MESSAGE_REPR.format(abbv_data, str(self.ordering_key), pretty_attrs)
+
+    @property
+    def request_queue(self):  # pragma: NO COVER
+        return self._request_queue
+
+    @request_queue.setter
+    def request_queue(self, request_queue):
+        self._request_queue = request_queue
+
+    @property
+    def message(self) -> "types.PubsubMessage._meta._pb":  # type: ignore
+        return self._message
 
     @property
     def attributes(self) -> "containers.ScalarMap":
@@ -253,15 +265,18 @@ class Message(object):
 
         """
         time_to_ack = math.ceil(time.time() - self._received_timestamp)
-        self._request_queue.put(
-            requests.AckRequest(
-                ack_id=self._ack_id,
-                byte_size=self.size,
-                time_to_ack=time_to_ack,
-                ordering_key=self.ordering_key,
-                future=None,
+        if (
+            self._request_queue
+        ):  # pragma: NO COVER  # Code coverage expects a tests for the null check being false(unexpected)
+            self._request_queue.put(
+                requests.AckRequest(
+                    ack_id=self._ack_id,
+                    byte_size=self.size,
+                    time_to_ack=time_to_ack,
+                    ordering_key=self.ordering_key,
+                    future=None,
+                )
             )
-        )
 
     def ack_with_response(self) -> "futures.Future":
         """Acknowledge the given message.
@@ -310,15 +325,18 @@ class Message(object):
             future = _SUCCESS_FUTURE
             req_future = None
         time_to_ack = math.ceil(time.time() - self._received_timestamp)
-        self._request_queue.put(
-            requests.AckRequest(
-                ack_id=self._ack_id,
-                byte_size=self.size,
-                time_to_ack=time_to_ack,
-                ordering_key=self.ordering_key,
-                future=req_future,
+        if (
+            self._request_queue
+        ):  # pragma: NO COVER  # Code coverage expects a tests for the null check being false(unexpected)
+            self._request_queue.put(
+                requests.AckRequest(
+                    ack_id=self._ack_id,
+                    byte_size=self.size,
+                    time_to_ack=time_to_ack,
+                    ordering_key=self.ordering_key,
+                    future=req_future,
+                )
             )
-        )
         return future
 
     def drop(self) -> None:
@@ -334,11 +352,16 @@ class Message(object):
             automatically drop()s the message on `ack` or `nack`. You probably
             do not want to call this method directly.
         """
-        self._request_queue.put(
-            requests.DropRequest(
-                ack_id=self._ack_id, byte_size=self.size, ordering_key=self.ordering_key
+        if (
+            self._request_queue
+        ):  # pragma: NO COVER  # Code coverage expects a tests for the null check being false(unexpected)
+            self._request_queue.put(
+                requests.DropRequest(
+                    ack_id=self._ack_id,
+                    byte_size=self.size,
+                    ordering_key=self.ordering_key,
+                )
             )
-        )
 
     def modify_ack_deadline(self, seconds: int) -> None:
         """Resets the deadline for acknowledgement.
@@ -356,9 +379,14 @@ class Message(object):
                 between 0 and 600. Due to network latency, values below 10 are advised
                 against.
         """
-        self._request_queue.put(
-            requests.ModAckRequest(ack_id=self._ack_id, seconds=seconds, future=None)
-        )
+        if (
+            self._request_queue
+        ):  # pragma: NO COVER  # Code coverage expects a tests for the null check being false(unexpected)
+            self._request_queue.put(
+                requests.ModAckRequest(
+                    ack_id=self._ack_id, seconds=seconds, future=None
+                )
+            )
 
     def modify_ack_deadline_with_response(self, seconds: int) -> "futures.Future":
         """Resets the deadline for acknowledgement and returns the response
@@ -413,12 +441,14 @@ class Message(object):
         else:
             future = _SUCCESS_FUTURE
             req_future = None
-
-        self._request_queue.put(
-            requests.ModAckRequest(
-                ack_id=self._ack_id, seconds=seconds, future=req_future
+        if (
+            self._request_queue
+        ):  # pragma: NO COVER  # Code coverage expects a tests for the null check being false(unexpected)
+            self._request_queue.put(
+                requests.ModAckRequest(
+                    ack_id=self._ack_id, seconds=seconds, future=req_future
+                )
             )
-        )
 
         return future
 
@@ -429,14 +459,17 @@ class Message(object):
         may take place immediately or after a delay, and may arrive at this subscriber
         or another.
         """
-        self._request_queue.put(
-            requests.NackRequest(
-                ack_id=self._ack_id,
-                byte_size=self.size,
-                ordering_key=self.ordering_key,
-                future=None,
+        if (
+            self._request_queue
+        ):  # pragma: NO COVER  # Code coverage expects a tests for the null check being false(unexpected)
+            self._request_queue.put(
+                requests.NackRequest(
+                    ack_id=self._ack_id,
+                    byte_size=self.size,
+                    ordering_key=self.ordering_key,
+                    future=None,
+                )
             )
-        )
 
     def nack_with_response(self) -> "futures.Future":
         """Decline to acknowledge the given message, returning the response status via
@@ -480,13 +513,16 @@ class Message(object):
             future = _SUCCESS_FUTURE
             req_future = None
 
-        self._request_queue.put(
-            requests.NackRequest(
-                ack_id=self._ack_id,
-                byte_size=self.size,
-                ordering_key=self.ordering_key,
-                future=req_future,
+        if (
+            self._request_queue
+        ):  # pragma: NO COVER  # Code coverage expects a tests for the null check being false(unexpected)
+            self._request_queue.put(
+                requests.NackRequest(
+                    ack_id=self._ack_id,
+                    byte_size=self.size,
+                    ordering_key=self.ordering_key,
+                    future=req_future,
+                )
             )
-        )
 
         return future

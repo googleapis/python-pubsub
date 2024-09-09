@@ -41,6 +41,10 @@ from google.cloud.pubsub_v1.subscriber._protocol import streaming_pull_manager
 from google.cloud.pubsub_v1.subscriber import exceptions as subscriber_exceptions
 from google.cloud.pubsub_v1.subscriber import futures
 from google.pubsub_v1 import types as gapic_types
+from google.cloud.pubsub_v1.open_telemetry.subscribe_message_wrapper import (
+    SubscribeMessageWrapper,
+)
+
 import grpc
 from google.rpc import status_pb2
 from google.rpc import code_pb2
@@ -532,15 +536,16 @@ def test__maybe_release_messages_below_overload():
         mock.create_autospec(message.Message, instance=True, ack_id="ack_baz", size=10),
     ]
     for msg in messages:
-        manager._messages_on_hold.put(msg)
+        wrapper = SubscribeMessageWrapper(msg)
+        manager._messages_on_hold.put(wrapper)
         manager._on_hold_bytes = 3 * 10
 
     # the actual call of MUT
     manager._maybe_release_messages()
 
     assert manager._messages_on_hold.size == 1
-    msg = manager._messages_on_hold.get()
-    assert msg.ack_id == "ack_baz"
+    wrapper = manager._messages_on_hold.get()
+    assert wrapper.subscriber_message.ack_id == "ack_baz"
 
     schedule_calls = manager._scheduler.schedule.mock_calls
     assert len(schedule_calls) == 2
@@ -557,7 +562,8 @@ def test__maybe_release_messages_negative_on_hold_bytes_warning(caplog):
     manager._callback = lambda msg: msg  # pragma: NO COVER
 
     msg = mock.create_autospec(message.Message, instance=True, ack_id="ack", size=17)
-    manager._messages_on_hold.put(msg)
+    wrapper = SubscribeMessageWrapper(msg)
+    manager._messages_on_hold.put(wrapper)
     manager._on_hold_bytes = 5  # too low for some reason
 
     _leaser = manager._leaser = mock.create_autospec(leaser.Leaser)
@@ -1408,7 +1414,9 @@ def test_close_nacks_internally_queued_messages():
     manager, _, _, _, _, _ = make_running_manager()
     dropped_by_scheduler = messages[:2]
     manager._scheduler.shutdown.return_value = dropped_by_scheduler
-    manager._messages_on_hold._messages_on_hold.append(messages[2])
+    manager._messages_on_hold._messages_on_hold.append(
+        SubscribeMessageWrapper(messages[2])
+    )
 
     manager.close()
     await_manager_shutdown(manager, timeout=3)
@@ -1757,12 +1765,12 @@ def test__on_response_with_leaser_overload():
     # the rest of the messages should have been put on hold
     assert manager._messages_on_hold.size == 2
     while True:
-        msg = manager._messages_on_hold.get()
-        if msg is None:
+        wrapper = manager._messages_on_hold.get()
+        if wrapper is None:
             break
         else:
-            assert isinstance(msg, message.Message)
-            assert msg.message_id in ("2", "3")
+            assert isinstance(wrapper.subscriber_message, message.Message)
+            assert wrapper.subscriber_message.message_id in ("2", "3")
 
 
 def test__on_response_none_data(caplog):

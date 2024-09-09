@@ -20,15 +20,19 @@ from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapProp
 from google.cloud.pubsub_v1.open_telemetry.context_propagation import (
     OpenTelemetryContextGetter,
 )
-from google.pubsub_v1 import types as gapic_types
+from google.cloud.pubsub_v1.subscriber.message import Message
 
 
 class SubscribeMessageWrapper:
     _OPEN_TELEMETRY_TRACER_NAME: str = "google.cloud.pubsub_v1.publisher"
     _OPEN_TELEMETRY_MESSAGING_SYSTEM: str = "gcp_pubsub"
 
-    def __init__(self, message: gapic_types.PubsubMessage):
-        self._message: gapic_types.PubsubMessage = message
+    def __init__(self, message: Message):
+        self._subscriber_message: Message = message
+
+    @property
+    def subscriber_message(self):
+        return self._subscriber_message
 
     def start_subscribe_span(
         self,
@@ -39,7 +43,7 @@ class SubscribeMessageWrapper:
     ) -> None:
         tracer = trace.get_tracer(self._OPEN_TELEMETRY_TRACER_NAME)
         parent_span_context = TraceContextTextMapPropagator().extract(
-            carrier=self._message,
+            carrier=self._subscriber_message.message,
             getter=OpenTelemetryContextGetter(),
         )
         subscription_short_name = subscription.split("/")[3]
@@ -51,10 +55,12 @@ class SubscribeMessageWrapper:
                 "messaging.system": self._OPEN_TELEMETRY_MESSAGING_SYSTEM,
                 "messaging.destination.name": subscription_short_name,
                 "gcp.project_id": subscription.split("/")[1],
-                "messaging.message.id": self._message.message_id,
-                "messaging.message.body.size": len(self._message.data),
+                "messaging.message.id": self._subscriber_message.message.message_id,
+                "messaging.message.body.size": len(
+                    self._subscriber_message.message.data
+                ),
                 "messaging.gcp_pubsub.message.ack_id": ack_id,
-                "messaging.gcp_pubsub.message.ordering_key": self._message.ordering_key,
+                "messaging.gcp_pubsub.message.ordering_key": self._subscriber_message.message.ordering_key,
                 "messaging.gcp_pubsub.message.exactly_once_delivery": exactly_once_enabled,
                 "code.function": "_on_response",
                 "messaging.gcp_pubsub.message.delivery_attempt": delivery_attempt,

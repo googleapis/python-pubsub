@@ -17,6 +17,9 @@ import queue
 from google.cloud.pubsub_v1.subscriber import message
 from google.cloud.pubsub_v1.subscriber._protocol import messages_on_hold
 from google.pubsub_v1 import types as gapic_types
+from google.cloud.pubsub_v1.open_telemetry.subscribe_message_wrapper import (
+    SubscribeMessageWrapper,
+)
 
 
 def make_message(ack_id, ordering_key):
@@ -41,16 +44,18 @@ def test_put_and_get_unordered_messages():
     moh = messages_on_hold.MessagesOnHold()
 
     msg1 = make_message(ack_id="ack1", ordering_key="")
-    moh.put(msg1)
+    wrapper1 = SubscribeMessageWrapper(msg1)
+    moh.put(wrapper1)
     assert moh.size == 1
 
     msg2 = make_message(ack_id="ack2", ordering_key="")
-    moh.put(msg2)
+    wrapper2 = SubscribeMessageWrapper(msg2)
+    moh.put(wrapper2)
     assert moh.size == 2
 
-    assert moh.get() == msg1
+    assert moh.get() == wrapper1
     assert moh.size == 1
-    assert moh.get() == msg2
+    assert moh.get() == wrapper2
     assert moh.size == 0
     assert moh.get() is None
 
@@ -69,15 +74,17 @@ def test_ordered_messages_one_key():
     moh = messages_on_hold.MessagesOnHold()
 
     msg1 = make_message(ack_id="ack1", ordering_key="key1")
-    moh.put(msg1)
+    wrapper1 = SubscribeMessageWrapper(msg1)
+    moh.put(wrapper1)
     assert moh.size == 1
 
     msg2 = make_message(ack_id="ack2", ordering_key="key1")
-    moh.put(msg2)
+    wrapper2 = SubscribeMessageWrapper(msg2)
+    moh.put(wrapper2)
     assert moh.size == 2
 
     # Get first message for "key1"
-    assert moh.get() == msg1
+    assert moh.get() == wrapper1
     assert moh.size == 1
 
     # Still waiting on the previously-sent message for "key1", and there are no
@@ -89,7 +96,7 @@ def test_ordered_messages_one_key():
     callback_tracker = ScheduleMessageCallbackTracker()
     moh.activate_ordering_keys(["key1"], callback_tracker)
     assert callback_tracker.called
-    assert callback_tracker.message == msg2
+    assert callback_tracker.message == wrapper2
     assert moh.size == 0
     assert len(moh._pending_ordered_messages) == 1
 
@@ -113,15 +120,17 @@ def test_ordered_messages_drop_duplicate_keys(caplog):
     moh = messages_on_hold.MessagesOnHold()
 
     msg1 = make_message(ack_id="ack1", ordering_key="key1")
-    moh.put(msg1)
+    wrapper1 = SubscribeMessageWrapper(msg1)
+    moh.put(wrapper1)
     assert moh.size == 1
 
     msg2 = make_message(ack_id="ack2", ordering_key="key1")
-    moh.put(msg2)
+    wrapper2 = SubscribeMessageWrapper(msg2)
+    moh.put(wrapper2)
     assert moh.size == 2
 
     # Get first message for "key1"
-    assert moh.get() == msg1
+    assert moh.get() == wrapper1
     assert moh.size == 1
 
     # Still waiting on the previously-sent message for "key1", and there are no
@@ -133,7 +142,7 @@ def test_ordered_messages_drop_duplicate_keys(caplog):
     callback_tracker = ScheduleMessageCallbackTracker()
     moh.activate_ordering_keys(["key1", "key1"], callback_tracker)
     assert callback_tracker.called
-    assert callback_tracker.message == msg2
+    assert callback_tracker.message == wrapper2
     assert moh.size == 0
     assert len(moh._pending_ordered_messages) == 0
 
@@ -149,11 +158,12 @@ def test_ordered_messages_drop_duplicate_keys(caplog):
     assert not callback_tracker.called
 
     msg3 = make_message(ack_id="ack3", ordering_key="key1")
-    moh.put(msg3)
+    wrapper3 = SubscribeMessageWrapper(msg3)
+    moh.put(wrapper3)
     assert moh.size == 1
 
     # Get next message for "key1"
-    assert moh.get() == msg3
+    assert moh.get() == wrapper3
     assert moh.size == 0
 
     # Activate "key1".
@@ -180,33 +190,36 @@ def test_ordered_messages_two_keys():
 
     # Put message with "key1".
     msg1 = make_message(ack_id="ack1", ordering_key="key1")
-    moh.put(msg1)
+    wrapper1 = SubscribeMessageWrapper(msg1)
+    moh.put(wrapper1)
     assert moh.size == 1
 
     # Put second message with "key1".
     msg2 = make_message(ack_id="ack2", ordering_key="key1")
-    moh.put(msg2)
+    wrapper2 = SubscribeMessageWrapper(msg2)
+    moh.put(wrapper2)
     assert moh.size == 2
 
     # Put message with another key: "key2".
     msg3 = make_message(ack_id="ack3", ordering_key="key2")
-    moh.put(msg3)
+    wrapper3 = SubscribeMessageWrapper(msg3)
+    moh.put(wrapper3)
     assert moh.size == 3
 
     # Get first message for "key1"
-    assert moh.get() == msg1
+    assert moh.get() == wrapper1
     assert moh.size == 2
 
     # Get another message. Still waiting on the previously-sent message for
     # "key1", so release msg3 with key "key2".
-    assert moh.get() is msg3
+    assert moh.get() is wrapper3
     assert moh.size == 1
 
     # Activate "key1" to release the second message with that key.
     callback_tracker = ScheduleMessageCallbackTracker()
     moh.activate_ordering_keys(["key1"], callback_tracker)
     assert callback_tracker.called
-    assert callback_tracker.message == msg2
+    assert callback_tracker.message == wrapper2
     assert moh.size == 0
 
     # Activate "key2" and release no messages because there are none left for
@@ -237,25 +250,28 @@ def test_ordered_messages_two_keys_interleaved():
 
     # Put message with "key1".
     msg1 = make_message(ack_id="ack1", ordering_key="key1")
-    moh.put(msg1)
+    wrapper1 = SubscribeMessageWrapper(msg1)
+    moh.put(wrapper1)
     assert moh.size == 1
 
     # Put message with another key: "key2".
     msg2 = make_message(ack_id="ack2", ordering_key="key2")
-    moh.put(msg2)
+    wrapper2 = SubscribeMessageWrapper(msg2)
+    moh.put(wrapper2)
     assert moh.size == 2
 
     # Put second message with "key1".
     msg3 = make_message(ack_id="ack3", ordering_key="key1")
-    moh.put(msg3)
+    wrapper3 = SubscribeMessageWrapper(msg3)
+    moh.put(wrapper3)
     assert moh.size == 3
 
     # Get first message for "key1"
-    assert moh.get() == msg1
+    assert moh.get() == wrapper1
     assert moh.size == 2
 
     # Get another message. msg2 with "key2" is next in line in the queue.
-    assert moh.get() is msg2
+    assert moh.get() is wrapper2
     assert moh.size == 1
 
     # Activate "key1". Clean up state for "key1" because another message with
@@ -266,18 +282,18 @@ def test_ordered_messages_two_keys_interleaved():
     assert not callback_tracker.called
     assert moh.size == 1
 
-    # Get another message. msg3 is next in line in the queue.
-    assert moh.get() is msg3
+    # Get another message. wrapper3 is next in line in the queue.
+    assert moh.get() is wrapper3
     assert moh.size == 0
 
-    # Activate "key2" to mark msg2 as complete. Release no messages because
+    # Activate "key2" to mark wrapper2 as complete. Release no messages because
     # there are none left for that key. State for "key2" should be cleaned up.
     callback_tracker = ScheduleMessageCallbackTracker()
     moh.activate_ordering_keys(["key2"], callback_tracker)
     assert not callback_tracker.called
     assert moh.size == 0
 
-    # Activate "key1" to mark msg3 as complete. Release no messages because
+    # Activate "key1" to mark wrapper3 as complete. Release no messages because
     # there are none left for that key. State for "key1" should be cleaned up.
     callback_tracker = ScheduleMessageCallbackTracker()
     moh.activate_ordering_keys(["key1"], callback_tracker)
@@ -298,33 +314,36 @@ def test_ordered_and_unordered_messages_interleaved():
 
     # Put message with "key1".
     msg1 = make_message(ack_id="ack1", ordering_key="key1")
-    moh.put(msg1)
+    wrapper1 = SubscribeMessageWrapper(msg1)
+    moh.put(wrapper1)
     assert moh.size == 1
 
     # Put another message "key1"
     msg2 = make_message(ack_id="ack2", ordering_key="key1")
-    moh.put(msg2)
+    wrapper2 = SubscribeMessageWrapper(msg2)
+    moh.put(wrapper2)
     assert moh.size == 2
 
     # Put a message with no ordering key.
     msg3 = make_message(ack_id="ack3", ordering_key="")
-    moh.put(msg3)
+    wrapper3 = SubscribeMessageWrapper(msg3)
+    moh.put(wrapper3)
     assert moh.size == 3
 
     # Get first message for "key1"
-    assert moh.get() == msg1
+    assert moh.get() == wrapper1
     assert moh.size == 2
 
-    # Get another message. msg2 will be skipped because another message with the
+    # Get another message. wrapper2 will be skipped because another message with the
     # same key (msg1) is in flight.
-    assert moh.get() is msg3
+    assert moh.get() is wrapper3
     assert moh.size == 1
 
     # Activate "key1". Send msg2, the next in line for the same ordering key.
     callback_tracker = ScheduleMessageCallbackTracker()
     moh.activate_ordering_keys(["key1"], callback_tracker)
     assert callback_tracker.called
-    assert callback_tracker.message == msg2
+    assert callback_tracker.message == wrapper2
     assert moh.size == 0
 
     # No more messages left.
@@ -360,16 +379,18 @@ def test_cleanup_key_with_messages(caplog):
 
     # Put message with "key1".
     msg1 = make_message(ack_id="ack1", ordering_key="key1")
-    moh.put(msg1)
+    wrapper1 = SubscribeMessageWrapper(msg1)
+    moh.put(wrapper1)
     assert moh.size == 1
 
     # Put another message "key1"
     msg2 = make_message(ack_id="ack2", ordering_key="key1")
-    moh.put(msg2)
+    wrapper2 = SubscribeMessageWrapper(msg2)
+    moh.put(wrapper2)
     assert moh.size == 2
 
     # Get first message for "key1"
-    assert moh.get() == msg1
+    assert moh.get() == wrapper1
     assert moh.size == 1
 
     # Get first message for "key1"

@@ -582,30 +582,28 @@ class StreamingPullManager(object):
         """
         released_ack_ids = []
         while self.load < _MAX_LOAD:
-            msg = self._messages_on_hold.get()
-            if not msg:
+            wrapper = self._messages_on_hold.get()
+            if not wrapper:
                 break
 
-            self._schedule_message_on_hold(msg)
-            released_ack_ids.append(msg.ack_id)
+            self._schedule_message_on_hold(wrapper)
+            released_ack_ids.append(wrapper.subscriber_message.ack_id)
 
         assert self._leaser is not None
         self._leaser.start_lease_expiry_timer(released_ack_ids)
 
-    def _schedule_message_on_hold(
-        self, msg: "google.cloud.pubsub_v1.subscriber.message.Message"
-    ):
+    def _schedule_message_on_hold(self, wrapper: SubscribeMessageWrapper):
         """Schedule a message on hold to be sent to the user and change on-hold-bytes.
 
         The method assumes the caller has acquired the ``_pause_resume_lock``.
 
         Args:
-            msg: The message to schedule to be sent to the user.
+            wrapper: The message wrapper to schedule to be sent to the user.
         """
-        assert msg, "Message must not be None."
+        assert wrapper, "Wrapper must not be None."
 
         # On-hold bytes goes down, increasing load.
-        self._on_hold_bytes -= msg.size
+        self._on_hold_bytes -= wrapper.subscriber_message.size
 
         if self._on_hold_bytes < 0:
             _LOGGER.warning(
@@ -621,7 +619,7 @@ class StreamingPullManager(object):
         )
         assert self._scheduler is not None
         assert self._callback is not None
-        self._scheduler.schedule(self._callback, msg)
+        self._scheduler.schedule(self._callback, wrapper.subscriber_message)
 
     def send_unary_ack(
         self, ack_ids, ack_reqs_dict
@@ -949,7 +947,11 @@ class StreamingPullManager(object):
             )
             _LOGGER.debug(f"NACK-ing all not-yet-dispatched messages (total: {total}).")
             messages_to_nack = itertools.chain(
-                dropped_messages, self._messages_on_hold._messages_on_hold
+                dropped_messages,
+                [
+                    wrapper.subscriber_message
+                    for wrapper in self._messages_on_hold._messages_on_hold
+                ],
             )
             for msg in messages_to_nack:
                 msg.nack()
@@ -1079,8 +1081,16 @@ class StreamingPullManager(object):
         received_messages = response._pb.received_messages
 
         wrappers: List[SubscribeMessageWrapper] = []
-        for received_message in response.received_messages:
-            wrapper = SubscribeMessageWrapper(received_message.message)
+        for received_message in received_messages:
+            message = google.cloud.pubsub_v1.subscriber.message.Message(
+                received_message.message,
+                received_message.ack_id,
+                received_message.delivery_attempt,
+                None,
+                self._exactly_once_delivery_enabled,
+            )
+
+            wrapper = SubscribeMessageWrapper(message)
             wrappers.append(wrapper)
             if self._client.open_telemetry_enabled:
                 wrapper.start_subscribe_span(
@@ -1128,19 +1138,13 @@ class StreamingPullManager(object):
             assert self._scheduler is not None
             assert self._leaser is not None
 
-            for received_message in received_messages:
+            for wrapper, received_message in zip(wrappers, received_messages):
                 if (
                     not self._exactly_once_delivery_enabled()
                     or received_message.ack_id not in expired_ack_ids
                 ):
-                    message = google.cloud.pubsub_v1.subscriber.message.Message(
-                        received_message.message,
-                        received_message.ack_id,
-                        received_message.delivery_attempt,
-                        self._scheduler.queue,
-                        self._exactly_once_delivery_enabled,
-                    )
-                    self._messages_on_hold.put(message)
+                    wrapper.subscriber_message.request_queue = self._scheduler.queue
+                    self._messages_on_hold.put(wrapper)
                     self._on_hold_bytes += message.size
                     req = requests.LeaseRequest(
                         ack_id=message.ack_id,
