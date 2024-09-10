@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pytest
+
 from google.pubsub_v1 import types as gapic_types
 from google.cloud.pubsub_v1.open_telemetry.publish_message_wrapper import (
     PublishMessageWrapper,
@@ -33,3 +35,21 @@ def test_eq():
 
     assert wrapper1.__eq__(wrapper2) is False
     assert wrapper1.__eq__(wrapper3) is True
+
+
+def test_end_create_span():
+    wrapper = PublishMessageWrapper(message=gapic_types.PubsubMessage(data=b"foo"))
+    with pytest.raises(AssertionError):
+        wrapper.end_create_span()
+
+
+def test_end_publisher_flow_control_span():
+    wrapper = PublishMessageWrapper(message=gapic_types.PubsubMessage(data=b"foo"))
+    with pytest.raises(AssertionError):
+        wrapper.end_publisher_flow_control_span()
+
+
+def test_end_publisher_batching_span():
+    wrapper = PublishMessageWrapper(message=gapic_types.PubsubMessage(data=b"foo"))
+    with pytest.raises(AssertionError):
+        wrapper.end_publisher_batching_span()

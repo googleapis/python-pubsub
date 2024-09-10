@@ -26,6 +26,7 @@ else:
 import pytest
 
 from opentelemetry import trace
+from opentelemetry.trace import SpanContext
 
 import google.api_core.exceptions
 from google.api_core import gapic_v1
@@ -830,21 +831,29 @@ def test_opentelemetry_commit_sampling(span_exporter):
         message=gapic_types.PubsubMessage(data=b"foo"),
     )
     message1.start_create_span(topic=TOPIC, ordering_key=None)
-    message1.create_span.is_recording = mock.Mock(return_value=False)
 
     message2 = PublishMessageWrapper(
         message=gapic_types.PubsubMessage(data=b"bar"),
     )
     message2.start_create_span(topic=TOPIC, ordering_key=None)
 
+    # Mock the 'get_span_context' method to return a mock SpanContext
+    mock_span_context = mock.Mock(spec=SpanContext)
+    mock_span_context.trace_flags.sampled = False
+
     batch.publish(message1)
     batch.publish(message2)
 
     publish_response = gapic_types.PublishResponse(message_ids=["a", "b"])
+
+    # Patch the 'create_span' method to return the mock SpanContext
     with mock.patch.object(
-        type(batch.client), "_gapic_publish", return_value=publish_response
+        message1.create_span, "get_span_context", return_value=mock_span_context
     ):
-        batch._commit()
+        with mock.patch.object(
+            type(batch.client), "_gapic_publish", return_value=publish_response
+        ):
+            batch._commit()
 
     spans = span_exporter.get_finished_spans()
 

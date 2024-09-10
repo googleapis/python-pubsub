@@ -91,7 +91,7 @@ class Batch(base.Batch):
             timeout is used.
     """
 
-    _OPEN_TELEMETRY_TRACER_NAME: str = "google.cloud.pubsub_v1.publisher"
+    _OPEN_TELEMETRY_TRACER_NAME: str = "google.cloud.pubsub_v1"
     _OPEN_TELEMETRY_MESSAGING_SYSTEM: str = "gcp_pubsub"
 
     def __init__(
@@ -246,8 +246,9 @@ class Batch(base.Batch):
         for wrapper in self._message_wrappers:
             span = wrapper.create_span
             # Add links only for sampled spans.
-            if span.is_recording():
+            if span.get_span_context().trace_flags.sampled:
                 links.append(trace.Link(span.get_span_context()))
+        assert len(self._topic.split("/")) == 4
         topic_short_name = self._topic.split("/")[3]
         with tracer.start_as_current_span(
             name=f"{topic_short_name} publish",
@@ -266,7 +267,7 @@ class Batch(base.Batch):
             ctx = rpc_span.get_span_context()
             for wrapper in self._message_wrappers:
                 span = wrapper.create_span
-                if span.is_recording():
+                if span.get_span_context().trace_flags.sampled:
                     span.add_link(ctx)
             self._rpc_span = rpc_span
 

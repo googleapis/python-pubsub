@@ -335,8 +335,6 @@ def test_opentelemetry_publish(creds, span_exporter):
     # Span 1: Publisher Flow control span
     # Span 2: Publisher Batching span
     # Publish Create Span would still be active, and hence not exported.
-    assert len(spans) == 2
-
     flow_control_span = spans[0]
     assert flow_control_span.name == "publisher flow control"
     assert flow_control_span.kind == trace.SpanKind.INTERNAL

@@ -14,7 +14,6 @@
 
 import sys
 from datetime import datetime
-import warnings
 from typing import Optional
 
 from opentelemetry import trace
@@ -28,7 +27,7 @@ from google.cloud.pubsub_v1.open_telemetry.context_propagation import (
 
 
 class PublishMessageWrapper:
-    _OPEN_TELEMETRY_TRACER_NAME: str = "google.cloud.pubsub_v1.publisher"
+    _OPEN_TELEMETRY_TRACER_NAME: str = "google.cloud.pubsub_v1"
     _OPEN_TELEMETRY_MESSAGING_SYSTEM: str = "gcp_pubsub"
     _OPEN_TELEMETRY_PUBLISHER_BATCHING = "publisher batching"
 
@@ -37,6 +36,9 @@ class PublishMessageWrapper:
 
     def __init__(self, message: gapic_types.PubsubMessage):
         self._message: gapic_types.PubsubMessage = message
+        self._create_span: Optional[trace.Span] = None
+        self._flow_control_span: Optional[trace.Span] = None
+        self._batching_span: Optional[trace.Span] = None
 
     @property
     def message(self):
@@ -58,6 +60,7 @@ class PublishMessageWrapper:
 
     def start_create_span(self, topic: str, ordering_key: str) -> None:
         tracer = trace.get_tracer(self._OPEN_TELEMETRY_TRACER_NAME)
+        assert len(topic.split("/")) == 4
         topic_short_name = topic.split("/")[3]
         with tracer.start_as_current_span(
             name=f"{topic_short_name} create",
@@ -68,7 +71,9 @@ class PublishMessageWrapper:
                 "messaging.gcp_pubsub.message.ordering_key": ordering_key,
                 "messaging.operation": "create",
                 "gcp.project_id": topic.split("/")[1],
-                "messaging.message.body.size": sys.getsizeof(self._message.data),
+                "messaging.message.body.size": sys.getsizeof(
+                    self._message.data
+                ),  # sys.getsizeof() used since the attribute expects size of message body in bytes
             },
             kind=trace.SpanKind.PRODUCER,
             end_on_exit=False,
@@ -79,19 +84,14 @@ class PublishMessageWrapper:
                     "timestamp": str(datetime.now()),
                 },
             )
-            self._create_span: trace.Span = create_span
+            self._create_span = create_span
             TraceContextTextMapPropagator().inject(
                 carrier=self._message,
                 setter=OpenTelemetryContextSetter(),
             )
 
     def end_create_span(self, exc: Optional[BaseException] = None) -> None:
-        if self._create_span is None:  # pragma: NO COVER
-            warnings.warn(
-                message="publish create span is None. Hence, not ending it",
-                category=RuntimeWarning,
-            )
-            return
+        assert self._create_span is not None
         if exc:
             self._create_span.record_exception(exception=exc)
             self._create_span.set_status(
@@ -101,29 +101,19 @@ class PublishMessageWrapper:
 
     def start_publisher_flow_control_span(self) -> None:
         tracer = trace.get_tracer(self._OPEN_TELEMETRY_TRACER_NAME)
-        if self._create_span is None:  # pragma: NO COVER
-            warnings.warn(
-                message="publish create span is None. Hence, not starting publish flow control span",
-                category=RuntimeWarning,
-            )
-            return
+        assert self._create_span is not None
         with tracer.start_as_current_span(
             name=self._PUBLISH_FLOW_CONTROL,
             kind=trace.SpanKind.INTERNAL,
             context=set_span_in_context(self._create_span),
             end_on_exit=False,
         ) as flow_control_span:
-            self._flow_control_span: trace.Span = flow_control_span
+            self._flow_control_span = flow_control_span
 
     def end_publisher_flow_control_span(
         self, exc: Optional[BaseException] = None
     ) -> None:
-        if self._flow_control_span is None:  # pragma: NO COVER
-            warnings.warn(
-                message="publish flow control span is None. Hence, not ending it",
-                category=RuntimeWarning,
-            )
-            return
+        assert self._flow_control_span is not None
         if exc:
             self._flow_control_span.record_exception(exception=exc)
             self._flow_control_span.set_status(
@@ -132,12 +122,7 @@ class PublishMessageWrapper:
         self._flow_control_span.end()
 
     def start_publisher_batching_span(self) -> None:
-        if self._create_span is None:  # pragma: NO COVER
-            warnings.warn(
-                message="publish create span is None. Hence, not starting publisher batching span",
-                category=RuntimeWarning,
-            )
-            return
+        assert self._create_span is not None
         tracer = trace.get_tracer(self._OPEN_TELEMETRY_TRACER_NAME)
         with tracer.start_as_current_span(
             name=self._OPEN_TELEMETRY_PUBLISHER_BATCHING,
@@ -148,12 +133,7 @@ class PublishMessageWrapper:
             self._batching_span = batching_span
 
     def end_publisher_batching_span(self, exc: Optional[BaseException] = None) -> None:
-        if self._batching_span is None:  # pragma: NO COVER
-            warnings.warn(
-                message="publisher batching span is None. Hence, not ending it",
-                category=RuntimeWarning,
-            )
-            return
+        assert self._batching_span is not None
         if exc:
             self._batching_span.record_exception(exception=exc)
             self._batching_span.set_status(

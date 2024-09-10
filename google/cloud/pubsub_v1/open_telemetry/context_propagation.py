@@ -1,4 +1,4 @@
-# Copyright 2017, Google LLC All rights reserved.
+# Copyright 2024, Google LLC All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
 
 from opentelemetry.propagators.textmap import Setter
 
-from google.pubsub_v1 import types as gapic_types
+from google.pubsub_v1 import PubsubMessage
 
 
 class OpenTelemetryContextSetter(Setter):
@@ -22,9 +22,18 @@ class OpenTelemetryContextSetter(Setter):
     Used by Open Telemetry for context propagation.
     """
 
-    def set(self, carrier: gapic_types.PubsubMessage, key: str, value: str) -> None:
+    def set(self, carrier: PubsubMessage, key: str, value: str) -> None:
         """
         Injects trace context into Pub/Sub message attributes with
         "googclient_" prefix.
+
+        Args:
+            carrier(PubsubMessage): The Pub/Sub message which is the carrier of Open Telemetry
+            data.
+            key(str): The key for which the Open Telemetry context data needs to be set.
+            value(str): The Open Telemetry context value to be set.
+
+        Returns:
+            None
         """
         carrier.attributes["googclient_" + key] = value
