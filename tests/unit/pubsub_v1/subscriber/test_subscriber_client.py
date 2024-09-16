@@ -30,6 +30,10 @@ from google.cloud.pubsub_v1 import types
 from google.cloud.pubsub_v1.subscriber import futures
 from google.pubsub_v1.services.subscriber import client as subscriber_client
 from google.pubsub_v1.services.subscriber.transports.grpc import SubscriberGrpcTransport
+from google.cloud.pubsub_v1.open_telemetry.context_propagation import (
+    OpenTelemetryContextGetter,
+)
+from google.pubsub_v1.types import PubsubMessage
 
 
 def test_init_default_client_info(creds):
@@ -341,3 +345,24 @@ def test_opentelemetry_subscriber_setting(creds, enable_open_telemetry):
         ):
             client = subscriber.Client(credentials=creds, subscriber_options=options)
             assert client._open_telemetry_enabled is False
+
+
+def test_opentelemetry_propagator_get():
+    message = PubsubMessage(data=b"foo")
+    message.attributes["key1"] = "value1"
+    message.attributes["googclient_key2"] = "value2"
+
+    assert OpenTelemetryContextGetter().get(message, "key2") == ["value2"]
+
+    assert OpenTelemetryContextGetter().get(message, "key1") is None
+
+
+def test_opentelemetry_propagator_keys():
+    message = PubsubMessage(data=b"foo")
+    message.attributes["key1"] = "value1"
+    message.attributes["googclient_key2"] = "value2"
+
+    assert sorted(OpenTelemetryContextGetter().keys(message)) == [
+        "googclient_key2",
+        "key1",
+    ]
