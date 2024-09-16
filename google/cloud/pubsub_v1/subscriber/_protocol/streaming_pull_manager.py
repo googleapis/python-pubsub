@@ -29,6 +29,9 @@ from google.api_core import bidi
 from google.api_core import exceptions
 from google.cloud.pubsub_v1 import types
 from google.cloud.pubsub_v1.subscriber._protocol import dispatcher
+from google.cloud.pubsub_v1.open_telemetry.subscribe_message_wrapper import (
+    SubscribeMessageWrapper,
+)
 from google.cloud.pubsub_v1.subscriber._protocol import heartbeater
 from google.cloud.pubsub_v1.subscriber._protocol import histogram
 from google.cloud.pubsub_v1.subscriber._protocol import leaser
@@ -1075,6 +1078,17 @@ class StreamingPullManager(object):
         # protobuf message to significantly gain on attribute access performance.
         received_messages = response._pb.received_messages
 
+        wrappers: List[SubscribeMessageWrapper] = []
+        for received_message in response.received_messages:
+            wrapper = SubscribeMessageWrapper(received_message.message)
+            wrappers.append(wrapper)
+            if self._client.open_telemetry_enabled:
+                wrapper.start_subscribe_span(
+                    self._subscription,
+                    response.subscription_properties.exactly_once_delivery_enabled,
+                    received_message.ack_id,
+                    received_message.delivery_attempt,
+                )
         _LOGGER.debug(
             "Processing %s received message(s), currently on hold %s (bytes %s).",
             len(received_messages),

@@ -179,11 +179,16 @@ def test_constructor_with_max_duration_per_lease_extension_too_high():
     assert manager._stream_ack_deadline == 600
 
 
-def make_manager(**kwargs):
+def make_manager(
+    enable_open_telemetry: bool = False,
+    subscription_name: str = "subscription-name",
+    **kwargs
+):
     client_ = mock.create_autospec(client.Client, instance=True)
+    client_.open_telemetry_enabled = enable_open_telemetry
     scheduler_ = mock.create_autospec(scheduler.Scheduler, instance=True)
     return streaming_pull_manager.StreamingPullManager(
-        client_, "subscription-name", scheduler=scheduler_, **kwargs
+        client_, subscription_name, scheduler=scheduler_, **kwargs
     )
 
 
@@ -1224,8 +1229,12 @@ def test_open_has_been_closed():
         manager.open(mock.sentinel.callback, mock.sentinel.on_callback_error)
 
 
-def make_running_manager(**kwargs):
-    manager = make_manager(**kwargs)
+def make_running_manager(
+    enable_open_telemetry: bool = False,
+    subscription_name: str = "subscription-name",
+    **kwargs
+):
+    manager = make_manager(enable_open_telemetry, subscription_name, **kwargs)
     manager._consumer = mock.create_autospec(bidi.BackgroundConsumer, instance=True)
     manager._consumer.is_active = True
     manager._dispatcher = mock.create_autospec(dispatcher.Dispatcher, instance=True)
@@ -1488,6 +1497,37 @@ def test__get_initial_request_wo_leaser():
     assert initial_request.stream_ack_deadline_seconds == 123
     assert initial_request.modify_deadline_ack_ids == []
     assert initial_request.modify_deadline_seconds == []
+
+
+def test_opentelemetry__on_response_subscribe_span_create(span_exporter):
+    manager, _, _, leaser, _, _ = make_running_manager(
+        enable_open_telemetry=True,
+        subscription_name="projects/projectID/subscriptions/subscriptionID",
+    )
+
+    fake_leaser_add(leaser, init_msg_count=0, assumed_msg_size=42)
+    manager._callback = mock.sentinel.callback
+
+    response = gapic_types.StreamingPullResponse(
+        received_messages=[
+            gapic_types.ReceivedMessage(
+                ack_id="ack1",
+                message=gapic_types.PubsubMessage(data=b"foo", message_id="1"),
+            ),
+            gapic_types.ReceivedMessage(
+                ack_id="ack2",
+                message=gapic_types.PubsubMessage(data=b"bar", message_id="2"),
+                delivery_attempt=6,
+            ),
+        ]
+    )
+
+    manager._on_response(response)
+
+    spans = span_exporter.get_finished_spans()
+
+    # Subscribe span is still active, hence unexported.
+    assert len(spans) == 0
 
 
 def test__on_response_delivery_attempt():
