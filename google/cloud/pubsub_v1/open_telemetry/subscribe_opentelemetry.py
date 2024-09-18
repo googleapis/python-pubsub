@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from typing import Optional
+from datetime import datetime
 
 from opentelemetry import trace
 from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
@@ -67,3 +68,12 @@ class SubscribeOpenTelemetry:
             end_on_exit=False,
         ) as subscribe_span:
             self._subscribe_span = subscribe_span
+
+    def add_subscribe_span_event(self, event: str) -> None:
+        assert self._subscribe_span is not None
+        self._subscribe_span.add_event(
+            name=event,
+            attributes={
+                "timestamp": str(datetime.now()),
+            },
+        )

@@ -1078,7 +1078,7 @@ class StreamingPullManager(object):
         # protobuf message to significantly gain on attribute access performance.
         received_messages = response._pb.received_messages
 
-        subscribe_open_telemetry: List[SubscribeOpenTelemetry] = []
+        subscribe_opentelemetry: List[SubscribeOpenTelemetry] = []
         if self._client.open_telemetry_enabled:
             for received_message in received_messages:
                 opentelemetry_data = SubscribeOpenTelemetry(received_message.message)
@@ -1088,7 +1088,7 @@ class StreamingPullManager(object):
                     received_message.ack_id,
                     received_message.delivery_attempt,
                 )
-                subscribe_open_telemetry.append(opentelemetry_data)
+                subscribe_opentelemetry.append(opentelemetry_data)
 
         _LOGGER.debug(
             "Processing %s received message(s), currently on hold %s (bytes %s).",
@@ -1113,10 +1113,16 @@ class StreamingPullManager(object):
         # Immediately (i.e. without waiting for the auto lease management)
         # modack the messages we received, as this tells the server that we've
         # received them.
+        if self._client.open_telemetry_enabled:
+            for opentelemetry_data in subscribe_opentelemetry:
+                opentelemetry_data.add_subscribe_span_event("modack start")
         ack_id_gen = (message.ack_id for message in received_messages)
         expired_ack_ids = self._send_lease_modacks(
             ack_id_gen, self.ack_deadline, warn_on_invalid=False
         )
+        if self._client.open_telemetry_enabled:
+            for opentelemetry_data in subscribe_opentelemetry:
+                opentelemetry_data.add_subscribe_span_event("modack end")
 
         with self._pause_resume_lock:
             if self._scheduler is None or self._leaser is None:
