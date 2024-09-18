@@ -16,6 +16,7 @@ import datetime
 import queue
 import sys
 import time
+import pytest
 
 # special case python < 3.8
 if sys.version_info.major == 3 and sys.version_info.minor < 8:
@@ -29,6 +30,9 @@ from google.cloud.pubsub_v1.subscriber._protocol import requests
 from google.protobuf import timestamp_pb2
 from google.pubsub_v1 import types as gapic_types
 from google.cloud.pubsub_v1.subscriber.exceptions import AcknowledgeStatus
+from google.cloud.pubsub_v1.open_telemetry.subscribe_opentelemetry import (
+    SubscribeOpenTelemetry,
+)
 
 
 RECEIVED = datetime.datetime(2012, 4, 21, 15, 0, tzinfo=datetime.timezone.utc)
@@ -129,6 +133,48 @@ def check_call_types(mock, *args, **kwargs):
         assert len(call_args) == len(args)
         for n, argtype in enumerate(args):
             assert isinstance(call_args[n], argtype)
+
+
+def test_opentelemetry_ack(span_exporter):
+    SUBSCRIPTION = "projects/projectID/subscriptions/subscriptionID"
+    msg = create_message(b"data", ack_id="ack_id")
+    opentelemetry_data = SubscribeOpenTelemetry(msg)
+    opentelemetry_data.start_subscribe_span(
+        subscription=SUBSCRIPTION,
+        exactly_once_enabled=False,
+        ack_id="ack_id",
+        delivery_attempt=2,
+    )
+    msg.opentelemetry_data = opentelemetry_data
+    msg.ack()
+    opentelemetry_data.end_subscribe_span()
+
+    spans = span_exporter.get_finished_spans()
+    assert len(spans) == 1
+
+    assert len(spans[0].events) == 1
+    assert spans[0].events[0].name == "ack start"
+
+
+def test_opentelemetry_ack_with_response(span_exporter):
+    SUBSCRIPTION = "projects/projectID/subscriptions/subscriptionID"
+    msg = create_message(b"data", ack_id="ack_id")
+    opentelemetry_data = SubscribeOpenTelemetry(msg)
+    opentelemetry_data.start_subscribe_span(
+        subscription=SUBSCRIPTION,
+        exactly_once_enabled=False,
+        ack_id="ack_id",
+        delivery_attempt=2,
+    )
+    msg.opentelemetry_data = opentelemetry_data
+    msg.ack_with_response()
+    opentelemetry_data.end_subscribe_span()
+
+    spans = span_exporter.get_finished_spans()
+    assert len(spans) == 1
+
+    assert len(spans[0].events) == 1
+    assert spans[0].events[0].name == "ack start"
 
 
 def test_ack():
