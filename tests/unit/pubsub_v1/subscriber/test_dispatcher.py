@@ -522,6 +522,46 @@ def test_retry_acks_in_new_thread():
             assert ctor_call.kwargs["daemon"]
 
 
+def test_opentelemetry_retry_acks(span_exporter):
+    manager = mock.create_autospec(
+        streaming_pull_manager.StreamingPullManager, instance=True
+    )
+    dispatcher_ = dispatcher.Dispatcher(manager, mock.sentinel.queue)
+    opentelemetry_data = SubscribeOpenTelemetry(message=PubsubMessage(data=b"foo"))
+    opentelemetry_data.start_subscribe_span(
+        subscription="projects/projectID/subscriptions/subscriptionID",
+        exactly_once_enabled=True,
+        ack_id="ack_id",
+        delivery_attempt=5,
+    )
+
+    f = futures.Future()
+    items = [
+        requests.AckRequest(
+            ack_id="ack_id_string",
+            byte_size=0,
+            time_to_ack=20,
+            ordering_key="",
+            future=f,
+            opentelemetry_data=opentelemetry_data,
+        )
+    ]
+    # first and second `send_unary_ack` calls fail, third one succeeds
+    manager.send_unary_ack.side_effect = [([], items), ([], items), (items, [])]
+    with mock.patch("time.sleep", return_value=None):
+        dispatcher_._retry_acks(items)
+
+    spans = span_exporter.get_finished_spans()
+
+    assert len(spans) == 1
+    subscribe_span = spans[0]
+
+    assert "messaging.gcp_pubsub.result" in subscribe_span.attributes
+    assert subscribe_span.attributes["messaging.gcp_pubsub.result"] == "acked"
+    assert len(subscribe_span.events) == 1
+    assert subscribe_span.events[0].name == "ack end"
+
+
 def test_retry_acks():
     manager = mock.create_autospec(
         streaming_pull_manager.StreamingPullManager, instance=True
