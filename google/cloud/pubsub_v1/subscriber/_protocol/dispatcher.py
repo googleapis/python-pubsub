@@ -243,6 +243,12 @@ class Dispatcher(object):
                 ack_reqs_dict=ack_reqs_dict,
             )
 
+            for completed_ack in requests_completed:
+                if completed_ack.opentelemetry_data:
+                    completed_ack.opentelemetry_data.set_subscribe_span_result("acked")
+                    completed_ack.opentelemetry_data.add_subscribe_span_event("ack end")
+                    completed_ack.opentelemetry_data.end_subscribe_span()
+
             # Remove the completed messages from lease management.
             self.drop(requests_completed)
 
@@ -286,6 +292,13 @@ class Dispatcher(object):
                 ack_ids=[req.ack_id for req in requests_to_retry],
                 ack_reqs_dict=ack_reqs_dict,
             )
+
+            for completed_ack in requests_completed:
+                if completed_ack.opentelemetry_data:
+                    completed_ack.opentelemetry_data.set_subscribe_span_result("acked")
+                    completed_ack.opentelemetry_data.add_subscribe_span_event("ack end")
+                    completed_ack.opentelemetry_data.end_subscribe_span()
+
             assert (
                 len(requests_to_retry) <= _ACK_IDS_BATCH_SIZE
             ), "Too many requests to be retried."

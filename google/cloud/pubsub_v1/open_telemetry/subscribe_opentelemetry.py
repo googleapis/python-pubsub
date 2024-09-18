@@ -77,3 +77,14 @@ class SubscribeOpenTelemetry:
                 "timestamp": str(datetime.now()),
             },
         )
+
+    def end_subscribe_span(self) -> None:
+        assert self._subscribe_span is not None
+        self._subscribe_span.end()
+
+    def set_subscribe_span_result(self, result: str) -> None:
+        assert self._subscribe_span is not None
+        self._subscribe_span.set_attribute(
+            key="messaging.gcp_pubsub.result",
+            value=result,
+        )
