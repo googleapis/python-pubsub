@@ -22,6 +22,10 @@ from google.cloud.pubsub_v1.subscriber._protocol import helper_threads
 from google.cloud.pubsub_v1.subscriber._protocol import requests
 from google.cloud.pubsub_v1.subscriber._protocol import streaming_pull_manager
 from google.cloud.pubsub_v1.subscriber import futures
+from google.cloud.pubsub_v1.open_telemetry.subscribe_opentelemetry import (
+    SubscribeOpenTelemetry,
+)
+from google.pubsub_v1.types import PubsubMessage
 
 # special case python < 3.8
 if sys.version_info.major == 3 and sys.version_info.minor < 8:
@@ -363,6 +367,43 @@ def test_unknown_request_type():
     manager.send_unary_ack.return_value = (items, [])
     with pytest.warns(RuntimeWarning, match="Skipping unknown request item of type"):
         dispatcher_.dispatch_callback(items)
+
+
+def test_opentelemetry_ack(span_exporter):
+    manager = mock.create_autospec(
+        streaming_pull_manager.StreamingPullManager, instance=True
+    )
+    dispatcher_ = dispatcher.Dispatcher(manager, mock.sentinel.queue)
+
+    opentelemetry_data = SubscribeOpenTelemetry(message=PubsubMessage(data=b"foo"))
+    opentelemetry_data.start_subscribe_span(
+        subscription="projects/projectID/subscriptions/subscriptionID",
+        exactly_once_enabled=True,
+        ack_id="ack_id",
+        delivery_attempt=5,
+    )
+    items = [
+        requests.AckRequest(
+            ack_id="ack_id_string",
+            byte_size=0,
+            time_to_ack=20,
+            ordering_key="",
+            future=None,
+            opentelemetry_data=opentelemetry_data,
+        )
+    ]
+    manager.send_unary_ack.return_value = (items, [])
+    dispatcher_.ack(items)
+
+    spans = span_exporter.get_finished_spans()
+
+    assert len(spans) == 1
+    subscribe_span = spans[0]
+
+    assert "messaging.gcp_pubsub.result" in subscribe_span.attributes
+    assert subscribe_span.attributes["messaging.gcp_pubsub.result"] == "acked"
+    assert len(subscribe_span.events) == 1
+    assert subscribe_span.events[0].name == "ack end"
 
 
 def test_ack():
