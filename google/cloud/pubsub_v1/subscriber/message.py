@@ -268,6 +268,8 @@ class Message(object):
             https://cloud.google.com/pubsub/docs/exactly-once-delivery."
 
         """
+        if self.opentelemetry_data:
+            self.opentelemetry_data.add_subscribe_span_event("ack start")
         time_to_ack = math.ceil(time.time() - self._received_timestamp)
         self._request_queue.put(
             requests.AckRequest(
@@ -318,6 +320,8 @@ class Message(object):
             pubsub_v1.subscriber.exceptions.AcknowledgeError exception
             will be thrown.
         """
+        if self.opentelemetry_data:
+            self.opentelemetry_data.add_subscribe_span_event("ack start")
         req_future: Optional[futures.Future]
         if self._exactly_once_delivery_enabled_func():
             future = futures.Future()
@@ -372,6 +376,8 @@ class Message(object):
                 between 0 and 600. Due to network latency, values below 10 are advised
                 against.
         """
+        if self.opentelemetry_data:
+            self.opentelemetry_data.add_subscribe_span_event("modack start")
         self._request_queue.put(
             requests.ModAckRequest(ack_id=self._ack_id, seconds=seconds, future=None)
         )
@@ -422,6 +428,8 @@ class Message(object):
             will be thrown.
 
         """
+        if self.opentelemetry_data:
+            self.opentelemetry_data.add_subscribe_span_event("modack start")
         req_future: Optional[futures.Future]
         if self._exactly_once_delivery_enabled_func():
             future = futures.Future()
@@ -445,6 +453,8 @@ class Message(object):
         may take place immediately or after a delay, and may arrive at this subscriber
         or another.
         """
+        if self.opentelemetry_data:
+            self.opentelemetry_data.add_subscribe_span_event("nack start")
         self._request_queue.put(
             requests.NackRequest(
                 ack_id=self._ack_id,
@@ -488,6 +498,8 @@ class Message(object):
             will be thrown.
 
         """
+        if self.opentelemetry_data:
+            self.opentelemetry_data.add_subscribe_span_event("nack start")
         req_future: Optional[futures.Future]
         if self._exactly_once_delivery_enabled_func():
             future = futures.Future()
