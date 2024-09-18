@@ -177,6 +177,48 @@ def test_opentelemetry_ack_with_response(span_exporter):
     assert spans[0].events[0].name == "ack start"
 
 
+def test_opentelemetry_nack(span_exporter):
+    SUBSCRIPTION = "projects/projectID/subscriptions/subscriptionID"
+    msg = create_message(b"data", ack_id="ack_id")
+    opentelemetry_data = SubscribeOpenTelemetry(msg)
+    opentelemetry_data.start_subscribe_span(
+        subscription=SUBSCRIPTION,
+        exactly_once_enabled=False,
+        ack_id="ack_id",
+        delivery_attempt=2,
+    )
+    msg.opentelemetry_data = opentelemetry_data
+    msg.nack()
+    opentelemetry_data.end_subscribe_span()
+
+    spans = span_exporter.get_finished_spans()
+    assert len(spans) == 1
+
+    assert len(spans[0].events) == 1
+    assert spans[0].events[0].name == "nack start"
+
+
+def test_opentelemetry_nack_with_response(span_exporter):
+    SUBSCRIPTION = "projects/projectID/subscriptions/subscriptionID"
+    msg = create_message(b"data", ack_id="ack_id")
+    opentelemetry_data = SubscribeOpenTelemetry(msg)
+    opentelemetry_data.start_subscribe_span(
+        subscription=SUBSCRIPTION,
+        exactly_once_enabled=False,
+        ack_id="ack_id",
+        delivery_attempt=2,
+    )
+    msg.opentelemetry_data = opentelemetry_data
+    msg.nack_with_response()
+    opentelemetry_data.end_subscribe_span()
+
+    spans = span_exporter.get_finished_spans()
+    assert len(spans) == 1
+
+    assert len(spans[0].events) == 1
+    assert spans[0].events[0].name == "nack start"
+
+
 def test_ack():
     msg = create_message(b"foo", ack_id="bogus_ack_id")
     with mock.patch.object(msg._request_queue, "put") as put:
