@@ -1131,6 +1131,7 @@ class StreamingPullManager(object):
                 )
                 return
 
+            i: int = 0
             for received_message in received_messages:
                 if (
                     not self._exactly_once_delivery_enabled()
@@ -1143,6 +1144,9 @@ class StreamingPullManager(object):
                         self._scheduler.queue,
                         self._exactly_once_delivery_enabled,
                     )
+                    if self._client.open_telemetry_enabled:
+                        message.opentelemetry_data = subscribe_opentelemetry[i]
+                        i = i + 1
                     self._messages_on_hold.put(message)
                     self._on_hold_bytes += message.size
                     req = requests.LeaseRequest(

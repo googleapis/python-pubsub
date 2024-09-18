@@ -24,6 +24,9 @@ from typing import Optional, Callable
 from google.cloud.pubsub_v1.subscriber._protocol import requests
 from google.cloud.pubsub_v1.subscriber import futures
 from google.cloud.pubsub_v1.subscriber.exceptions import AcknowledgeStatus
+from google.cloud.pubsub_v1.open_telemetry.subscribe_opentelemetry import (
+    SubscribeOpenTelemetry,
+)
 
 
 if typing.TYPE_CHECKING:  # pragma: NO COVER
@@ -85,6 +88,8 @@ class Message(object):
             information on this type.
         publish_time (google.protobuf.timestamp_pb2.Timestamp):
             The time that this message was originally published.
+        opentelemetry_data (google.cloud.pubsub_v1.open_telemetry.subscribe_opentelemetry.SubscribeOpenTelemetry)
+            Open Telemetry data associated with this message. None if Open Telemetry is not enabled.
     """
 
     def __init__(
@@ -144,6 +149,9 @@ class Message(object):
         self._ordering_key = message.ordering_key
         self._size = message.ByteSize()
 
+        # None if Open Telemetry is disabled. Else contains OpenTelemetry data.
+        self._opentelemetry_data: SubscribeOpenTelemetry = None
+
     def __repr__(self):
         # Get an abbreviated version of the data.
         abbv_data = self._message.data
@@ -157,6 +165,14 @@ class Message(object):
         # We don't actually want the first line indented.
         pretty_attrs = pretty_attrs.lstrip()
         return _MESSAGE_REPR.format(abbv_data, str(self.ordering_key), pretty_attrs)
+
+    @property
+    def opentelemetry_data(self):
+        return self._opentelemetry_data  # pragma: NO COVER
+
+    @opentelemetry_data.setter
+    def opentelemetry_data(self, data):
+        self._opentelemetry_data = data  # pragma: NO COVER
 
     @property
     def attributes(self) -> "containers.ScalarMap":
