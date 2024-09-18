@@ -38,6 +38,9 @@ from google.cloud.pubsub_v1.subscriber.exceptions import (
     AcknowledgeError,
     AcknowledgeStatus,
 )
+from google.cloud.pubsub_v1.open_telemetry.subscribe_opentelemetry import (
+    SubscribeOpenTelemetry,
+)
 import google.cloud.pubsub_v1.subscriber.message
 from google.cloud.pubsub_v1.subscriber import futures
 from google.cloud.pubsub_v1.subscriber.scheduler import ThreadScheduler
@@ -1074,6 +1077,18 @@ class StreamingPullManager(object):
         # IMPORTANT: Circumvent the wrapper class and operate on the raw underlying
         # protobuf message to significantly gain on attribute access performance.
         received_messages = response._pb.received_messages
+
+        subscribe_open_telemetry: List[SubscribeOpenTelemetry] = []
+        if self._client.open_telemetry_enabled:
+            for received_message in received_messages:
+                opentelemetry_data = SubscribeOpenTelemetry(received_message.message)
+                opentelemetry_data.start_subscribe_span(
+                    self._subscription,
+                    response.subscription_properties.exactly_once_delivery_enabled,
+                    received_message.ack_id,
+                    received_message.delivery_attempt,
+                )
+                subscribe_open_telemetry.append(opentelemetry_data)
 
         _LOGGER.debug(
             "Processing %s received message(s), currently on hold %s (bytes %s).",
