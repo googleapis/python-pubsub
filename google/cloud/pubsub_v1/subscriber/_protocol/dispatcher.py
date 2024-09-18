@@ -355,9 +355,10 @@ class Dispatcher(object):
                 for req in itertools.islice(items_gen, _ACK_IDS_BATCH_SIZE)
             }
             requests_to_retry: List[requests.ModAckRequest]
+            requests_completed: List[requests.ModAckRequest] = None
             if default_deadline is None:
                 # no further work needs to be done for `requests_to_retry`
-                _, requests_to_retry = self._manager.send_unary_modack(
+                requests_completed, requests_to_retry = self._manager.send_unary_modack(
                     modify_deadline_ack_ids=list(
                         itertools.islice(ack_ids_gen, _ACK_IDS_BATCH_SIZE)
                     ),
@@ -368,7 +369,7 @@ class Dispatcher(object):
                     default_deadline=None,
                 )
             else:
-                _, requests_to_retry = self._manager.send_unary_modack(
+                requests_completed, requests_to_retry = self._manager.send_unary_modack(
                     modify_deadline_ack_ids=itertools.islice(
                         ack_ids_gen, _ACK_IDS_BATCH_SIZE
                     ),
@@ -379,6 +380,25 @@ class Dispatcher(object):
             assert (
                 len(requests_to_retry) <= _ACK_IDS_BATCH_SIZE
             ), "Too many requests to be retried."
+
+            for completed_modack in requests_completed:
+                if completed_modack.opentelemetry_data:
+                    # nack is a modack with 0 extension seconds.
+                    if math.isclose(completed_modack.seconds, 0):
+                        completed_modack.opentelemetry_data.set_subscribe_span_result(
+                            "nacked"
+                        )
+                        completed_modack.opentelemetry_data.add_subscribe_span_event(
+                            "nack end"
+                        )
+                    else:
+                        completed_modack.opentelemetry_data.set_subscribe_span_result(
+                            "modacked"
+                        )
+                        completed_modack.opentelemetry_data.add_subscribe_span_event(
+                            "modack end"
+                        )
+                    completed_modack.opentelemetry_data.end_subscribe_span()
 
             # Retry on a separate thread so the dispatcher thread isn't blocked
             # by sleeps.
@@ -418,7 +438,10 @@ class Dispatcher(object):
         self.modify_ack_deadline(
             [
                 requests.ModAckRequest(
-                    ack_id=item.ack_id, seconds=0, future=item.future
+                    ack_id=item.ack_id,
+                    seconds=0,
+                    future=item.future,
+                    opentelemetry_data=item.opentelemetry_data,
                 )
                 for item in items
             ]

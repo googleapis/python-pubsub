@@ -369,6 +369,40 @@ def test_unknown_request_type():
         dispatcher_.dispatch_callback(items)
 
 
+def test_opentelemetry_modify_ack_deadline(span_exporter):
+    manager = mock.create_autospec(
+        streaming_pull_manager.StreamingPullManager, instance=True
+    )
+    dispatcher_ = dispatcher.Dispatcher(manager, mock.sentinel.queue)
+    opentelemetry_data = SubscribeOpenTelemetry(message=PubsubMessage(data=b"foo"))
+    opentelemetry_data.start_subscribe_span(
+        subscription="projects/projectID/subscriptions/subscriptionID",
+        exactly_once_enabled=True,
+        ack_id="ack_id",
+        delivery_attempt=5,
+    )
+
+    items = [
+        requests.ModAckRequest(
+            ack_id="ack_id_string",
+            seconds=60,
+            future=None,
+            opentelemetry_data=opentelemetry_data,
+        )
+    ]
+    manager.send_unary_modack.return_value = (items, [])
+    dispatcher_.modify_ack_deadline(items)
+
+    spans = span_exporter.get_finished_spans()
+    assert len(spans) == 1
+    subscribe_span = spans[0]
+
+    assert "messaging.gcp_pubsub.result" in subscribe_span.attributes
+    assert subscribe_span.attributes["messaging.gcp_pubsub.result"] == "modacked"
+    assert len(subscribe_span.events) == 1
+    assert subscribe_span.events[0].name == "modack end"
+
+
 def test_opentelemetry_ack(span_exporter):
     manager = mock.create_autospec(
         streaming_pull_manager.StreamingPullManager, instance=True
@@ -712,6 +746,50 @@ def test_drop_ordered_messages():
     manager.leaser.remove.assert_called_once_with(items)
     assert list(manager.activate_ordering_keys.call_args.args[0]) == ["key1", "key2"]
     manager.maybe_resume_consumer.assert_called_once()
+
+
+def test_opentelemetry_nack(span_exporter):
+    manager = mock.create_autospec(
+        streaming_pull_manager.StreamingPullManager, instance=True
+    )
+    dispatcher_ = dispatcher.Dispatcher(manager, mock.sentinel.queue)
+
+    opentelemetry_data = SubscribeOpenTelemetry(message=PubsubMessage(data=b"foo"))
+    opentelemetry_data.start_subscribe_span(
+        subscription="projects/projectID/subscriptions/subscriptionID",
+        exactly_once_enabled=True,
+        ack_id="ack_id",
+        delivery_attempt=5,
+    )
+
+    items = [
+        requests.NackRequest(
+            ack_id="ack_id_string",
+            byte_size=10,
+            ordering_key="",
+            future=None,
+            opentelemetry_data=opentelemetry_data,
+        )
+    ]
+    response_items = [
+        requests.ModAckRequest(
+            ack_id="ack_id_string",
+            seconds=0,
+            future=None,
+            opentelemetry_data=opentelemetry_data,
+        )
+    ]
+    manager.send_unary_modack.return_value = (response_items, [])
+    dispatcher_.nack(items)
+
+    spans = span_exporter.get_finished_spans()
+
+    assert len(spans) == 1
+    subscribe_span = spans[0]
+    assert "messaging.gcp_pubsub.result" in subscribe_span.attributes
+    assert subscribe_span.attributes["messaging.gcp_pubsub.result"] == "nacked"
+    assert len(subscribe_span.events) == 1
+    assert subscribe_span.events[0].name == "nack end"
 
 
 def test_nack():
