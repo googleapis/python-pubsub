@@ -278,6 +278,7 @@ class Message(object):
                 time_to_ack=time_to_ack,
                 ordering_key=self.ordering_key,
                 future=None,
+                opentelemetry_data=self.opentelemetry_data,
             )
         )
 
@@ -337,6 +338,7 @@ class Message(object):
                 time_to_ack=time_to_ack,
                 ordering_key=self.ordering_key,
                 future=req_future,
+                opentelemetry_data=self.opentelemetry_data,
             )
         )
         return future
@@ -379,7 +381,12 @@ class Message(object):
         if self.opentelemetry_data:
             self.opentelemetry_data.add_subscribe_span_event("modack start")
         self._request_queue.put(
-            requests.ModAckRequest(ack_id=self._ack_id, seconds=seconds, future=None)
+            requests.ModAckRequest(
+                ack_id=self._ack_id,
+                seconds=seconds,
+                future=None,
+                opentelemetry_data=self.opentelemetry_data,
+            )
         )
 
     def modify_ack_deadline_with_response(self, seconds: int) -> "futures.Future":
@@ -440,7 +447,10 @@ class Message(object):
 
         self._request_queue.put(
             requests.ModAckRequest(
-                ack_id=self._ack_id, seconds=seconds, future=req_future
+                ack_id=self._ack_id,
+                seconds=seconds,
+                future=req_future,
+                opentelemetry_data=self.opentelemetry_data,
             )
         )
 
@@ -461,6 +471,7 @@ class Message(object):
                 byte_size=self.size,
                 ordering_key=self.ordering_key,
                 future=None,
+                opentelemetry_data=self.opentelemetry_data,
             )
         )
 
@@ -514,6 +525,7 @@ class Message(object):
                 byte_size=self.size,
                 ordering_key=self.ordering_key,
                 future=req_future,
+                opentelemetry_data=self.opentelemetry_data,
             )
         )
 
