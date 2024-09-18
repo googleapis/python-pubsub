@@ -580,8 +580,7 @@ def test_opentelemetry_retry_acks(span_exporter):
             opentelemetry_data=opentelemetry_data,
         )
     ]
-    # first and second `send_unary_ack` calls fail, third one succeeds
-    manager.send_unary_ack.side_effect = [([], items), ([], items), (items, [])]
+    manager.send_unary_ack.side_effect = [(items, [])]
     with mock.patch("time.sleep", return_value=None):
         dispatcher_._retry_acks(items)
 
@@ -657,6 +656,80 @@ def test_retry_modacks_in_new_thread():
             assert ctor_call.kwargs["name"] == "Thread-RetryModAcks"
             assert ctor_call.kwargs["target"].args[0] == items
             assert ctor_call.kwargs["daemon"]
+
+
+def test_opentelemetry_retry_modacks(span_exporter):
+    manager = mock.create_autospec(
+        streaming_pull_manager.StreamingPullManager, instance=True
+    )
+    dispatcher_ = dispatcher.Dispatcher(manager, mock.sentinel.queue)
+
+    opentelemetry_data = SubscribeOpenTelemetry(message=PubsubMessage(data=b"foo"))
+    opentelemetry_data.start_subscribe_span(
+        subscription="projects/projectID/subscriptions/subscriptionID",
+        exactly_once_enabled=True,
+        ack_id="ack_id",
+        delivery_attempt=5,
+    )
+
+    f = futures.Future()
+    items = [
+        requests.ModAckRequest(
+            ack_id="ack_id_string",
+            seconds=20,
+            future=f,
+            opentelemetry_data=opentelemetry_data,
+        )
+    ]
+    manager.send_unary_modack.side_effect = [(items, [])]
+    with mock.patch("time.sleep", return_value=None):
+        dispatcher_._retry_modacks(items)
+
+    spans = span_exporter.get_finished_spans()
+    assert len(spans) == 1
+    subscribe_span = spans[0]
+
+    assert "messaging.gcp_pubsub.result" in subscribe_span.attributes
+    assert subscribe_span.attributes["messaging.gcp_pubsub.result"] == "modacked"
+    assert len(subscribe_span.events) == 1
+    assert subscribe_span.events[0].name == "modack end"
+
+
+def test_opentelemetry_retry_nacks(span_exporter):
+    manager = mock.create_autospec(
+        streaming_pull_manager.StreamingPullManager, instance=True
+    )
+    dispatcher_ = dispatcher.Dispatcher(manager, mock.sentinel.queue)
+
+    opentelemetry_data = SubscribeOpenTelemetry(message=PubsubMessage(data=b"foo"))
+    opentelemetry_data.start_subscribe_span(
+        subscription="projects/projectID/subscriptions/subscriptionID",
+        exactly_once_enabled=True,
+        ack_id="ack_id",
+        delivery_attempt=5,
+    )
+
+    f = futures.Future()
+    items = [
+        requests.ModAckRequest(
+            ack_id="ack_id_string",
+            seconds=0,
+            future=f,
+            opentelemetry_data=opentelemetry_data,
+        )
+    ]
+    manager.send_unary_modack.side_effect = [(items, [])]
+    with mock.patch("time.sleep", return_value=None):
+        dispatcher_._retry_modacks(items)
+
+    spans = span_exporter.get_finished_spans()
+    assert len(spans) == 1
+    subscribe_span = spans[0]
+
+    assert "messaging.gcp_pubsub.result" in subscribe_span.attributes
+    assert subscribe_span.attributes["messaging.gcp_pubsub.result"] == "nacked"
+    assert len(subscribe_span.events) == 1
+    assert subscribe_span.events[0].name == "nack end"
 
 
 def test_retry_modacks():

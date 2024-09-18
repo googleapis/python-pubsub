@@ -428,6 +428,24 @@ class Dispatcher(object):
                 modify_deadline_seconds=[req.seconds for req in requests_to_retry],
                 ack_reqs_dict=ack_reqs_dict,
             )
+            for completed_modack in requests_completed:
+                if completed_modack.opentelemetry_data:
+                    # nack is a modack with 0 extension seconds.
+                    if math.isclose(completed_modack.seconds, 0):
+                        completed_modack.opentelemetry_data.set_subscribe_span_result(
+                            "nacked"
+                        )
+                        completed_modack.opentelemetry_data.add_subscribe_span_event(
+                            "nack end"
+                        )
+                    else:
+                        completed_modack.opentelemetry_data.set_subscribe_span_result(
+                            "modacked"
+                        )
+                        completed_modack.opentelemetry_data.add_subscribe_span_event(
+                            "modack end"
+                        )
+                    completed_modack.opentelemetry_data.end_subscribe_span()
 
     def nack(self, items: Sequence[requests.NackRequest]) -> None:
         """Explicitly deny receipt of messages.
