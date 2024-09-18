@@ -16,7 +16,6 @@ import datetime
 import queue
 import sys
 import time
-import pytest
 
 # special case python < 3.8
 if sys.version_info.major == 3 and sys.version_info.minor < 8:
@@ -217,6 +216,48 @@ def test_opentelemetry_nack_with_response(span_exporter):
 
     assert len(spans[0].events) == 1
     assert spans[0].events[0].name == "nack start"
+
+
+def test_opentelemetry_modack(span_exporter):
+    SUBSCRIPTION = "projects/projectID/subscriptions/subscriptionID"
+    msg = create_message(b"data", ack_id="ack_id")
+    opentelemetry_data = SubscribeOpenTelemetry(msg)
+    opentelemetry_data.start_subscribe_span(
+        subscription=SUBSCRIPTION,
+        exactly_once_enabled=False,
+        ack_id="ack_id",
+        delivery_attempt=2,
+    )
+    msg.opentelemetry_data = opentelemetry_data
+    msg.modify_ack_deadline(3)
+    opentelemetry_data.end_subscribe_span()
+
+    spans = span_exporter.get_finished_spans()
+    assert len(spans) == 1
+
+    assert len(spans[0].events) == 1
+    assert spans[0].events[0].name == "modack start"
+
+
+def test_opentelemetry_modack_with_response(span_exporter):
+    SUBSCRIPTION = "projects/projectID/subscriptions/subscriptionID"
+    msg = create_message(b"data", ack_id="ack_id")
+    opentelemetry_data = SubscribeOpenTelemetry(msg)
+    opentelemetry_data.start_subscribe_span(
+        subscription=SUBSCRIPTION,
+        exactly_once_enabled=False,
+        ack_id="ack_id",
+        delivery_attempt=2,
+    )
+    msg.opentelemetry_data = opentelemetry_data
+    msg.modify_ack_deadline_with_response(3)
+    opentelemetry_data.end_subscribe_span()
+
+    spans = span_exporter.get_finished_spans()
+    assert len(spans) == 1
+
+    assert len(spans[0].events) == 1
+    assert spans[0].events[0].name == "modack start"
 
 
 def test_ack():
