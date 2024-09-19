@@ -906,6 +906,10 @@ class Subscription(proto.Message):
             Output only. An output-only field indicating
             whether or not the subscription can receive
             messages.
+        analytics_hub_subscription_info (google.pubsub_v1.types.Subscription.AnalyticsHubSubscriptionInfo):
+            Output only. Information about the associated
+            Analytics Hub subscription. Only set if the
+            subscritpion is created by Analytics Hub.
     """
 
     class State(proto.Enum):
@@ -926,6 +930,31 @@ class Subscription(proto.Message):
         STATE_UNSPECIFIED = 0
         ACTIVE = 1
         RESOURCE_ERROR = 2
+
+    class AnalyticsHubSubscriptionInfo(proto.Message):
+        r"""Information about an associated Analytics Hub subscription
+        (https://cloud.google.com/bigquery/docs/analytics-hub-manage-subscriptions).
+
+        Attributes:
+            listing (str):
+                Optional. The name of the associated Analytics Hub listing
+                resource. Pattern:
+                "projects/{project}/locations/{location}/dataExchanges/{data_exchange}/listings/{listing}".
+            subscription (str):
+                Optional. The name of the associated
+                Analytics Hub subscription resource. Pattern:
+
+                "projects/{project}/locations/{location}/subscriptions/{subscription}".
+        """
+
+        listing: str = proto.Field(
+            proto.STRING,
+            number=1,
+        )
+        subscription: str = proto.Field(
+            proto.STRING,
+            number=2,
+        )
 
     name: str = proto.Field(
         proto.STRING,
@@ -1008,6 +1037,11 @@ class Subscription(proto.Message):
         proto.ENUM,
         number=19,
         enum=State,
+    )
+    analytics_hub_subscription_info: AnalyticsHubSubscriptionInfo = proto.Field(
+        proto.MESSAGE,
+        number=23,
+        message=AnalyticsHubSubscriptionInfo,
     )
 
 
