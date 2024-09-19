@@ -1013,7 +1013,7 @@ class StreamingPullManager(object):
         self,
         ack_ids: Iterable[str],
         ack_deadline: float,
-        opentelemetry_data: List[SubscribeOpenTelemetry],
+        opentelemetry_data: List[Optional[SubscribeOpenTelemetry]],
         warn_on_invalid=True,
     ) -> Set[str]:
         exactly_once_enabled = False

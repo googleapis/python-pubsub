@@ -170,7 +170,9 @@ class Leaser(object):
             # and allow the Pub/Sub server to resend them.
             cutoff = time.time() - self._manager.flow_control.max_lease_duration
             to_drop = [
-                requests.DropRequest(ack_id, item.size, item.ordering_key)
+                requests.DropRequest(
+                    ack_id, item.size, item.ordering_key, item.opentelemetry_data
+                )
                 for ack_id, item in leased_messages.items()
                 if item.sent_time < cutoff
             ]
@@ -223,6 +225,7 @@ class Leaser(object):
                             ack_id,
                             leased_messages.get(ack_id).size,  # type: ignore
                             leased_messages.get(ack_id).ordering_key,  # type: ignore
+                            leased_messages.get(ack_id).opentelemetry_data,  # type: ignore
                         )
                         for ack_id in expired_ack_ids
                         if ack_id in leased_messages
