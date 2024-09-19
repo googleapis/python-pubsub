@@ -150,7 +150,7 @@ class Message(object):
         self._size = message.ByteSize()
 
         # None if Open Telemetry is disabled. Else contains OpenTelemetry data.
-        self._opentelemetry_data: SubscribeOpenTelemetry = None
+        self._opentelemetry_data: Optional[SubscribeOpenTelemetry] = None
 
     def __repr__(self):
         # Get an abbreviated version of the data.

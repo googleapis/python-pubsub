@@ -355,7 +355,7 @@ class Dispatcher(object):
                 for req in itertools.islice(items_gen, _ACK_IDS_BATCH_SIZE)
             }
             requests_to_retry: List[requests.ModAckRequest]
-            requests_completed: List[requests.ModAckRequest] = None
+            requests_completed: Optional[List[requests.ModAckRequest]] = None
             if default_deadline is None:
                 # no further work needs to be done for `requests_to_retry`
                 requests_completed, requests_to_retry = self._manager.send_unary_modack(
