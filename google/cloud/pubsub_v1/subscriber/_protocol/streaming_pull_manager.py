@@ -1010,7 +1010,11 @@ class StreamingPullManager(object):
         return request
 
     def _send_lease_modacks(
-        self, ack_ids: Iterable[str], ack_deadline: float, warn_on_invalid=True
+        self,
+        ack_ids: Iterable[str],
+        ack_deadline: float,
+        opentelemetry_data: List[SubscribeOpenTelemetry],
+        warn_on_invalid=True,
     ) -> Set[str]:
         exactly_once_enabled = False
         with self._exactly_once_enabled_lock:
@@ -1020,6 +1024,12 @@ class StreamingPullManager(object):
                 requests.ModAckRequest(ack_id, ack_deadline, futures.Future())
                 for ack_id in ack_ids
             ]
+            if self._client.open_telemetry_enabled:
+                for item, data in zip(
+                    items, opentelemetry_data
+                ):  # pragma: NO COVER # Identical code covered in the same function below
+                    data.add_subscribe_span_event("modack start")
+                    item._replace(opentelemetry_data=data)
 
             assert self._dispatcher is not None
             self._dispatcher.modify_ack_deadline(items, ack_deadline)
@@ -1046,6 +1056,10 @@ class StreamingPullManager(object):
                 requests.ModAckRequest(ack_id, self.ack_deadline, None)
                 for ack_id in ack_ids
             ]
+            if self._client.open_telemetry_enabled:
+                for item, data in zip(items, opentelemetry_data):
+                    data.add_subscribe_span_event("modack start")
+                    item._replace(opentelemetry_data=data)
             assert self._dispatcher is not None
             self._dispatcher.modify_ack_deadline(items, ack_deadline)
             return set()
@@ -1113,16 +1127,13 @@ class StreamingPullManager(object):
         # Immediately (i.e. without waiting for the auto lease management)
         # modack the messages we received, as this tells the server that we've
         # received them.
-        if self._client.open_telemetry_enabled:
-            for opentelemetry_data in subscribe_opentelemetry:
-                opentelemetry_data.add_subscribe_span_event("modack start")
         ack_id_gen = (message.ack_id for message in received_messages)
         expired_ack_ids = self._send_lease_modacks(
-            ack_id_gen, self.ack_deadline, warn_on_invalid=False
+            ack_id_gen,
+            self.ack_deadline,
+            subscribe_opentelemetry,
+            warn_on_invalid=False,
         )
-        if self._client.open_telemetry_enabled:
-            for opentelemetry_data in subscribe_opentelemetry:
-                opentelemetry_data.add_subscribe_span_event("modack end")
 
         with self._pause_resume_lock:
             if self._scheduler is None or self._leaser is None:
@@ -1153,6 +1164,7 @@ class StreamingPullManager(object):
                         ack_id=message.ack_id,
                         byte_size=message.size,
                         ordering_key=message.ordering_key,
+                        opentelemetry_data=message.opentelemetry_data,
                     )
                     self._leaser.add([req])
 

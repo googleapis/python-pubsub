@@ -19,6 +19,10 @@ import threading
 import time
 import types as stdlib_types
 
+from google.cloud.pubsub_v1.open_telemetry.subscribe_opentelemetry import (
+    SubscribeOpenTelemetry,
+)
+
 # special case python < 3.8
 if sys.version_info.major == 3 and sys.version_info.minor < 8:
     import mock
@@ -577,6 +581,42 @@ def test__maybe_release_messages_negative_on_hold_bytes_warning(caplog):
     assert "-12" in expected_warnings[0]
 
     assert manager._on_hold_bytes == 0  # should be auto-corrected
+
+
+def test_opentelemetry__send_lease_modacks(span_exporter):
+    manager, _, _, _, _, _ = make_running_manager(enable_open_telemetry=True)
+    data1 = SubscribeOpenTelemetry(
+        message=gapic_types.PubsubMessage(data=b"foo", message_id="1")
+    )
+    data2 = SubscribeOpenTelemetry(
+        message=gapic_types.PubsubMessage(data=b"bar", message_id="2")
+    )
+
+    data1.start_subscribe_span(
+        subscription="projects/projectID/subscriptions/subscriptionID",
+        exactly_once_enabled=False,
+        ack_id="ack_id1",
+        delivery_attempt=2,
+    )
+    data2.start_subscribe_span(
+        subscription="projects/projectID/subscriptions/subscriptionID",
+        exactly_once_enabled=True,
+        ack_id="ack_id1",
+        delivery_attempt=2,
+    )
+    manager._send_lease_modacks(
+        ack_ids=["ack_id1", "ack_id2"],
+        ack_deadline=20,
+        opentelemetry_data=[data1, data2],
+    )
+    data1.end_subscribe_span()
+    data2.end_subscribe_span()
+    spans = span_exporter.get_finished_spans()
+    assert len(spans) == 2
+
+    for span in spans:
+        assert len(span.events) == 1
+        assert span.events[0].name == "modack start"
 
 
 def test_send_unary_ack():
@@ -1240,7 +1280,6 @@ def make_running_manager(
     manager._dispatcher = mock.create_autospec(dispatcher.Dispatcher, instance=True)
     manager._leaser = mock.create_autospec(leaser.Leaser, instance=True)
     manager._heartbeater = mock.create_autospec(heartbeater.Heartbeater, instance=True)
-
     return (
         manager,
         manager._consumer,

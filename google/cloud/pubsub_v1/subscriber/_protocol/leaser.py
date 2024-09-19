@@ -23,6 +23,9 @@ import typing
 from typing import Dict, Iterable, Optional, Union
 
 from google.cloud.pubsub_v1.subscriber._protocol.dispatcher import _MAX_BATCH_LATENCY
+from google.cloud.pubsub_v1.open_telemetry.subscribe_opentelemetry import (
+    SubscribeOpenTelemetry,
+)
 
 try:
     from collections.abc import KeysView
@@ -50,6 +53,7 @@ class _LeasedMessage(typing.NamedTuple):
 
     size: int
     ordering_key: Optional[str]
+    opentelemetry_data: Optional[SubscribeOpenTelemetry]
 
 
 class Leaser(object):
@@ -98,6 +102,7 @@ class Leaser(object):
                         sent_time=float("inf"),
                         size=item.byte_size,
                         ordering_key=item.ordering_key,
+                        opentelemetry_data=item.opentelemetry_data,
                     )
                     self._bytes += item.byte_size
                 else:
@@ -198,8 +203,14 @@ class Leaser(object):
                 #       is inactive.
                 assert self._manager.dispatcher is not None
                 ack_id_gen = (ack_id for ack_id in ack_ids)
+                opentelemetry_data = [
+                    message.opentelemetry_data
+                    for message in list(leased_messages.values())
+                ]
                 expired_ack_ids = self._manager._send_lease_modacks(
-                    ack_id_gen, deadline
+                    ack_id_gen,
+                    deadline,
+                    opentelemetry_data,
                 )
 
             start_time = time.time()
