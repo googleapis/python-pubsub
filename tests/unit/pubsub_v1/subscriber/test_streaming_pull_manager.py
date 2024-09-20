@@ -2820,6 +2820,7 @@ def test_opentelemetry_subscriber_concurrency_control_span(span_exporter):
     concurrency_control_span, subscribe_span = spans
     assert concurrency_control_span.name == "subscriber concurrency control"
     assert subscribe_span.name == "subscriptionID subscribe"
+    assert opentelemetry_data.subscription_id == "subscriptionID"
 
     assert concurrency_control_span.parent == subscribe_span.context
 

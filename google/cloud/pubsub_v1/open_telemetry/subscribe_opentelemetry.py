@@ -44,6 +44,14 @@ class SubscribeOpenTelemetry:
         # `start_subscribe_scheduler_span` method.
         self._scheduler_span: Optional[trace.Span] = None
 
+        # This will be set by `start_subscribe_span` method and will be used
+        # for other spans, such as
+        self._subscription_id: Optional[str] = None
+
+    @property
+    def subscription_id(self):
+        return self._subscription_id
+
     def start_subscribe_span(
         self,
         subscription: str,
@@ -58,6 +66,7 @@ class SubscribeOpenTelemetry:
         )
         assert len(subscription.split("/")) == 4
         subscription_short_name = subscription.split("/")[3]
+        self._subscription_id = subscription_short_name
         with tracer.start_as_current_span(
             name=f"{subscription_short_name} subscribe",
             context=parent_span_context if parent_span_context else None,
