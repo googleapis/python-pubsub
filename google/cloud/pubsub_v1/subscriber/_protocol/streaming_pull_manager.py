@@ -126,6 +126,8 @@ def _wrap_callback_errors(
         message: The Pub/Sub message.
     """
     try:
+        if message.opentelemetry_data:
+            message.opentelemetry_data.end_subscribe_concurrency_control_span()
         callback(message)
     except BaseException as exc:
         # Note: the likelihood of this failing is extremely low. This just adds
@@ -621,6 +623,8 @@ class StreamingPullManager(object):
         )
         assert self._scheduler is not None
         assert self._callback is not None
+        if msg.opentelemetry_data:
+            msg.opentelemetry_data.start_subscribe_concurrency_control_span()
         self._scheduler.schedule(self._callback, msg)
 
     def send_unary_ack(

@@ -96,3 +96,17 @@ def test_opentelemetry_set_subscribe_span_result_assert_error():
     opentelemetry_data = SubscribeOpenTelemetry(msg)
     with pytest.raises(AssertionError):
         opentelemetry_data.set_subscribe_span_result("hi")
+
+
+def test_opentelemetry_start_subscribe_concurrency_control_span_no_subscribe_span():
+    msg = create_message(b"foo")
+    opentelemetry_data = SubscribeOpenTelemetry(msg)
+    with pytest.raises(AssertionError):
+        opentelemetry_data.start_subscribe_concurrency_control_span()
+
+
+def test_opentelemetry_end_subscribe_concurrency_control_span_assertion_error():
+    msg = create_message(b"foo")
+    opentelemetry_data = SubscribeOpenTelemetry(msg)
+    with pytest.raises(AssertionError):
+        opentelemetry_data.end_subscribe_concurrency_control_span()

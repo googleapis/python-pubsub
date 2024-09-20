@@ -17,6 +17,7 @@ from datetime import datetime
 
 from opentelemetry import trace
 from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
+from opentelemetry.trace.propagation import set_span_in_context
 
 from google.cloud.pubsub_v1.open_telemetry.context_propagation import (
     OpenTelemetryContextGetter,
@@ -34,6 +35,10 @@ class SubscribeOpenTelemetry:
         # subscribe span will be initialized by the `start_subscribe_span`
         # method.
         self._subscribe_span: Optional[trace.Span] = None
+
+        # subscriber concurrency control span will be initialized by the
+        # `start_subscribe_concurrency_control_span` method.
+        self._concurrency_control_span: Optional[trace.Span] = None
 
     def start_subscribe_span(
         self,
@@ -88,3 +93,18 @@ class SubscribeOpenTelemetry:
             key="messaging.gcp_pubsub.result",
             value=result,
         )
+
+    def start_subscribe_concurrency_control_span(self) -> None:
+        assert self._subscribe_span is not None
+        tracer = trace.get_tracer(self._OPEN_TELEMETRY_TRACER_NAME)
+        with tracer.start_as_current_span(
+            name="subscriber concurrency control",
+            kind=trace.SpanKind.INTERNAL,
+            context=set_span_in_context(self._subscribe_span),
+            end_on_exit=False,
+        ) as concurrency_control_span:
+            self._concurrency_control_span = concurrency_control_span
+
+    def end_subscribe_concurrency_control_span(self) -> None:
+        assert self._concurrency_control_span is not None
+        self._concurrency_control_span.end()

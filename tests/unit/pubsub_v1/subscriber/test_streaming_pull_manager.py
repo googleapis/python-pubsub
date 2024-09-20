@@ -18,10 +18,18 @@ import sys
 import threading
 import time
 import types as stdlib_types
+import datetime
+import queue
+
+from google.protobuf import timestamp_pb2
+from google.api_core import datetime_helpers
 
 from google.cloud.pubsub_v1.open_telemetry.subscribe_opentelemetry import (
     SubscribeOpenTelemetry,
 )
+from google.cloud.pubsub_v1.subscriber.message import Message
+from google.cloud.pubsub_v1.types import PubsubMessage
+
 
 # special case python < 3.8
 if sys.version_info.major == 3 and sys.version_info.minor < 8:
@@ -2704,4 +2712,99 @@ def test_opentelemetry__on_response_subscribe_span_create(span_exporter):
     spans = span_exporter.get_finished_spans()
 
     # Subscribe span is still active, hence unexported.
+    assert len(spans) == 0
+
+
+RECEIVED = datetime.datetime(2012, 4, 21, 15, 0, tzinfo=datetime.timezone.utc)
+RECEIVED_SECONDS = datetime_helpers.to_milliseconds(RECEIVED) // 1000
+PUBLISHED_MICROS = 123456
+PUBLISHED = RECEIVED + datetime.timedelta(days=1, microseconds=PUBLISHED_MICROS)
+PUBLISHED_SECONDS = datetime_helpers.to_milliseconds(PUBLISHED) // 1000
+
+
+def create_message(
+    data,
+    ack_id="ACKID",
+    delivery_attempt=0,
+    ordering_key="",
+    exactly_once_delivery_enabled=False,
+    **attrs,
+):  # pragma: NO COVER
+    with mock.patch.object(time, "time") as time_:
+        time_.return_value = RECEIVED_SECONDS
+        gapic_pubsub_message = PubsubMessage(
+            attributes=attrs,
+            data=data,
+            message_id="message_id",
+            publish_time=timestamp_pb2.Timestamp(
+                seconds=PUBLISHED_SECONDS, nanos=PUBLISHED_MICROS * 1000
+            ),
+            ordering_key=ordering_key,
+        )
+        msg = Message(
+            # The code under test uses a raw protobuf PubsubMessage, i.e. w/o additional
+            # Python class wrappers, hence the "_pb"
+            message=gapic_pubsub_message._pb,
+            ack_id=ack_id,
+            delivery_attempt=delivery_attempt,
+            request_queue=queue.Queue(),
+            exactly_once_delivery_enabled_func=lambda: exactly_once_delivery_enabled,
+        )
+        return msg
+
+
+def test_opentelemetry_subscriber_concurrency_control_span(span_exporter):
+    manager, _, _, leaser, _, _ = make_running_manager(
+        enable_open_telemetry=True,
+        subscription_name="projects/projectID/subscriptions/subscriptionID",
+    )
+    manager._callback = mock.Mock()
+    msg = create_message(b"foo")
+    opentelemetry_data = SubscribeOpenTelemetry(msg)
+    opentelemetry_data.start_subscribe_span(
+        subscription="projects/projectId/subscriptions/subscriptionID",
+        exactly_once_enabled=False,
+        ack_id="ack_id",
+        delivery_attempt=4,
+    )
+    msg.opentelemetry_data = opentelemetry_data
+    manager._schedule_message_on_hold(msg)
+    opentelemetry_data.end_subscribe_concurrency_control_span()
+    opentelemetry_data.end_subscribe_span()
+
+    spans = span_exporter.get_finished_spans()
+    assert len(spans) == 2
+
+    concurrency_control_span, subscribe_span = spans
+    assert concurrency_control_span.name == "subscriber concurrency control"
+    assert subscribe_span.name == "subscriptionID subscribe"
+
+    assert concurrency_control_span.parent == subscribe_span.context
+
+
+def test_opentelemetry_subscriber_concurrency_control_span_end(span_exporter):
+    msg = create_message(b"foo")
+    opentelemetry_data = SubscribeOpenTelemetry(msg)
+    opentelemetry_data.start_subscribe_span(
+        subscription="projects/projectId/subscriptions/subscriptionID",
+        exactly_once_enabled=False,
+        ack_id="ack_id",
+        delivery_attempt=4,
+    )
+    opentelemetry_data.start_subscribe_concurrency_control_span()
+    msg.opentelemetry_data = opentelemetry_data
+    streaming_pull_manager._wrap_callback_errors(mock.Mock(), mock.Mock(), msg)
+
+    spans = span_exporter.get_finished_spans()
+    assert len(spans) == 1
+
+    concurrency_control_span = spans[0]
+    concurrency_control_span.name == "subscriber concurrency control"
+
+
+def test_opentelemetry_wrap_callback_error(span_exporter):
+    msg = create_message(b"foo")
+    streaming_pull_manager._wrap_callback_errors(mock.Mock(), mock.Mock(), msg)
+
+    spans = span_exporter.get_finished_spans()
     assert len(spans) == 0
