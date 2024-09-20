@@ -182,6 +182,10 @@ class Leaser(object):
                     "Dropping %s items because they were leased too long.", len(to_drop)
                 )
                 assert self._manager.dispatcher is not None
+                for drop_msg in to_drop:
+                    if drop_msg.opentelemetry_data:
+                        drop_msg.opentelemetry_data.add_process_span_event("dropped")
+                        drop_msg.opentelemetry_data.end_process_span()
                 self._manager.dispatcher.drop(to_drop)
 
             # Remove dropped items from our copy of the leased messages (they
@@ -210,9 +214,6 @@ class Leaser(object):
                     for message in list(leased_messages.values())
                     if message.opentelemetry_data
                 ]
-                # for message in list(leased_messages.values()):
-                #     if message.opentelemetry_data:
-                #         opentelemetry_data.append(message.opentelemetry_data)
                 expired_ack_ids = self._manager._send_lease_modacks(
                     ack_id_gen,
                     deadline,
@@ -223,6 +224,11 @@ class Leaser(object):
             # If exactly once delivery is enabled, we should drop all expired ack_ids from lease management.
             if self._manager._exactly_once_delivery_enabled() and len(expired_ack_ids):
                 assert self._manager.dispatcher is not None
+                for ack_id in expired_ack_ids:
+                    msg = leased_messages.get(ack_id)
+                    if msg.opentelemetry_data:
+                        msg.opentelemetry_data.add_process_span_event("dropped")
+                        msg.opentelemetry_data.end_process_span()
                 self._manager.dispatcher.drop(
                     [
                         requests.DropRequest(
