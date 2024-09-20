@@ -45,8 +45,11 @@ class SubscribeOpenTelemetry:
         self._scheduler_span: Optional[trace.Span] = None
 
         # This will be set by `start_subscribe_span` method and will be used
-        # for other spans, such as
+        # for other spans, such as process span.
         self._subscription_id: Optional[str] = None
+
+        # This will be set by `start_process_span` method.
+        self._process_span: Optional[trace.Span] = None
 
     @property
     def subscription_id(self):
@@ -136,3 +139,23 @@ class SubscribeOpenTelemetry:
     def end_subscribe_scheduler_span(self) -> None:
         assert self._scheduler_span is not None
         self._scheduler_span.end()
+
+    def start_process_span(self) -> None:
+        assert self._subscribe_span is not None
+        tracer = trace.get_tracer(self._OPEN_TELEMETRY_TRACER_NAME)
+        publish_create_span_link: Optional[trace.Link] = (
+            trace.Link(self._subscribe_span.parent)
+            if self._subscribe_span.parent
+            else None
+        )
+        with tracer.start_as_current_span(
+            name=f"{self._subscription_id} process",
+            attributes={
+                "messaging.system": self._OPEN_TELEMETRY_MESSAGING_SYSTEM,
+            },
+            kind=trace.SpanKind.INTERNAL,
+            context=set_span_in_context(self._subscribe_span),
+            links=[publish_create_span_link] if publish_create_span_link else None,
+            end_on_exit=False,
+        ) as process_span:
+            self._process_span = process_span

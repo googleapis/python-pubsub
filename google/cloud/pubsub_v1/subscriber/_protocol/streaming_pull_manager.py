@@ -128,6 +128,7 @@ def _wrap_callback_errors(
     try:
         if message.opentelemetry_data:
             message.opentelemetry_data.end_subscribe_concurrency_control_span()
+            message.opentelemetry_data.start_process_span()
         callback(message)
     except BaseException as exc:
         # Note: the likelihood of this failing is extremely low. This just adds
