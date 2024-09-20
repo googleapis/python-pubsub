@@ -21,6 +21,7 @@ import types as stdlib_types
 import datetime
 import queue
 
+from opentelemetry import trace
 from google.protobuf import timestamp_pb2
 from google.api_core import datetime_helpers
 
@@ -524,6 +525,45 @@ def test__maybe_release_messages_on_overload():
     assert manager._messages_on_hold.size == 1
     manager._leaser.add.assert_not_called()
     manager._scheduler.schedule.assert_not_called()
+
+
+def test_opentelemetry__maybe_release_messages_subscribe_scheduler_span(span_exporter):
+    manager = make_manager(
+        flow_control=types.FlowControl(max_messages=10, max_bytes=1000)
+    )
+    manager._callback = mock.sentinel.callback
+
+    # Init leaser message count to 11, so that when subtracting the 3 messages
+    # that are on hold, there is still room for another 2 messages before the
+    # max load is hit.
+    _leaser = manager._leaser = mock.create_autospec(leaser.Leaser)
+    fake_leaser_add(_leaser, init_msg_count=8, assumed_msg_size=10)
+    msg = mock.create_autospec(
+        message.Message, instance=True, ack_id="ack_foo", size=10
+    )
+    msg.message_id = 3
+    opentelemetry_data = SubscribeOpenTelemetry(msg)
+    msg.opentelemetry_data = opentelemetry_data
+    opentelemetry_data.start_subscribe_span(
+        subscription="projects/projectId/subscriptions/subscriptionID",
+        exactly_once_enabled=False,
+        ack_id="ack_id",
+        delivery_attempt=4,
+    )
+    manager._messages_on_hold.put(msg)
+    manager._maybe_release_messages()
+    opentelemetry_data.end_subscribe_span()
+    spans = span_exporter.get_finished_spans()
+
+    assert len(spans) == 2
+
+    subscriber_scheduler_span, subscribe_span = spans
+
+    assert subscriber_scheduler_span.name == "subscriber scheduler"
+    assert subscribe_span.name == "subscriptionID subscribe"
+
+    assert subscriber_scheduler_span.parent == subscribe_span.context
+    assert subscriber_scheduler_span.kind == trace.SpanKind.INTERNAL
 
 
 def test__maybe_release_messages_below_overload():
@@ -2712,7 +2752,9 @@ def test_opentelemetry__on_response_subscribe_span_create(span_exporter):
     spans = span_exporter.get_finished_spans()
 
     # Subscribe span is still active, hence unexported.
-    assert len(spans) == 0
+    # Subscriber scheduler spans corresponding to the two messages would be started in `messages_on_hold.put()``
+    # and ended in `_maybe_release_messages`
+    assert len(spans) == 2
 
 
 RECEIVED = datetime.datetime(2012, 4, 21, 15, 0, tzinfo=datetime.timezone.utc)

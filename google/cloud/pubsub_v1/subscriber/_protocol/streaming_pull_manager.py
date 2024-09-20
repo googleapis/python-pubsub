@@ -587,7 +587,8 @@ class StreamingPullManager(object):
             msg = self._messages_on_hold.get()
             if not msg:
                 break
-
+            if msg.opentelemetry_data:
+                msg.opentelemetry_data.end_subscribe_scheduler_span()
             self._schedule_message_on_hold(msg)
             released_ack_ids.append(msg.ack_id)
 
