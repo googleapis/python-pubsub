@@ -159,3 +159,7 @@ class SubscribeOpenTelemetry:
             end_on_exit=False,
         ) as process_span:
             self._process_span = process_span
+
+    def end_process_span(self) -> None:
+        assert self._process_span is not None
+        self._process_span.end()

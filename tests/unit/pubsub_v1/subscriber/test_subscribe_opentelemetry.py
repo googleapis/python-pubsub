@@ -131,3 +131,10 @@ def test_opentelemetry_start_process_span_assertion_error():
     opentelemetry_data = SubscribeOpenTelemetry(msg)
     with pytest.raises(AssertionError):
         opentelemetry_data.start_process_span()
+
+
+def test_opentelemetry_end_process_span_assertion_error():
+    msg = create_message(b"foo")
+    opentelemetry_data = SubscribeOpenTelemetry(msg)
+    with pytest.raises(AssertionError):
+        opentelemetry_data.end_process_span()
