@@ -144,15 +144,22 @@ def test_opentelemetry_ack(span_exporter):
         ack_id="ack_id",
         delivery_attempt=2,
     )
+    opentelemetry_data.start_process_span()
     msg.opentelemetry_data = opentelemetry_data
     msg.ack()
     opentelemetry_data.end_subscribe_span()
 
     spans = span_exporter.get_finished_spans()
-    assert len(spans) == 1
+    assert len(spans) == 2
+    process_span, subscribe_span = spans
 
-    assert len(spans[0].events) == 1
-    assert spans[0].events[0].name == "ack start"
+    assert subscribe_span.name == "subscriptionID subscribe"
+    assert len(subscribe_span.events) == 1
+    assert subscribe_span.events[0].name == "ack start"
+
+    assert process_span.name == "subscriptionID process"
+    assert len(process_span.events) == 1
+    assert process_span.events[0].name == "ack called"
 
 
 def test_opentelemetry_ack_with_response(span_exporter):
@@ -165,15 +172,22 @@ def test_opentelemetry_ack_with_response(span_exporter):
         ack_id="ack_id",
         delivery_attempt=2,
     )
+    opentelemetry_data.start_process_span()
     msg.opentelemetry_data = opentelemetry_data
     msg.ack_with_response()
     opentelemetry_data.end_subscribe_span()
 
     spans = span_exporter.get_finished_spans()
-    assert len(spans) == 1
+    assert len(spans) == 2
+    process_span, subscribe_span = spans
 
-    assert len(spans[0].events) == 1
-    assert spans[0].events[0].name == "ack start"
+    assert subscribe_span.name == "subscriptionID subscribe"
+    assert len(subscribe_span.events) == 1
+    assert subscribe_span.events[0].name == "ack start"
+
+    assert process_span.name == "subscriptionID process"
+    assert len(process_span.events) == 1
+    assert process_span.events[0].name == "ack called"
 
 
 def test_opentelemetry_nack(span_exporter):
@@ -186,15 +200,22 @@ def test_opentelemetry_nack(span_exporter):
         ack_id="ack_id",
         delivery_attempt=2,
     )
+    opentelemetry_data.start_process_span()
     msg.opentelemetry_data = opentelemetry_data
     msg.nack()
     opentelemetry_data.end_subscribe_span()
 
     spans = span_exporter.get_finished_spans()
-    assert len(spans) == 1
+    assert len(spans) == 2
+    process_span, subscribe_span = spans
 
-    assert len(spans[0].events) == 1
-    assert spans[0].events[0].name == "nack start"
+    assert subscribe_span.name == "subscriptionID subscribe"
+    assert len(subscribe_span.events) == 1
+    assert subscribe_span.events[0].name == "nack start"
+
+    assert process_span.name == "subscriptionID process"
+    assert len(process_span.events) == 1
+    assert process_span.events[0].name == "nack called"
 
 
 def test_opentelemetry_nack_with_response(span_exporter):
@@ -207,15 +228,23 @@ def test_opentelemetry_nack_with_response(span_exporter):
         ack_id="ack_id",
         delivery_attempt=2,
     )
+    opentelemetry_data.start_process_span()
     msg.opentelemetry_data = opentelemetry_data
     msg.nack_with_response()
     opentelemetry_data.end_subscribe_span()
 
     spans = span_exporter.get_finished_spans()
-    assert len(spans) == 1
+    assert len(spans) == 2
 
-    assert len(spans[0].events) == 1
-    assert spans[0].events[0].name == "nack start"
+    process_span, subscribe_span = spans
+
+    assert subscribe_span.name == "subscriptionID subscribe"
+    assert len(subscribe_span.events) == 1
+    assert subscribe_span.events[0].name == "nack start"
+
+    assert process_span.name == "subscriptionID process"
+    assert len(process_span.events) == 1
+    assert process_span.events[0].name == "nack called"
 
 
 def test_opentelemetry_modack(span_exporter):

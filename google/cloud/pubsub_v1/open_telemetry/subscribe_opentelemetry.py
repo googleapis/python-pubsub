@@ -163,3 +163,12 @@ class SubscribeOpenTelemetry:
     def end_process_span(self) -> None:
         assert self._process_span is not None
         self._process_span.end()
+
+    def add_process_span_event(self, event: str) -> None:
+        assert self._process_span is not None
+        self._process_span.add_event(
+            name=event,
+            attributes={
+                "timestamp": str(datetime.now()),
+            },
+        )
