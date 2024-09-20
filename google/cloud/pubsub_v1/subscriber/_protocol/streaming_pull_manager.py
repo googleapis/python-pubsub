@@ -1013,7 +1013,7 @@ class StreamingPullManager(object):
         self,
         ack_ids: Iterable[str],
         ack_deadline: float,
-        opentelemetry_data: List[Optional[SubscribeOpenTelemetry]],
+        opentelemetry_data: List[SubscribeOpenTelemetry],
         warn_on_invalid=True,
     ) -> Set[str]:
         exactly_once_enabled = False
@@ -1028,6 +1028,7 @@ class StreamingPullManager(object):
                 for item, data in zip(
                     items, opentelemetry_data
                 ):  # pragma: NO COVER # Identical code covered in the same function below
+                    assert data is not None
                     data.add_subscribe_span_event("modack start")
                     item._replace(opentelemetry_data=data)
 
@@ -1058,6 +1059,7 @@ class StreamingPullManager(object):
             ]
             if self._client.open_telemetry_enabled:
                 for item, data in zip(items, opentelemetry_data):
+                    assert data is not None
                     data.add_subscribe_span_event("modack start")
                     item._replace(opentelemetry_data=data)
             assert self._dispatcher is not None
