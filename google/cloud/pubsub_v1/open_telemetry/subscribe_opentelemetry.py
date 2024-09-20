@@ -40,6 +40,10 @@ class SubscribeOpenTelemetry:
         # `start_subscribe_concurrency_control_span` method.
         self._concurrency_control_span: Optional[trace.Span] = None
 
+        # scheduler span will be initialized by the
+        # `start_subscribe_scheduler_span` method.
+        self._scheduler_span: Optional[trace.Span] = None
+
     def start_subscribe_span(
         self,
         subscription: str,
@@ -108,3 +112,18 @@ class SubscribeOpenTelemetry:
     def end_subscribe_concurrency_control_span(self) -> None:
         assert self._concurrency_control_span is not None
         self._concurrency_control_span.end()
+
+    def start_subscribe_scheduler_span(self) -> None:
+        assert self._subscribe_span is not None
+        tracer = trace.get_tracer(self._OPEN_TELEMETRY_TRACER_NAME)
+        with tracer.start_as_current_span(
+            name="subscriber scheduler",
+            kind=trace.SpanKind.INTERNAL,
+            context=set_span_in_context(self._subscribe_span),
+            end_on_exit=False,
+        ) as scheduler_span:
+            self._scheduler_span = scheduler_span
+
+    def end_subscribe_scheduler_span(self) -> None:
+        assert self._scheduler_span is not None
+        self._scheduler_span.end()
