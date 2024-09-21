@@ -226,7 +226,7 @@ class Leaser(object):
                 assert self._manager.dispatcher is not None
                 for ack_id in expired_ack_ids:
                     msg = leased_messages.get(ack_id)
-                    if msg.opentelemetry_data:
+                    if msg and msg.opentelemetry_data:
                         msg.opentelemetry_data.add_process_span_event("dropped")
                         msg.opentelemetry_data.end_process_span()
                 self._manager.dispatcher.drop(
