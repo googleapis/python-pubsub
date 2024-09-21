@@ -20,6 +20,11 @@ import pytest
 
 from google.protobuf import timestamp_pb2
 from google.api_core import datetime_helpers
+from opentelemetry import trace
+from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
+from google.cloud.pubsub_v1.open_telemetry.context_propagation import (
+    OpenTelemetryContextSetter,
+)
 
 from google.cloud.pubsub_v1.open_telemetry.subscribe_opentelemetry import (
     SubscribeOpenTelemetry,
@@ -138,3 +143,47 @@ def test_opentelemetry_end_process_span_assertion_error():
     opentelemetry_data = SubscribeOpenTelemetry(msg)
     with pytest.raises(AssertionError):
         opentelemetry_data.end_process_span()
+
+
+def test_opentelemetry_start_process_span_publisher_link():
+    msg = create_message(b"foo")
+    opentelemetry_data = SubscribeOpenTelemetry(msg)
+    msg.opentelemetry_data = opentelemetry_data
+    tracer = trace.get_tracer("foo")
+    publisher_create_span = None
+    with tracer.start_as_current_span(name="name") as span:
+        publisher_create_span = span
+        TraceContextTextMapPropagator().inject(
+            carrier=msg._message,
+            setter=OpenTelemetryContextSetter(),
+        )
+        opentelemetry_data.start_subscribe_span(
+            subscription="projects/projectId/subscriptions/subscriptionID",
+            exactly_once_enabled=False,
+            ack_id="ack_id",
+            delivery_attempt=4,
+        )
+    opentelemetry_data.start_process_span()
+    assert len(opentelemetry_data._process_span.links) == 1
+    assert (
+        opentelemetry_data._process_span.links[0].context.span_id
+        == publisher_create_span.get_span_context().span_id
+    )
+
+
+def test_opentelemetry_start_process_span_no_publisher_span():
+    msg = create_message(b"foo")
+    opentelemetry_data = SubscribeOpenTelemetry(msg)
+    msg.opentelemetry_data = opentelemetry_data
+    opentelemetry_data.start_subscribe_span(
+        subscription="projects/projectId/subscriptions/subscriptionID",
+        exactly_once_enabled=False,
+        ack_id="ack_id",
+        delivery_attempt=4,
+    )
+    opentelemetry_data.start_process_span()
+    # Assert that when no context is propagated, the subscriber span has no parent.
+    assert opentelemetry_data._subscribe_span.parent is None
+    # Assert that when there is no publisher create span context propagated,
+    # There are no links created in the process span.
+    assert len(opentelemetry_data._process_span.links) == 0
