@@ -357,6 +357,8 @@ class Dispatcher(object):
             if item.opentelemetry_data:
                 if math.isclose(item.seconds, 0):
                     item.opentelemetry_data.add_subscribe_span_event("nack start")
+                else:
+                    item.opentelemetry_data.add_subscribe_span_event("modack start")
         for _ in range(total_chunks):
             ack_reqs_dict = {
                 req.ack_id: req

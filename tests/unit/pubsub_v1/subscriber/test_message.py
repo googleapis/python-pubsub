@@ -260,8 +260,7 @@ def test_opentelemetry_modack(span_exporter):
     spans = span_exporter.get_finished_spans()
     assert len(spans) == 1
 
-    assert len(spans[0].events) == 1
-    assert spans[0].events[0].name == "modack start"
+    assert len(spans[0].events) == 0
 
 
 def test_opentelemetry_modack_with_response(span_exporter):
@@ -281,8 +280,7 @@ def test_opentelemetry_modack_with_response(span_exporter):
     spans = span_exporter.get_finished_spans()
     assert len(spans) == 1
 
-    assert len(spans[0].events) == 1
-    assert spans[0].events[0].name == "modack start"
+    assert len(spans[0].events) == 0
 
 
 def test_ack():

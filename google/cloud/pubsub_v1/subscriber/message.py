@@ -380,8 +380,6 @@ class Message(object):
                 between 0 and 600. Due to network latency, values below 10 are advised
                 against.
         """
-        if self.opentelemetry_data:
-            self.opentelemetry_data.add_subscribe_span_event("modack start")
         self._request_queue.put(
             requests.ModAckRequest(
                 ack_id=self._ack_id,
@@ -437,8 +435,6 @@ class Message(object):
             will be thrown.
 
         """
-        if self.opentelemetry_data:
-            self.opentelemetry_data.add_subscribe_span_event("modack start")
         req_future: Optional[futures.Future]
         if self._exactly_once_delivery_enabled_func():
             future = futures.Future()

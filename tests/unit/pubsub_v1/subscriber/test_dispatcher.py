@@ -399,8 +399,9 @@ def test_opentelemetry_modify_ack_deadline(span_exporter):
 
     assert "messaging.gcp_pubsub.result" in subscribe_span.attributes
     assert subscribe_span.attributes["messaging.gcp_pubsub.result"] == "modacked"
-    assert len(subscribe_span.events) == 1
-    assert subscribe_span.events[0].name == "modack end"
+    assert len(subscribe_span.events) == 2
+    assert subscribe_span.events[0].name == "modack start"
+    assert subscribe_span.events[1].name == "modack end"
 
 
 def test_opentelemetry_ack(span_exporter):
