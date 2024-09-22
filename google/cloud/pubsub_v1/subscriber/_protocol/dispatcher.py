@@ -232,7 +232,9 @@ class Dispatcher(object):
         items_gen = iter(items)
         ack_ids_gen = (item.ack_id for item in items)
         total_chunks = int(math.ceil(len(items) / _ACK_IDS_BATCH_SIZE))
-
+        for item in items:
+            if item.opentelemetry_data:
+                item.opentelemetry_data.add_subscribe_span_event("ack start")
         for _ in range(total_chunks):
             ack_reqs_dict = {
                 req.ack_id: req
@@ -245,8 +247,8 @@ class Dispatcher(object):
 
             for completed_ack in requests_completed:
                 if completed_ack.opentelemetry_data:
-                    completed_ack.opentelemetry_data.set_subscribe_span_result("acked")
                     completed_ack.opentelemetry_data.add_subscribe_span_event("ack end")
+                    completed_ack.opentelemetry_data.set_subscribe_span_result("acked")
                     completed_ack.opentelemetry_data.end_subscribe_span()
 
             # Remove the completed messages from lease management.
@@ -273,7 +275,7 @@ class Dispatcher(object):
         # a back-end timeout error or other permanent failure.
         retry_thread.start()
 
-    def _retry_acks(self, requests_to_retry):
+    def _retry_acks(self, requests_to_retry: List[requests.AckRequest]):
         retry_delay_gen = exponential_sleep_generator(
             initial=_MIN_EXACTLY_ONCE_DELIVERY_ACK_MODACK_RETRY_DURATION_SECS,
             maximum=_MAX_EXACTLY_ONCE_DELIVERY_ACK_MODACK_RETRY_DURATION_SECS,
@@ -288,6 +290,9 @@ class Dispatcher(object):
             time.sleep(time_to_wait)
 
             ack_reqs_dict = {req.ack_id: req for req in requests_to_retry}
+            for req in requests_to_retry:
+                if req.opentelemetry_data:
+                    req.opentelemetry_data.add_subscribe_span_event("ack start")
             requests_completed, requests_to_retry = self._manager.send_unary_ack(
                 ack_ids=[req.ack_id for req in requests_to_retry],
                 ack_reqs_dict=ack_reqs_dict,
@@ -295,8 +300,8 @@ class Dispatcher(object):
 
             for completed_ack in requests_completed:
                 if completed_ack.opentelemetry_data:
-                    completed_ack.opentelemetry_data.set_subscribe_span_result("acked")
                     completed_ack.opentelemetry_data.add_subscribe_span_event("ack end")
+                    completed_ack.opentelemetry_data.set_subscribe_span_result("acked")
                     completed_ack.opentelemetry_data.end_subscribe_span()
 
             assert (

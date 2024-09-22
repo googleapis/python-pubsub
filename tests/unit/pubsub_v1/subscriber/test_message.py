@@ -154,8 +154,7 @@ def test_opentelemetry_ack(span_exporter):
     process_span, subscribe_span = spans
 
     assert subscribe_span.name == "subscriptionID subscribe"
-    assert len(subscribe_span.events) == 1
-    assert subscribe_span.events[0].name == "ack start"
+    assert len(subscribe_span.events) == 0
 
     assert process_span.name == "subscriptionID process"
     assert len(process_span.events) == 1
@@ -182,8 +181,7 @@ def test_opentelemetry_ack_with_response(span_exporter):
     process_span, subscribe_span = spans
 
     assert subscribe_span.name == "subscriptionID subscribe"
-    assert len(subscribe_span.events) == 1
-    assert subscribe_span.events[0].name == "ack start"
+    assert len(subscribe_span.events) == 0
 
     assert process_span.name == "subscriptionID process"
     assert len(process_span.events) == 1

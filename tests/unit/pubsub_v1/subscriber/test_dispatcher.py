@@ -436,8 +436,9 @@ def test_opentelemetry_ack(span_exporter):
 
     assert "messaging.gcp_pubsub.result" in subscribe_span.attributes
     assert subscribe_span.attributes["messaging.gcp_pubsub.result"] == "acked"
-    assert len(subscribe_span.events) == 1
-    assert subscribe_span.events[0].name == "ack end"
+    assert len(subscribe_span.events) == 2
+    assert subscribe_span.events[0].name == "ack start"
+    assert subscribe_span.events[1].name == "ack end"
 
 
 def test_ack():
@@ -591,8 +592,9 @@ def test_opentelemetry_retry_acks(span_exporter):
 
     assert "messaging.gcp_pubsub.result" in subscribe_span.attributes
     assert subscribe_span.attributes["messaging.gcp_pubsub.result"] == "acked"
-    assert len(subscribe_span.events) == 1
-    assert subscribe_span.events[0].name == "ack end"
+    assert len(subscribe_span.events) == 2
+    assert subscribe_span.events[0].name == "ack start"
+    assert subscribe_span.events[1].name == "ack end"
 
 
 def test_retry_acks():

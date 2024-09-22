@@ -269,7 +269,6 @@ class Message(object):
 
         """
         if self.opentelemetry_data:
-            self.opentelemetry_data.add_subscribe_span_event("ack start")
             self.opentelemetry_data.add_process_span_event("ack called")
             self.opentelemetry_data.end_process_span()
         time_to_ack = math.ceil(time.time() - self._received_timestamp)
@@ -324,7 +323,6 @@ class Message(object):
             will be thrown.
         """
         if self.opentelemetry_data:
-            self.opentelemetry_data.add_subscribe_span_event("ack start")
             self.opentelemetry_data.add_process_span_event("ack called")
             self.opentelemetry_data.end_process_span()
         req_future: Optional[futures.Future]
