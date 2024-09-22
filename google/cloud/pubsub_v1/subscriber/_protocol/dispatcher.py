@@ -316,10 +316,6 @@ class Dispatcher(object):
         Args:
             items: The items to drop.
         """
-        for item in items:
-            if item.opentelemetry_data:
-                item.opentelemetry_data.set_subscribe_span_result("dropped")
-                item.opentelemetry_data.end_subscribe_span()
         assert self._manager.leaser is not None
         self._manager.leaser.remove(items)
         ordering_keys = (k.ordering_key for k in items if k.ordering_key)

@@ -170,9 +170,7 @@ class Leaser(object):
             # and allow the Pub/Sub server to resend them.
             cutoff = time.time() - self._manager.flow_control.max_lease_duration
             to_drop = [
-                requests.DropRequest(
-                    ack_id, item.size, item.ordering_key, item.opentelemetry_data
-                )
+                requests.DropRequest(ack_id, item.size, item.ordering_key)
                 for ack_id, item in leased_messages.items()
                 if item.sent_time < cutoff
             ]
@@ -183,9 +181,16 @@ class Leaser(object):
                 )
                 assert self._manager.dispatcher is not None
                 for drop_msg in to_drop:
-                    if drop_msg.opentelemetry_data:
-                        drop_msg.opentelemetry_data.add_process_span_event("dropped")
-                        drop_msg.opentelemetry_data.end_process_span()
+                    leased_message = leased_messages.get(drop_msg.ack_id)
+                    if leased_message and leased_message.opentelemetry_data:
+                        leased_message.opentelemetry_data.add_process_span_event(
+                            "dropped"
+                        )
+                        leased_message.opentelemetry_data.end_process_span()
+                        leased_message.opentelemetry_data.set_subscribe_span_result(
+                            "dropped"
+                        )
+                        leased_message.opentelemetry_data.end_subscribe_span()
                 self._manager.dispatcher.drop(to_drop)
 
             # Remove dropped items from our copy of the leased messages (they
@@ -229,13 +234,14 @@ class Leaser(object):
                     if msg and msg.opentelemetry_data:
                         msg.opentelemetry_data.add_process_span_event("dropped")
                         msg.opentelemetry_data.end_process_span()
+                        msg.opentelemetry_data.set_subscribe_span_result("dropped")
+                        msg.opentelemetry_data.end_subscribe_span()
                 self._manager.dispatcher.drop(
                     [
                         requests.DropRequest(
                             ack_id,
                             leased_messages.get(ack_id).size,  # type: ignore
                             leased_messages.get(ack_id).ordering_key,  # type: ignore
-                            leased_messages.get(ack_id).opentelemetry_data,  # type: ignore
                         )
                         for ack_id in expired_ack_ids
                         if ack_id in leased_messages
