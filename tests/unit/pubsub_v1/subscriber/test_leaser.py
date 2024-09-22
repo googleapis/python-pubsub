@@ -186,7 +186,7 @@ def test_opentelemetry_dropped_message_process_span(span_exporter):
     assert subscribe_span.name == "subscriptionID subscribe"
 
     assert len(process_span.events) == 1
-    assert process_span.events[0].name == "dropped"
+    assert process_span.events[0].name == "expired"
 
     assert process_span.parent == subscribe_span.context
 
@@ -230,7 +230,7 @@ def test_opentelemetry_expired_message_exactly_once_process_span(span_exporter):
     assert subscribe_span.name == "subscriptionID subscribe"
 
     assert len(process_span.events) == 1
-    assert process_span.events[0].name == "dropped"
+    assert process_span.events[0].name == "expired"
 
     assert process_span.parent == subscribe_span.context
 

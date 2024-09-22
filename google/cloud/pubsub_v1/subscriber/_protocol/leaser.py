@@ -184,11 +184,11 @@ class Leaser(object):
                     leased_message = leased_messages.get(drop_msg.ack_id)
                     if leased_message and leased_message.opentelemetry_data:
                         leased_message.opentelemetry_data.add_process_span_event(
-                            "dropped"
+                            "expired"
                         )
                         leased_message.opentelemetry_data.end_process_span()
                         leased_message.opentelemetry_data.set_subscribe_span_result(
-                            "dropped"
+                            "expired"
                         )
                         leased_message.opentelemetry_data.end_subscribe_span()
                 self._manager.dispatcher.drop(to_drop)
@@ -232,9 +232,9 @@ class Leaser(object):
                 for ack_id in expired_ack_ids:
                     msg = leased_messages.get(ack_id)
                     if msg and msg.opentelemetry_data:
-                        msg.opentelemetry_data.add_process_span_event("dropped")
+                        msg.opentelemetry_data.add_process_span_event("expired")
                         msg.opentelemetry_data.end_process_span()
-                        msg.opentelemetry_data.set_subscribe_span_result("dropped")
+                        msg.opentelemetry_data.set_subscribe_span_result("expired")
                         msg.opentelemetry_data.end_subscribe_span()
                 self._manager.dispatcher.drop(
                     [
