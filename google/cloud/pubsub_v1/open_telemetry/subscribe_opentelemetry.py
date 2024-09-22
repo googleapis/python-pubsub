@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 
 from opentelemetry import trace, context
@@ -56,9 +56,21 @@ class SubscribeOpenTelemetry:
         # proces span to add links to the publisher create span.
         self._publisher_create_span_context: Optional[context.Context] = None
 
+        # This will be set by `start_subscribe_span` method and will be used
+        # for other spans, such as modack span.
+        self._project_id: Optional[str] = None
+
     @property
-    def subscription_id(self):
+    def subscription_id(self) -> Optional[str]:
         return self._subscription_id
+
+    @property
+    def project_id(self) -> Optional[str]:
+        return self._project_id
+
+    @property
+    def subscribe_span(self) -> Optional[trace.Span]:
+        return self._subscribe_span
 
     def start_subscribe_span(
         self,
@@ -75,6 +87,7 @@ class SubscribeOpenTelemetry:
         self._publisher_create_span_context = parent_span_context
         assert len(subscription.split("/")) == 4
         subscription_short_name = subscription.split("/")[3]
+        self._project_id = subscription.split("/")[1]
         self._subscription_id = subscription_short_name
         with tracer.start_as_current_span(
             name=f"{subscription_short_name} subscribe",
@@ -185,3 +198,34 @@ class SubscribeOpenTelemetry:
                 "timestamp": str(datetime.now()),
             },
         )
+
+
+def start_modack_span(
+    subscribe_span_links: List[trace.Link],
+    subscription_id: Optional[str],
+    message_count: int,
+    deadline: float,
+    project_id: Optional[str],
+    code_function: str,
+) -> trace.Span:
+    _OPEN_TELEMETRY_TRACER_NAME: str = "google.cloud.pubsub_v1"
+    _OPEN_TELEMETRY_MESSAGING_SYSTEM: str = "gcp_pubsub"
+    assert subscription_id is not None
+    assert project_id is not None
+    tracer = trace.get_tracer(_OPEN_TELEMETRY_TRACER_NAME)
+    with tracer.start_as_current_span(
+        name=f"{subscription_id} modack",
+        attributes={
+            "messaging.system": _OPEN_TELEMETRY_MESSAGING_SYSTEM,
+            "messaging.batch.message_count": message_count,
+            "messaging.gcp_pubsub.message.ack_deadline": deadline,
+            "messaging.destination.name": subscription_id,
+            "gcp.project_id": project_id,
+            "messaging.operation.name": "modack",
+            "code.function": code_function,
+        },
+        links=subscribe_span_links,
+        kind=trace.SpanKind.CLIENT,
+        end_on_exit=False,
+    ) as modack_span:
+        return modack_span

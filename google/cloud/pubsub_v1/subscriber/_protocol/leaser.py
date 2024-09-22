@@ -219,6 +219,7 @@ class Leaser(object):
                     for message in list(leased_messages.values())
                     if message.opentelemetry_data
                 ]
+
                 expired_ack_ids = self._manager._send_lease_modacks(
                     ack_id_gen,
                     deadline,

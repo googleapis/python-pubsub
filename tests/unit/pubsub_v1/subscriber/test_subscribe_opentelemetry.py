@@ -187,3 +187,16 @@ def test_opentelemetry_start_process_span_no_publisher_span():
     # Assert that when there is no publisher create span context propagated,
     # There are no links created in the process span.
     assert len(opentelemetry_data._process_span.links) == 0
+
+
+def test_opentelemetry_project_id_set_after_create_subscribe_span():
+    msg = create_message(b"foo")
+    opentelemetry_data = SubscribeOpenTelemetry(msg)
+    msg.opentelemetry_data = opentelemetry_data
+    opentelemetry_data.start_subscribe_span(
+        subscription="projects/projectId/subscriptions/subscriptionID",
+        exactly_once_enabled=False,
+        ack_id="ack_id",
+        delivery_attempt=4,
+    )
+    assert opentelemetry_data.project_id == "projectId"

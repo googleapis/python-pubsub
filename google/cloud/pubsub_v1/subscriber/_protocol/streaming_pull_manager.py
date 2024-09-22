@@ -23,6 +23,7 @@ import typing
 from typing import Any, Dict, Callable, Iterable, List, Optional, Set, Tuple
 import uuid
 
+from opentelemetry import trace
 import grpc  # type: ignore
 
 from google.api_core import bidi
@@ -49,6 +50,9 @@ from grpc_status import rpc_status  # type: ignore
 from google.rpc.error_details_pb2 import ErrorInfo  # type: ignore
 from google.rpc import code_pb2  # type: ignore
 from google.rpc import status_pb2
+from google.cloud.pubsub_v1.open_telemetry.subscribe_opentelemetry import (
+    start_modack_span,
+)
 
 if typing.TYPE_CHECKING:  # pragma: NO COVER
     from google.cloud.pubsub_v1 import subscriber
@@ -1023,6 +1027,31 @@ class StreamingPullManager(object):
         warn_on_invalid=True,
     ) -> Set[str]:
         exactly_once_enabled = False
+
+        modack_span: Optional[trace.Span] = None
+        if self._client.open_telemetry_enabled:
+            subscribe_span_links: List[trace.Link] = []
+            assert len(self._subscription.split("/")) == 4
+            subscription_id: str = self._subscription.split("/")[3]
+            project_id: str = self._subscription.split("/")[1]
+            for data in opentelemetry_data:
+                subscribe_span: Optional[trace.Span] = data.subscribe_span
+                if (
+                    subscribe_span
+                    and subscribe_span.get_span_context().trace_flags.sampled
+                ):
+                    subscribe_span_links.append(
+                        trace.Link(subscribe_span.get_span_context())
+                    )
+            modack_span = start_modack_span(
+                subscribe_span_links,
+                subscription_id,
+                len(opentelemetry_data),
+                ack_deadline,
+                project_id,
+                "_send_lease_modacks",
+            )
+
         with self._exactly_once_enabled_lock:
             exactly_once_enabled = self._exactly_once_enabled
         if exactly_once_enabled:
@@ -1040,7 +1069,10 @@ class StreamingPullManager(object):
 
             assert self._dispatcher is not None
             self._dispatcher.modify_ack_deadline(items, ack_deadline)
-
+            if (
+                modack_span
+            ):  # pragma: NO COVER # Identical code covered in the same function below
+                modack_span.end()
             expired_ack_ids = set()
             for req in items:
                 try:
@@ -1070,6 +1102,8 @@ class StreamingPullManager(object):
                     item._replace(opentelemetry_data=data)
             assert self._dispatcher is not None
             self._dispatcher.modify_ack_deadline(items, ack_deadline)
+            if modack_span:
+                modack_span.end()
             return set()
 
     def _exactly_once_delivery_enabled(self) -> bool:

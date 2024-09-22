@@ -20,6 +20,7 @@ import time
 import types as stdlib_types
 import datetime
 import queue
+import math
 
 from opentelemetry import trace
 from google.protobuf import timestamp_pb2
@@ -632,7 +633,10 @@ def test__maybe_release_messages_negative_on_hold_bytes_warning(caplog):
 
 
 def test_opentelemetry__send_lease_modacks(span_exporter):
-    manager, _, _, _, _, _ = make_running_manager(enable_open_telemetry=True)
+    manager, _, _, _, _, _ = make_running_manager(
+        enable_open_telemetry=True,
+        subscription_name="projects/projectID/subscriptions/subscriptionID",
+    )
     data1 = SubscribeOpenTelemetry(
         message=gapic_types.PubsubMessage(data=b"foo", message_id="1")
     )
@@ -652,19 +656,42 @@ def test_opentelemetry__send_lease_modacks(span_exporter):
         ack_id="ack_id1",
         delivery_attempt=2,
     )
-    manager._send_lease_modacks(
-        ack_ids=["ack_id1", "ack_id2"],
-        ack_deadline=20,
-        opentelemetry_data=[data1, data2],
-    )
+    mock_span_context = mock.Mock(spec=trace.SpanContext)
+    mock_span_context.trace_flags.sampled = False
+    with mock.patch.object(
+        data1._subscribe_span, "get_span_context", return_value=mock_span_context
+    ):
+        manager._send_lease_modacks(
+            ack_ids=["ack_id1", "ack_id2"],
+            ack_deadline=20,
+            opentelemetry_data=[data1, data2],
+        )
     data1.end_subscribe_span()
     data2.end_subscribe_span()
     spans = span_exporter.get_finished_spans()
-    assert len(spans) == 2
+    assert len(spans) == 3
+    modack_span, subscribe_span1, subscribe_span2 = spans
 
-    for span in spans:
-        assert len(span.events) == 1
-        assert span.events[0].name == "modack start"
+    assert len(subscribe_span1.events) == 1
+    assert subscribe_span1.events[0].name == "modack start"
+
+    assert len(subscribe_span2.events) == 1
+    assert subscribe_span2.events[0].name == "modack start"
+
+    assert modack_span.name == "subscriptionID modack"
+    assert modack_span.parent is None
+    assert modack_span.kind == trace.SpanKind.CLIENT
+    assert len(modack_span.links) == 1
+    modack_span_attributes = modack_span.attributes
+    assert modack_span_attributes["messaging.system"] == "gcp_pubsub"
+    assert modack_span_attributes["messaging.batch.message_count"] == 2
+    assert math.isclose(
+        modack_span_attributes["messaging.gcp_pubsub.message.ack_deadline"], 20
+    )
+    assert modack_span_attributes["messaging.destination.name"] == "subscriptionID"
+    assert modack_span_attributes["gcp.project_id"] == "projectID"
+    assert modack_span_attributes["messaging.operation.name"] == "modack"
+    assert modack_span_attributes["code.function"] == "_send_lease_modacks"
 
 
 def test_send_unary_ack():
@@ -2754,7 +2781,19 @@ def test_opentelemetry__on_response_subscribe_span_create(span_exporter):
     # Subscribe span is still active, hence unexported.
     # Subscriber scheduler spans corresponding to the two messages would be started in `messages_on_hold.put()``
     # and ended in `_maybe_release_messages`
-    assert len(spans) == 2
+    assert len(spans) == 3
+    modack_span = spans[0]
+
+    for span in spans[1:]:
+        assert span.name == "subscriber scheduler"
+        assert span.kind == trace.SpanKind.INTERNAL
+        assert span.parent is not None
+        assert len(span.attributes) == 0
+
+    assert modack_span.name == "subscriptionID modack"
+    assert modack_span.kind == trace.SpanKind.CLIENT
+    assert modack_span.parent is None
+    assert len(modack_span.links) == 2
 
 
 RECEIVED = datetime.datetime(2012, 4, 21, 15, 0, tzinfo=datetime.timezone.utc)
