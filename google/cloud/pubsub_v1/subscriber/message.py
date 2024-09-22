@@ -466,7 +466,6 @@ class Message(object):
         or another.
         """
         if self.opentelemetry_data:
-            self.opentelemetry_data.add_subscribe_span_event("nack start")
             self.opentelemetry_data.add_process_span_event("nack called")
             self.opentelemetry_data.end_process_span()
         self._request_queue.put(
@@ -514,7 +513,6 @@ class Message(object):
 
         """
         if self.opentelemetry_data:
-            self.opentelemetry_data.add_subscribe_span_event("nack start")
             self.opentelemetry_data.add_process_span_event("nack called")
             self.opentelemetry_data.end_process_span()
         req_future: Optional[futures.Future]

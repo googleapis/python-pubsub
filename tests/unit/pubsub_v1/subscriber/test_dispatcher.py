@@ -863,8 +863,9 @@ def test_opentelemetry_nack(span_exporter):
     subscribe_span = spans[0]
     assert "messaging.gcp_pubsub.result" in subscribe_span.attributes
     assert subscribe_span.attributes["messaging.gcp_pubsub.result"] == "nacked"
-    assert len(subscribe_span.events) == 1
-    assert subscribe_span.events[0].name == "nack end"
+    assert len(subscribe_span.events) == 2
+    assert subscribe_span.events[0].name == "nack start"
+    assert subscribe_span.events[1].name == "nack end"
 
 
 def test_nack():

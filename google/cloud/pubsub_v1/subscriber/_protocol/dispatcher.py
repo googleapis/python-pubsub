@@ -353,7 +353,10 @@ class Dispatcher(object):
         ack_ids_gen = (item.ack_id for item in items)
         deadline_seconds_gen = (item.seconds for item in items)
         total_chunks = int(math.ceil(len(items) / _ACK_IDS_BATCH_SIZE))
-
+        for item in items:
+            if item.opentelemetry_data:
+                if math.isclose(item.seconds, 0):
+                    item.opentelemetry_data.add_subscribe_span_event("nack start")
         for _ in range(total_chunks):
             ack_reqs_dict = {
                 req.ack_id: req
