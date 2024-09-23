@@ -26,11 +26,14 @@ from typing import List, Optional, Sequence, Union
 import warnings
 from google.api_core.retry import exponential_sleep_generator
 
+from opentelemetry import trace
+
 from google.cloud.pubsub_v1.subscriber._protocol import helper_threads
 from google.cloud.pubsub_v1.subscriber._protocol import requests
 from google.cloud.pubsub_v1.subscriber.exceptions import (
     AcknowledgeStatus,
 )
+from google.cloud.pubsub_v1.open_telemetry.subscribe_opentelemetry import start_ack_span
 
 if typing.TYPE_CHECKING:  # pragma: NO COVER
     import queue
@@ -232,18 +235,49 @@ class Dispatcher(object):
         items_gen = iter(items)
         ack_ids_gen = (item.ack_id for item in items)
         total_chunks = int(math.ceil(len(items) / _ACK_IDS_BATCH_SIZE))
+        subscription_id: Optional[str] = None
+        project_id: Optional[str] = None
         for item in items:
             if item.opentelemetry_data:
                 item.opentelemetry_data.add_subscribe_span_event("ack start")
+                if subscription_id is None:
+                    subscription_id = item.opentelemetry_data.subscription_id
+                if project_id is None:
+                    project_id = item.opentelemetry_data.project_id
+
         for _ in range(total_chunks):
             ack_reqs_dict = {
                 req.ack_id: req
                 for req in itertools.islice(items_gen, _ACK_IDS_BATCH_SIZE)
             }
+
+            subscribe_links: List[trace.Link] = []
+            for ack_req in ack_reqs_dict.values():
+                if ack_req.opentelemetry_data:
+                    subscribe_span: Optional[
+                        trace.Span
+                    ] = ack_req.opentelemetry_data.subscribe_span
+                    if (
+                        subscribe_span
+                        and subscribe_span.get_span_context().trace_flags.sampled
+                    ):
+                        subscribe_links.append(
+                            trace.Link(subscribe_span.get_span_context())
+                        )
+            ack_span: Optional[trace.Span] = None
+            if subscription_id and project_id:
+                ack_span = start_ack_span(
+                    subscription_id,
+                    len(ack_reqs_dict),
+                    project_id,
+                    subscribe_links,
+                )
             requests_completed, requests_to_retry = self._manager.send_unary_ack(
                 ack_ids=list(itertools.islice(ack_ids_gen, _ACK_IDS_BATCH_SIZE)),
                 ack_reqs_dict=ack_reqs_dict,
             )
+            if ack_span:
+                ack_span.end()
 
             for completed_ack in requests_completed:
                 if completed_ack.opentelemetry_data:

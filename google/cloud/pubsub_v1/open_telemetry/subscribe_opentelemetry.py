@@ -24,11 +24,11 @@ from google.cloud.pubsub_v1.open_telemetry.context_propagation import (
 )
 from google.pubsub_v1.types import PubsubMessage
 
+_OPEN_TELEMETRY_TRACER_NAME: str = "google.cloud.pubsub_v1"
+_OPEN_TELEMETRY_MESSAGING_SYSTEM: str = "gcp_pubsub"
+
 
 class SubscribeOpenTelemetry:
-    _OPEN_TELEMETRY_TRACER_NAME: str = "google.cloud.pubsub_v1"
-    _OPEN_TELEMETRY_MESSAGING_SYSTEM: str = "gcp_pubsub"
-
     def __init__(self, message: PubsubMessage):
         self._message: PubsubMessage = message
 
@@ -79,7 +79,7 @@ class SubscribeOpenTelemetry:
         ack_id: str,
         delivery_attempt: int,
     ) -> None:
-        tracer = trace.get_tracer(self._OPEN_TELEMETRY_TRACER_NAME)
+        tracer = trace.get_tracer(_OPEN_TELEMETRY_TRACER_NAME)
         parent_span_context = TraceContextTextMapPropagator().extract(
             carrier=self._message,
             getter=OpenTelemetryContextGetter(),
@@ -94,7 +94,7 @@ class SubscribeOpenTelemetry:
             context=parent_span_context if parent_span_context else None,
             kind=trace.SpanKind.CONSUMER,
             attributes={
-                "messaging.system": self._OPEN_TELEMETRY_MESSAGING_SYSTEM,
+                "messaging.system": _OPEN_TELEMETRY_MESSAGING_SYSTEM,
                 "messaging.destination.name": subscription_short_name,
                 "gcp.project_id": subscription.split("/")[1],
                 "messaging.message.id": self._message.message_id,
@@ -131,7 +131,7 @@ class SubscribeOpenTelemetry:
 
     def start_subscribe_concurrency_control_span(self) -> None:
         assert self._subscribe_span is not None
-        tracer = trace.get_tracer(self._OPEN_TELEMETRY_TRACER_NAME)
+        tracer = trace.get_tracer(_OPEN_TELEMETRY_TRACER_NAME)
         with tracer.start_as_current_span(
             name="subscriber concurrency control",
             kind=trace.SpanKind.INTERNAL,
@@ -146,7 +146,7 @@ class SubscribeOpenTelemetry:
 
     def start_subscribe_scheduler_span(self) -> None:
         assert self._subscribe_span is not None
-        tracer = trace.get_tracer(self._OPEN_TELEMETRY_TRACER_NAME)
+        tracer = trace.get_tracer(_OPEN_TELEMETRY_TRACER_NAME)
         with tracer.start_as_current_span(
             name="subscriber scheduler",
             kind=trace.SpanKind.INTERNAL,
@@ -161,7 +161,7 @@ class SubscribeOpenTelemetry:
 
     def start_process_span(self) -> None:
         assert self._subscribe_span is not None
-        tracer = trace.get_tracer(self._OPEN_TELEMETRY_TRACER_NAME)
+        tracer = trace.get_tracer(_OPEN_TELEMETRY_TRACER_NAME)
         publish_create_span_link: Optional[trace.Link] = None
         if self._publisher_create_span_context:
             publish_create_span: trace.Span = trace.get_current_span(
@@ -177,7 +177,7 @@ class SubscribeOpenTelemetry:
         with tracer.start_as_current_span(
             name=f"{self._subscription_id} process",
             attributes={
-                "messaging.system": self._OPEN_TELEMETRY_MESSAGING_SYSTEM,
+                "messaging.system": _OPEN_TELEMETRY_MESSAGING_SYSTEM,
             },
             kind=trace.SpanKind.INTERNAL,
             context=set_span_in_context(self._subscribe_span),
@@ -209,8 +209,6 @@ def start_modack_span(
     code_function: str,
     receipt_modack: bool,
 ) -> trace.Span:
-    _OPEN_TELEMETRY_TRACER_NAME: str = "google.cloud.pubsub_v1"
-    _OPEN_TELEMETRY_MESSAGING_SYSTEM: str = "gcp_pubsub"
     assert subscription_id is not None
     assert project_id is not None
     tracer = trace.get_tracer(_OPEN_TELEMETRY_TRACER_NAME)
@@ -231,3 +229,27 @@ def start_modack_span(
         end_on_exit=False,
     ) as modack_span:
         return modack_span
+
+
+def start_ack_span(
+    subscription_id: str,
+    message_count: int,
+    project_id: str,
+    links: List[trace.Link],
+) -> trace.Span:
+    tracer = trace.get_tracer(_OPEN_TELEMETRY_TRACER_NAME)
+    with tracer.start_as_current_span(
+        name=f"{subscription_id} ack",
+        attributes={
+            "messaging.system": _OPEN_TELEMETRY_MESSAGING_SYSTEM,
+            "messaging.batch.message_count": message_count,
+            "messaging.operation": "ack",
+            "gcp.project_id": project_id,
+            "messaging.destination.name": subscription_id,
+            "code.function": "ack",
+        },
+        kind=trace.SpanKind.CLIENT,
+        links=links,
+        end_on_exit=False,
+    ) as ack_span:
+        return ack_span
