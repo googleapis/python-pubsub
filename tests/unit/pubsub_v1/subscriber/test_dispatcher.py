@@ -769,35 +769,65 @@ def test_opentelemetry_retry_nacks(span_exporter):
     )
     dispatcher_ = dispatcher.Dispatcher(manager, mock.sentinel.queue)
 
-    opentelemetry_data = SubscribeOpenTelemetry(message=PubsubMessage(data=b"foo"))
-    opentelemetry_data.start_subscribe_span(
+    data1 = SubscribeOpenTelemetry(message=PubsubMessage(data=b"foo"))
+    data1.start_subscribe_span(
         subscription="projects/projectID/subscriptions/subscriptionID",
         exactly_once_enabled=True,
-        ack_id="ack_id",
+        ack_id="ack_id1",
+        delivery_attempt=5,
+    )
+    data2 = SubscribeOpenTelemetry(message=PubsubMessage(data=b"foo"))
+    data2.start_subscribe_span(
+        subscription="projects/projectID/subscriptions/subscriptionID",
+        exactly_once_enabled=True,
+        ack_id="ack_id2",
         delivery_attempt=5,
     )
 
     f = futures.Future()
     items = [
         requests.ModAckRequest(
-            ack_id="ack_id_string",
+            ack_id="ack_id1",
             seconds=0,
             future=f,
-            opentelemetry_data=opentelemetry_data,
-        )
+            opentelemetry_data=data1,
+        ),
+        requests.ModAckRequest(
+            ack_id="ack_id2",
+            seconds=0,
+            future=f,
+            opentelemetry_data=data2,
+        ),
     ]
     manager.send_unary_modack.side_effect = [(items, [])]
+    mock_span_context = mock.Mock(spec=trace.SpanContext)
+    mock_span_context.trace_flags.sampled = False
     with mock.patch("time.sleep", return_value=None):
-        dispatcher_._retry_modacks(items)
+        with mock.patch.object(
+            data2._subscribe_span, "get_span_context", return_value=mock_span_context
+        ):
+            dispatcher_._retry_modacks(items)
 
     spans = span_exporter.get_finished_spans()
-    assert len(spans) == 1
-    subscribe_span = spans[0]
+    assert len(spans) == 3
+    nack_span = spans[0]
 
-    assert "messaging.gcp_pubsub.result" in subscribe_span.attributes
-    assert subscribe_span.attributes["messaging.gcp_pubsub.result"] == "nacked"
-    assert len(subscribe_span.events) == 1
-    assert subscribe_span.events[0].name == "nack end"
+    for subscribe_span in spans[1:]:
+        assert "messaging.gcp_pubsub.result" in subscribe_span.attributes
+        assert subscribe_span.attributes["messaging.gcp_pubsub.result"] == "nacked"
+        assert len(subscribe_span.events) == 1
+        assert subscribe_span.events[0].name == "nack end"
+
+    assert nack_span.name == "subscriptionID nack"
+    assert nack_span.kind == trace.SpanKind.CLIENT
+    assert nack_span.parent is None
+    assert len(nack_span.links) == 1
+    assert nack_span.attributes["messaging.system"] == "gcp_pubsub"
+    assert nack_span.attributes["messaging.batch.message_count"] == 2
+    assert nack_span.attributes["messaging.operation"] == "nack"
+    assert nack_span.attributes["gcp.project_id"] == "projectID"
+    assert nack_span.attributes["messaging.destination.name"] == "subscriptionID"
+    assert nack_span.attributes["code.function"] == "modify_ack_deadline"
 
 
 def test_retry_modacks():
