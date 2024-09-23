@@ -33,7 +33,10 @@ from google.cloud.pubsub_v1.subscriber._protocol import requests
 from google.cloud.pubsub_v1.subscriber.exceptions import (
     AcknowledgeStatus,
 )
-from google.cloud.pubsub_v1.open_telemetry.subscribe_opentelemetry import start_ack_span
+from google.cloud.pubsub_v1.open_telemetry.subscribe_opentelemetry import (
+    start_ack_span,
+    start_nack_span,
+)
 
 if typing.TYPE_CHECKING:  # pragma: NO COVER
     import queue
@@ -416,10 +419,18 @@ class Dispatcher(object):
         ack_ids_gen = (item.ack_id for item in items)
         deadline_seconds_gen = (item.seconds for item in items)
         total_chunks = int(math.ceil(len(items) / _ACK_IDS_BATCH_SIZE))
+
+        subscription_id: Optional[str] = None
+        project_id: Optional[str] = None
+
         for item in items:
             if item.opentelemetry_data:
                 if math.isclose(item.seconds, 0):
                     item.opentelemetry_data.add_subscribe_span_event("nack start")
+                    if subscription_id is None:
+                        subscription_id = item.opentelemetry_data.subscription_id
+                    if project_id is None:
+                        project_id = item.opentelemetry_data.project_id
                 else:
                     item.opentelemetry_data.add_subscribe_span_event("modack start")
         for _ in range(total_chunks):
@@ -427,6 +438,27 @@ class Dispatcher(object):
                 req.ack_id: req
                 for req in itertools.islice(items_gen, _ACK_IDS_BATCH_SIZE)
             }
+            subscribe_links: List[trace.Link] = []
+            for ack_req in ack_reqs_dict.values():
+                if ack_req.opentelemetry_data and math.isclose(ack_req.seconds, 0):
+                    subscribe_span: Optional[
+                        trace.Span
+                    ] = ack_req.opentelemetry_data.subscribe_span
+                    if (
+                        subscribe_span
+                        and subscribe_span.get_span_context().trace_flags.sampled
+                    ):
+                        subscribe_links.append(
+                            trace.Link(subscribe_span.get_span_context())
+                        )
+            nack_span: Optional[trace.Span] = None
+            if subscription_id and project_id and len(subscribe_links) > 0:
+                nack_span = start_nack_span(
+                    subscription_id,
+                    len(ack_reqs_dict),
+                    project_id,
+                    subscribe_links,
+                )
             requests_to_retry: List[requests.ModAckRequest]
             requests_completed: Optional[List[requests.ModAckRequest]] = None
             if default_deadline is None:
@@ -450,6 +482,8 @@ class Dispatcher(object):
                     ack_reqs_dict=ack_reqs_dict,
                     default_deadline=default_deadline,
                 )
+            if nack_span:
+                nack_span.end()
             assert (
                 len(requests_to_retry) <= _ACK_IDS_BATCH_SIZE
             ), "Too many requests to be retried."

@@ -253,3 +253,27 @@ def start_ack_span(
         end_on_exit=False,
     ) as ack_span:
         return ack_span
+
+
+def start_nack_span(
+    subscription_id: str,
+    message_count: int,
+    project_id: str,
+    links: List[trace.Link],
+) -> trace.Span:
+    tracer = trace.get_tracer(_OPEN_TELEMETRY_TRACER_NAME)
+    with tracer.start_as_current_span(
+        name=f"{subscription_id} nack",
+        attributes={
+            "messaging.system": _OPEN_TELEMETRY_MESSAGING_SYSTEM,
+            "messaging.batch.message_count": message_count,
+            "messaging.operation": "nack",
+            "gcp.project_id": project_id,
+            "messaging.destination.name": subscription_id,
+            "code.function": "modify_ack_deadline",
+        },
+        kind=trace.SpanKind.CLIENT,
+        links=links,
+        end_on_exit=False,
+    ) as nack_span:
+        return nack_span
