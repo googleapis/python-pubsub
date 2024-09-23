@@ -324,13 +324,42 @@ class Dispatcher(object):
             time.sleep(time_to_wait)
 
             ack_reqs_dict = {req.ack_id: req for req in requests_to_retry}
+            subscription_id: Optional[str] = None
+            project_id: Optional[str] = None
+            subscribe_links: List[trace.Link] = []
             for req in requests_to_retry:
                 if req.opentelemetry_data:
                     req.opentelemetry_data.add_subscribe_span_event("ack start")
+                    if subscription_id is None:
+                        subscription_id = req.opentelemetry_data.subscription_id
+                    if project_id is None:
+                        project_id = req.opentelemetry_data.project_id
+                    subscribe_span: Optional[
+                        trace.Span
+                    ] = req.opentelemetry_data.subscribe_span
+                    if (
+                        subscribe_span
+                        and subscribe_span.get_span_context().trace_flags.sampled
+                    ):
+                        subscribe_links.append(
+                            trace.Link(subscribe_span.get_span_context())
+                        )
+            ack_span: Optional[trace.Span] = None
+            if subscription_id and project_id:
+                ack_span = start_ack_span(
+                    subscription_id,
+                    len(ack_reqs_dict),
+                    project_id,
+                    subscribe_links,
+                )
+
             requests_completed, requests_to_retry = self._manager.send_unary_ack(
                 ack_ids=[req.ack_id for req in requests_to_retry],
                 ack_reqs_dict=ack_reqs_dict,
             )
+
+            if ack_span:
+                ack_span.end()
 
             for completed_ack in requests_completed:
                 if completed_ack.opentelemetry_data:

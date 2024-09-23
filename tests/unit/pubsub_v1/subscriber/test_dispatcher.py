@@ -596,8 +596,15 @@ def test_opentelemetry_retry_acks(span_exporter):
         streaming_pull_manager.StreamingPullManager, instance=True
     )
     dispatcher_ = dispatcher.Dispatcher(manager, mock.sentinel.queue)
-    opentelemetry_data = SubscribeOpenTelemetry(message=PubsubMessage(data=b"foo"))
-    opentelemetry_data.start_subscribe_span(
+    data1 = SubscribeOpenTelemetry(message=PubsubMessage(data=b"foo"))
+    data1.start_subscribe_span(
+        subscription="projects/projectID/subscriptions/subscriptionID",
+        exactly_once_enabled=True,
+        ack_id="ack_id",
+        delivery_attempt=5,
+    )
+    data2 = SubscribeOpenTelemetry(message=PubsubMessage(data=b"foo"))
+    data2.start_subscribe_span(
         subscription="projects/projectID/subscriptions/subscriptionID",
         exactly_once_enabled=True,
         ack_id="ack_id",
@@ -612,23 +619,48 @@ def test_opentelemetry_retry_acks(span_exporter):
             time_to_ack=20,
             ordering_key="",
             future=f,
-            opentelemetry_data=opentelemetry_data,
-        )
+            opentelemetry_data=data1,
+        ),
+        requests.AckRequest(
+            ack_id="ack_id_string2",
+            byte_size=0,
+            time_to_ack=20,
+            ordering_key="",
+            future=f,
+            opentelemetry_data=data2,
+        ),
     ]
     manager.send_unary_ack.side_effect = [(items, [])]
+    mock_span_context = mock.Mock(spec=trace.SpanContext)
+    mock_span_context.trace_flags.sampled = False
     with mock.patch("time.sleep", return_value=None):
-        dispatcher_._retry_acks(items)
+        with mock.patch.object(
+            data2._subscribe_span, "get_span_context", return_value=mock_span_context
+        ):
+            dispatcher_._retry_acks(items)
 
     spans = span_exporter.get_finished_spans()
 
-    assert len(spans) == 1
-    subscribe_span = spans[0]
+    assert len(spans) == 3
+    ack_span = spans[0]
 
-    assert "messaging.gcp_pubsub.result" in subscribe_span.attributes
-    assert subscribe_span.attributes["messaging.gcp_pubsub.result"] == "acked"
-    assert len(subscribe_span.events) == 2
-    assert subscribe_span.events[0].name == "ack start"
-    assert subscribe_span.events[1].name == "ack end"
+    for subscribe_span in spans[1:]:
+        assert "messaging.gcp_pubsub.result" in subscribe_span.attributes
+        assert subscribe_span.attributes["messaging.gcp_pubsub.result"] == "acked"
+        assert len(subscribe_span.events) == 2
+        assert subscribe_span.events[0].name == "ack start"
+        assert subscribe_span.events[1].name == "ack end"
+
+    assert ack_span.name == "subscriptionID ack"
+    assert ack_span.kind == trace.SpanKind.CLIENT
+    assert ack_span.parent is None
+    assert len(ack_span.links) == 1
+    assert ack_span.attributes["messaging.system"] == "gcp_pubsub"
+    assert ack_span.attributes["messaging.batch.message_count"] == 2
+    assert ack_span.attributes["messaging.operation"] == "ack"
+    assert ack_span.attributes["gcp.project_id"] == "projectID"
+    assert ack_span.attributes["messaging.destination.name"] == "subscriptionID"
+    assert ack_span.attributes["code.function"] == "ack"
 
 
 def test_retry_acks():
