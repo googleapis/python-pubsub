@@ -1025,6 +1025,7 @@ class StreamingPullManager(object):
         ack_deadline: float,
         opentelemetry_data: List[SubscribeOpenTelemetry],
         warn_on_invalid=True,
+        receipt_modack: bool = False,
     ) -> Set[str]:
         exactly_once_enabled = False
 
@@ -1050,6 +1051,7 @@ class StreamingPullManager(object):
                 ack_deadline,
                 project_id,
                 "_send_lease_modacks",
+                receipt_modack,
             )
 
         with self._exactly_once_enabled_lock:
@@ -1175,6 +1177,7 @@ class StreamingPullManager(object):
             self.ack_deadline,
             subscribe_opentelemetry,
             warn_on_invalid=False,
+            receipt_modack=True,
         )
 
         with self._pause_resume_lock:

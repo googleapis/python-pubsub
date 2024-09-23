@@ -632,7 +632,14 @@ def test__maybe_release_messages_negative_on_hold_bytes_warning(caplog):
     assert manager._on_hold_bytes == 0  # should be auto-corrected
 
 
-def test_opentelemetry__send_lease_modacks(span_exporter):
+@pytest.mark.parametrize(
+    "receipt_modack",
+    [
+        True,
+        False,
+    ],
+)
+def test_opentelemetry__send_lease_modacks(span_exporter, receipt_modack):
     manager, _, _, _, _, _ = make_running_manager(
         enable_open_telemetry=True,
         subscription_name="projects/projectID/subscriptions/subscriptionID",
@@ -665,6 +672,7 @@ def test_opentelemetry__send_lease_modacks(span_exporter):
             ack_ids=["ack_id1", "ack_id2"],
             ack_deadline=20,
             opentelemetry_data=[data1, data2],
+            receipt_modack=receipt_modack,
         )
     data1.end_subscribe_span()
     data2.end_subscribe_span()
@@ -692,6 +700,10 @@ def test_opentelemetry__send_lease_modacks(span_exporter):
     assert modack_span_attributes["gcp.project_id"] == "projectID"
     assert modack_span_attributes["messaging.operation.name"] == "modack"
     assert modack_span_attributes["code.function"] == "_send_lease_modacks"
+    assert (
+        modack_span_attributes["messaging.gcp_pubsub.is_receipt_modack"]
+        == receipt_modack
+    )
 
 
 def test_send_unary_ack():

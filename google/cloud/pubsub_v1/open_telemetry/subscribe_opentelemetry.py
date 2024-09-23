@@ -207,6 +207,7 @@ def start_modack_span(
     deadline: float,
     project_id: Optional[str],
     code_function: str,
+    receipt_modack: bool,
 ) -> trace.Span:
     _OPEN_TELEMETRY_TRACER_NAME: str = "google.cloud.pubsub_v1"
     _OPEN_TELEMETRY_MESSAGING_SYSTEM: str = "gcp_pubsub"
@@ -223,6 +224,7 @@ def start_modack_span(
             "gcp.project_id": project_id,
             "messaging.operation.name": "modack",
             "code.function": code_function,
+            "messaging.gcp_pubsub.is_receipt_modack": receipt_modack,
         },
         links=subscribe_span_links,
         kind=trace.SpanKind.CLIENT,
