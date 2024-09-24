@@ -1032,6 +1032,7 @@ class StreamingPullManager(object):
         modack_span: Optional[trace.Span] = None
         if self._client.open_telemetry_enabled:
             subscribe_span_links: List[trace.Link] = []
+            subscribe_spans: List[trace.Span] = []
             assert len(self._subscription.split("/")) == 4
             subscription_id: str = self._subscription.split("/")[3]
             project_id: str = self._subscription.split("/")[1]
@@ -1044,6 +1045,7 @@ class StreamingPullManager(object):
                     subscribe_span_links.append(
                         trace.Link(subscribe_span.get_span_context())
                     )
+                    subscribe_spans.append(subscribe_span)
             modack_span = start_modack_span(
                 subscribe_span_links,
                 subscription_id,
@@ -1053,6 +1055,17 @@ class StreamingPullManager(object):
                 "_send_lease_modacks",
                 receipt_modack,
             )
+            if (
+                modack_span and modack_span.get_span_context().trace_flags.sampled
+            ):  # pragma: NO COVER
+                modack_span_context: trace.SpanContext = modack_span.get_span_context()
+                for subscribe_span in subscribe_spans:
+                    subscribe_span.add_link(
+                        context=modack_span_context,
+                        attributes={
+                            "messaging.operation.name": "modack",
+                        },
+                    )
 
         with self._exactly_once_enabled_lock:
             exactly_once_enabled = self._exactly_once_enabled

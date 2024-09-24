@@ -632,6 +632,10 @@ def test__maybe_release_messages_negative_on_hold_bytes_warning(caplog):
     assert manager._on_hold_bytes == 0  # should be auto-corrected
 
 
+@pytest.mark.skipif(
+    sys.version_info < (3, 8),
+    reason="Open Telemetry not supported below Python version 3.8",
+)
 @pytest.mark.parametrize(
     "receipt_modack",
     [
@@ -682,6 +686,11 @@ def test_opentelemetry__send_lease_modacks(span_exporter, receipt_modack):
 
     assert len(subscribe_span1.events) == 0
     assert len(subscribe_span2.events) == 0
+
+    assert len(subscribe_span1.links) == 0
+    assert len(subscribe_span2.links) == 1
+    assert subscribe_span2.links[0].context == modack_span.context
+    assert subscribe_span2.links[0].attributes["messaging.operation.name"] == "modack"
 
     assert modack_span.name == "subscriptionID modack"
     assert modack_span.parent is None
@@ -2760,6 +2769,10 @@ def test_process_requests_mixed_success_and_failure_modacks():
     assert future3.result() == subscriber_exceptions.AcknowledgeStatus.SUCCESS
 
 
+@pytest.mark.skipif(
+    sys.version_info < (3, 8),
+    reason="Open Telemetry not supported below Python version 3.8",
+)
 def test_opentelemetry__on_response_subscribe_span_create(span_exporter):
     manager, _, _, leaser, _, _ = make_running_manager(
         enable_open_telemetry=True,
