@@ -282,7 +282,12 @@ class Dispatcher(object):
                 ):  # pragma: NO COVER
                     ack_span_context: trace.SpanContext = ack_span.get_span_context()
                     for subscribe_span in subscribe_spans:
-                        subscribe_span.add_link(ack_span_context)
+                        subscribe_span.add_link(
+                            context=ack_span_context,
+                            attributes={
+                                "messaging.operation.name": "ack",
+                            },
+                        )
 
             requests_completed, requests_to_retry = self._manager.send_unary_ack(
                 ack_ids=list(itertools.islice(ack_ids_gen, _ACK_IDS_BATCH_SIZE)),
@@ -371,7 +376,12 @@ class Dispatcher(object):
                 ):  # pragma: NO COVER
                     ack_span_context: trace.SpanContext = ack_span.get_span_context()
                     for subscribe_span in subscribe_spans:
-                        subscribe_span.add_link(ack_span_context)
+                        subscribe_span.add_link(
+                            context=ack_span_context,
+                            attributes={
+                                "messaging.operation.name": "ack",
+                            },
+                        )
 
             requests_completed, requests_to_retry = self._manager.send_unary_ack(
                 ack_ids=[req.ack_id for req in requests_to_retry],
