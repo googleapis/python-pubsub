@@ -456,6 +456,7 @@ class Dispatcher(object):
                 for req in itertools.islice(items_gen, _ACK_IDS_BATCH_SIZE)
             }
             subscribe_links: List[trace.Link] = []
+            subscribe_spans: List[trace.Span] = []
             for ack_req in ack_reqs_dict.values():
                 if ack_req.opentelemetry_data and math.isclose(ack_req.seconds, 0):
                     subscribe_span: Optional[
@@ -468,6 +469,7 @@ class Dispatcher(object):
                         subscribe_links.append(
                             trace.Link(subscribe_span.get_span_context())
                         )
+                        subscribe_spans.append(subscribe_span)
             nack_span: Optional[trace.Span] = None
             if subscription_id and project_id and len(subscribe_links) > 0:
                 nack_span = start_nack_span(
@@ -476,6 +478,12 @@ class Dispatcher(object):
                     project_id,
                     subscribe_links,
                 )
+                if (
+                    nack_span and nack_span.get_span_context().trace_flags.sampled
+                ):  # pragma: NO COVER
+                    nack_span_context: trace.SpanContext = nack_span.get_span_context()
+                    for subscribe_span in subscribe_spans:
+                        subscribe_span.add_link(nack_span_context)
             requests_to_retry: List[requests.ModAckRequest]
             requests_completed: Optional[List[requests.ModAckRequest]] = None
             if default_deadline is None:
