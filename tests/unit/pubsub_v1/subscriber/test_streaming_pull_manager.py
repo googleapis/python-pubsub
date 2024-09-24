@@ -680,11 +680,8 @@ def test_opentelemetry__send_lease_modacks(span_exporter, receipt_modack):
     assert len(spans) == 3
     modack_span, subscribe_span1, subscribe_span2 = spans
 
-    assert len(subscribe_span1.events) == 1
-    assert subscribe_span1.events[0].name == "modack start"
-
-    assert len(subscribe_span2.events) == 1
-    assert subscribe_span2.events[0].name == "modack start"
+    assert len(subscribe_span1.events) == 0
+    assert len(subscribe_span2.events) == 0
 
     assert modack_span.name == "subscriptionID modack"
     assert modack_span.parent is None

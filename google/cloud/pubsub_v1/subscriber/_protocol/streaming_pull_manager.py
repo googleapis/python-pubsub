@@ -1057,17 +1057,25 @@ class StreamingPullManager(object):
         with self._exactly_once_enabled_lock:
             exactly_once_enabled = self._exactly_once_enabled
         if exactly_once_enabled:
-            items = [
-                requests.ModAckRequest(ack_id, ack_deadline, futures.Future())
-                for ack_id in ack_ids
-            ]
+            items: List[requests.ModAckRequest] = []
             if self._client.open_telemetry_enabled:
-                for item, data in zip(
-                    items, opentelemetry_data
+                for ack_id, data in zip(
+                    ack_ids, opentelemetry_data
                 ):  # pragma: NO COVER # Identical code covered in the same function below
                     assert data is not None
-                    data.add_subscribe_span_event("modack start")
-                    item._replace(opentelemetry_data=data)
+                    items.append(
+                        requests.ModAckRequest(
+                            ack_id,
+                            ack_deadline,
+                            futures.Future(),
+                            data,
+                        )
+                    )
+            else:
+                items = [
+                    requests.ModAckRequest(ack_id, ack_deadline, futures.Future())
+                    for ack_id in ack_ids
+                ]
 
             assert self._dispatcher is not None
             self._dispatcher.modify_ack_deadline(items, ack_deadline)
@@ -1093,15 +1101,23 @@ class StreamingPullManager(object):
                         expired_ack_ids.add(req.ack_id)
             return expired_ack_ids
         else:
-            items = [
-                requests.ModAckRequest(ack_id, self.ack_deadline, None)
-                for ack_id in ack_ids
-            ]
+            items: List[requests.ModAckRequest] = []
             if self._client.open_telemetry_enabled:
-                for item, data in zip(items, opentelemetry_data):
+                for ack_id, data in zip(ack_ids, opentelemetry_data):
                     assert data is not None
-                    data.add_subscribe_span_event("modack start")
-                    item._replace(opentelemetry_data=data)
+                    items.append(
+                        requests.ModAckRequest(
+                            ack_id,
+                            self.ack_deadline,
+                            None,
+                            data,
+                        )
+                    )
+            else:
+                items = [
+                    requests.ModAckRequest(ack_id, self.ack_deadline, None)
+                    for ack_id in ack_ids
+                ]
             assert self._dispatcher is not None
             self._dispatcher.modify_ack_deadline(items, ack_deadline)
             if modack_span:

@@ -395,12 +395,13 @@ def test_opentelemetry_modify_ack_deadline(span_exporter):
     manager.send_unary_modack.return_value = (items, [])
     dispatcher_.modify_ack_deadline(items)
 
+    # Subscribe span would not have ended as part of a modack. So, end it
+    # in the test, so that we can export and assert its contents.
+    opentelemetry_data.end_subscribe_span()
     spans = span_exporter.get_finished_spans()
     assert len(spans) == 1
     subscribe_span = spans[0]
 
-    assert "messaging.gcp_pubsub.result" in subscribe_span.attributes
-    assert subscribe_span.attributes["messaging.gcp_pubsub.result"] == "modacked"
     assert len(subscribe_span.events) == 2
     assert subscribe_span.events[0].name == "modack start"
     assert subscribe_span.events[1].name == "modack end"
@@ -753,12 +754,13 @@ def test_opentelemetry_retry_modacks(span_exporter):
     with mock.patch("time.sleep", return_value=None):
         dispatcher_._retry_modacks(items)
 
+    # Subscribe span wouldn't be ended for modacks. So, end it in the test, so
+    # that we can export and assert its contents.
+    opentelemetry_data.end_subscribe_span()
     spans = span_exporter.get_finished_spans()
     assert len(spans) == 1
     subscribe_span = spans[0]
 
-    assert "messaging.gcp_pubsub.result" in subscribe_span.attributes
-    assert subscribe_span.attributes["messaging.gcp_pubsub.result"] == "modacked"
     assert len(subscribe_span.events) == 1
     assert subscribe_span.events[0].name == "modack end"
 

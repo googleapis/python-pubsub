@@ -498,14 +498,11 @@ class Dispatcher(object):
                         completed_modack.opentelemetry_data.add_subscribe_span_event(
                             "nack end"
                         )
+                        completed_modack.opentelemetry_data.end_subscribe_span()
                     else:
-                        completed_modack.opentelemetry_data.set_subscribe_span_result(
-                            "modacked"
-                        )
                         completed_modack.opentelemetry_data.add_subscribe_span_event(
                             "modack end"
                         )
-                    completed_modack.opentelemetry_data.end_subscribe_span()
 
             # Retry on a separate thread so the dispatcher thread isn't blocked
             # by sleeps.
@@ -575,14 +572,11 @@ class Dispatcher(object):
                         completed_modack.opentelemetry_data.add_subscribe_span_event(
                             "nack end"
                         )
+                        completed_modack.opentelemetry_data.end_subscribe_span()
                     else:
-                        completed_modack.opentelemetry_data.set_subscribe_span_result(
-                            "modacked"
-                        )
                         completed_modack.opentelemetry_data.add_subscribe_span_event(
                             "modack end"
                         )
-                    completed_modack.opentelemetry_data.end_subscribe_span()
 
     def nack(self, items: Sequence[requests.NackRequest]) -> None:
         """Explicitly deny receipt of messages.
