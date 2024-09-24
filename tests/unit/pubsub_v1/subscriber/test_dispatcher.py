@@ -407,6 +407,10 @@ def test_opentelemetry_modify_ack_deadline(span_exporter):
     assert subscribe_span.events[1].name == "modack end"
 
 
+@pytest.mark.skipif(
+    sys.version_info < (3, 8),
+    reason="Open Telemetry not supported below Python version 3.8",
+)
 def test_opentelemetry_ack(span_exporter):
     manager = mock.create_autospec(
         streaming_pull_manager.StreamingPullManager, instance=True
@@ -463,6 +467,14 @@ def test_opentelemetry_ack(span_exporter):
         assert len(subscribe_span.events) == 2
         assert subscribe_span.events[0].name == "ack start"
         assert subscribe_span.events[1].name == "ack end"
+
+    # This subscribe span is sampled, so we expect it to be linked to the ack
+    # span.
+    assert len(spans[1].links) == 1
+    assert spans[1].links[0].context == ack_span.context
+    # This subscribe span is not sampled, so we expect it to not be linked to
+    # the ack span
+    assert len(spans[2].links) == 0
 
     assert ack_span.name == "subscriptionID ack"
     assert ack_span.kind == trace.SpanKind.CLIENT
