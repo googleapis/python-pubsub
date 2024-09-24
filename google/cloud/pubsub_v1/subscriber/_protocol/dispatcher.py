@@ -528,18 +528,16 @@ class Dispatcher(object):
 
             ack_reqs_dict = {req.ack_id: req for req in requests_to_retry}
 
-            subscription_id: Optional[str] = None
-            project_id: Optional[str] = None
-            subscribe_links: List[trace.Link] = []
+            subscription_id = None
+            project_id = None
+            subscribe_links = []
             for ack_req in ack_reqs_dict.values():
                 if ack_req.opentelemetry_data and math.isclose(ack_req.seconds, 0):
                     if subscription_id is None:
                         subscription_id = ack_req.opentelemetry_data.subscription_id
                     if project_id is None:
                         project_id = ack_req.opentelemetry_data.project_id
-                    subscribe_span: Optional[
-                        trace.Span
-                    ] = ack_req.opentelemetry_data.subscribe_span
+                    subscribe_span = ack_req.opentelemetry_data.subscribe_span
                     if (
                         subscribe_span
                         and subscribe_span.get_span_context().trace_flags.sampled
@@ -547,7 +545,7 @@ class Dispatcher(object):
                         subscribe_links.append(
                             trace.Link(subscribe_span.get_span_context())
                         )
-            nack_span: Optional[trace.Span] = None
+            nack_span = None
             if subscription_id and project_id and len(subscribe_links) > 0:
                 nack_span = start_nack_span(
                     subscription_id,

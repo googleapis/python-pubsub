@@ -1057,13 +1057,13 @@ class StreamingPullManager(object):
         with self._exactly_once_enabled_lock:
             exactly_once_enabled = self._exactly_once_enabled
         if exactly_once_enabled:
-            items: List[requests.ModAckRequest] = []
+            eod_items: List[requests.ModAckRequest] = []
             if self._client.open_telemetry_enabled:
                 for ack_id, data in zip(
                     ack_ids, opentelemetry_data
                 ):  # pragma: NO COVER # Identical code covered in the same function below
                     assert data is not None
-                    items.append(
+                    eod_items.append(
                         requests.ModAckRequest(
                             ack_id,
                             ack_deadline,
@@ -1072,19 +1072,19 @@ class StreamingPullManager(object):
                         )
                     )
             else:
-                items = [
+                eod_items = [
                     requests.ModAckRequest(ack_id, ack_deadline, futures.Future())
                     for ack_id in ack_ids
                 ]
 
             assert self._dispatcher is not None
-            self._dispatcher.modify_ack_deadline(items, ack_deadline)
+            self._dispatcher.modify_ack_deadline(eod_items, ack_deadline)
             if (
                 modack_span
             ):  # pragma: NO COVER # Identical code covered in the same function below
                 modack_span.end()
             expired_ack_ids = set()
-            for req in items:
+            for req in eod_items:
                 try:
                     assert req.future is not None
                     req.future.result()
