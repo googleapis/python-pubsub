@@ -789,6 +789,10 @@ def test_opentelemetry_retry_modacks(span_exporter):
     assert subscribe_span.events[0].name == "modack end"
 
 
+@pytest.mark.skipif(
+    sys.version_info < (3, 8),
+    reason="Open Telemetry not supported below Python version 3.8",
+)
 def test_opentelemetry_retry_nacks(span_exporter):
     manager = mock.create_autospec(
         streaming_pull_manager.StreamingPullManager, instance=True
@@ -843,6 +847,14 @@ def test_opentelemetry_retry_nacks(span_exporter):
         assert subscribe_span.attributes["messaging.gcp_pubsub.result"] == "nacked"
         assert len(subscribe_span.events) == 1
         assert subscribe_span.events[0].name == "nack end"
+
+    # This subscribe span is sampled, so we expect it to be linked to the nack
+    # span.
+    assert len(spans[1].links) == 1
+    assert spans[1].links[0].context == nack_span.context
+    # This subscribe span is not sampled, so we expect it to not be linked to
+    # the nack span
+    assert len(spans[2].links) == 0
 
     assert nack_span.name == "subscriptionID nack"
     assert nack_span.kind == trace.SpanKind.CLIENT
