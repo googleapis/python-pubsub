@@ -856,6 +856,8 @@ def test_opentelemetry_retry_nacks(span_exporter):
     # span.
     assert len(spans[1].links) == 1
     assert spans[1].links[0].context == nack_span.context
+    assert len(spans[1].links[0].attributes) == 1
+    assert spans[1].links[0].attributes["messaging.operation.name"] == "nack"
     # This subscribe span is not sampled, so we expect it to not be linked to
     # the nack span
     assert len(spans[2].links) == 0
@@ -1040,6 +1042,8 @@ def test_opentelemetry_nack(span_exporter):
     # span.
     assert len(spans[1].links) == 1
     assert spans[1].links[0].context == nack_span.context
+    assert len(spans[1].links[0].attributes) == 1
+    assert spans[1].links[0].attributes["messaging.operation.name"] == "nack"
     # This subscribe span is not sampled, so we expect it to not be linked to
     # the nack span
     assert len(spans[2].links) == 0

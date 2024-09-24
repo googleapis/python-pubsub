@@ -493,7 +493,12 @@ class Dispatcher(object):
                 ):  # pragma: NO COVER
                     nack_span_context: trace.SpanContext = nack_span.get_span_context()
                     for subscribe_span in subscribe_spans:
-                        subscribe_span.add_link(nack_span_context)
+                        subscribe_span.add_link(
+                            context=nack_span_context,
+                            attributes={
+                                "messaging.operation.name": "nack",
+                            },
+                        )
             requests_to_retry: List[requests.ModAckRequest]
             requests_completed: Optional[List[requests.ModAckRequest]] = None
             if default_deadline is None:
@@ -595,7 +600,12 @@ class Dispatcher(object):
                 ):  # pragma: NO COVER
                     nack_span_context: trace.SpanContext = nack_span.get_span_context()
                     for subscribe_span in subscribe_spans:
-                        subscribe_span.add_link(nack_span_context)
+                        subscribe_span.add_link(
+                            context=nack_span_context,
+                            attributes={
+                                "messaging.operation.name": "nack",
+                            },
+                        )
             requests_completed, requests_to_retry = self._manager.send_unary_modack(
                 modify_deadline_ack_ids=[req.ack_id for req in requests_to_retry],
                 modify_deadline_seconds=[req.seconds for req in requests_to_retry],
