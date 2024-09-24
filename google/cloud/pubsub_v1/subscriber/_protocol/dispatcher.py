@@ -481,7 +481,7 @@ class Dispatcher(object):
                         )
                         subscribe_spans.append(subscribe_span)
             nack_span: Optional[trace.Span] = None
-            if subscription_id and project_id and len(subscribe_links) > 0:
+            if subscription_id and project_id:
                 nack_span = start_nack_span(
                     subscription_id,
                     len(ack_reqs_dict),
@@ -588,7 +588,7 @@ class Dispatcher(object):
                         )
                         subscribe_spans.append(subscribe_span)
             nack_span = None
-            if subscription_id and project_id and len(subscribe_links) > 0:
+            if subscription_id and project_id:
                 nack_span = start_nack_span(
                     subscription_id,
                     len(ack_reqs_dict),
