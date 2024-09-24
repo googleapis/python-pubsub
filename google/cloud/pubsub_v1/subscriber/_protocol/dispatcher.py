@@ -339,6 +339,7 @@ class Dispatcher(object):
             subscription_id: Optional[str] = None
             project_id: Optional[str] = None
             subscribe_links: List[trace.Link] = []
+            subscribe_spans: List[trace.Span] = []
             for req in requests_to_retry:
                 if req.opentelemetry_data:
                     req.opentelemetry_data.add_subscribe_span_event("ack start")
@@ -356,6 +357,7 @@ class Dispatcher(object):
                         subscribe_links.append(
                             trace.Link(subscribe_span.get_span_context())
                         )
+                        subscribe_spans.append(subscribe_span)
             ack_span: Optional[trace.Span] = None
             if subscription_id and project_id:
                 ack_span = start_ack_span(
@@ -364,6 +366,12 @@ class Dispatcher(object):
                     project_id,
                     subscribe_links,
                 )
+                if (
+                    ack_span and ack_span.get_span_context().trace_flags.sampled
+                ):  # pragma: NO COVER
+                    ack_span_context: trace.SpanContext = ack_span.get_span_context()
+                    for subscribe_span in subscribe_spans:
+                        subscribe_span.add_link(ack_span_context)
 
             requests_completed, requests_to_retry = self._manager.send_unary_ack(
                 ack_ids=[req.ack_id for req in requests_to_retry],
