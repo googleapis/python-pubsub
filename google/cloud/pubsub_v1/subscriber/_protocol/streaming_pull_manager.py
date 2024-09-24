@@ -1033,9 +1033,10 @@ class StreamingPullManager(object):
         if self._client.open_telemetry_enabled:
             subscribe_span_links: List[trace.Link] = []
             subscribe_spans: List[trace.Span] = []
-            assert len(self._subscription.split("/")) == 4
-            subscription_id: str = self._subscription.split("/")[3]
-            project_id: str = self._subscription.split("/")[1]
+            subscription_split: List[str] = self._subscription.split("/")
+            assert len(subscription_split) == 4
+            subscription_id: str = subscription_split[3]
+            project_id: str = subscription_split[1]
             for data in opentelemetry_data:
                 subscribe_span: Optional[trace.Span] = data.subscribe_span
                 if (

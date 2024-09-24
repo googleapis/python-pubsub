@@ -85,9 +85,10 @@ class SubscribeOpenTelemetry:
             getter=OpenTelemetryContextGetter(),
         )
         self._publisher_create_span_context = parent_span_context
-        assert len(subscription.split("/")) == 4
-        subscription_short_name = subscription.split("/")[3]
-        self._project_id = subscription.split("/")[1]
+        split_subscription: List[str] = subscription.split("/")
+        assert len(split_subscription) == 4
+        subscription_short_name = split_subscription[3]
+        self._project_id = split_subscription[1]
         self._subscription_id = subscription_short_name
         with tracer.start_as_current_span(
             name=f"{subscription_short_name} subscribe",
