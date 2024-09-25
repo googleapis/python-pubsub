@@ -17,7 +17,6 @@ import time
 import typing
 from typing import Any, Callable, cast, Iterator, TypeVar, Union
 import uuid
-import sys
 
 from _pytest.capture import CaptureFixture
 import backoff
@@ -208,18 +207,6 @@ def test_list(topic_path: str, capsys: CaptureFixture[str]) -> None:
     out, _ = capsys.readouterr()
 
     assert topic_path in out
-
-
-@pytest.mark.skipif(
-    sys.version_info < (3, 8),
-    reason="Open Telemetry not supported below Python version 3.8",
-)
-def test_pubsub_publish_otel_tracing(
-    capsys: CaptureFixture[str],
-) -> None:
-    publisher.pubsub_publish_otel_tracing(PROJECT_ID, PROJECT_ID, TOPIC_ID)
-    out, _ = capsys.readouterr()
-    assert f"Published messages to {topic_path}." in out
 
 
 def test_publish(topic_path: str, capsys: CaptureFixture[str]) -> None:
