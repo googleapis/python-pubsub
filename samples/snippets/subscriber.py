@@ -1241,9 +1241,7 @@ if __name__ == "__main__":  # noqa
     otel_subscribe_parse.add_argument("subscription_project_id")
     otel_subscribe_parse.add_argument("cloud_trace_project_id")
     otel_subscribe_parse.add_argument("subscription_id")
-    otel_subscribe_parse.add_argument(
-        "timeout", default=None, type=float, nargs="?"
-    )
+    otel_subscribe_parse.add_argument("timeout", default=None, type=float, nargs="?")
 
     create_parser = subparsers.add_parser("create", help=create_subscription.__doc__)
     create_parser.add_argument("topic_id")
