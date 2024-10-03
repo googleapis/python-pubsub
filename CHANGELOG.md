@@ -5,6 +5,20 @@
 [1]: https://pypi.org/project/google-cloud-pubsub/#history
 
 
+## [2.25.2](https://github.com/googleapis/python-pubsub/compare/v2.25.1...v2.25.2) (2024-09-30)
+
+
+### Documentation
+
+* Add command line args for OpenTelemetry Subscribe sample ([#1265](https://github.com/googleapis/python-pubsub/issues/1265)) ([0ff7f2a](https://github.com/googleapis/python-pubsub/commit/0ff7f2a64b5aa1b0e014e0933e4edaef0fb3f222))
+
+## [2.25.1](https://github.com/googleapis/python-pubsub/compare/v2.25.0...v2.25.1) (2024-09-29)
+
+
+### Bug Fixes
+
+* Update the requirements.txt for samples directory ([#1263](https://github.com/googleapis/python-pubsub/issues/1263)) ([5cce8b1](https://github.com/googleapis/python-pubsub/commit/5cce8b103ab7085613b7ee0efb5c8342d41ebae1))
+
 ## [2.25.0](https://github.com/googleapis/python-pubsub/compare/v2.24.0...v2.25.0) (2024-09-28)
 
 
