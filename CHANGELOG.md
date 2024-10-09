@@ -5,6 +5,40 @@
 [1]: https://pypi.org/project/google-cloud-pubsub/#history
 
 
+## [2.25.2](https://github.com/googleapis/python-pubsub/compare/v2.25.1...v2.25.2) (2024-09-30)
+
+
+### Documentation
+
+* Add command line args for OpenTelemetry Subscribe sample ([#1265](https://github.com/googleapis/python-pubsub/issues/1265)) ([0ff7f2a](https://github.com/googleapis/python-pubsub/commit/0ff7f2a64b5aa1b0e014e0933e4edaef0fb3f222))
+
+## [2.25.1](https://github.com/googleapis/python-pubsub/compare/v2.25.0...v2.25.1) (2024-09-29)
+
+
+### Bug Fixes
+
+* Update the requirements.txt for samples directory ([#1263](https://github.com/googleapis/python-pubsub/issues/1263)) ([5cce8b1](https://github.com/googleapis/python-pubsub/commit/5cce8b103ab7085613b7ee0efb5c8342d41ebae1))
+
+## [2.25.0](https://github.com/googleapis/python-pubsub/compare/v2.24.0...v2.25.0) (2024-09-28)
+
+
+### Features
+
+* Add OpenTelemetry publish sample ([#1258](https://github.com/googleapis/python-pubsub/issues/1258)) ([bc13ff0](https://github.com/googleapis/python-pubsub/commit/bc13ff05c3d1104c17169c360bdc09340430da37))
+
+## [2.24.0](https://github.com/googleapis/python-pubsub/compare/v2.23.1...v2.24.0) (2024-09-24)
+
+
+### Features
+
+* Add OpenTelemetry support for Subscribe Side ([#1252](https://github.com/googleapis/python-pubsub/issues/1252)) ([1b6f3d2](https://github.com/googleapis/python-pubsub/commit/1b6f3d284095e138943576de8551df263f73a506))
+* Open Telemetry Publish Side Support ([#1241](https://github.com/googleapis/python-pubsub/issues/1241)) ([bb5f3d1](https://github.com/googleapis/python-pubsub/commit/bb5f3d1a7df2d661cccc336edc8eceb2161c6921))
+
+
+### Bug Fixes
+
+* Fix flaky test ([#1254](https://github.com/googleapis/python-pubsub/issues/1254)) ([1ae49de](https://github.com/googleapis/python-pubsub/commit/1ae49de09996a5cf19f592f996c46e0222d540fc))
+
 ## [2.23.1](https://github.com/googleapis/python-pubsub/compare/v2.23.0...v2.23.1) (2024-09-09)
 
 
