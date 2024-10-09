@@ -150,9 +150,13 @@ def create_topic_with_cloud_storage_ingestion(
         cloud_storage_settings.match_glob = match_glob
 
     if minimum_object_create_time:
-        minimum_object_create_time_timestamp = timestamp_pb2.Timestamp()
-        minimum_object_create_time_timestamp.FromJsonString(minimum_object_create_time)
-        cloud_storage_settings.minimum_object_create_time = minimum_object_create_time_timestamp
+        try:
+            minimum_object_create_time_timestamp = timestamp_pb2.Timestamp()
+            minimum_object_create_time_timestamp.FromJsonString(minimum_object_create_time)
+            cloud_storage_settings.minimum_object_create_time = minimum_object_create_time_timestamp
+        except ValueError:
+            print("Invalid minimum_object_create_time: " + minimum_object_create_time)
+            return
 
     request = Topic(
         name=topic_path,
