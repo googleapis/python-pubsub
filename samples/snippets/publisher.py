@@ -123,7 +123,7 @@ def create_topic_with_cloud_storage_ingestion(
     # project_id = "your-project-id"
     # topic_id = "your-topic-id"
     # bucket = "your-bucket"
-    # input_format = "text"
+    # input_format = "text"  (can be one of "text", "avro", "pubsub_avro")
     # text_delimiter = "\n"
     # match_glob = "**.txt"
     # minimum_object_create_time = "YYYY-MM-DDThh:mm:ssZ"
