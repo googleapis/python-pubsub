@@ -110,7 +110,7 @@ def create_topic_with_cloud_storage_ingestion(
     input_format: str,
     text_delimiter: str,
     match_glob: str,
-    minimum_object_create_time: str
+    minimum_object_create_time: str,
 ) -> None:
     """Create a new Pub/Sub topic with Cloud Storage Ingestion Settings."""
     # [START pubsub_create_topic_with_cloud_storage_ingestion]
@@ -136,14 +136,24 @@ def create_topic_with_cloud_storage_ingestion(
     )
     if input_format == "text":
         cloud_storage_settings.text_format = (
-            IngestionDataSourceSettings.CloudStorage.TextFormat(delimiter=text_delimiter)
+            IngestionDataSourceSettings.CloudStorage.TextFormat(
+                delimiter=text_delimiter
+            )
         )
     elif input_format == "avro":
-        cloud_storage_settings.avro_format = IngestionDataSourceSettings.CloudStorage.AvroFormat()
+        cloud_storage_settings.avro_format = (
+            IngestionDataSourceSettings.CloudStorage.AvroFormat()
+        )
     elif input_format == "pubsub_avro":
-        cloud_storage_settings.pubsub_avro_format = IngestionDataSourceSettings.CloudStorage.PubSubAvroFormat()
+        cloud_storage_settings.pubsub_avro_format = (
+            IngestionDataSourceSettings.CloudStorage.PubSubAvroFormat()
+        )
     else:
-        print("Invalid input_format: " + input_format + "; must be in ('text', 'avro', 'pubsub_avro')")
+        print(
+            "Invalid input_format: "
+            + input_format
+            + "; must be in ('text', 'avro', 'pubsub_avro')"
+        )
         return
 
     if match_glob:
@@ -152,8 +162,12 @@ def create_topic_with_cloud_storage_ingestion(
     if minimum_object_create_time:
         try:
             minimum_object_create_time_timestamp = timestamp_pb2.Timestamp()
-            minimum_object_create_time_timestamp.FromJsonString(minimum_object_create_time)
-            cloud_storage_settings.minimum_object_create_time = minimum_object_create_time_timestamp
+            minimum_object_create_time_timestamp.FromJsonString(
+                minimum_object_create_time
+            )
+            cloud_storage_settings.minimum_object_create_time = (
+                minimum_object_create_time_timestamp
+            )
         except ValueError:
             print("Invalid minimum_object_create_time: " + minimum_object_create_time)
             return
@@ -684,14 +698,17 @@ if __name__ == "__main__":
     create_topic_with_kinesis_ingestion_parser.add_argument("gcp_service_account")
 
     create_topic_with_cloud_storage_ingestion_parser = subparsers.add_parser(
-        "create_cloud_storage_ingestion", help=create_topic_with_cloud_storage_ingestion.__doc__
+        "create_cloud_storage_ingestion",
+        help=create_topic_with_cloud_storage_ingestion.__doc__,
     )
     create_topic_with_cloud_storage_ingestion_parser.add_argument("topic_id")
     create_topic_with_cloud_storage_ingestion_parser.add_argument("bucket")
     create_topic_with_cloud_storage_ingestion_parser.add_argument("input_format")
     create_topic_with_cloud_storage_ingestion_parser.add_argument("text_delimiter")
     create_topic_with_cloud_storage_ingestion_parser.add_argument("match_glob")
-    create_topic_with_cloud_storage_ingestion_parser.add_argument("minimum_object_create_time")
+    create_topic_with_cloud_storage_ingestion_parser.add_argument(
+        "minimum_object_create_time"
+    )
 
     update_topic_type_parser = subparsers.add_parser(
         "update_kinesis_ingestion", help=update_topic_type.__doc__

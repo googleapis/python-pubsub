@@ -162,7 +162,9 @@ def test_create_topic_with_kinesis_ingestion(
     publisher_client.delete_topic(request={"topic": topic_path})
 
 
-def test_create_topic_with_cloud_storage_ingestion(publisher_client: pubsub_v1.PublisherClient, capsys: CaptureFixture[str]) -> None:
+def test_create_topic_with_cloud_storage_ingestion(
+    publisher_client: pubsub_v1.PublisherClient, capsys: CaptureFixture[str]
+) -> None:
     # The scope of `topic_path` is limited to this function.
     topic_path = publisher_client.topic_path(PROJECT_ID, TOPIC_ID)
 
