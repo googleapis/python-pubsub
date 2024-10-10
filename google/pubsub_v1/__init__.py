@@ -40,6 +40,7 @@ from .types.pubsub import GetSnapshotRequest
 from .types.pubsub import GetSubscriptionRequest
 from .types.pubsub import GetTopicRequest
 from .types.pubsub import IngestionDataSourceSettings
+from .types.pubsub import IngestionFailureEvent
 from .types.pubsub import ListSnapshotsRequest
 from .types.pubsub import ListSnapshotsResponse
 from .types.pubsub import ListSubscriptionsRequest
@@ -116,6 +117,7 @@ __all__ = (
     "GetSubscriptionRequest",
     "GetTopicRequest",
     "IngestionDataSourceSettings",
+    "IngestionFailureEvent",
     "ListSchemaRevisionsRequest",
     "ListSchemaRevisionsResponse",
     "ListSchemasRequest",
