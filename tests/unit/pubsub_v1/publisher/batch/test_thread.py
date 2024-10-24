@@ -329,7 +329,7 @@ def test_blocking__commit_wrong_messageid_length():
         assert isinstance(future.exception(), exceptions.PublishError)
 
 
-def test_block__commmit_api_error():
+def test_block__commit_api_error():
     batch = create_batch()
     futures = (
         batch.publish(
@@ -356,7 +356,7 @@ def test_block__commmit_api_error():
         assert future.exception() == error
 
 
-def test_block__commmit_retry_error():
+def test_block__commit_retry_error():
     batch = create_batch()
     futures = (
         batch.publish(

@@ -1137,7 +1137,7 @@ class Subscription(proto.Message):
         analytics_hub_subscription_info (google.pubsub_v1.types.Subscription.AnalyticsHubSubscriptionInfo):
             Output only. Information about the associated
             Analytics Hub subscription. Only set if the
-            subscritpion is created by Analytics Hub.
+            subscription is created by Analytics Hub.
     """
 
     class State(proto.Enum):

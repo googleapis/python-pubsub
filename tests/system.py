@@ -444,7 +444,7 @@ def test_managing_subscription_iam_policy(
 def test_subscriber_not_leaking_open_sockets(
     publisher, topic_path_base, subscription_path_base, cleanup, transport
 ):
-    # Make sure the topic and the supscription get deleted.
+    # Make sure the topic and the subscription get deleted.
     # NOTE: Since subscriber client will be closed in the test, we should not
     # use the shared `subscriber` fixture, but instead construct a new client
     # in this test.
@@ -752,7 +752,7 @@ class TestStreamingPull(object):
             subscription_future.result()  # block until shutdown completes
 
         # There should be 7 messages left that were not yet processed and none of them
-        # should be a message that should have already been sucessfully processed in the
+        # should be a message that should have already been successfully processed in the
         # first streaming pull.
         assert len(remaining) == 7
         assert not (set(processed_messages) & set(remaining))  # no re-delivery
@@ -867,7 +867,7 @@ class TestBasicRBAC(object):
         )
         subscriber_only_client = type(subscriber).from_service_account_file(filename)
 
-        # Publish two messages and create a snapshot inbetween.
+        # Publish two messages and create a snapshot in between.
         _publish_messages(publisher, topic_path, batch_sizes=[1])
         response = subscriber.pull(subscription=subscription_path, max_messages=10)
         assert len(response.received_messages) == 1
@@ -968,7 +968,7 @@ def _publish_messages(publisher, topic_path, batch_sizes):
             publish_futures.append(future)
         time.sleep(0.1)
 
-    # wait untill all messages have been successfully published
+    # wait until all messages have been successfully published
     for future in publish_futures:
         future.result(timeout=30)
 

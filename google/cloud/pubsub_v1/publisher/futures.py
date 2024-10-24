@@ -24,7 +24,7 @@ if typing.TYPE_CHECKING:  # pragma: NO COVER
 
 
 class Future(futures.Future):
-    """This future object is returned from asychronous Pub/Sub publishing
+    """This future object is returned from asynchronous Pub/Sub publishing
     calls.
 
     Calling :meth:`result` will resolve the future by returning the message

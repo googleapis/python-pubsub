@@ -23,7 +23,7 @@ import google.api_core.future
 class Future(concurrent.futures.Future, google.api_core.future.Future):
     """Encapsulation of the asynchronous execution of an action.
 
-    This object is returned from asychronous Pub/Sub calls, and is the
+    This object is returned from asynchronous Pub/Sub calls, and is the
     interface to determine the status of those calls.
 
     This object should not be created directly, but is returned by other

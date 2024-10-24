@@ -170,7 +170,7 @@ class FlowController(object):
             del self._waiting[current_thread]
 
     def release(self, message: MessageType) -> None:
-        """Release a mesage from flow control.
+        """Release a message from flow control.
 
         Args:
             message:

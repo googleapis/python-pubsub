@@ -84,10 +84,10 @@ class Batch(base.Batch):
         commit_when_full:
             Whether to commit the batch when the batch is full.
         commit_retry:
-            Designation of what errors, if any, should be retried when commiting
+            Designation of what errors, if any, should be retried when committing
             the batch. If not provided, a default retry is used.
         commit_timeout:
-            The timeout to apply when commiting the batch. If not provided, a default
+            The timeout to apply when committing the batch. If not provided, a default
             timeout is used.
     """
 

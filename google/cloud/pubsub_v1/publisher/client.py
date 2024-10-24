@@ -223,7 +223,7 @@ class Client(publisher_client.PublisherClient):
         """
         msg = (
             'The "api" property only exists for backward compatibility, access its '
-            'attributes directly thorugh the client instance (e.g. "client.foo" '
+            'attributes directly through the client instance (e.g. "client.foo" '
             'instead of "client.api.foo").'
         )
         warnings.warn(msg, category=DeprecationWarning)
@@ -336,7 +336,7 @@ class Client(publisher_client.PublisherClient):
             retry:
                 Designation of what errors, if any, should be retried. If `ordering_key`
                 is specified, the total retry deadline will be changed to "infinity".
-                If given, it overides any retry passed into the client through
+                If given, it overrides any retry passed into the client through
                 the ``publisher_options`` argument.
             timeout:
                 The timeout for the RPC request. Can be used to override any timeout
