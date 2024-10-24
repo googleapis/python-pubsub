@@ -309,7 +309,7 @@ for library in s.get_staging_dirs(default_version):
     )
     if count < 9:
         raise Exception(
-            "Default retry deadline not overriden for all publisher methods."
+            "Default retry deadline not overridden for all publisher methods."
         )
 
     # The namespace package declaration in google/cloud/__init__.py should be excluded

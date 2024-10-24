@@ -1684,7 +1684,7 @@ def test__on_response_modifies_ack_deadline():
     # adjust message bookkeeping in leaser
     fake_leaser_add(leaser, init_msg_count=0, assumed_msg_size=80)
 
-    # Actually run the method and chack that correct MODACK value is used.
+    # Actually run the method and check that correct MODACK value is used.
     with mock.patch.object(
         type(manager), "ack_deadline", new=mock.PropertyMock(return_value=18)
     ):

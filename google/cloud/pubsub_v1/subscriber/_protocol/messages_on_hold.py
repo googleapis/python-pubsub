@@ -62,7 +62,7 @@ class MessagesOnHold(object):
 
     def get(self) -> Optional["subscriber.message.Message"]:
         """Gets a message from the on-hold queue. A message with an ordering
-        key wont be returned if there's another message with the same key in
+        key won't be returned if there's another message with the same key in
         flight.
 
         Returns:

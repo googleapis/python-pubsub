@@ -122,7 +122,7 @@ def test_init_client_options_pass_through():
 def test_init_emulator(monkeypatch):
     monkeypatch.setenv("PUBSUB_EMULATOR_HOST", "/baz/bacon:123")
     # NOTE: When the emulator host is set, a custom channel will be used, so
-    #       no credentials (mock ot otherwise) can be passed in.
+    #       no credentials (mock or otherwise) can be passed in.
     client = subscriber.Client()
 
     # Establish that a gRPC request would attempt to hit the emulator host.
@@ -229,8 +229,8 @@ def test_context_manager_raises_if_closed(creds):
     with mock.patch.object(client._transport.grpc_channel, "close"):
         client.close()
 
-    expetect_msg = r"(?i).*closed.*cannot.*context manager.*"
-    with pytest.raises(RuntimeError, match=expetect_msg):
+    expect_msg = r"(?i).*closed.*cannot.*context manager.*"
+    with pytest.raises(RuntimeError, match=expect_msg):
         with client:
             pass  # pragma: NO COVER
 

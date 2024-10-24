@@ -160,7 +160,7 @@ def test_as_completed_compatibility():
     all_futures[2].set_result("2: I'm done!")
 
     # Start marking the futures as completed (either with success or error) at
-    # different times and check that ther "as completed" order is correct.
+    # different times and check that the "as completed" order is correct.
     for future_idx, delay in ((0, 0.8), (3, 0.6), (1, 0.4), (5, 0.2)):
         threading.Thread(
             target=resolve_future, args=(future_idx, delay), daemon=True

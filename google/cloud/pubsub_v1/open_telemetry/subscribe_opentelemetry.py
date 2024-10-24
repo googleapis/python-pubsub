@@ -53,7 +53,7 @@ class SubscribeOpenTelemetry:
 
         # This will be set by `start_subscribe_span` method, if a publisher create span
         # context was extracted from trace propagation. And will be used by spans like
-        # proces span to add links to the publisher create span.
+        # process span to add links to the publisher create span.
         self._publisher_create_span_context: Optional[context.Context] = None
 
         # This will be set by `start_subscribe_span` method and will be used

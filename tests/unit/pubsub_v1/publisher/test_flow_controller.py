@@ -282,7 +282,7 @@ def test_blocking_on_overflow_until_free_capacity():
     assert released_count == 2, "Exactly two threads should have been unblocked."
 
 
-def test_error_if_mesage_would_block_indefinitely():
+def test_error_if_message_would_block_indefinitely():
     settings = types.PublishFlowControl(
         message_limit=0,  # simulate non-sane settings
         byte_limit=1,
@@ -339,7 +339,7 @@ def test_threads_posting_large_messages_do_not_starve():
     messages = [grpc_types.PubsubMessage(data=b"x" * 10)] * 10
     _run_in_daemon(flow_controller.add, messages, adding_busy_done, action_pause=0.1)
 
-    # At the same time, gradually keep releasing the messages - the freeed up
+    # At the same time, gradually keep releasing the messages - the freed up
     # capacity should be consumed by the large message, not the other small messages
     # being added after it.
     _run_in_daemon(
@@ -376,7 +376,7 @@ def test_blocked_messages_are_accepted_in_fifo_order():
     )
     flow_controller = FlowController(settings)
 
-    # It's OK if the message instance is shared, as flow controlelr is only concerned
+    # It's OK if the message instance is shared, as flow controller is only concerned
     # with byte sizes and counts, and not with particular message instances.
     message = grpc_types.PubsubMessage(data=b"x")
 

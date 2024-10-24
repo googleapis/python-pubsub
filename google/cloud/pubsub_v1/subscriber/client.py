@@ -170,7 +170,7 @@ class Client(subscriber_client.SubscriberClient):
         """
         msg = (
             'The "api" property only exists for backward compatibility, access its '
-            'attributes directly thorugh the client instance (e.g. "client.foo" '
+            'attributes directly through the client instance (e.g. "client.foo" '
             'instead of "client.api.foo").'
         )
         warnings.warn(msg, category=DeprecationWarning)

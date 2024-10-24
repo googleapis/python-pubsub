@@ -747,7 +747,7 @@
 * flaky samples tests ([#263](https://www.github.com/googleapis/python-pubsub/issues/263)) ([3d6a29d](https://www.github.com/googleapis/python-pubsub/commit/3d6a29de07cc09be663c90a3333f4cd33633994f))
 * Modify synth.py to update grpc transport options ([#266](https://www.github.com/googleapis/python-pubsub/issues/266)) ([41dcd30](https://www.github.com/googleapis/python-pubsub/commit/41dcd30636168f3dd1248f1d99170d531fc9bcb8))
 * pass anonymous credentials for emulator ([#250](https://www.github.com/googleapis/python-pubsub/issues/250)) ([8eed8e1](https://www.github.com/googleapis/python-pubsub/commit/8eed8e16019510dc8b20fb6b009d61a7ac532d26))
-* remove grpc send/recieve limits ([#259](https://www.github.com/googleapis/python-pubsub/issues/259)) ([fd2840c](https://www.github.com/googleapis/python-pubsub/commit/fd2840c10f92b03da7f4b40ac69c602220757c0a))
+* remove grpc send/receive limits ([#259](https://www.github.com/googleapis/python-pubsub/issues/259)) ([fd2840c](https://www.github.com/googleapis/python-pubsub/commit/fd2840c10f92b03da7f4b40ac69c602220757c0a))
 
 ## [2.2.0](https://www.github.com/googleapis/python-pubsub/compare/v2.1.0...v2.2.0) (2020-11-16)
 
@@ -861,7 +861,7 @@ This is the last release that supports Python 2.7 and 3.5.
 
 
 ### Internal / Testing Changes
-- Re-generated service implementaton using synth: removed experimental notes from the RetryPolicy and filtering features in anticipation of GA, added DetachSubscription (experimental) ([#114](https://github.com/googleapis/python-pubsub/pull/114)) ([0132a46](https://github.com/googleapis/python-pubsub/commit/0132a4680e0727ce45d5e27d98ffc9f3541a0962))
+- Re-generated service implementation using synth: removed experimental notes from the RetryPolicy and filtering features in anticipation of GA, added DetachSubscription (experimental) ([#114](https://github.com/googleapis/python-pubsub/pull/114)) ([0132a46](https://github.com/googleapis/python-pubsub/commit/0132a4680e0727ce45d5e27d98ffc9f3541a0962))
 - Incorporate will_accept() checks into publish() ([#108](https://github.com/googleapis/python-pubsub/pull/108)) ([6c7677e](https://github.com/googleapis/python-pubsub/commit/6c7677ecb259672bbb9b6f7646919e602c698570))
 
 ## [1.5.0](https://www.github.com/googleapis/python-pubsub/compare/v1.4.3...v1.5.0) (2020-05-04)
@@ -984,7 +984,7 @@ This is the last release that supports Python 2.7 and 3.5.
 ### Documentation
 - Update docstrings for client kwargs and fix return types uris ([#9037](https://github.com/googleapis/google-cloud-python/pull/9037))
 - Remove CI for gh-pages, use googleapis.dev for api_core refs. ([#9085](https://github.com/googleapis/google-cloud-python/pull/9085))
-- Remove compatability badges from READMEs. ([#9035](https://github.com/googleapis/google-cloud-python/pull/9035))
+- Remove compatibility badges from READMEs. ([#9035](https://github.com/googleapis/google-cloud-python/pull/9035))
 
 ### Internal / Testing Changes
 - Add dead-letter-policy field in preparation for its implementation (via synth) ([#9078](https://github.com/googleapis/google-cloud-python/pull/9078))
@@ -1023,7 +1023,7 @@ This is the last release that supports Python 2.7 and 3.5.
 
 
 ### Implementation Changes
-- Accomodate new location of 'IAMPolicyStub' (via synth). ([#8680](https://github.com/googleapis/google-cloud-python/pull/8680))
+- Accommodate new location of 'IAMPolicyStub' (via synth). ([#8680](https://github.com/googleapis/google-cloud-python/pull/8680))
 - Use kwargs in test_subscriber_client ([#8414](https://github.com/googleapis/google-cloud-python/pull/8414))
 
 ### New Features
@@ -1308,7 +1308,7 @@ This is the last release that supports Python 2.7 and 3.5.
 ### Implementation changes
 
 - Drop leased messages after flow_control.max_lease_duration has passed. (#5020)
-- Fix mantain leases to not modack messages it just dropped (#5045)
+- Fix maintain leases to not modack messages it just dropped (#5045)
 - Avoid race condition in maintain_leases by copying leased_messages (#5035)
 - Retry subscription stream on InternalServerError, Unknown, and GatewayTimeout (#5021)
 - Use the rpc's status to determine when to exit the request generator thread (#5054)

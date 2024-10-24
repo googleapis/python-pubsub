@@ -336,7 +336,7 @@ def test_opentelemetry_publish(creds, span_exporter):
     # publish() function and are deterministically expected to be in the
     # list of exported spans. The Publish Create span and Publish RPC span
     # are run async and end at a non-deterministic time. Hence,
-    # asserting that we have atleast two spans(flow control and batching span)
+    # asserting that we have at least two spans(flow control and batching span)
     assert len(spans) >= 2
     flow_control_span = None
     batching_span = None
@@ -410,7 +410,7 @@ def test_init_client_options_pass_through():
 def test_init_emulator(monkeypatch):
     monkeypatch.setenv("PUBSUB_EMULATOR_HOST", "/foo/bar:123")
     # NOTE: When the emulator host is set, a custom channel will be used, so
-    #       no credentials (mock ot otherwise) can be passed in.
+    #       no credentials (mock or otherwise) can be passed in.
     client = publisher.Client()
 
     # Establish that a gRPC request would attempt to hit the emulator host.

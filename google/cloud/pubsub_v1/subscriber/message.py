@@ -261,7 +261,7 @@ class Message(object):
             Acks in Pub/Sub are best effort. You should always
             ensure that your processing code is idempotent, as you may
             receive any given message more than once. If you need strong
-            guarantees about acks and re-deliveres, enable exactly-once
+            guarantees about acks and re-delivers, enable exactly-once
             delivery on your subscription and use the `ack_with_response`
             method instead. Exactly once delivery is a preview feature.
             For more details, see:
@@ -372,7 +372,7 @@ class Message(object):
         The default implementation handles automatically modacking received messages for you;
         you should not need to manually deal with setting ack deadlines. The exception case is
         if you are implementing your own custom subclass of
-        :class:`~.pubsub_v1.subcriber._consumer.Consumer`.
+        :class:`~.pubsub_v1.subscriber._consumer.Consumer`.
 
         Args:
             seconds (int):
@@ -398,7 +398,7 @@ class Message(object):
         The default implementation handles automatically modacking received messages for you;
         you should not need to manually deal with setting ack deadlines. The exception case is
         if you are implementing your own custom subclass of
-        :class:`~.pubsub_v1.subcriber._consumer.Consumer`.
+        :class:`~.pubsub_v1.subscriber._consumer.Consumer`.
 
         If exactly-once delivery is NOT enabled on the subscription, the
         future returns immediately with an AcknowledgeStatus.SUCCESS.

@@ -896,7 +896,7 @@ def receive_messages_with_blocking_shutdown(
 
     def callback(message: pubsub_v1.subscriber.message.Message) -> None:
         print(f"Received {message.data!r}.")
-        time.sleep(timeout + 3.0)  # Pocess longer than streaming pull future timeout.
+        time.sleep(timeout + 3.0)  # Process longer than streaming pull future timeout.
         message.ack()
         print(f"Done processing the message {message.data!r}.")
 

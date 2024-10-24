@@ -41,7 +41,7 @@ class Histogram(object):
 
         Args:
             data:
-                The data strucure to be used to store the underlying data. The default
+                The data structure to be used to store the underlying data. The default
                 is an empty dictionary. This can be set to a dictionary-like object if
                 required (for example, if a special object is needed for concurrency
                 reasons).
@@ -129,11 +129,11 @@ class Histogram(object):
         self._len += 1
 
     def percentile(self, percent: Union[int, float]) -> int:
-        """Return the value that is the Nth precentile in the histogram.
+        """Return the value that is the Nth percentile in the histogram.
 
         Args:
             percent:
-                The precentile being sought. The default consumer implementations
+                The percentile being sought. The default consumer implementations
                 consistently use ``99``.
 
         Returns:

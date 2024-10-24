@@ -113,7 +113,7 @@ an instance of :class:`~.pubsub_v1.publisher.futures.Future`.
    
    The returned future conforms for the most part to the interface of
    the standard library's :class:`~concurrent.futures.Future`, but might not
-   be usable in all cases which expect that exact implementaton.
+   be usable in all cases which expect that exact implementation.
 
 You can use this to ensure that the publish succeeded:
 
