@@ -335,12 +335,13 @@ templated_files = gcp.CommonTemplates().py_library(
     microgenerator=True,
     samples=True,
     cov_level=100,
+    unit_test_extras=["flaky"],
     versions=gcp.common.detect_versions(path="./google", default_first=True),
     unit_test_python_versions=["3.7", "3.8", "3.9", "3.10", "3.11", "3.12"],
     system_test_python_versions=["3.12"],
     system_test_external_dependencies=["psutil","flaky"],
 )
-s.move(templated_files, excludes=[".coveragerc", ".github/release-please.yml", "README.rst", "docs/index.rst"])
+s.move(templated_files, excludes=[".coveragerc", ".github/release-please.yml", "README.rst", "docs/index.rst", "noxfile.py"])
 
 # ----------------------------------------------------------------------------
 # Add mypy nox session.
