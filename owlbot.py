@@ -29,9 +29,7 @@ from synthtool.languages import python
 clean_up_generated_samples = True
 
 # Load the default version defined in .repo-metadata.json.
-default_version = json.load(open(".repo-metadata.json", "rt")).get(
-    "default_version"
-)
+default_version = json.load(open(".repo-metadata.json", "rt")).get("default_version")
 
 for library in s.get_staging_dirs(default_version):
     if clean_up_generated_samples:
@@ -324,7 +322,18 @@ for library in s.get_staging_dirs(default_version):
     if count < 1:
         raise Exception(".coveragerc replacement failed.")
 
-    s.move([library], excludes=["**/gapic_version.py", "README.rst", "docs/**/*", "setup.py", "testing/constraints-3.7.txt", "testing/constraints-3.8.txt"])
+    s.move(
+        [library],
+        excludes=[
+            "**/gapic_version.py",
+            "README.rst",
+            "docs/**/*",
+            "setup.py",
+            "testing/constraints-3.7.txt",
+            "testing/constraints-3.8.txt",
+            "noxfile.py",
+        ],
+    )
 s.remove_staging_dirs()
 
 # ----------------------------------------------------------------------------
@@ -338,9 +347,18 @@ templated_files = gcp.CommonTemplates().py_library(
     versions=gcp.common.detect_versions(path="./google", default_first=True),
     unit_test_python_versions=["3.7", "3.8", "3.9", "3.10", "3.11", "3.12", "3.13"],
     system_test_python_versions=["3.12"],
-    system_test_external_dependencies=["psutil","flaky"],
+    system_test_external_dependencies=["psutil", "flaky"],
 )
-s.move(templated_files, excludes=[".coveragerc", ".github/release-please.yml", "README.rst", "docs/index.rst"])
+s.move(
+    templated_files,
+    excludes=[
+        ".coveragerc",
+        ".github/release-please.yml",
+        "README.rst",
+        "docs/index.rst",
+        "noxfile.py",
+    ],
+)
 
 # ----------------------------------------------------------------------------
 # Add mypy nox session.
@@ -351,7 +369,9 @@ s.replace(
     '\g<0>\n\nMYPY_VERSION = "mypy==1.10.0"',
 )
 s.replace(
-    "noxfile.py", r'"blacken",', '\g<0>\n    "mypy",',
+    "noxfile.py",
+    r'"blacken",',
+    '\g<0>\n    "mypy",',
 )
 s.replace(
     "noxfile.py",
@@ -393,7 +413,7 @@ s.replace(
 s.replace(
     "noxfile.py",
     r'    "mypy",',
-    '\g<0>\n    # https://github.com/googleapis/python-pubsub/pull/552#issuecomment-1016256936'
+    "\g<0>\n    # https://github.com/googleapis/python-pubsub/pull/552#issuecomment-1016256936"
     '\n    # "mypy_samples",  # TODO: uncomment when the check passes',
 )
 s.replace(
@@ -429,7 +449,9 @@ s.replace(
 
 # Only consider the hand-written layer when assessing the test coverage.
 s.replace(
-    "noxfile.py", "--cov=google", "--cov=google/cloud",
+    "noxfile.py",
+    "--cov=google",
+    "--cov=google/cloud",
 )
 
 s.replace(".github/blunderbuss.yml", "googleapis/api-pubsub", "mukund-ananthu")
