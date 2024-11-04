@@ -50,8 +50,10 @@ from google.cloud.pubsub_v1.open_telemetry.publish_message_wrapper import (
     PublishMessageWrapper,
 )
 
+
 C = TypeVar("C", bound=Callable[..., Any])
 typed_flaky = cast(Callable[[C], C], flaky(max_runs=5, min_passes=1))
+
 
 def _assert_retries_equal(retry, retry2):
     # Retry instances cannot be directly compared, because their predicates are
