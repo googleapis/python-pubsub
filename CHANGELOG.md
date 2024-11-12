@@ -5,6 +5,32 @@
 [1]: https://pypi.org/project/google-cloud-pubsub/#history
 
 
+## [2.27.1](https://github.com/googleapis/python-pubsub/compare/v2.27.0...v2.27.1) (2024-11-08)
+
+
+### Bug Fixes
+
+* Add support for Python3.13 ([#1302](https://github.com/googleapis/python-pubsub/issues/1302)) ([ab22e27](https://github.com/googleapis/python-pubsub/commit/ab22e27954450b4e06ec98fe2e3458056aa8ca60))
+
+## [2.27.0](https://github.com/googleapis/python-pubsub/compare/v2.26.1...v2.27.0) (2024-11-02)
+
+
+### Features
+
+* Add support for Python 3.13 ([#1281](https://github.com/googleapis/python-pubsub/issues/1281)) ([0b46a33](https://github.com/googleapis/python-pubsub/commit/0b46a3321d6f19cd72e4f2ccdba73d062c7bd832))
+
+
+### Bug Fixes
+
+* Mark test_streaming_pull_max_messages flaky ([#1288](https://github.com/googleapis/python-pubsub/issues/1288)) ([d6635a0](https://github.com/googleapis/python-pubsub/commit/d6635a00dc2c614dd8608ef32ad4e79f9124e040))
+
+## [2.26.1](https://github.com/googleapis/python-pubsub/compare/v2.26.0...v2.26.1) (2024-10-10)
+
+
+### Documentation
+
+* Add ingestion from GCS sample ([#1273](https://github.com/googleapis/python-pubsub/issues/1273)) ([b59cc8d](https://github.com/googleapis/python-pubsub/commit/b59cc8d4fae593eb7592455a1696d7ab996a53dd))
+
 ## [2.26.0](https://github.com/googleapis/python-pubsub/compare/v2.25.2...v2.26.0) (2024-10-09)
 
 
