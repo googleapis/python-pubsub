@@ -5,6 +5,13 @@
 [1]: https://pypi.org/project/google-cloud-pubsub/#history
 
 
+## [2.27.2](https://github.com/googleapis/python-pubsub/compare/v2.27.1...v2.27.2) (2024-11-12)
+
+
+### Bug Fixes
+
+* Reduce the code coverage percentage to 99 ([#1278](https://github.com/googleapis/python-pubsub/issues/1278)) ([50504ae](https://github.com/googleapis/python-pubsub/commit/50504aed67b83c94d9c02fc8fbb58822bf8d1335))
+
 ## [2.27.1](https://github.com/googleapis/python-pubsub/compare/v2.27.0...v2.27.1) (2024-11-08)
 
 
