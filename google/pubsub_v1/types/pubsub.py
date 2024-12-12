@@ -32,6 +32,7 @@ __protobuf__ = proto.module(
         "SchemaSettings",
         "IngestionDataSourceSettings",
         "PlatformLogsSettings",
+        "IngestionFailureEvent",
         "Topic",
         "PubsubMessage",
         "GetTopicRequest",
@@ -492,6 +493,122 @@ class PlatformLogsSettings(proto.Message):
         proto.ENUM,
         number=1,
         enum=Severity,
+    )
+
+
+class IngestionFailureEvent(proto.Message):
+    r"""Payload of the Platform Log entry sent when a failure is
+    encountered while ingesting.
+
+
+    .. _oneof: https://proto-plus-python.readthedocs.io/en/stable/fields.html#oneofs-mutually-exclusive-fields
+
+    Attributes:
+        topic (str):
+            Required. Name of the import topic. Format is:
+            projects/{project_name}/topics/{topic_name}.
+        error_message (str):
+            Required. Error details explaining why
+            ingestion to Pub/Sub has failed.
+        cloud_storage_failure (google.pubsub_v1.types.IngestionFailureEvent.CloudStorageFailure):
+            Optional. Failure when ingesting from Cloud
+            Storage.
+
+            This field is a member of `oneof`_ ``failure``.
+    """
+
+    class ApiViolationReason(proto.Message):
+        r"""Specifies the reason why some data may have been left out of the
+        desired Pub/Sub message due to the API message limits
+        (https://cloud.google.com/pubsub/quotas#resource_limits). For
+        example, when the number of attributes is larger than 100, the
+        number of attributes is truncated to 100 to respect the limit on the
+        attribute count. Other attribute limits are treated similarly. When
+        the size of the desired message would've been larger than 10MB, the
+        message won't be published at all, and ingestion of the subsequent
+        messages will proceed as normal.
+
+        """
+
+    class AvroFailureReason(proto.Message):
+        r"""Set when an Avro file is unsupported or its format is not
+        valid. When this occurs, one or more Avro objects won't be
+        ingested.
+
+        """
+
+    class CloudStorageFailure(proto.Message):
+        r"""Failure when ingesting from a Cloud Storage source.
+
+        This message has `oneof`_ fields (mutually exclusive fields).
+        For each oneof, at most one member field can be set at the same time.
+        Setting any member of the oneof automatically clears all other
+        members.
+
+        .. _oneof: https://proto-plus-python.readthedocs.io/en/stable/fields.html#oneofs-mutually-exclusive-fields
+
+        Attributes:
+            bucket (str):
+                Optional. Name of the Cloud Storage bucket
+                used for ingestion.
+            object_name (str):
+                Optional. Name of the Cloud Storage object
+                which contained the section that couldn't be
+                ingested.
+            object_generation (int):
+                Optional. Generation of the Cloud Storage
+                object which contained the section that couldn't
+                be ingested.
+            avro_failure_reason (google.pubsub_v1.types.IngestionFailureEvent.AvroFailureReason):
+                Optional. Failure encountered when parsing an
+                Avro file.
+
+                This field is a member of `oneof`_ ``reason``.
+            api_violation_reason (google.pubsub_v1.types.IngestionFailureEvent.ApiViolationReason):
+                Optional. The Pub/Sub API limits prevented
+                the desired message from being published.
+
+                This field is a member of `oneof`_ ``reason``.
+        """
+
+        bucket: str = proto.Field(
+            proto.STRING,
+            number=1,
+        )
+        object_name: str = proto.Field(
+            proto.STRING,
+            number=2,
+        )
+        object_generation: int = proto.Field(
+            proto.INT64,
+            number=3,
+        )
+        avro_failure_reason: "IngestionFailureEvent.AvroFailureReason" = proto.Field(
+            proto.MESSAGE,
+            number=5,
+            oneof="reason",
+            message="IngestionFailureEvent.AvroFailureReason",
+        )
+        api_violation_reason: "IngestionFailureEvent.ApiViolationReason" = proto.Field(
+            proto.MESSAGE,
+            number=6,
+            oneof="reason",
+            message="IngestionFailureEvent.ApiViolationReason",
+        )
+
+    topic: str = proto.Field(
+        proto.STRING,
+        number=1,
+    )
+    error_message: str = proto.Field(
+        proto.STRING,
+        number=2,
+    )
+    cloud_storage_failure: CloudStorageFailure = proto.Field(
+        proto.MESSAGE,
+        number=3,
+        oneof="failure",
+        message=CloudStorageFailure,
     )
 
 
