@@ -663,7 +663,7 @@ class StreamingPullManager(object):
                 # Futures may be present even with exactly-once delivery
                 # disabled, in transition periods after the setting is changed on
                 # the subscription.
-                if req.future:
+                if req.future and req.future.running:
                     if exactly_once_delivery_enabled:
                         e = AcknowledgeError(
                             AcknowledgeStatus.OTHER, "RetryError while sending ack RPC."
@@ -695,7 +695,7 @@ class StreamingPullManager(object):
                 # Futures may be present even with exactly-once delivery
                 # disabled, in transition periods after the setting is changed on
                 # the subscription.
-                if req.future:
+                if req.future and req.future.running:
                     req.future.set_result(AcknowledgeStatus.SUCCESS)
                 requests_completed.append(req)
 
@@ -756,7 +756,7 @@ class StreamingPullManager(object):
                 # Futures may be present even with exactly-once delivery
                 # disabled, in transition periods after the setting is changed on
                 # the subscription.
-                if req.future:
+                if req.future and req.future.running:
                     if exactly_once_delivery_enabled:
                         e = AcknowledgeError(
                             AcknowledgeStatus.OTHER,
@@ -789,7 +789,7 @@ class StreamingPullManager(object):
                 # Futures may be present even with exactly-once delivery
                 # disabled, in transition periods after the setting is changed on
                 # the subscription.
-                if req.future:
+                if req.future and req.future.running:
                     req.future.set_result(AcknowledgeStatus.SUCCESS)
                 requests_completed.append(req)
 
