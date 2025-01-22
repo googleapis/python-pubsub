@@ -414,24 +414,48 @@ def test_init_client_options_pass_through():
         assert client.transport._ssl_channel_credentials == mock_ssl_creds
 
 
-def test_init_emulator(monkeypatch):
+class MetadataClienGrpcInterceptor(
+    grpc.UnaryUnaryClientInterceptor,
+):
+    def intercept_unary_unary(self, continuation, client_call_details, request):
+        # self._add_metadata(client_call_details)
+        response = continuation(client_call_details, request)
+        metadata = [(k, str(v)) for k, v in response.trailing_metadata()]
+        self.response_metadata = metadata
+        return response
+
+def test_init_emulator(monkeypatch, creds):
     monkeypatch.setenv("PUBSUB_EMULATOR_HOST", "/foo/bar:123")
     # NOTE: When the emulator host is set, a custom channel will be used, so
     #       no credentials (mock ot otherwise) can be passed in.
-    client = publisher.Client()
 
     # Establish that a gRPC request would attempt to hit the emulator host.
     #
     # Sadly, there seems to be no good way to do this without poking at
     # the private API of gRPC.
-    channel = client._transport.publish._channel
+    # channel = grpc.insecure_channel(target="")
+    client = publisher.Client()
+    channel = client.transport.grpc_channel
+    interceptor = MetadataClienGrpcInterceptor()
+    intercept_channel = grpc.intercept_channel(channel, interceptor)
+    
+    transport = publisher.Client.get_transport_class("grpc")(
+        credentials=creds,
+        channel=intercept_channel,
+    )
+
+    client = publisher.Client(transport=transport)
+    # channel = client._transport.publish._thunk("")._channel
+    # logged_channel = client._transport._logged_channel
     # Behavior to include dns prefix changed in gRPCv1.63
     grpc_major, grpc_minor = [int(part) for part in grpc.__version__.split(".")[0:2]]
     if grpc_major > 1 or (grpc_major == 1 and grpc_minor >= 63):
         _EXPECTED_TARGET = "dns:////foo/bar:123"
     else:
         _EXPECTED_TARGET = "/foo/bar:123"
-    assert channel.target().decode("utf8") == _EXPECTED_TARGET
+    
+    call = client.publish(topic="", data=b"")
+    assert client._transport.publish._thunk("")._channel.target().decode("utf8") == _EXPECTED_TARGET
 
 
 def test_message_ordering_enabled(creds):
