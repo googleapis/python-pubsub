@@ -132,7 +132,8 @@ class Client(publisher_client.PublisherClient):
             kwargs["client_options"] = {
                 "api_endpoint": os.environ.get("PUBSUB_EMULATOR_HOST")
             }
-            kwargs["credentials"] = AnonymousCredentials()
+            if "transport" not in kwargs:
+                kwargs["credentials"] = AnonymousCredentials()
 
         # For a transient failure, retry publishing the message infinitely.
         self.publisher_options = types.PublisherOptions(*publisher_options)
