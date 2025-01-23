@@ -85,7 +85,9 @@ class Client(subscriber_client.SubscriberClient):
             kwargs["client_options"] = {
                 "api_endpoint": os.environ.get("PUBSUB_EMULATOR_HOST")
             }
-            kwargs["credentials"] = AnonymousCredentials()
+            # Configure credentials directly to transport, if provided.
+            if "transport" not in kwargs:
+                kwargs["credentials"] = AnonymousCredentials()
 
         # Instantiate the underlying GAPIC client.
         super().__init__(**kwargs)
