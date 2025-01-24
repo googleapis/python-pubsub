@@ -717,6 +717,8 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
             )
             # initialize with the provided callable or the passed in class
 
+            # TODO(https://github.com/googleapis/python-pubsub/issues/1349): Move the emulator
+            # code below to test files.
             emulator_host = os.environ.get("PUBSUB_EMULATOR_HOST")
             if emulator_host:
                 if issubclass(transport_init, type(self)._transport_registry["grpc"]):
