@@ -712,7 +712,6 @@ class PublisherClient(metaclass=PublisherClientMeta):
                 else cast(Callable[..., PublisherTransport], transport)
             )
             # initialize with the provided callable or the passed in class
-
             emulator_host = os.environ.get("PUBSUB_EMULATOR_HOST")
             if emulator_host:
                 if issubclass(transport_init, type(self)._transport_registry["grpc"]):
