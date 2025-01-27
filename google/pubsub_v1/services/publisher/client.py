@@ -711,6 +711,7 @@ class PublisherClient(metaclass=PublisherClientMeta):
                 if isinstance(transport, str) or transport is None
                 else cast(Callable[..., PublisherTransport], transport)
             )
+
             # initialize with the provided callable or the passed in class
             emulator_host = os.environ.get("PUBSUB_EMULATOR_HOST")
             if emulator_host:
