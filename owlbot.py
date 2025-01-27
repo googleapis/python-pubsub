@@ -99,13 +99,13 @@ for library in s.get_staging_dirs(default_version):
     if count < len(clients_to_patch):
         raise Exception(err_msg)
 
+    # TODO(https://github.com/googleapis/python-pubsub/issues/1349): Move the emulator
+    # code below to test files.
     count = s.replace(
         clients_to_patch,
         r"# initialize with the provided callable or the passed in class",
         """\g<0>
 
-            # TODO(https://github.com/googleapis/python-pubsub/issues/1349): Move the emulator
-            # code below to test files.
             emulator_host = os.environ.get("PUBSUB_EMULATOR_HOST")
             if emulator_host:
                 if issubclass(transport_init, type(self)._transport_registry["grpc"]):
