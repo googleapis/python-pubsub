@@ -427,21 +427,22 @@ def test_init_emulator(monkeypatch, creds):
     # NOTE: When the emulator host is set, a custom channel will be used, so
     #       no credentials (mock ot otherwise) can be passed in.
 
-    # TODO(https://github.com/grpc/grpc/issues/38519): Workaround to create an intercept 
-    # channel (for forwards compatibility) with a channel created by the publisher client 
+    # TODO(https://github.com/grpc/grpc/issues/38519): Workaround to create an intercept
+    # channel (for forwards compatibility) with a channel created by the publisher client
     # where target is set to the emulator host.
     channel = publisher.Client().transport.grpc_channel
     interceptor = _PublisherClientGrpcInterceptor()
     intercept_channel = grpc.intercept_channel(channel, interceptor)
-    transport = publisher.Client.get_transport_class("grpc")(credentials=creds, channel=intercept_channel)
+    transport = publisher.Client.get_transport_class("grpc")(
+        credentials=creds, channel=intercept_channel
+    )
     client = publisher.Client(transport=transport)
-
 
     # Establish that a gRPC request would attempt to hit the emulator host.
     #
     # Sadly, there seems to be no good way to do this without poking at
     # the private API of gRPC.
-    channel =  client._transport.publish._thunk("")._channel
+    channel = client._transport.publish._thunk("")._channel
     # Behavior to include dns prefix changed in gRPCv1.63
     grpc_major, grpc_minor = [int(part) for part in grpc.__version__.split(".")[0:2]]
     if grpc_major > 1 or (grpc_major == 1 and grpc_minor >= 63):
