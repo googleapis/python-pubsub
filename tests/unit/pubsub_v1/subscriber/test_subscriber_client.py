@@ -147,7 +147,7 @@ def test_init_emulator(monkeypatch, creds):
     #
     # Sadly, there seems to be no good way to do this without poking at
     # the private API of gRPC.
-    channel = client._transport.publish._thunk("")._channel
+    channel = client._transport.pull._thunk("")._channel
     # Behavior to include dns prefix changed in gRPCv1.63
     grpc_major, grpc_minor = [int(part) for part in grpc.__version__.split(".")[0:2]]
     if grpc_major > 1 or (grpc_major == 1 and grpc_minor >= 63):
