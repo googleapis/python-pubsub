@@ -14,7 +14,6 @@
 # limitations under the License.
 #
 from collections import OrderedDict
-import logging as std_logging
 import functools
 import os
 import re
@@ -52,15 +51,6 @@ try:
     OptionalRetry = Union[retries.Retry, gapic_v1.method._MethodDefault, None]
 except AttributeError:  # pragma: NO COVER
     OptionalRetry = Union[retries.Retry, object, None]  # type: ignore
-
-try:
-    from google.api_core import client_logging  # type: ignore
-
-    CLIENT_LOGGING_SUPPORTED = True  # pragma: NO COVER
-except ImportError:  # pragma: NO COVER
-    CLIENT_LOGGING_SUPPORTED = False
-
-_LOGGER = std_logging.getLogger(__name__)
 
 from google.iam.v1 import iam_policy_pb2  # type: ignore
 from google.iam.v1 import policy_pb2  # type: ignore
@@ -642,10 +632,6 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
         # Initialize the universe domain validation.
         self._is_universe_domain_valid = False
 
-        if CLIENT_LOGGING_SUPPORTED:  # pragma: NO COVER
-            # Setup logging.
-            client_logging.initialize_logging()
-
         api_key_value = getattr(self._client_options, "api_key", None)
         if api_key_value and credentials:
             raise ValueError(
@@ -717,29 +703,6 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
                 api_audience=self._client_options.api_audience,
             )
 
-        if "async" not in str(self._transport):
-            if CLIENT_LOGGING_SUPPORTED and _LOGGER.isEnabledFor(
-                std_logging.DEBUG
-            ):  # pragma: NO COVER
-                _LOGGER.debug(
-                    "Created client `google.pubsub_v1.SubscriberClient`.",
-                    extra={
-                        "serviceName": "google.pubsub.v1.Subscriber",
-                        "universeDomain": getattr(
-                            self._transport._credentials, "universe_domain", ""
-                        ),
-                        "credentialsType": f"{type(self._transport._credentials).__module__}.{type(self._transport._credentials).__qualname__}",
-                        "credentialsInfo": getattr(
-                            self.transport._credentials, "get_cred_info", lambda: None
-                        )(),
-                    }
-                    if hasattr(self._transport, "_credentials")
-                    else {
-                        "serviceName": "google.pubsub.v1.Subscriber",
-                        "credentialsType": None,
-                    },
-                )
-
     def create_subscription(
         self,
         request: Optional[Union[pubsub.Subscription, dict]] = None,
@@ -750,7 +713,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
         ack_deadline_seconds: Optional[int] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: Union[float, object] = gapic_v1.method.DEFAULT,
-        metadata: Sequence[Tuple[str, Union[str, bytes]]] = (),
+        metadata: Sequence[Tuple[str, str]] = (),
     ) -> pubsub.Subscription:
         r"""Creates a subscription to a given topic. See the [resource name
         rules]
@@ -863,10 +826,8 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
-            metadata (Sequence[Tuple[str, Union[str, bytes]]]): Key/value pairs which should be
-                sent along with the request as metadata. Normally, each value must be of type `str`,
-                but for metadata keys ending with the suffix `-bin`, the corresponding values must
-                be of type `bytes`.
+            metadata (Sequence[Tuple[str, str]]): Strings which should be
+                sent along with the request as metadata.
 
         Returns:
             google.pubsub_v1.types.Subscription:
@@ -932,7 +893,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
         subscription: Optional[str] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: Union[float, object] = gapic_v1.method.DEFAULT,
-        metadata: Sequence[Tuple[str, Union[str, bytes]]] = (),
+        metadata: Sequence[Tuple[str, str]] = (),
     ) -> pubsub.Subscription:
         r"""Gets the configuration details of a subscription.
 
@@ -976,10 +937,8 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
-            metadata (Sequence[Tuple[str, Union[str, bytes]]]): Key/value pairs which should be
-                sent along with the request as metadata. Normally, each value must be of type `str`,
-                but for metadata keys ending with the suffix `-bin`, the corresponding values must
-                be of type `bytes`.
+            metadata (Sequence[Tuple[str, str]]): Strings which should be
+                sent along with the request as metadata.
 
         Returns:
             google.pubsub_v1.types.Subscription:
@@ -1042,7 +1001,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
         update_mask: Optional[field_mask_pb2.FieldMask] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: Union[float, object] = gapic_v1.method.DEFAULT,
-        metadata: Sequence[Tuple[str, Union[str, bytes]]] = (),
+        metadata: Sequence[Tuple[str, str]] = (),
     ) -> pubsub.Subscription:
         r"""Updates an existing subscription by updating the
         fields specified in the update mask. Note that certain
@@ -1101,10 +1060,8 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
-            metadata (Sequence[Tuple[str, Union[str, bytes]]]): Key/value pairs which should be
-                sent along with the request as metadata. Normally, each value must be of type `str`,
-                but for metadata keys ending with the suffix `-bin`, the corresponding values must
-                be of type `bytes`.
+            metadata (Sequence[Tuple[str, str]]): Strings which should be
+                sent along with the request as metadata.
 
         Returns:
             google.pubsub_v1.types.Subscription:
@@ -1168,7 +1125,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
         project: Optional[str] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: Union[float, object] = gapic_v1.method.DEFAULT,
-        metadata: Sequence[Tuple[str, Union[str, bytes]]] = (),
+        metadata: Sequence[Tuple[str, str]] = (),
     ) -> pagers.ListSubscriptionsPager:
         r"""Lists matching subscriptions.
 
@@ -1212,10 +1169,8 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
-            metadata (Sequence[Tuple[str, Union[str, bytes]]]): Key/value pairs which should be
-                sent along with the request as metadata. Normally, each value must be of type `str`,
-                but for metadata keys ending with the suffix `-bin`, the corresponding values must
-                be of type `bytes`.
+            metadata (Sequence[Tuple[str, str]]): Strings which should be
+                sent along with the request as metadata.
 
         Returns:
             google.pubsub_v1.services.subscriber.pagers.ListSubscriptionsPager:
@@ -1286,7 +1241,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
         subscription: Optional[str] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: Union[float, object] = gapic_v1.method.DEFAULT,
-        metadata: Sequence[Tuple[str, Union[str, bytes]]] = (),
+        metadata: Sequence[Tuple[str, str]] = (),
     ) -> None:
         r"""Deletes an existing subscription. All messages retained in the
         subscription are immediately dropped. Calls to ``Pull`` after
@@ -1332,10 +1287,8 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
-            metadata (Sequence[Tuple[str, Union[str, bytes]]]): Key/value pairs which should be
-                sent along with the request as metadata. Normally, each value must be of type `str`,
-                but for metadata keys ending with the suffix `-bin`, the corresponding values must
-                be of type `bytes`.
+            metadata (Sequence[Tuple[str, str]]): Strings which should be
+                sent along with the request as metadata.
         """
         # Create or coerce a protobuf request object.
         # - Quick check: If we got a request object, we should *not* have
@@ -1388,7 +1341,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
         ack_deadline_seconds: Optional[int] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: Union[float, object] = gapic_v1.method.DEFAULT,
-        metadata: Sequence[Tuple[str, Union[str, bytes]]] = (),
+        metadata: Sequence[Tuple[str, str]] = (),
     ) -> None:
         r"""Modifies the ack deadline for a specific message. This method is
         useful to indicate that more time is needed to process a message
@@ -1457,10 +1410,8 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
-            metadata (Sequence[Tuple[str, Union[str, bytes]]]): Key/value pairs which should be
-                sent along with the request as metadata. Normally, each value must be of type `str`,
-                but for metadata keys ending with the suffix `-bin`, the corresponding values must
-                be of type `bytes`.
+            metadata (Sequence[Tuple[str, str]]): Strings which should be
+                sent along with the request as metadata.
         """
         # Create or coerce a protobuf request object.
         # - Quick check: If we got a request object, we should *not* have
@@ -1516,7 +1467,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
         ack_ids: Optional[MutableSequence[str]] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: Union[float, object] = gapic_v1.method.DEFAULT,
-        metadata: Sequence[Tuple[str, Union[str, bytes]]] = (),
+        metadata: Sequence[Tuple[str, str]] = (),
     ) -> None:
         r"""Acknowledges the messages associated with the ``ack_ids`` in the
         ``AcknowledgeRequest``. The Pub/Sub system can remove the
@@ -1573,10 +1524,8 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
-            metadata (Sequence[Tuple[str, Union[str, bytes]]]): Key/value pairs which should be
-                sent along with the request as metadata. Normally, each value must be of type `str`,
-                but for metadata keys ending with the suffix `-bin`, the corresponding values must
-                be of type `bytes`.
+            metadata (Sequence[Tuple[str, str]]): Strings which should be
+                sent along with the request as metadata.
         """
         # Create or coerce a protobuf request object.
         # - Quick check: If we got a request object, we should *not* have
@@ -1631,7 +1580,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
         max_messages: Optional[int] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: Union[float, object] = gapic_v1.method.DEFAULT,
-        metadata: Sequence[Tuple[str, Union[str, bytes]]] = (),
+        metadata: Sequence[Tuple[str, str]] = (),
     ) -> pubsub.PullResponse:
         r"""Pulls messages from the server.
 
@@ -1700,10 +1649,8 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
-            metadata (Sequence[Tuple[str, Union[str, bytes]]]): Key/value pairs which should be
-                sent along with the request as metadata. Normally, each value must be of type `str`,
-                but for metadata keys ending with the suffix `-bin`, the corresponding values must
-                be of type `bytes`.
+            metadata (Sequence[Tuple[str, str]]): Strings which should be
+                sent along with the request as metadata.
 
         Returns:
             google.pubsub_v1.types.PullResponse:
@@ -1770,7 +1717,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
         *,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: Union[float, object] = gapic_v1.method.DEFAULT,
-        metadata: Sequence[Tuple[str, Union[str, bytes]]] = (),
+        metadata: Sequence[Tuple[str, str]] = (),
     ) -> Iterable[pubsub.StreamingPullResponse]:
         r"""Establishes a stream with the server, which sends messages down
         to the client. The client streams acknowledgements and ack
@@ -1828,10 +1775,8 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
-            metadata (Sequence[Tuple[str, Union[str, bytes]]]): Key/value pairs which should be
-                sent along with the request as metadata. Normally, each value must be of type `str`,
-                but for metadata keys ending with the suffix `-bin`, the corresponding values must
-                be of type `bytes`.
+            metadata (Sequence[Tuple[str, str]]): Strings which should be
+                sent along with the request as metadata.
 
         Returns:
             Iterable[google.pubsub_v1.types.StreamingPullResponse]:
@@ -1871,7 +1816,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
         push_config: Optional[pubsub.PushConfig] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: Union[float, object] = gapic_v1.method.DEFAULT,
-        metadata: Sequence[Tuple[str, Union[str, bytes]]] = (),
+        metadata: Sequence[Tuple[str, str]] = (),
     ) -> None:
         r"""Modifies the ``PushConfig`` for a specified subscription.
 
@@ -1930,10 +1875,8 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
-            metadata (Sequence[Tuple[str, Union[str, bytes]]]): Key/value pairs which should be
-                sent along with the request as metadata. Normally, each value must be of type `str`,
-                but for metadata keys ending with the suffix `-bin`, the corresponding values must
-                be of type `bytes`.
+            metadata (Sequence[Tuple[str, str]]): Strings which should be
+                sent along with the request as metadata.
         """
         # Create or coerce a protobuf request object.
         # - Quick check: If we got a request object, we should *not* have
@@ -1986,7 +1929,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
         snapshot: Optional[str] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: Union[float, object] = gapic_v1.method.DEFAULT,
-        metadata: Sequence[Tuple[str, Union[str, bytes]]] = (),
+        metadata: Sequence[Tuple[str, str]] = (),
     ) -> pubsub.Snapshot:
         r"""Gets the configuration details of a snapshot. Snapshots are used
         in
@@ -2034,10 +1977,8 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
-            metadata (Sequence[Tuple[str, Union[str, bytes]]]): Key/value pairs which should be
-                sent along with the request as metadata. Normally, each value must be of type `str`,
-                but for metadata keys ending with the suffix `-bin`, the corresponding values must
-                be of type `bytes`.
+            metadata (Sequence[Tuple[str, str]]): Strings which should be
+                sent along with the request as metadata.
 
         Returns:
             google.pubsub_v1.types.Snapshot:
@@ -2099,7 +2040,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
         project: Optional[str] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: Union[float, object] = gapic_v1.method.DEFAULT,
-        metadata: Sequence[Tuple[str, Union[str, bytes]]] = (),
+        metadata: Sequence[Tuple[str, str]] = (),
     ) -> pagers.ListSnapshotsPager:
         r"""Lists the existing snapshots. Snapshots are used in
         `Seek <https://cloud.google.com/pubsub/docs/replay-overview>`__
@@ -2147,10 +2088,8 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
-            metadata (Sequence[Tuple[str, Union[str, bytes]]]): Key/value pairs which should be
-                sent along with the request as metadata. Normally, each value must be of type `str`,
-                but for metadata keys ending with the suffix `-bin`, the corresponding values must
-                be of type `bytes`.
+            metadata (Sequence[Tuple[str, str]]): Strings which should be
+                sent along with the request as metadata.
 
         Returns:
             google.pubsub_v1.services.subscriber.pagers.ListSnapshotsPager:
@@ -2222,7 +2161,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
         subscription: Optional[str] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: Union[float, object] = gapic_v1.method.DEFAULT,
-        metadata: Sequence[Tuple[str, Union[str, bytes]]] = (),
+        metadata: Sequence[Tuple[str, str]] = (),
     ) -> pubsub.Snapshot:
         r"""Creates a snapshot from the requested subscription. Snapshots
         are used in
@@ -2305,10 +2244,8 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
-            metadata (Sequence[Tuple[str, Union[str, bytes]]]): Key/value pairs which should be
-                sent along with the request as metadata. Normally, each value must be of type `str`,
-                but for metadata keys ending with the suffix `-bin`, the corresponding values must
-                be of type `bytes`.
+            metadata (Sequence[Tuple[str, str]]): Strings which should be
+                sent along with the request as metadata.
 
         Returns:
             google.pubsub_v1.types.Snapshot:
@@ -2373,7 +2310,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
         update_mask: Optional[field_mask_pb2.FieldMask] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: Union[float, object] = gapic_v1.method.DEFAULT,
-        metadata: Sequence[Tuple[str, Union[str, bytes]]] = (),
+        metadata: Sequence[Tuple[str, str]] = (),
     ) -> pubsub.Snapshot:
         r"""Updates an existing snapshot by updating the fields specified in
         the update mask. Snapshots are used in
@@ -2429,10 +2366,8 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
-            metadata (Sequence[Tuple[str, Union[str, bytes]]]): Key/value pairs which should be
-                sent along with the request as metadata. Normally, each value must be of type `str`,
-                but for metadata keys ending with the suffix `-bin`, the corresponding values must
-                be of type `bytes`.
+            metadata (Sequence[Tuple[str, str]]): Strings which should be
+                sent along with the request as metadata.
 
         Returns:
             google.pubsub_v1.types.Snapshot:
@@ -2498,7 +2433,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
         snapshot: Optional[str] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: Union[float, object] = gapic_v1.method.DEFAULT,
-        metadata: Sequence[Tuple[str, Union[str, bytes]]] = (),
+        metadata: Sequence[Tuple[str, str]] = (),
     ) -> None:
         r"""Removes an existing snapshot. Snapshots are used in [Seek]
         (https://cloud.google.com/pubsub/docs/replay-overview)
@@ -2547,10 +2482,8 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
-            metadata (Sequence[Tuple[str, Union[str, bytes]]]): Key/value pairs which should be
-                sent along with the request as metadata. Normally, each value must be of type `str`,
-                but for metadata keys ending with the suffix `-bin`, the corresponding values must
-                be of type `bytes`.
+            metadata (Sequence[Tuple[str, str]]): Strings which should be
+                sent along with the request as metadata.
         """
         # Create or coerce a protobuf request object.
         # - Quick check: If we got a request object, we should *not* have
@@ -2598,7 +2531,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
         *,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: Union[float, object] = gapic_v1.method.DEFAULT,
-        metadata: Sequence[Tuple[str, Union[str, bytes]]] = (),
+        metadata: Sequence[Tuple[str, str]] = (),
     ) -> pubsub.SeekResponse:
         r"""Seeks an existing subscription to a point in time or to a given
         snapshot, whichever is provided in the request. Snapshots are
@@ -2642,10 +2575,8 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
-            metadata (Sequence[Tuple[str, Union[str, bytes]]]): Key/value pairs which should be
-                sent along with the request as metadata. Normally, each value must be of type `str`,
-                but for metadata keys ending with the suffix `-bin`, the corresponding values must
-                be of type `bytes`.
+            metadata (Sequence[Tuple[str, str]]): Strings which should be
+                sent along with the request as metadata.
 
         Returns:
             google.pubsub_v1.types.SeekResponse:
@@ -2702,7 +2633,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
         *,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: Union[float, object] = gapic_v1.method.DEFAULT,
-        metadata: Sequence[Tuple[str, Union[str, bytes]]] = (),
+        metadata: Sequence[Tuple[str, str]] = (),
     ) -> policy_pb2.Policy:
         r"""Sets the IAM access control policy on the specified function.
 
@@ -2715,10 +2646,8 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
             retry (google.api_core.retry.Retry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
-            metadata (Sequence[Tuple[str, Union[str, bytes]]]): Key/value pairs which should be
-                sent along with the request as metadata. Normally, each value must be of type `str`,
-                but for metadata keys ending with the suffix `-bin`, the corresponding values must
-                be of type `bytes`.
+            metadata (Sequence[Tuple[str, str]]): Strings which should be
+                sent along with the request as metadata.
         Returns:
             ~.policy_pb2.Policy:
                 Defines an Identity and Access Management (IAM) policy.
@@ -2827,7 +2756,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
         *,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: Union[float, object] = gapic_v1.method.DEFAULT,
-        metadata: Sequence[Tuple[str, Union[str, bytes]]] = (),
+        metadata: Sequence[Tuple[str, str]] = (),
     ) -> policy_pb2.Policy:
         r"""Gets the IAM access control policy for a function.
 
@@ -2841,10 +2770,8 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
             retry (google.api_core.retry.Retry): Designation of what errors, if
                 any, should be retried.
             timeout (float): The timeout for this request.
-            metadata (Sequence[Tuple[str, Union[str, bytes]]]): Key/value pairs which should be
-                sent along with the request as metadata. Normally, each value must be of type `str`,
-                but for metadata keys ending with the suffix `-bin`, the corresponding values must
-                be of type `bytes`.
+            metadata (Sequence[Tuple[str, str]]): Strings which should be
+                sent along with the request as metadata.
         Returns:
             ~.policy_pb2.Policy:
                 Defines an Identity and Access Management (IAM) policy.
@@ -2953,7 +2880,7 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
         *,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: Union[float, object] = gapic_v1.method.DEFAULT,
-        metadata: Sequence[Tuple[str, Union[str, bytes]]] = (),
+        metadata: Sequence[Tuple[str, str]] = (),
     ) -> iam_policy_pb2.TestIamPermissionsResponse:
         r"""Tests the specified IAM permissions against the IAM access control
             policy for a function.
@@ -2968,10 +2895,8 @@ class SubscriberClient(metaclass=SubscriberClientMeta):
             retry (google.api_core.retry.Retry): Designation of what errors,
                  if any, should be retried.
             timeout (float): The timeout for this request.
-            metadata (Sequence[Tuple[str, Union[str, bytes]]]): Key/value pairs which should be
-                sent along with the request as metadata. Normally, each value must be of type `str`,
-                but for metadata keys ending with the suffix `-bin`, the corresponding values must
-                be of type `bytes`.
+            metadata (Sequence[Tuple[str, str]]): Strings which should be
+                sent along with the request as metadata.
         Returns:
             ~.iam_policy_pb2.TestIamPermissionsResponse:
                 Response message for ``TestIamPermissions`` method.

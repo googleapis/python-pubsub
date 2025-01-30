@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-import logging as std_logging
 from collections import OrderedDict
 import re
 from typing import (
@@ -54,15 +53,6 @@ from google.pubsub_v1.types import TimeoutType
 from .transports.base import PublisherTransport, DEFAULT_CLIENT_INFO
 from .transports.grpc_asyncio import PublisherGrpcAsyncIOTransport
 from .client import PublisherClient
-
-try:
-    from google.api_core import client_logging  # type: ignore
-
-    CLIENT_LOGGING_SUPPORTED = True  # pragma: NO COVER
-except ImportError:  # pragma: NO COVER
-    CLIENT_LOGGING_SUPPORTED = False
-
-_LOGGER = std_logging.getLogger(__name__)
 
 
 class PublisherAsyncClient:
@@ -269,28 +259,6 @@ class PublisherAsyncClient:
             client_info=client_info,
         )
 
-        if CLIENT_LOGGING_SUPPORTED and _LOGGER.isEnabledFor(
-            std_logging.DEBUG
-        ):  # pragma: NO COVER
-            _LOGGER.debug(
-                "Created client `google.pubsub_v1.PublisherAsyncClient`.",
-                extra={
-                    "serviceName": "google.pubsub.v1.Publisher",
-                    "universeDomain": getattr(
-                        self._client._transport._credentials, "universe_domain", ""
-                    ),
-                    "credentialsType": f"{type(self._client._transport._credentials).__module__}.{type(self._client._transport._credentials).__qualname__}",
-                    "credentialsInfo": getattr(
-                        self.transport._credentials, "get_cred_info", lambda: None
-                    )(),
-                }
-                if hasattr(self._client._transport, "_credentials")
-                else {
-                    "serviceName": "google.pubsub.v1.Publisher",
-                    "credentialsType": None,
-                },
-            )
-
     async def create_topic(
         self,
         request: Optional[Union[pubsub.Topic, dict]] = None,
@@ -298,7 +266,7 @@ class PublisherAsyncClient:
         name: Optional[str] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: TimeoutType = gapic_v1.method.DEFAULT,
-        metadata: Sequence[Tuple[str, Union[str, bytes]]] = (),
+        metadata: Sequence[Tuple[str, str]] = (),
     ) -> pubsub.Topic:
         r"""Creates the given topic with the given name. See the [resource
         name rules]
@@ -350,10 +318,8 @@ class PublisherAsyncClient:
                 should be retried.
             timeout (TimeoutType):
                 The timeout for this request.
-            metadata (Sequence[Tuple[str, Union[str, bytes]]]): Key/value pairs which should be
-                sent along with the request as metadata. Normally, each value must be of type `str`,
-                but for metadata keys ending with the suffix `-bin`, the corresponding values must
-                be of type `bytes`.
+            metadata (Sequence[Tuple[str, str]]): Strings which should be
+                sent along with the request as metadata.
 
         Returns:
             google.pubsub_v1.types.Topic:
@@ -413,7 +379,7 @@ class PublisherAsyncClient:
         update_mask: Optional[field_mask_pb2.FieldMask] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: TimeoutType = gapic_v1.method.DEFAULT,
-        metadata: Sequence[Tuple[str, Union[str, bytes]]] = (),
+        metadata: Sequence[Tuple[str, str]] = (),
     ) -> pubsub.Topic:
         r"""Updates an existing topic by updating the fields
         specified in the update mask. Note that certain
@@ -472,10 +438,8 @@ class PublisherAsyncClient:
                 should be retried.
             timeout (TimeoutType):
                 The timeout for this request.
-            metadata (Sequence[Tuple[str, Union[str, bytes]]]): Key/value pairs which should be
-                sent along with the request as metadata. Normally, each value must be of type `str`,
-                but for metadata keys ending with the suffix `-bin`, the corresponding values must
-                be of type `bytes`.
+            metadata (Sequence[Tuple[str, str]]): Strings which should be
+                sent along with the request as metadata.
 
         Returns:
             google.pubsub_v1.types.Topic:
@@ -539,7 +503,7 @@ class PublisherAsyncClient:
         messages: Optional[MutableSequence[pubsub.PubsubMessage]] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: TimeoutType = gapic_v1.method.DEFAULT,
-        metadata: Sequence[Tuple[str, Union[str, bytes]]] = (),
+        metadata: Sequence[Tuple[str, str]] = (),
     ) -> pubsub.PublishResponse:
         r"""Adds one or more messages to the topic. Returns ``NOT_FOUND`` if
         the topic does not exist.
@@ -590,10 +554,8 @@ class PublisherAsyncClient:
                 should be retried.
             timeout (TimeoutType):
                 The timeout for this request.
-            metadata (Sequence[Tuple[str, Union[str, bytes]]]): Key/value pairs which should be
-                sent along with the request as metadata. Normally, each value must be of type `str`,
-                but for metadata keys ending with the suffix `-bin`, the corresponding values must
-                be of type `bytes`.
+            metadata (Sequence[Tuple[str, str]]): Strings which should be
+                sent along with the request as metadata.
 
         Returns:
             google.pubsub_v1.types.PublishResponse:
@@ -652,7 +614,7 @@ class PublisherAsyncClient:
         topic: Optional[str] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: TimeoutType = gapic_v1.method.DEFAULT,
-        metadata: Sequence[Tuple[str, Union[str, bytes]]] = (),
+        metadata: Sequence[Tuple[str, str]] = (),
     ) -> pubsub.Topic:
         r"""Gets the configuration of a topic.
 
@@ -696,10 +658,8 @@ class PublisherAsyncClient:
                 should be retried.
             timeout (TimeoutType):
                 The timeout for this request.
-            metadata (Sequence[Tuple[str, Union[str, bytes]]]): Key/value pairs which should be
-                sent along with the request as metadata. Normally, each value must be of type `str`,
-                but for metadata keys ending with the suffix `-bin`, the corresponding values must
-                be of type `bytes`.
+            metadata (Sequence[Tuple[str, str]]): Strings which should be
+                sent along with the request as metadata.
 
         Returns:
             google.pubsub_v1.types.Topic:
@@ -758,7 +718,7 @@ class PublisherAsyncClient:
         project: Optional[str] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: TimeoutType = gapic_v1.method.DEFAULT,
-        metadata: Sequence[Tuple[str, Union[str, bytes]]] = (),
+        metadata: Sequence[Tuple[str, str]] = (),
     ) -> pagers.ListTopicsAsyncPager:
         r"""Lists matching topics.
 
@@ -803,10 +763,8 @@ class PublisherAsyncClient:
                 should be retried.
             timeout (TimeoutType):
                 The timeout for this request.
-            metadata (Sequence[Tuple[str, Union[str, bytes]]]): Key/value pairs which should be
-                sent along with the request as metadata. Normally, each value must be of type `str`,
-                but for metadata keys ending with the suffix `-bin`, the corresponding values must
-                be of type `bytes`.
+            metadata (Sequence[Tuple[str, str]]): Strings which should be
+                sent along with the request as metadata.
 
         Returns:
             google.pubsub_v1.services.publisher.pagers.ListTopicsAsyncPager:
@@ -880,7 +838,7 @@ class PublisherAsyncClient:
         topic: Optional[str] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: TimeoutType = gapic_v1.method.DEFAULT,
-        metadata: Sequence[Tuple[str, Union[str, bytes]]] = (),
+        metadata: Sequence[Tuple[str, str]] = (),
     ) -> pagers.ListTopicSubscriptionsAsyncPager:
         r"""Lists the names of the attached subscriptions on this
         topic.
@@ -927,10 +885,8 @@ class PublisherAsyncClient:
                 should be retried.
             timeout (TimeoutType):
                 The timeout for this request.
-            metadata (Sequence[Tuple[str, Union[str, bytes]]]): Key/value pairs which should be
-                sent along with the request as metadata. Normally, each value must be of type `str`,
-                but for metadata keys ending with the suffix `-bin`, the corresponding values must
-                be of type `bytes`.
+            metadata (Sequence[Tuple[str, str]]): Strings which should be
+                sent along with the request as metadata.
 
         Returns:
             google.pubsub_v1.services.publisher.pagers.ListTopicSubscriptionsAsyncPager:
@@ -1004,7 +960,7 @@ class PublisherAsyncClient:
         topic: Optional[str] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: TimeoutType = gapic_v1.method.DEFAULT,
-        metadata: Sequence[Tuple[str, Union[str, bytes]]] = (),
+        metadata: Sequence[Tuple[str, str]] = (),
     ) -> pagers.ListTopicSnapshotsAsyncPager:
         r"""Lists the names of the snapshots on this topic. Snapshots are
         used in
@@ -1055,10 +1011,8 @@ class PublisherAsyncClient:
                 should be retried.
             timeout (TimeoutType):
                 The timeout for this request.
-            metadata (Sequence[Tuple[str, Union[str, bytes]]]): Key/value pairs which should be
-                sent along with the request as metadata. Normally, each value must be of type `str`,
-                but for metadata keys ending with the suffix `-bin`, the corresponding values must
-                be of type `bytes`.
+            metadata (Sequence[Tuple[str, str]]): Strings which should be
+                sent along with the request as metadata.
 
         Returns:
             google.pubsub_v1.services.publisher.pagers.ListTopicSnapshotsAsyncPager:
@@ -1132,7 +1086,7 @@ class PublisherAsyncClient:
         topic: Optional[str] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: TimeoutType = gapic_v1.method.DEFAULT,
-        metadata: Sequence[Tuple[str, Union[str, bytes]]] = (),
+        metadata: Sequence[Tuple[str, str]] = (),
     ) -> None:
         r"""Deletes the topic with the given name. Returns ``NOT_FOUND`` if
         the topic does not exist. After a topic is deleted, a new topic
@@ -1178,10 +1132,8 @@ class PublisherAsyncClient:
                 should be retried.
             timeout (TimeoutType):
                 The timeout for this request.
-            metadata (Sequence[Tuple[str, Union[str, bytes]]]): Key/value pairs which should be
-                sent along with the request as metadata. Normally, each value must be of type `str`,
-                but for metadata keys ending with the suffix `-bin`, the corresponding values must
-                be of type `bytes`.
+            metadata (Sequence[Tuple[str, str]]): Strings which should be
+                sent along with the request as metadata.
         """
         # Create or coerce a protobuf request object.
         # - Quick check: If we got a request object, we should *not* have
@@ -1232,7 +1184,7 @@ class PublisherAsyncClient:
         *,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: TimeoutType = gapic_v1.method.DEFAULT,
-        metadata: Sequence[Tuple[str, Union[str, bytes]]] = (),
+        metadata: Sequence[Tuple[str, str]] = (),
     ) -> pubsub.DetachSubscriptionResponse:
         r"""Detaches a subscription from this topic. All messages retained
         in the subscription are dropped. Subsequent ``Pull`` and
@@ -1274,10 +1226,8 @@ class PublisherAsyncClient:
                 should be retried.
             timeout (TimeoutType):
                 The timeout for this request.
-            metadata (Sequence[Tuple[str, Union[str, bytes]]]): Key/value pairs which should be
-                sent along with the request as metadata. Normally, each value must be of type `str`,
-                but for metadata keys ending with the suffix `-bin`, the corresponding values must
-                be of type `bytes`.
+            metadata (Sequence[Tuple[str, str]]): Strings which should be
+                sent along with the request as metadata.
 
         Returns:
             google.pubsub_v1.types.DetachSubscriptionResponse:
@@ -1325,7 +1275,7 @@ class PublisherAsyncClient:
         *,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: TimeoutType = gapic_v1.method.DEFAULT,
-        metadata: Sequence[Tuple[str, Union[str, bytes]]] = (),
+        metadata: Sequence[Tuple[str, str]] = (),
     ) -> policy_pb2.Policy:
         r"""Sets the IAM access control policy on the specified function.
 
@@ -1339,10 +1289,8 @@ class PublisherAsyncClient:
                 should be retried.
             timeout (TimeoutType):
                 The timeout for this request.
-            metadata (Sequence[Tuple[str, Union[str, bytes]]]): Key/value pairs which should be
-                sent along with the request as metadata. Normally, each value must be of type `str`,
-                but for metadata keys ending with the suffix `-bin`, the corresponding values must
-                be of type `bytes`.
+            metadata (Sequence[Tuple[str, str]]): Strings which should be
+                sent along with the request as metadata.
         Returns:
             ~.policy_pb2.Policy:
                 Defines an Identity and Access Management (IAM) policy.
@@ -1446,7 +1394,7 @@ class PublisherAsyncClient:
         *,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: TimeoutType = gapic_v1.method.DEFAULT,
-        metadata: Sequence[Tuple[str, Union[str, bytes]]] = (),
+        metadata: Sequence[Tuple[str, str]] = (),
     ) -> policy_pb2.Policy:
         r"""Gets the IAM access control policy for a function.
 
@@ -1461,10 +1409,8 @@ class PublisherAsyncClient:
                 should be retried.
             timeout (TimeoutType):
                 The timeout for this request.
-            metadata (Sequence[Tuple[str, Union[str, bytes]]]): Key/value pairs which should be
-                sent along with the request as metadata. Normally, each value must be of type `str`,
-                but for metadata keys ending with the suffix `-bin`, the corresponding values must
-                be of type `bytes`.
+            metadata (Sequence[Tuple[str, str]]): Strings which should be
+                sent along with the request as metadata.
         Returns:
             ~.policy_pb2.Policy:
                 Defines an Identity and Access Management (IAM) policy.
@@ -1569,7 +1515,7 @@ class PublisherAsyncClient:
         *,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: TimeoutType = gapic_v1.method.DEFAULT,
-        metadata: Sequence[Tuple[str, Union[str, bytes]]] = (),
+        metadata: Sequence[Tuple[str, str]] = (),
     ) -> iam_policy_pb2.TestIamPermissionsResponse:
         r"""Tests the specified permissions against the IAM access control
             policy for a function.
@@ -1585,10 +1531,8 @@ class PublisherAsyncClient:
                 should be retried.
             timeout (TimeoutType):
                 The timeout for this request.
-            metadata (Sequence[Tuple[str, Union[str, bytes]]]): Key/value pairs which should be
-                sent along with the request as metadata. Normally, each value must be of type `str`,
-                but for metadata keys ending with the suffix `-bin`, the corresponding values must
-                be of type `bytes`.
+            metadata (Sequence[Tuple[str, str]]): Strings which should be
+                sent along with the request as metadata.
         Returns:
             ~iam_policy_pb2.PolicyTestIamPermissionsResponse:
                 Response message for ``TestIamPermissions`` method.

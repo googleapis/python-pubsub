@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-import logging as std_logging
 from collections import OrderedDict
 import re
 from typing import (
@@ -53,15 +52,6 @@ from google.pubsub_v1.types import schema as gp_schema
 from .transports.base import SchemaServiceTransport, DEFAULT_CLIENT_INFO
 from .transports.grpc_asyncio import SchemaServiceGrpcAsyncIOTransport
 from .client import SchemaServiceClient
-
-try:
-    from google.api_core import client_logging  # type: ignore
-
-    CLIENT_LOGGING_SUPPORTED = True  # pragma: NO COVER
-except ImportError:  # pragma: NO COVER
-    CLIENT_LOGGING_SUPPORTED = False
-
-_LOGGER = std_logging.getLogger(__name__)
 
 
 class SchemaServiceAsyncClient:
@@ -268,28 +258,6 @@ class SchemaServiceAsyncClient:
             client_info=client_info,
         )
 
-        if CLIENT_LOGGING_SUPPORTED and _LOGGER.isEnabledFor(
-            std_logging.DEBUG
-        ):  # pragma: NO COVER
-            _LOGGER.debug(
-                "Created client `google.pubsub_v1.SchemaServiceAsyncClient`.",
-                extra={
-                    "serviceName": "google.pubsub.v1.SchemaService",
-                    "universeDomain": getattr(
-                        self._client._transport._credentials, "universe_domain", ""
-                    ),
-                    "credentialsType": f"{type(self._client._transport._credentials).__module__}.{type(self._client._transport._credentials).__qualname__}",
-                    "credentialsInfo": getattr(
-                        self.transport._credentials, "get_cred_info", lambda: None
-                    )(),
-                }
-                if hasattr(self._client._transport, "_credentials")
-                else {
-                    "serviceName": "google.pubsub.v1.SchemaService",
-                    "credentialsType": None,
-                },
-            )
-
     async def create_schema(
         self,
         request: Optional[Union[gp_schema.CreateSchemaRequest, dict]] = None,
@@ -299,7 +267,7 @@ class SchemaServiceAsyncClient:
         schema_id: Optional[str] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: Union[float, object] = gapic_v1.method.DEFAULT,
-        metadata: Sequence[Tuple[str, Union[str, bytes]]] = (),
+        metadata: Sequence[Tuple[str, str]] = (),
     ) -> gp_schema.Schema:
         r"""Creates a schema.
 
@@ -367,10 +335,8 @@ class SchemaServiceAsyncClient:
             retry (google.api_core.retry_async.AsyncRetry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
-            metadata (Sequence[Tuple[str, Union[str, bytes]]]): Key/value pairs which should be
-                sent along with the request as metadata. Normally, each value must be of type `str`,
-                but for metadata keys ending with the suffix `-bin`, the corresponding values must
-                be of type `bytes`.
+            metadata (Sequence[Tuple[str, str]]): Strings which should be
+                sent along with the request as metadata.
 
         Returns:
             google.pubsub_v1.types.Schema:
@@ -433,7 +399,7 @@ class SchemaServiceAsyncClient:
         name: Optional[str] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: Union[float, object] = gapic_v1.method.DEFAULT,
-        metadata: Sequence[Tuple[str, Union[str, bytes]]] = (),
+        metadata: Sequence[Tuple[str, str]] = (),
     ) -> schema.Schema:
         r"""Gets a schema.
 
@@ -476,10 +442,8 @@ class SchemaServiceAsyncClient:
             retry (google.api_core.retry_async.AsyncRetry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
-            metadata (Sequence[Tuple[str, Union[str, bytes]]]): Key/value pairs which should be
-                sent along with the request as metadata. Normally, each value must be of type `str`,
-                but for metadata keys ending with the suffix `-bin`, the corresponding values must
-                be of type `bytes`.
+            metadata (Sequence[Tuple[str, str]]): Strings which should be
+                sent along with the request as metadata.
 
         Returns:
             google.pubsub_v1.types.Schema:
@@ -538,7 +502,7 @@ class SchemaServiceAsyncClient:
         parent: Optional[str] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: Union[float, object] = gapic_v1.method.DEFAULT,
-        metadata: Sequence[Tuple[str, Union[str, bytes]]] = (),
+        metadata: Sequence[Tuple[str, str]] = (),
     ) -> pagers.ListSchemasAsyncPager:
         r"""Lists schemas in a project.
 
@@ -582,10 +546,8 @@ class SchemaServiceAsyncClient:
             retry (google.api_core.retry_async.AsyncRetry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
-            metadata (Sequence[Tuple[str, Union[str, bytes]]]): Key/value pairs which should be
-                sent along with the request as metadata. Normally, each value must be of type `str`,
-                but for metadata keys ending with the suffix `-bin`, the corresponding values must
-                be of type `bytes`.
+            metadata (Sequence[Tuple[str, str]]): Strings which should be
+                sent along with the request as metadata.
 
         Returns:
             google.pubsub_v1.services.schema_service.pagers.ListSchemasAsyncPager:
@@ -659,7 +621,7 @@ class SchemaServiceAsyncClient:
         name: Optional[str] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: Union[float, object] = gapic_v1.method.DEFAULT,
-        metadata: Sequence[Tuple[str, Union[str, bytes]]] = (),
+        metadata: Sequence[Tuple[str, str]] = (),
     ) -> pagers.ListSchemaRevisionsAsyncPager:
         r"""Lists all schema revisions for the named schema.
 
@@ -703,10 +665,8 @@ class SchemaServiceAsyncClient:
             retry (google.api_core.retry_async.AsyncRetry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
-            metadata (Sequence[Tuple[str, Union[str, bytes]]]): Key/value pairs which should be
-                sent along with the request as metadata. Normally, each value must be of type `str`,
-                but for metadata keys ending with the suffix `-bin`, the corresponding values must
-                be of type `bytes`.
+            metadata (Sequence[Tuple[str, str]]): Strings which should be
+                sent along with the request as metadata.
 
         Returns:
             google.pubsub_v1.services.schema_service.pagers.ListSchemaRevisionsAsyncPager:
@@ -781,7 +741,7 @@ class SchemaServiceAsyncClient:
         schema: Optional[gp_schema.Schema] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: Union[float, object] = gapic_v1.method.DEFAULT,
-        metadata: Sequence[Tuple[str, Union[str, bytes]]] = (),
+        metadata: Sequence[Tuple[str, str]] = (),
     ) -> gp_schema.Schema:
         r"""Commits a new schema revision to an existing schema.
 
@@ -835,10 +795,8 @@ class SchemaServiceAsyncClient:
             retry (google.api_core.retry_async.AsyncRetry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
-            metadata (Sequence[Tuple[str, Union[str, bytes]]]): Key/value pairs which should be
-                sent along with the request as metadata. Normally, each value must be of type `str`,
-                but for metadata keys ending with the suffix `-bin`, the corresponding values must
-                be of type `bytes`.
+            metadata (Sequence[Tuple[str, str]]): Strings which should be
+                sent along with the request as metadata.
 
         Returns:
             google.pubsub_v1.types.Schema:
@@ -900,7 +858,7 @@ class SchemaServiceAsyncClient:
         revision_id: Optional[str] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: Union[float, object] = gapic_v1.method.DEFAULT,
-        metadata: Sequence[Tuple[str, Union[str, bytes]]] = (),
+        metadata: Sequence[Tuple[str, str]] = (),
     ) -> schema.Schema:
         r"""Creates a new schema revision that is a copy of the provided
         revision_id.
@@ -955,10 +913,8 @@ class SchemaServiceAsyncClient:
             retry (google.api_core.retry_async.AsyncRetry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
-            metadata (Sequence[Tuple[str, Union[str, bytes]]]): Key/value pairs which should be
-                sent along with the request as metadata. Normally, each value must be of type `str`,
-                but for metadata keys ending with the suffix `-bin`, the corresponding values must
-                be of type `bytes`.
+            metadata (Sequence[Tuple[str, str]]): Strings which should be
+                sent along with the request as metadata.
 
         Returns:
             google.pubsub_v1.types.Schema:
@@ -1020,7 +976,7 @@ class SchemaServiceAsyncClient:
         revision_id: Optional[str] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: Union[float, object] = gapic_v1.method.DEFAULT,
-        metadata: Sequence[Tuple[str, Union[str, bytes]]] = (),
+        metadata: Sequence[Tuple[str, str]] = (),
     ) -> schema.Schema:
         r"""Deletes a specific schema revision.
 
@@ -1073,10 +1029,8 @@ class SchemaServiceAsyncClient:
             retry (google.api_core.retry_async.AsyncRetry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
-            metadata (Sequence[Tuple[str, Union[str, bytes]]]): Key/value pairs which should be
-                sent along with the request as metadata. Normally, each value must be of type `str`,
-                but for metadata keys ending with the suffix `-bin`, the corresponding values must
-                be of type `bytes`.
+            metadata (Sequence[Tuple[str, str]]): Strings which should be
+                sent along with the request as metadata.
 
         Returns:
             google.pubsub_v1.types.Schema:
@@ -1137,7 +1091,7 @@ class SchemaServiceAsyncClient:
         name: Optional[str] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: Union[float, object] = gapic_v1.method.DEFAULT,
-        metadata: Sequence[Tuple[str, Union[str, bytes]]] = (),
+        metadata: Sequence[Tuple[str, str]] = (),
     ) -> None:
         r"""Deletes a schema.
 
@@ -1177,10 +1131,8 @@ class SchemaServiceAsyncClient:
             retry (google.api_core.retry_async.AsyncRetry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
-            metadata (Sequence[Tuple[str, Union[str, bytes]]]): Key/value pairs which should be
-                sent along with the request as metadata. Normally, each value must be of type `str`,
-                but for metadata keys ending with the suffix `-bin`, the corresponding values must
-                be of type `bytes`.
+            metadata (Sequence[Tuple[str, str]]): Strings which should be
+                sent along with the request as metadata.
         """
         # Create or coerce a protobuf request object.
         # - Quick check: If we got a request object, we should *not* have
@@ -1233,7 +1185,7 @@ class SchemaServiceAsyncClient:
         schema: Optional[gp_schema.Schema] = None,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: Union[float, object] = gapic_v1.method.DEFAULT,
-        metadata: Sequence[Tuple[str, Union[str, bytes]]] = (),
+        metadata: Sequence[Tuple[str, str]] = (),
     ) -> gp_schema.ValidateSchemaResponse:
         r"""Validates a schema.
 
@@ -1287,10 +1239,8 @@ class SchemaServiceAsyncClient:
             retry (google.api_core.retry_async.AsyncRetry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
-            metadata (Sequence[Tuple[str, Union[str, bytes]]]): Key/value pairs which should be
-                sent along with the request as metadata. Normally, each value must be of type `str`,
-                but for metadata keys ending with the suffix `-bin`, the corresponding values must
-                be of type `bytes`.
+            metadata (Sequence[Tuple[str, str]]): Strings which should be
+                sent along with the request as metadata.
 
         Returns:
             google.pubsub_v1.types.ValidateSchemaResponse:
@@ -1352,7 +1302,7 @@ class SchemaServiceAsyncClient:
         *,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: Union[float, object] = gapic_v1.method.DEFAULT,
-        metadata: Sequence[Tuple[str, Union[str, bytes]]] = (),
+        metadata: Sequence[Tuple[str, str]] = (),
     ) -> schema.ValidateMessageResponse:
         r"""Validates a message against a schema.
 
@@ -1389,10 +1339,8 @@ class SchemaServiceAsyncClient:
             retry (google.api_core.retry_async.AsyncRetry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
-            metadata (Sequence[Tuple[str, Union[str, bytes]]]): Key/value pairs which should be
-                sent along with the request as metadata. Normally, each value must be of type `str`,
-                but for metadata keys ending with the suffix `-bin`, the corresponding values must
-                be of type `bytes`.
+            metadata (Sequence[Tuple[str, str]]): Strings which should be
+                sent along with the request as metadata.
 
         Returns:
             google.pubsub_v1.types.ValidateMessageResponse:
@@ -1438,7 +1386,7 @@ class SchemaServiceAsyncClient:
         *,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: Union[float, object] = gapic_v1.method.DEFAULT,
-        metadata: Sequence[Tuple[str, Union[str, bytes]]] = (),
+        metadata: Sequence[Tuple[str, str]] = (),
     ) -> policy_pb2.Policy:
         r"""Sets the IAM access control policy on the specified function.
 
@@ -1451,10 +1399,8 @@ class SchemaServiceAsyncClient:
             retry (google.api_core.retry_async.AsyncRetry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
-            metadata (Sequence[Tuple[str, Union[str, bytes]]]): Key/value pairs which should be
-                sent along with the request as metadata. Normally, each value must be of type `str`,
-                but for metadata keys ending with the suffix `-bin`, the corresponding values must
-                be of type `bytes`.
+            metadata (Sequence[Tuple[str, str]]): Strings which should be
+                sent along with the request as metadata.
         Returns:
             ~.policy_pb2.Policy:
                 Defines an Identity and Access Management (IAM) policy.
@@ -1558,7 +1504,7 @@ class SchemaServiceAsyncClient:
         *,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: Union[float, object] = gapic_v1.method.DEFAULT,
-        metadata: Sequence[Tuple[str, Union[str, bytes]]] = (),
+        metadata: Sequence[Tuple[str, str]] = (),
     ) -> policy_pb2.Policy:
         r"""Gets the IAM access control policy for a function.
 
@@ -1572,10 +1518,8 @@ class SchemaServiceAsyncClient:
             retry (google.api_core.retry_async.AsyncRetry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
-            metadata (Sequence[Tuple[str, Union[str, bytes]]]): Key/value pairs which should be
-                sent along with the request as metadata. Normally, each value must be of type `str`,
-                but for metadata keys ending with the suffix `-bin`, the corresponding values must
-                be of type `bytes`.
+            metadata (Sequence[Tuple[str, str]]): Strings which should be
+                sent along with the request as metadata.
         Returns:
             ~.policy_pb2.Policy:
                 Defines an Identity and Access Management (IAM) policy.
@@ -1680,7 +1624,7 @@ class SchemaServiceAsyncClient:
         *,
         retry: OptionalRetry = gapic_v1.method.DEFAULT,
         timeout: Union[float, object] = gapic_v1.method.DEFAULT,
-        metadata: Sequence[Tuple[str, Union[str, bytes]]] = (),
+        metadata: Sequence[Tuple[str, str]] = (),
     ) -> iam_policy_pb2.TestIamPermissionsResponse:
         r"""Tests the specified permissions against the IAM access control
             policy for a function.
@@ -1695,10 +1639,8 @@ class SchemaServiceAsyncClient:
             retry (google.api_core.retry_async.AsyncRetry): Designation of what errors, if any,
                 should be retried.
             timeout (float): The timeout for this request.
-            metadata (Sequence[Tuple[str, Union[str, bytes]]]): Key/value pairs which should be
-                sent along with the request as metadata. Normally, each value must be of type `str`,
-                but for metadata keys ending with the suffix `-bin`, the corresponding values must
-                be of type `bytes`.
+            metadata (Sequence[Tuple[str, str]]): Strings which should be
+                sent along with the request as metadata.
         Returns:
             ~iam_policy_pb2.PolicyTestIamPermissionsResponse:
                 Response message for ``TestIamPermissions`` method.

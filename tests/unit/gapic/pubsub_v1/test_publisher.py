@@ -4639,7 +4639,6 @@ def test_create_topic_rest_required_fields(request_type=pubsub.Topic):
 
             response_value._content = json_return_value.encode("UTF-8")
             req.return_value = response_value
-            req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
 
             response = client.create_topic(request)
 
@@ -4685,7 +4684,6 @@ def test_create_topic_rest_flattened():
         json_return_value = json_format.MessageToJson(return_value)
         response_value._content = json_return_value.encode("UTF-8")
         req.return_value = response_value
-        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
 
         client.create_topic(**mock_args)
 
@@ -4809,7 +4807,6 @@ def test_update_topic_rest_required_fields(request_type=pubsub.UpdateTopicReques
 
             response_value._content = json_return_value.encode("UTF-8")
             req.return_value = response_value
-            req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
 
             response = client.update_topic(request)
 
@@ -4864,7 +4861,6 @@ def test_update_topic_rest_flattened():
         json_return_value = json_format.MessageToJson(return_value)
         response_value._content = json_return_value.encode("UTF-8")
         req.return_value = response_value
-        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
 
         client.update_topic(**mock_args)
 
@@ -4994,7 +4990,6 @@ def test_publish_rest_required_fields(request_type=pubsub.PublishRequest):
 
             response_value._content = json_return_value.encode("UTF-8")
             req.return_value = response_value
-            req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
 
             response = client.publish(request)
 
@@ -5049,7 +5044,6 @@ def test_publish_rest_flattened():
         json_return_value = json_format.MessageToJson(return_value)
         response_value._content = json_return_value.encode("UTF-8")
         req.return_value = response_value
-        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
 
         client.publish(**mock_args)
 
@@ -5179,7 +5173,6 @@ def test_get_topic_rest_required_fields(request_type=pubsub.GetTopicRequest):
 
             response_value._content = json_return_value.encode("UTF-8")
             req.return_value = response_value
-            req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
 
             response = client.get_topic(request)
 
@@ -5225,7 +5218,6 @@ def test_get_topic_rest_flattened():
         json_return_value = json_format.MessageToJson(return_value)
         response_value._content = json_return_value.encode("UTF-8")
         req.return_value = response_value
-        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
 
         client.get_topic(**mock_args)
 
@@ -5360,7 +5352,6 @@ def test_list_topics_rest_required_fields(request_type=pubsub.ListTopicsRequest)
 
             response_value._content = json_return_value.encode("UTF-8")
             req.return_value = response_value
-            req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
 
             response = client.list_topics(request)
 
@@ -5414,7 +5405,6 @@ def test_list_topics_rest_flattened():
         json_return_value = json_format.MessageToJson(return_value)
         response_value._content = json_return_value.encode("UTF-8")
         req.return_value = response_value
-        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
 
         client.list_topics(**mock_args)
 
@@ -5617,7 +5607,6 @@ def test_list_topic_subscriptions_rest_required_fields(
 
             response_value._content = json_return_value.encode("UTF-8")
             req.return_value = response_value
-            req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
 
             response = client.list_topic_subscriptions(request)
 
@@ -5671,7 +5660,6 @@ def test_list_topic_subscriptions_rest_flattened():
         json_return_value = json_format.MessageToJson(return_value)
         response_value._content = json_return_value.encode("UTF-8")
         req.return_value = response_value
-        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
 
         client.list_topic_subscriptions(**mock_args)
 
@@ -5876,7 +5864,6 @@ def test_list_topic_snapshots_rest_required_fields(
 
             response_value._content = json_return_value.encode("UTF-8")
             req.return_value = response_value
-            req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
 
             response = client.list_topic_snapshots(request)
 
@@ -5930,7 +5917,6 @@ def test_list_topic_snapshots_rest_flattened():
         json_return_value = json_format.MessageToJson(return_value)
         response_value._content = json_return_value.encode("UTF-8")
         req.return_value = response_value
-        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
 
         client.list_topic_snapshots(**mock_args)
 
@@ -6117,7 +6103,6 @@ def test_delete_topic_rest_required_fields(request_type=pubsub.DeleteTopicReques
 
             response_value._content = json_return_value.encode("UTF-8")
             req.return_value = response_value
-            req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
 
             response = client.delete_topic(request)
 
@@ -6161,7 +6146,6 @@ def test_delete_topic_rest_flattened():
         json_return_value = ""
         response_value._content = json_return_value.encode("UTF-8")
         req.return_value = response_value
-        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
 
         client.delete_topic(**mock_args)
 
@@ -6295,7 +6279,6 @@ def test_detach_subscription_rest_required_fields(
 
             response_value._content = json_return_value.encode("UTF-8")
             req.return_value = response_value
-            req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
 
             response = client.detach_subscription(request)
 
@@ -6908,7 +6891,6 @@ def test_create_topic_rest_bad_request(request_type=pubsub.Topic):
         response_value.status_code = 400
         response_value.request = mock.Mock()
         req.return_value = response_value
-        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
         client.create_topic(request)
 
 
@@ -6947,7 +6929,6 @@ def test_create_topic_rest_call_success(request_type):
         json_return_value = json_format.MessageToJson(return_value)
         response_value.content = json_return_value.encode("UTF-8")
         req.return_value = response_value
-        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
         response = client.create_topic(request)
 
     # Establish that the response is the type that we expect.
@@ -6987,7 +6968,6 @@ def test_create_topic_rest_interceptors(null_interceptor):
 
         req.return_value = mock.Mock()
         req.return_value.status_code = 200
-        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
         return_value = pubsub.Topic.to_json(pubsub.Topic())
         req.return_value.content = return_value
 
@@ -7030,7 +7010,6 @@ def test_update_topic_rest_bad_request(request_type=pubsub.UpdateTopicRequest):
         response_value.status_code = 400
         response_value.request = mock.Mock()
         req.return_value = response_value
-        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
         client.update_topic(request)
 
 
@@ -7069,7 +7048,6 @@ def test_update_topic_rest_call_success(request_type):
         json_return_value = json_format.MessageToJson(return_value)
         response_value.content = json_return_value.encode("UTF-8")
         req.return_value = response_value
-        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
         response = client.update_topic(request)
 
     # Establish that the response is the type that we expect.
@@ -7109,7 +7087,6 @@ def test_update_topic_rest_interceptors(null_interceptor):
 
         req.return_value = mock.Mock()
         req.return_value.status_code = 200
-        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
         return_value = pubsub.Topic.to_json(pubsub.Topic())
         req.return_value.content = return_value
 
@@ -7152,7 +7129,6 @@ def test_publish_rest_bad_request(request_type=pubsub.PublishRequest):
         response_value.status_code = 400
         response_value.request = mock.Mock()
         req.return_value = response_value
-        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
         client.publish(request)
 
 
@@ -7188,7 +7164,6 @@ def test_publish_rest_call_success(request_type):
         json_return_value = json_format.MessageToJson(return_value)
         response_value.content = json_return_value.encode("UTF-8")
         req.return_value = response_value
-        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
         response = client.publish(request)
 
     # Establish that the response is the type that we expect.
@@ -7225,7 +7200,6 @@ def test_publish_rest_interceptors(null_interceptor):
 
         req.return_value = mock.Mock()
         req.return_value.status_code = 200
-        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
         return_value = pubsub.PublishResponse.to_json(pubsub.PublishResponse())
         req.return_value.content = return_value
 
@@ -7268,7 +7242,6 @@ def test_get_topic_rest_bad_request(request_type=pubsub.GetTopicRequest):
         response_value.status_code = 400
         response_value.request = mock.Mock()
         req.return_value = response_value
-        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
         client.get_topic(request)
 
 
@@ -7307,7 +7280,6 @@ def test_get_topic_rest_call_success(request_type):
         json_return_value = json_format.MessageToJson(return_value)
         response_value.content = json_return_value.encode("UTF-8")
         req.return_value = response_value
-        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
         response = client.get_topic(request)
 
     # Establish that the response is the type that we expect.
@@ -7347,7 +7319,6 @@ def test_get_topic_rest_interceptors(null_interceptor):
 
         req.return_value = mock.Mock()
         req.return_value.status_code = 200
-        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
         return_value = pubsub.Topic.to_json(pubsub.Topic())
         req.return_value.content = return_value
 
@@ -7390,7 +7361,6 @@ def test_list_topics_rest_bad_request(request_type=pubsub.ListTopicsRequest):
         response_value.status_code = 400
         response_value.request = mock.Mock()
         req.return_value = response_value
-        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
         client.list_topics(request)
 
 
@@ -7426,7 +7396,6 @@ def test_list_topics_rest_call_success(request_type):
         json_return_value = json_format.MessageToJson(return_value)
         response_value.content = json_return_value.encode("UTF-8")
         req.return_value = response_value
-        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
         response = client.list_topics(request)
 
     # Establish that the response is the type that we expect.
@@ -7463,7 +7432,6 @@ def test_list_topics_rest_interceptors(null_interceptor):
 
         req.return_value = mock.Mock()
         req.return_value.status_code = 200
-        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
         return_value = pubsub.ListTopicsResponse.to_json(pubsub.ListTopicsResponse())
         req.return_value.content = return_value
 
@@ -7508,7 +7476,6 @@ def test_list_topic_subscriptions_rest_bad_request(
         response_value.status_code = 400
         response_value.request = mock.Mock()
         req.return_value = response_value
-        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
         client.list_topic_subscriptions(request)
 
 
@@ -7545,7 +7512,6 @@ def test_list_topic_subscriptions_rest_call_success(request_type):
         json_return_value = json_format.MessageToJson(return_value)
         response_value.content = json_return_value.encode("UTF-8")
         req.return_value = response_value
-        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
         response = client.list_topic_subscriptions(request)
 
     # Establish that the response is the type that we expect.
@@ -7585,7 +7551,6 @@ def test_list_topic_subscriptions_rest_interceptors(null_interceptor):
 
         req.return_value = mock.Mock()
         req.return_value.status_code = 200
-        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
         return_value = pubsub.ListTopicSubscriptionsResponse.to_json(
             pubsub.ListTopicSubscriptionsResponse()
         )
@@ -7632,7 +7597,6 @@ def test_list_topic_snapshots_rest_bad_request(
         response_value.status_code = 400
         response_value.request = mock.Mock()
         req.return_value = response_value
-        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
         client.list_topic_snapshots(request)
 
 
@@ -7669,7 +7633,6 @@ def test_list_topic_snapshots_rest_call_success(request_type):
         json_return_value = json_format.MessageToJson(return_value)
         response_value.content = json_return_value.encode("UTF-8")
         req.return_value = response_value
-        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
         response = client.list_topic_snapshots(request)
 
     # Establish that the response is the type that we expect.
@@ -7709,7 +7672,6 @@ def test_list_topic_snapshots_rest_interceptors(null_interceptor):
 
         req.return_value = mock.Mock()
         req.return_value.status_code = 200
-        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
         return_value = pubsub.ListTopicSnapshotsResponse.to_json(
             pubsub.ListTopicSnapshotsResponse()
         )
@@ -7754,7 +7716,6 @@ def test_delete_topic_rest_bad_request(request_type=pubsub.DeleteTopicRequest):
         response_value.status_code = 400
         response_value.request = mock.Mock()
         req.return_value = response_value
-        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
         client.delete_topic(request)
 
 
@@ -7785,7 +7746,6 @@ def test_delete_topic_rest_call_success(request_type):
         json_return_value = ""
         response_value.content = json_return_value.encode("UTF-8")
         req.return_value = response_value
-        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
         response = client.delete_topic(request)
 
     # Establish that the response is the type that we expect.
@@ -7818,7 +7778,6 @@ def test_delete_topic_rest_interceptors(null_interceptor):
 
         req.return_value = mock.Mock()
         req.return_value.status_code = 200
-        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
 
         request = pubsub.DeleteTopicRequest()
         metadata = [
@@ -7859,7 +7818,6 @@ def test_detach_subscription_rest_bad_request(
         response_value.status_code = 400
         response_value.request = mock.Mock()
         req.return_value = response_value
-        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
         client.detach_subscription(request)
 
 
@@ -7893,7 +7851,6 @@ def test_detach_subscription_rest_call_success(request_type):
         json_return_value = json_format.MessageToJson(return_value)
         response_value.content = json_return_value.encode("UTF-8")
         req.return_value = response_value
-        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
         response = client.detach_subscription(request)
 
     # Establish that the response is the type that we expect.
@@ -7931,7 +7888,6 @@ def test_detach_subscription_rest_interceptors(null_interceptor):
 
         req.return_value = mock.Mock()
         req.return_value.status_code = 200
-        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
         return_value = pubsub.DetachSubscriptionResponse.to_json(
             pubsub.DetachSubscriptionResponse()
         )
@@ -7980,7 +7936,6 @@ def test_get_iam_policy_rest_bad_request(
         response_value.status_code = 400
         response_value.request = Request()
         req.return_value = response_value
-        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
         client.get_iam_policy(request)
 
 
@@ -8011,7 +7966,6 @@ def test_get_iam_policy_rest(request_type):
         response_value.content = json_return_value.encode("UTF-8")
 
         req.return_value = response_value
-        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
 
         response = client.get_iam_policy(request)
 
@@ -8042,7 +7996,6 @@ def test_set_iam_policy_rest_bad_request(
         response_value.status_code = 400
         response_value.request = Request()
         req.return_value = response_value
-        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
         client.set_iam_policy(request)
 
 
@@ -8073,7 +8026,6 @@ def test_set_iam_policy_rest(request_type):
         response_value.content = json_return_value.encode("UTF-8")
 
         req.return_value = response_value
-        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
 
         response = client.set_iam_policy(request)
 
@@ -8104,7 +8056,6 @@ def test_test_iam_permissions_rest_bad_request(
         response_value.status_code = 400
         response_value.request = Request()
         req.return_value = response_value
-        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
         client.test_iam_permissions(request)
 
 
@@ -8135,7 +8086,6 @@ def test_test_iam_permissions_rest(request_type):
         response_value.content = json_return_value.encode("UTF-8")
 
         req.return_value = response_value
-        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
 
         response = client.test_iam_permissions(request)
 
