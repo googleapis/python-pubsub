@@ -33,6 +33,8 @@ __protobuf__ = proto.module(
         "IngestionDataSourceSettings",
         "PlatformLogsSettings",
         "IngestionFailureEvent",
+        "JavaScriptUDF",
+        "MessageTransform",
         "Topic",
         "PubsubMessage",
         "GetTopicRequest",
@@ -1085,6 +1087,119 @@ class IngestionFailureEvent(proto.Message):
     )
 
 
+class JavaScriptUDF(proto.Message):
+    r"""User-defined JavaScript function that can transform or filter
+    a Pub/Sub message.
+
+    Attributes:
+        function_name (str):
+            Required. Name of the JavasScript function
+            that should applied to Pub/Sub messages.
+        code (str):
+            Required. JavaScript code that contains a function
+            ``function_name`` with the below signature:
+
+            /*\*
+
+            -  Transforms a Pub/Sub message.
+
+            -  @return {(Object<string, (string \| Object<string,
+               string>)>|null)} - To
+
+            -  filter a message, return ``null``. To transform a message
+               return a map
+
+            -  with the following keys:
+
+            -
+
+               -  (required) 'data' : {string}
+
+            -
+
+               -  (optional) 'attributes' : {Object<string, string>}
+
+            -  Returning empty ``attributes`` will remove all attributes
+               from the
+
+            -  message.
+
+            -
+            -  @param {(Object<string, (string \| Object<string,
+               string>)>} Pub/Sub
+
+            -  message. Keys:
+
+            -
+
+               -  (required) 'data' : {string}
+
+            -
+
+               -  (required) 'attributes' : {Object<string, string>}
+
+            -
+            -  @param {Object<string, any>} metadata - Pub/Sub message
+               metadata.
+
+            -  Keys:
+
+            -
+
+               -  (required) 'message_id' : {string}
+
+            -
+
+               -  (optional) 'publish_time': {string}
+                  YYYY-MM-DDTHH:MM:SSZ format
+
+            -
+
+               -  (optional) 'ordering_key': {string} \*/
+
+            function <function_name>(message, metadata) { }
+    """
+
+    function_name: str = proto.Field(
+        proto.STRING,
+        number=1,
+    )
+    code: str = proto.Field(
+        proto.STRING,
+        number=2,
+    )
+
+
+class MessageTransform(proto.Message):
+    r"""All supported message transforms types.
+
+    .. _oneof: https://proto-plus-python.readthedocs.io/en/stable/fields.html#oneofs-mutually-exclusive-fields
+
+    Attributes:
+        javascript_udf (google.pubsub_v1.types.JavaScriptUDF):
+            Optional. JavaScript User Defined Function. If multiple
+            JavaScriptUDF's are specified on a resource, each must have
+            a unique ``function_name``.
+
+            This field is a member of `oneof`_ ``transform``.
+        enabled (bool):
+            Optional. If set to true, the transform is enabled. If
+            false, the transform is disabled and will not be applied to
+            messages. Defaults to ``true``.
+    """
+
+    javascript_udf: "JavaScriptUDF" = proto.Field(
+        proto.MESSAGE,
+        number=2,
+        oneof="transform",
+        message="JavaScriptUDF",
+    )
+    enabled: bool = proto.Field(
+        proto.BOOL,
+        number=3,
+    )
+
+
 class Topic(proto.Message):
     r"""A topic resource.
 
@@ -1137,6 +1252,10 @@ class Topic(proto.Message):
         ingestion_data_source_settings (google.pubsub_v1.types.IngestionDataSourceSettings):
             Optional. Settings for ingestion from a data
             source into this topic.
+        message_transforms (MutableSequence[google.pubsub_v1.types.MessageTransform]):
+            Optional. Transforms to be applied to
+            messages published to the topic. Transforms are
+            applied in the order specified.
     """
 
     class State(proto.Enum):
@@ -1199,6 +1318,11 @@ class Topic(proto.Message):
         proto.MESSAGE,
         number=10,
         message="IngestionDataSourceSettings",
+    )
+    message_transforms: MutableSequence["MessageTransform"] = proto.RepeatedField(
+        proto.MESSAGE,
+        number=13,
+        message="MessageTransform",
     )
 
 
@@ -1728,6 +1852,11 @@ class Subscription(proto.Message):
             Output only. Information about the associated
             Analytics Hub subscription. Only set if the
             subscritpion is created by Analytics Hub.
+        message_transforms (MutableSequence[google.pubsub_v1.types.MessageTransform]):
+            Optional. Transforms to be applied to
+            messages before they are delivered to
+            subscribers. Transforms are applied in the order
+            specified.
     """
 
     class State(proto.Enum):
@@ -1750,8 +1879,8 @@ class Subscription(proto.Message):
         RESOURCE_ERROR = 2
 
     class AnalyticsHubSubscriptionInfo(proto.Message):
-        r"""Information about an associated Analytics Hub subscription
-        (https://cloud.google.com/bigquery/docs/analytics-hub-manage-subscriptions).
+        r"""Information about an associated `Analytics Hub
+        subscription <https://cloud.google.com/bigquery/docs/analytics-hub-manage-subscriptions>`__.
 
         Attributes:
             listing (str):
@@ -1860,6 +1989,11 @@ class Subscription(proto.Message):
         proto.MESSAGE,
         number=23,
         message=AnalyticsHubSubscriptionInfo,
+    )
+    message_transforms: MutableSequence["MessageTransform"] = proto.RepeatedField(
+        proto.MESSAGE,
+        number=25,
+        message="MessageTransform",
     )
 
 

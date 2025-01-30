@@ -41,6 +41,7 @@ from .types.pubsub import GetSubscriptionRequest
 from .types.pubsub import GetTopicRequest
 from .types.pubsub import IngestionDataSourceSettings
 from .types.pubsub import IngestionFailureEvent
+from .types.pubsub import JavaScriptUDF
 from .types.pubsub import ListSnapshotsRequest
 from .types.pubsub import ListSnapshotsResponse
 from .types.pubsub import ListSubscriptionsRequest
@@ -52,6 +53,7 @@ from .types.pubsub import ListTopicsResponse
 from .types.pubsub import ListTopicSubscriptionsRequest
 from .types.pubsub import ListTopicSubscriptionsResponse
 from .types.pubsub import MessageStoragePolicy
+from .types.pubsub import MessageTransform
 from .types.pubsub import ModifyAckDeadlineRequest
 from .types.pubsub import ModifyPushConfigRequest
 from .types.pubsub import PlatformLogsSettings
@@ -118,6 +120,7 @@ __all__ = (
     "GetTopicRequest",
     "IngestionDataSourceSettings",
     "IngestionFailureEvent",
+    "JavaScriptUDF",
     "ListSchemaRevisionsRequest",
     "ListSchemaRevisionsResponse",
     "ListSchemasRequest",
@@ -133,6 +136,7 @@ __all__ = (
     "ListTopicsRequest",
     "ListTopicsResponse",
     "MessageStoragePolicy",
+    "MessageTransform",
     "ModifyAckDeadlineRequest",
     "ModifyPushConfigRequest",
     "PlatformLogsSettings",
