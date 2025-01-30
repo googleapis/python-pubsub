@@ -45,14 +45,16 @@ class _BasePublisherRestTransport(PublisherTransport):
     It sends JSON representations of protocol buffers over HTTP/1.1
     """
 
-    def __init__(self, *,
-            host: str = 'pubsub.googleapis.com',
-            credentials: Optional[Any] = None,
-            client_info: gapic_v1.client_info.ClientInfo = DEFAULT_CLIENT_INFO,
-            always_use_jwt_access: Optional[bool] = False,
-            url_scheme: str = 'https',
-            api_audience: Optional[str] = None,
-            ) -> None:
+    def __init__(
+        self,
+        *,
+        host: str = "pubsub.googleapis.com",
+        credentials: Optional[Any] = None,
+        client_info: gapic_v1.client_info.ClientInfo = DEFAULT_CLIENT_INFO,
+        always_use_jwt_access: Optional[bool] = False,
+        url_scheme: str = "https",
+        api_audience: Optional[str] = None,
+    ) -> None:
         """Instantiate the transport.
         Args:
             host (Optional[str]):
@@ -76,7 +78,9 @@ class _BasePublisherRestTransport(PublisherTransport):
         # Run the base constructor
         maybe_url_match = re.match("^(?P<scheme>http(?:s)?://)?(?P<host>.*)$", host)
         if maybe_url_match is None:
-            raise ValueError(f"Unexpected hostname structure: {host}")  # pragma: NO COVER
+            raise ValueError(
+                f"Unexpected hostname structure: {host}"
+            )  # pragma: NO COVER
 
         url_match_items = maybe_url_match.groupdict()
 
@@ -87,27 +91,31 @@ class _BasePublisherRestTransport(PublisherTransport):
             credentials=credentials,
             client_info=client_info,
             always_use_jwt_access=always_use_jwt_access,
-            api_audience=api_audience
+            api_audience=api_audience,
         )
 
     class _BaseCreateTopic:
         def __hash__(self):  # pragma: NO COVER
             return NotImplementedError("__hash__ must be implemented.")
 
-        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] =  {
-        }
+        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] = {}
 
         @classmethod
         def _get_unset_required_fields(cls, message_dict):
-            return {k: v for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items() if k not in message_dict}
+            return {
+                k: v
+                for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items()
+                if k not in message_dict
+            }
 
         @staticmethod
         def _get_http_options():
-            http_options: List[Dict[str, str]] = [{
-                'method': 'put',
-                'uri': '/v1/{name=projects/*/topics/*}',
-                'body': '*',
-            },
+            http_options: List[Dict[str, str]] = [
+                {
+                    "method": "put",
+                    "uri": "/v1/{name=projects/*/topics/*}",
+                    "body": "*",
+                },
             ]
             return http_options
 
@@ -122,17 +130,23 @@ class _BasePublisherRestTransport(PublisherTransport):
             # Jsonify the request body
 
             body = json_format.MessageToJson(
-                transcoded_request['body'],
-                use_integers_for_enums=True
+                transcoded_request["body"], use_integers_for_enums=True
             )
             return body
+
         @staticmethod
         def _get_query_params_json(transcoded_request):
-            query_params = json.loads(json_format.MessageToJson(
-                transcoded_request['query_params'],
-                use_integers_for_enums=True,
-            ))
-            query_params.update(_BasePublisherRestTransport._BaseCreateTopic._get_unset_required_fields(query_params))
+            query_params = json.loads(
+                json_format.MessageToJson(
+                    transcoded_request["query_params"],
+                    use_integers_for_enums=True,
+                )
+            )
+            query_params.update(
+                _BasePublisherRestTransport._BaseCreateTopic._get_unset_required_fields(
+                    query_params
+                )
+            )
 
             query_params["$alt"] = "json;enum-encoding=int"
             return query_params
@@ -141,19 +155,23 @@ class _BasePublisherRestTransport(PublisherTransport):
         def __hash__(self):  # pragma: NO COVER
             return NotImplementedError("__hash__ must be implemented.")
 
-        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] =  {
-        }
+        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] = {}
 
         @classmethod
         def _get_unset_required_fields(cls, message_dict):
-            return {k: v for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items() if k not in message_dict}
+            return {
+                k: v
+                for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items()
+                if k not in message_dict
+            }
 
         @staticmethod
         def _get_http_options():
-            http_options: List[Dict[str, str]] = [{
-                'method': 'delete',
-                'uri': '/v1/{topic=projects/*/topics/*}',
-            },
+            http_options: List[Dict[str, str]] = [
+                {
+                    "method": "delete",
+                    "uri": "/v1/{topic=projects/*/topics/*}",
+                },
             ]
             return http_options
 
@@ -165,11 +183,17 @@ class _BasePublisherRestTransport(PublisherTransport):
 
         @staticmethod
         def _get_query_params_json(transcoded_request):
-            query_params = json.loads(json_format.MessageToJson(
-                transcoded_request['query_params'],
-                use_integers_for_enums=True,
-            ))
-            query_params.update(_BasePublisherRestTransport._BaseDeleteTopic._get_unset_required_fields(query_params))
+            query_params = json.loads(
+                json_format.MessageToJson(
+                    transcoded_request["query_params"],
+                    use_integers_for_enums=True,
+                )
+            )
+            query_params.update(
+                _BasePublisherRestTransport._BaseDeleteTopic._get_unset_required_fields(
+                    query_params
+                )
+            )
 
             query_params["$alt"] = "json;enum-encoding=int"
             return query_params
@@ -178,19 +202,23 @@ class _BasePublisherRestTransport(PublisherTransport):
         def __hash__(self):  # pragma: NO COVER
             return NotImplementedError("__hash__ must be implemented.")
 
-        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] =  {
-        }
+        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] = {}
 
         @classmethod
         def _get_unset_required_fields(cls, message_dict):
-            return {k: v for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items() if k not in message_dict}
+            return {
+                k: v
+                for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items()
+                if k not in message_dict
+            }
 
         @staticmethod
         def _get_http_options():
-            http_options: List[Dict[str, str]] = [{
-                'method': 'post',
-                'uri': '/v1/{subscription=projects/*/subscriptions/*}:detach',
-            },
+            http_options: List[Dict[str, str]] = [
+                {
+                    "method": "post",
+                    "uri": "/v1/{subscription=projects/*/subscriptions/*}:detach",
+                },
             ]
             return http_options
 
@@ -202,11 +230,17 @@ class _BasePublisherRestTransport(PublisherTransport):
 
         @staticmethod
         def _get_query_params_json(transcoded_request):
-            query_params = json.loads(json_format.MessageToJson(
-                transcoded_request['query_params'],
-                use_integers_for_enums=True,
-            ))
-            query_params.update(_BasePublisherRestTransport._BaseDetachSubscription._get_unset_required_fields(query_params))
+            query_params = json.loads(
+                json_format.MessageToJson(
+                    transcoded_request["query_params"],
+                    use_integers_for_enums=True,
+                )
+            )
+            query_params.update(
+                _BasePublisherRestTransport._BaseDetachSubscription._get_unset_required_fields(
+                    query_params
+                )
+            )
 
             query_params["$alt"] = "json;enum-encoding=int"
             return query_params
@@ -215,19 +249,23 @@ class _BasePublisherRestTransport(PublisherTransport):
         def __hash__(self):  # pragma: NO COVER
             return NotImplementedError("__hash__ must be implemented.")
 
-        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] =  {
-        }
+        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] = {}
 
         @classmethod
         def _get_unset_required_fields(cls, message_dict):
-            return {k: v for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items() if k not in message_dict}
+            return {
+                k: v
+                for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items()
+                if k not in message_dict
+            }
 
         @staticmethod
         def _get_http_options():
-            http_options: List[Dict[str, str]] = [{
-                'method': 'get',
-                'uri': '/v1/{topic=projects/*/topics/*}',
-            },
+            http_options: List[Dict[str, str]] = [
+                {
+                    "method": "get",
+                    "uri": "/v1/{topic=projects/*/topics/*}",
+                },
             ]
             return http_options
 
@@ -239,11 +277,17 @@ class _BasePublisherRestTransport(PublisherTransport):
 
         @staticmethod
         def _get_query_params_json(transcoded_request):
-            query_params = json.loads(json_format.MessageToJson(
-                transcoded_request['query_params'],
-                use_integers_for_enums=True,
-            ))
-            query_params.update(_BasePublisherRestTransport._BaseGetTopic._get_unset_required_fields(query_params))
+            query_params = json.loads(
+                json_format.MessageToJson(
+                    transcoded_request["query_params"],
+                    use_integers_for_enums=True,
+                )
+            )
+            query_params.update(
+                _BasePublisherRestTransport._BaseGetTopic._get_unset_required_fields(
+                    query_params
+                )
+            )
 
             query_params["$alt"] = "json;enum-encoding=int"
             return query_params
@@ -252,19 +296,23 @@ class _BasePublisherRestTransport(PublisherTransport):
         def __hash__(self):  # pragma: NO COVER
             return NotImplementedError("__hash__ must be implemented.")
 
-        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] =  {
-        }
+        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] = {}
 
         @classmethod
         def _get_unset_required_fields(cls, message_dict):
-            return {k: v for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items() if k not in message_dict}
+            return {
+                k: v
+                for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items()
+                if k not in message_dict
+            }
 
         @staticmethod
         def _get_http_options():
-            http_options: List[Dict[str, str]] = [{
-                'method': 'get',
-                'uri': '/v1/{project=projects/*}/topics',
-            },
+            http_options: List[Dict[str, str]] = [
+                {
+                    "method": "get",
+                    "uri": "/v1/{project=projects/*}/topics",
+                },
             ]
             return http_options
 
@@ -276,11 +324,17 @@ class _BasePublisherRestTransport(PublisherTransport):
 
         @staticmethod
         def _get_query_params_json(transcoded_request):
-            query_params = json.loads(json_format.MessageToJson(
-                transcoded_request['query_params'],
-                use_integers_for_enums=True,
-            ))
-            query_params.update(_BasePublisherRestTransport._BaseListTopics._get_unset_required_fields(query_params))
+            query_params = json.loads(
+                json_format.MessageToJson(
+                    transcoded_request["query_params"],
+                    use_integers_for_enums=True,
+                )
+            )
+            query_params.update(
+                _BasePublisherRestTransport._BaseListTopics._get_unset_required_fields(
+                    query_params
+                )
+            )
 
             query_params["$alt"] = "json;enum-encoding=int"
             return query_params
@@ -289,19 +343,23 @@ class _BasePublisherRestTransport(PublisherTransport):
         def __hash__(self):  # pragma: NO COVER
             return NotImplementedError("__hash__ must be implemented.")
 
-        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] =  {
-        }
+        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] = {}
 
         @classmethod
         def _get_unset_required_fields(cls, message_dict):
-            return {k: v for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items() if k not in message_dict}
+            return {
+                k: v
+                for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items()
+                if k not in message_dict
+            }
 
         @staticmethod
         def _get_http_options():
-            http_options: List[Dict[str, str]] = [{
-                'method': 'get',
-                'uri': '/v1/{topic=projects/*/topics/*}/snapshots',
-            },
+            http_options: List[Dict[str, str]] = [
+                {
+                    "method": "get",
+                    "uri": "/v1/{topic=projects/*/topics/*}/snapshots",
+                },
             ]
             return http_options
 
@@ -313,11 +371,17 @@ class _BasePublisherRestTransport(PublisherTransport):
 
         @staticmethod
         def _get_query_params_json(transcoded_request):
-            query_params = json.loads(json_format.MessageToJson(
-                transcoded_request['query_params'],
-                use_integers_for_enums=True,
-            ))
-            query_params.update(_BasePublisherRestTransport._BaseListTopicSnapshots._get_unset_required_fields(query_params))
+            query_params = json.loads(
+                json_format.MessageToJson(
+                    transcoded_request["query_params"],
+                    use_integers_for_enums=True,
+                )
+            )
+            query_params.update(
+                _BasePublisherRestTransport._BaseListTopicSnapshots._get_unset_required_fields(
+                    query_params
+                )
+            )
 
             query_params["$alt"] = "json;enum-encoding=int"
             return query_params
@@ -326,19 +390,23 @@ class _BasePublisherRestTransport(PublisherTransport):
         def __hash__(self):  # pragma: NO COVER
             return NotImplementedError("__hash__ must be implemented.")
 
-        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] =  {
-        }
+        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] = {}
 
         @classmethod
         def _get_unset_required_fields(cls, message_dict):
-            return {k: v for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items() if k not in message_dict}
+            return {
+                k: v
+                for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items()
+                if k not in message_dict
+            }
 
         @staticmethod
         def _get_http_options():
-            http_options: List[Dict[str, str]] = [{
-                'method': 'get',
-                'uri': '/v1/{topic=projects/*/topics/*}/subscriptions',
-            },
+            http_options: List[Dict[str, str]] = [
+                {
+                    "method": "get",
+                    "uri": "/v1/{topic=projects/*/topics/*}/subscriptions",
+                },
             ]
             return http_options
 
@@ -350,11 +418,17 @@ class _BasePublisherRestTransport(PublisherTransport):
 
         @staticmethod
         def _get_query_params_json(transcoded_request):
-            query_params = json.loads(json_format.MessageToJson(
-                transcoded_request['query_params'],
-                use_integers_for_enums=True,
-            ))
-            query_params.update(_BasePublisherRestTransport._BaseListTopicSubscriptions._get_unset_required_fields(query_params))
+            query_params = json.loads(
+                json_format.MessageToJson(
+                    transcoded_request["query_params"],
+                    use_integers_for_enums=True,
+                )
+            )
+            query_params.update(
+                _BasePublisherRestTransport._BaseListTopicSubscriptions._get_unset_required_fields(
+                    query_params
+                )
+            )
 
             query_params["$alt"] = "json;enum-encoding=int"
             return query_params
@@ -363,20 +437,24 @@ class _BasePublisherRestTransport(PublisherTransport):
         def __hash__(self):  # pragma: NO COVER
             return NotImplementedError("__hash__ must be implemented.")
 
-        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] =  {
-        }
+        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] = {}
 
         @classmethod
         def _get_unset_required_fields(cls, message_dict):
-            return {k: v for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items() if k not in message_dict}
+            return {
+                k: v
+                for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items()
+                if k not in message_dict
+            }
 
         @staticmethod
         def _get_http_options():
-            http_options: List[Dict[str, str]] = [{
-                'method': 'post',
-                'uri': '/v1/{topic=projects/*/topics/*}:publish',
-                'body': '*',
-            },
+            http_options: List[Dict[str, str]] = [
+                {
+                    "method": "post",
+                    "uri": "/v1/{topic=projects/*/topics/*}:publish",
+                    "body": "*",
+                },
             ]
             return http_options
 
@@ -391,17 +469,23 @@ class _BasePublisherRestTransport(PublisherTransport):
             # Jsonify the request body
 
             body = json_format.MessageToJson(
-                transcoded_request['body'],
-                use_integers_for_enums=True
+                transcoded_request["body"], use_integers_for_enums=True
             )
             return body
+
         @staticmethod
         def _get_query_params_json(transcoded_request):
-            query_params = json.loads(json_format.MessageToJson(
-                transcoded_request['query_params'],
-                use_integers_for_enums=True,
-            ))
-            query_params.update(_BasePublisherRestTransport._BasePublish._get_unset_required_fields(query_params))
+            query_params = json.loads(
+                json_format.MessageToJson(
+                    transcoded_request["query_params"],
+                    use_integers_for_enums=True,
+                )
+            )
+            query_params.update(
+                _BasePublisherRestTransport._BasePublish._get_unset_required_fields(
+                    query_params
+                )
+            )
 
             query_params["$alt"] = "json;enum-encoding=int"
             return query_params
@@ -410,20 +494,24 @@ class _BasePublisherRestTransport(PublisherTransport):
         def __hash__(self):  # pragma: NO COVER
             return NotImplementedError("__hash__ must be implemented.")
 
-        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] =  {
-        }
+        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] = {}
 
         @classmethod
         def _get_unset_required_fields(cls, message_dict):
-            return {k: v for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items() if k not in message_dict}
+            return {
+                k: v
+                for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items()
+                if k not in message_dict
+            }
 
         @staticmethod
         def _get_http_options():
-            http_options: List[Dict[str, str]] = [{
-                'method': 'patch',
-                'uri': '/v1/{topic.name=projects/*/topics/*}',
-                'body': '*',
-            },
+            http_options: List[Dict[str, str]] = [
+                {
+                    "method": "patch",
+                    "uri": "/v1/{topic.name=projects/*/topics/*}",
+                    "body": "*",
+                },
             ]
             return http_options
 
@@ -438,17 +526,23 @@ class _BasePublisherRestTransport(PublisherTransport):
             # Jsonify the request body
 
             body = json_format.MessageToJson(
-                transcoded_request['body'],
-                use_integers_for_enums=True
+                transcoded_request["body"], use_integers_for_enums=True
             )
             return body
+
         @staticmethod
         def _get_query_params_json(transcoded_request):
-            query_params = json.loads(json_format.MessageToJson(
-                transcoded_request['query_params'],
-                use_integers_for_enums=True,
-            ))
-            query_params.update(_BasePublisherRestTransport._BaseUpdateTopic._get_unset_required_fields(query_params))
+            query_params = json.loads(
+                json_format.MessageToJson(
+                    transcoded_request["query_params"],
+                    use_integers_for_enums=True,
+                )
+            )
+            query_params.update(
+                _BasePublisherRestTransport._BaseUpdateTopic._get_unset_required_fields(
+                    query_params
+                )
+            )
 
             query_params["$alt"] = "json;enum-encoding=int"
             return query_params
@@ -459,35 +553,35 @@ class _BasePublisherRestTransport(PublisherTransport):
 
         @staticmethod
         def _get_http_options():
-            http_options: List[Dict[str, str]] = [{
-                'method': 'get',
-                'uri': '/v1/{resource=projects/*/topics/*}:getIamPolicy',
-            },
-        {
-                'method': 'get',
-                'uri': '/v1/{resource=projects/*/subscriptions/*}:getIamPolicy',
-            },
-        {
-                'method': 'get',
-                'uri': '/v1/{resource=projects/*/snapshots/*}:getIamPolicy',
-            },
-        {
-                'method': 'get',
-                'uri': '/v1/{resource=projects/*/schemas/*}:getIamPolicy',
-            },
+            http_options: List[Dict[str, str]] = [
+                {
+                    "method": "get",
+                    "uri": "/v1/{resource=projects/*/topics/*}:getIamPolicy",
+                },
+                {
+                    "method": "get",
+                    "uri": "/v1/{resource=projects/*/subscriptions/*}:getIamPolicy",
+                },
+                {
+                    "method": "get",
+                    "uri": "/v1/{resource=projects/*/snapshots/*}:getIamPolicy",
+                },
+                {
+                    "method": "get",
+                    "uri": "/v1/{resource=projects/*/schemas/*}:getIamPolicy",
+                },
             ]
             return http_options
 
         @staticmethod
         def _get_transcoded_request(http_options, request):
             request_kwargs = json_format.MessageToDict(request)
-            transcoded_request = path_template.transcode(
-                http_options, **request_kwargs)
+            transcoded_request = path_template.transcode(http_options, **request_kwargs)
             return transcoded_request
 
         @staticmethod
         def _get_query_params_json(transcoded_request):
-            query_params = json.loads(json.dumps(transcoded_request['query_params']))
+            query_params = json.loads(json.dumps(transcoded_request["query_params"]))
             return query_params
 
     class _BaseSetIamPolicy:
@@ -496,43 +590,44 @@ class _BasePublisherRestTransport(PublisherTransport):
 
         @staticmethod
         def _get_http_options():
-            http_options: List[Dict[str, str]] = [{
-                'method': 'post',
-                'uri': '/v1/{resource=projects/*/topics/*}:setIamPolicy',
-                'body': '*',
-            },
-        {
-                'method': 'post',
-                'uri': '/v1/{resource=projects/*/subscriptions/*}:setIamPolicy',
-                'body': '*',
-            },
-        {
-                'method': 'post',
-                'uri': '/v1/{resource=projects/*/snapshots/*}:setIamPolicy',
-                'body': '*',
-            },
-        {
-                'method': 'post',
-                'uri': '/v1/{resource=projects/*/schemas/*}:setIamPolicy',
-                'body': '*',
-            },
+            http_options: List[Dict[str, str]] = [
+                {
+                    "method": "post",
+                    "uri": "/v1/{resource=projects/*/topics/*}:setIamPolicy",
+                    "body": "*",
+                },
+                {
+                    "method": "post",
+                    "uri": "/v1/{resource=projects/*/subscriptions/*}:setIamPolicy",
+                    "body": "*",
+                },
+                {
+                    "method": "post",
+                    "uri": "/v1/{resource=projects/*/snapshots/*}:setIamPolicy",
+                    "body": "*",
+                },
+                {
+                    "method": "post",
+                    "uri": "/v1/{resource=projects/*/schemas/*}:setIamPolicy",
+                    "body": "*",
+                },
             ]
             return http_options
 
         @staticmethod
         def _get_transcoded_request(http_options, request):
             request_kwargs = json_format.MessageToDict(request)
-            transcoded_request = path_template.transcode(
-                http_options, **request_kwargs)
+            transcoded_request = path_template.transcode(http_options, **request_kwargs)
             return transcoded_request
 
         @staticmethod
         def _get_request_body_json(transcoded_request):
-            body = json.dumps(transcoded_request['body'])
+            body = json.dumps(transcoded_request["body"])
             return body
+
         @staticmethod
         def _get_query_params_json(transcoded_request):
-            query_params = json.loads(json.dumps(transcoded_request['query_params']))
+            query_params = json.loads(json.dumps(transcoded_request["query_params"]))
             return query_params
 
     class _BaseTestIamPermissions:
@@ -541,46 +636,45 @@ class _BasePublisherRestTransport(PublisherTransport):
 
         @staticmethod
         def _get_http_options():
-            http_options: List[Dict[str, str]] = [{
-                'method': 'post',
-                'uri': '/v1/{resource=projects/*/subscriptions/*}:testIamPermissions',
-                'body': '*',
-            },
-        {
-                'method': 'post',
-                'uri': '/v1/{resource=projects/*/topics/*}:testIamPermissions',
-                'body': '*',
-            },
-        {
-                'method': 'post',
-                'uri': '/v1/{resource=projects/*/snapshots/*}:testIamPermissions',
-                'body': '*',
-            },
-        {
-                'method': 'post',
-                'uri': '/v1/{resource=projects/*/schemas/*}:testIamPermissions',
-                'body': '*',
-            },
+            http_options: List[Dict[str, str]] = [
+                {
+                    "method": "post",
+                    "uri": "/v1/{resource=projects/*/subscriptions/*}:testIamPermissions",
+                    "body": "*",
+                },
+                {
+                    "method": "post",
+                    "uri": "/v1/{resource=projects/*/topics/*}:testIamPermissions",
+                    "body": "*",
+                },
+                {
+                    "method": "post",
+                    "uri": "/v1/{resource=projects/*/snapshots/*}:testIamPermissions",
+                    "body": "*",
+                },
+                {
+                    "method": "post",
+                    "uri": "/v1/{resource=projects/*/schemas/*}:testIamPermissions",
+                    "body": "*",
+                },
             ]
             return http_options
 
         @staticmethod
         def _get_transcoded_request(http_options, request):
             request_kwargs = json_format.MessageToDict(request)
-            transcoded_request = path_template.transcode(
-                http_options, **request_kwargs)
+            transcoded_request = path_template.transcode(http_options, **request_kwargs)
             return transcoded_request
 
         @staticmethod
         def _get_request_body_json(transcoded_request):
-            body = json.dumps(transcoded_request['body'])
+            body = json.dumps(transcoded_request["body"])
             return body
+
         @staticmethod
         def _get_query_params_json(transcoded_request):
-            query_params = json.loads(json.dumps(transcoded_request['query_params']))
+            query_params = json.loads(json.dumps(transcoded_request["query_params"]))
             return query_params
 
 
-__all__=(
-    '_BasePublisherRestTransport',
-)
+__all__ = ("_BasePublisherRestTransport",)
