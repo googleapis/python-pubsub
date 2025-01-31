@@ -19,6 +19,7 @@ import inspect
 import sys
 
 import grpc
+import math
 
 # special case python < 3.8
 if sys.version_info.major == 3 and sys.version_info.minor < 8:
@@ -35,6 +36,7 @@ from opentelemetry import trace
 from google.api_core import gapic_v1
 from google.api_core import retry as retries
 from google.api_core.gapic_v1.client_info import METRICS_METADATA_KEY
+from google.api_core.timeout import ConstantTimeout
 
 from google.cloud.pubsub_v1 import publisher
 from google.cloud.pubsub_v1 import types
@@ -53,6 +55,14 @@ from google.cloud.pubsub_v1.open_telemetry.publish_message_wrapper import (
 
 C = TypeVar("C", bound=Callable[..., Any])
 typed_flaky = cast(Callable[[C], C], flaky(max_runs=5, min_passes=1))
+
+
+# NOTE: This interceptor is required to create an intercept channel.
+class _PublisherClientGrpcInterceptor(
+    grpc.UnaryUnaryClientInterceptor,
+):
+    def intercept_unary_unary(self, continuation, client_call_details, request):
+        pass
 
 
 def _assert_retries_equal(retry, retry2):
@@ -414,17 +424,27 @@ def test_init_client_options_pass_through():
         assert client.transport._ssl_channel_credentials == mock_ssl_creds
 
 
-def test_init_emulator(monkeypatch):
+def test_init_emulator(monkeypatch, creds):
     monkeypatch.setenv("PUBSUB_EMULATOR_HOST", "/foo/bar:123")
     # NOTE: When the emulator host is set, a custom channel will be used, so
     #       no credentials (mock ot otherwise) can be passed in.
-    client = publisher.Client()
+
+    # TODO(https://github.com/grpc/grpc/issues/38519): Workaround to create an intercept
+    # channel (for forwards compatibility) with a channel created by the publisher client
+    # where target is set to the emulator host.
+    channel = publisher.Client().transport.grpc_channel
+    interceptor = _PublisherClientGrpcInterceptor()
+    intercept_channel = grpc.intercept_channel(channel, interceptor)
+    transport = publisher.Client.get_transport_class("grpc")(
+        credentials=creds, channel=intercept_channel
+    )
+    client = publisher.Client(transport=transport)
 
     # Establish that a gRPC request would attempt to hit the emulator host.
     #
     # Sadly, there seems to be no good way to do this without poking at
     # the private API of gRPC.
-    channel = client._transport.publish._channel
+    channel = client._transport.publish._thunk("")._channel
     # Behavior to include dns prefix changed in gRPCv1.63
     grpc_major, grpc_minor = [int(part) for part in grpc.__version__.split(".")[0:2]]
     if grpc_major > 1 or (grpc_major == 1 and grpc_minor >= 63):
@@ -652,6 +672,8 @@ def test_publish_new_batch_needed(creds):
     future = client.publish(topic, b"foo", bar=b"baz")
     assert future is mock.sentinel.future
 
+    call_args = batch_class.call_args
+
     # Check the mocks.
     batch_class.assert_called_once_with(
         client=mock.ANY,
@@ -660,8 +682,12 @@ def test_publish_new_batch_needed(creds):
         batch_done_callback=None,
         commit_when_full=True,
         commit_retry=gapic_v1.method.DEFAULT,
-        commit_timeout=gapic_v1.method.DEFAULT,
+        commit_timeout=mock.ANY,
     )
+    commit_timeout_arg = call_args[1]["commit_timeout"]
+    assert isinstance(commit_timeout_arg, ConstantTimeout)
+    assert math.isclose(commit_timeout_arg._timeout, 60) is True
+
     message_pb = gapic_types.PubsubMessage(data=b"foo", attributes={"bar": "baz"})
     wrapper = PublishMessageWrapper(message=message_pb)
     batch1.publish.assert_called_once_with(wrapper)
