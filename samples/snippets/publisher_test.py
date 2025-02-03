@@ -196,6 +196,86 @@ def test_create_topic_with_cloud_storage_ingestion(
     publisher_client.delete_topic(request={"topic": topic_path})
 
 
+def test_create_topic_with_aws_msk_ingestion(
+    publisher_client: pubsub_v1.PublisherClient, capsys: CaptureFixture[str]
+) -> None:
+    # The scope of `topic_path` is limited to this function.
+    topic_path = publisher_client.topic_path(PROJECT_ID, TOPIC_ID)
+
+    # Outside of automated CI tests, these values must be of actual AWS resources for the test to pass.
+    cluster_arn = (
+        "arn:aws:kafka:us-east-1:111111111111:cluster/fake-cluster-name/11111111-1111-1"
+    )
+    msk_topic = "fake-msk-topic-name"
+    aws_role_arn = "arn:aws:iam::111111111111:role/fake-role-name"
+    gcp_service_account = (
+        "fake-service-account@fake-gcp-project.iam.gserviceaccount.com"
+    )
+
+    try:
+        publisher_client.delete_topic(request={"topic": topic_path})
+    except NotFound:
+        pass
+
+    publisher.create_topic_with_aws_msk_ingestion(
+        PROJECT_ID,
+        TOPIC_ID,
+        cluster_arn,
+        msk_topic,
+        aws_role_arn,
+        gcp_service_account,
+    )
+
+    out, _ = capsys.readouterr()
+    assert f"Created topic: {topic_path} with AWS MSK Ingestion Settings" in out
+
+    # Clean up resource created for the test.
+    publisher_client.delete_topic(request={"topic": topic_path})
+
+
+def test_create_topic_with_azure_event_hubs_ingestion(
+    publisher_client: pubsub_v1.PublisherClient, capsys: CaptureFixture[str]
+) -> None:
+    # The scope of `topic_path` is limited to this function.
+    topic_path = publisher_client.topic_path(PROJECT_ID, TOPIC_ID)
+
+    # Outside of automated CI tests, these values must be of actual Azure resources for the test to pass.
+    resource_group = "fake-resource-group"
+    namespace = "fake-namespace"
+    event_hub = "fake-event-hub"
+    client_id = "fake-client-id"
+    tenant_id = "fake-tenant-id"
+    subcription_id = "fake-subscription-id"
+    gcp_service_account = (
+        "fake-service-account@fake-gcp-project.iam.gserviceaccount.com"
+    )
+
+    try:
+        publisher_client.delete_topic(request={"topic": topic_path})
+    except NotFound:
+        pass
+
+    publisher.create_topic_with_azure_event_hubs_ingestion(
+        PROJECT_ID,
+        TOPIC_ID,
+        resource_group,
+        namespace,
+        event_hub,
+        client_id,
+        tenant_id,
+        subcription_id,
+        gcp_service_account,
+    )
+
+    out, _ = capsys.readouterr()
+    assert (
+        f"Created topic: {topic_path} with Azure Event Hubs Ingestion Settings" in out
+    )
+
+    # Clean up resource created for the test.
+    publisher_client.delete_topic(request={"topic": topic_path})
+
+
 def test_update_topic_type(
     publisher_client: pubsub_v1.PublisherClient, capsys: CaptureFixture[str]
 ) -> None:
