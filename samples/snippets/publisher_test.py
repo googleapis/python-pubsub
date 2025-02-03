@@ -276,6 +276,43 @@ def test_create_topic_with_azure_event_hubs_ingestion(
     publisher_client.delete_topic(request={"topic": topic_path})
 
 
+def test_create_topic_with_confluent_cloud_ingestion(
+    publisher_client: pubsub_v1.PublisherClient, capsys: CaptureFixture[str]
+) -> None:
+    # The scope of `topic_path` is limited to this function.
+    topic_path = publisher_client.topic_path(PROJECT_ID, TOPIC_ID)
+
+    # Outside of automated CI tests, these values must be of actual Confluent resources for the test to pass.
+    bootstrap_server = "fake-bootstrap-server-id.us-south1.gcp.confluent.cloud:9092"
+    cluster_id = "fake-cluster-id"
+    confluent_topic = "fake-confluent-topic-name"
+    identity_pool_id = "fake-identity-pool-id"
+    gcp_service_account = (
+        "fake-service-account@fake-gcp-project.iam.gserviceaccount.com"
+    )
+
+    try:
+        publisher_client.delete_topic(request={"topic": topic_path})
+    except NotFound:
+        pass
+
+    publisher.create_topic_with_confluent_cloud_ingestion(
+        PROJECT_ID,
+        TOPIC_ID,
+        bootstrap_server,
+        cluster_id,
+        confluent_topic,
+        identity_pool_id,
+        gcp_service_account,
+    )
+
+    out, _ = capsys.readouterr()
+    assert f"Created topic: {topic_path} with AWS MSK Ingestion Settings" in out
+
+    # Clean up resource created for the test.
+    publisher_client.delete_topic(request={"topic": topic_path})
+
+
 def test_update_topic_type(
     publisher_client: pubsub_v1.PublisherClient, capsys: CaptureFixture[str]
 ) -> None:
