@@ -307,7 +307,7 @@ def test_create_topic_with_confluent_cloud_ingestion(
     )
 
     out, _ = capsys.readouterr()
-    assert f"Created topic: {topic_path} with AWS MSK Ingestion Settings" in out
+    assert f"Created topic: {topic_path} with Confluent Cloud Ingestion Settings" in out
 
     # Clean up resource created for the test.
     publisher_client.delete_topic(request={"topic": topic_path})
