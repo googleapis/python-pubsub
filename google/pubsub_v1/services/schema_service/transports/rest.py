@@ -177,11 +177,34 @@ class SchemaServiceRestInterceptor:
     def post_commit_schema(self, response: gp_schema.Schema) -> gp_schema.Schema:
         """Post-rpc interceptor for commit_schema
 
-        Override in a subclass to manipulate the response
+        DEPRECATED. Please use the `post_commit_schema_with_metadata`
+        interceptor instead.
+
+        Override in a subclass to read or manipulate the response
         after it is returned by the SchemaService server but before
-        it is returned to user code.
+        it is returned to user code. This `post_commit_schema` interceptor runs
+        before the `post_commit_schema_with_metadata` interceptor.
         """
         return response
+
+    def post_commit_schema_with_metadata(
+        self,
+        response: gp_schema.Schema,
+        metadata: Sequence[Tuple[str, Union[str, bytes]]],
+    ) -> Tuple[gp_schema.Schema, Sequence[Tuple[str, Union[str, bytes]]]]:
+        """Post-rpc interceptor for commit_schema
+
+        Override in a subclass to read or manipulate the response or metadata after it
+        is returned by the SchemaService server but before it is returned to user code.
+
+        We recommend only using this `post_commit_schema_with_metadata`
+        interceptor in new development instead of the `post_commit_schema` interceptor.
+        When both interceptors are used, this `post_commit_schema_with_metadata` interceptor runs after the
+        `post_commit_schema` interceptor. The (possibly modified) response returned by
+        `post_commit_schema` will be passed to
+        `post_commit_schema_with_metadata`.
+        """
+        return response, metadata
 
     def pre_create_schema(
         self,
@@ -198,11 +221,34 @@ class SchemaServiceRestInterceptor:
     def post_create_schema(self, response: gp_schema.Schema) -> gp_schema.Schema:
         """Post-rpc interceptor for create_schema
 
-        Override in a subclass to manipulate the response
+        DEPRECATED. Please use the `post_create_schema_with_metadata`
+        interceptor instead.
+
+        Override in a subclass to read or manipulate the response
         after it is returned by the SchemaService server but before
-        it is returned to user code.
+        it is returned to user code. This `post_create_schema` interceptor runs
+        before the `post_create_schema_with_metadata` interceptor.
         """
         return response
+
+    def post_create_schema_with_metadata(
+        self,
+        response: gp_schema.Schema,
+        metadata: Sequence[Tuple[str, Union[str, bytes]]],
+    ) -> Tuple[gp_schema.Schema, Sequence[Tuple[str, Union[str, bytes]]]]:
+        """Post-rpc interceptor for create_schema
+
+        Override in a subclass to read or manipulate the response or metadata after it
+        is returned by the SchemaService server but before it is returned to user code.
+
+        We recommend only using this `post_create_schema_with_metadata`
+        interceptor in new development instead of the `post_create_schema` interceptor.
+        When both interceptors are used, this `post_create_schema_with_metadata` interceptor runs after the
+        `post_create_schema` interceptor. The (possibly modified) response returned by
+        `post_create_schema` will be passed to
+        `post_create_schema_with_metadata`.
+        """
+        return response, metadata
 
     def pre_delete_schema(
         self,
@@ -233,11 +279,32 @@ class SchemaServiceRestInterceptor:
     def post_delete_schema_revision(self, response: schema.Schema) -> schema.Schema:
         """Post-rpc interceptor for delete_schema_revision
 
-        Override in a subclass to manipulate the response
+        DEPRECATED. Please use the `post_delete_schema_revision_with_metadata`
+        interceptor instead.
+
+        Override in a subclass to read or manipulate the response
         after it is returned by the SchemaService server but before
-        it is returned to user code.
+        it is returned to user code. This `post_delete_schema_revision` interceptor runs
+        before the `post_delete_schema_revision_with_metadata` interceptor.
         """
         return response
+
+    def post_delete_schema_revision_with_metadata(
+        self, response: schema.Schema, metadata: Sequence[Tuple[str, Union[str, bytes]]]
+    ) -> Tuple[schema.Schema, Sequence[Tuple[str, Union[str, bytes]]]]:
+        """Post-rpc interceptor for delete_schema_revision
+
+        Override in a subclass to read or manipulate the response or metadata after it
+        is returned by the SchemaService server but before it is returned to user code.
+
+        We recommend only using this `post_delete_schema_revision_with_metadata`
+        interceptor in new development instead of the `post_delete_schema_revision` interceptor.
+        When both interceptors are used, this `post_delete_schema_revision_with_metadata` interceptor runs after the
+        `post_delete_schema_revision` interceptor. The (possibly modified) response returned by
+        `post_delete_schema_revision` will be passed to
+        `post_delete_schema_revision_with_metadata`.
+        """
+        return response, metadata
 
     def pre_get_schema(
         self,
@@ -254,11 +321,32 @@ class SchemaServiceRestInterceptor:
     def post_get_schema(self, response: schema.Schema) -> schema.Schema:
         """Post-rpc interceptor for get_schema
 
-        Override in a subclass to manipulate the response
+        DEPRECATED. Please use the `post_get_schema_with_metadata`
+        interceptor instead.
+
+        Override in a subclass to read or manipulate the response
         after it is returned by the SchemaService server but before
-        it is returned to user code.
+        it is returned to user code. This `post_get_schema` interceptor runs
+        before the `post_get_schema_with_metadata` interceptor.
         """
         return response
+
+    def post_get_schema_with_metadata(
+        self, response: schema.Schema, metadata: Sequence[Tuple[str, Union[str, bytes]]]
+    ) -> Tuple[schema.Schema, Sequence[Tuple[str, Union[str, bytes]]]]:
+        """Post-rpc interceptor for get_schema
+
+        Override in a subclass to read or manipulate the response or metadata after it
+        is returned by the SchemaService server but before it is returned to user code.
+
+        We recommend only using this `post_get_schema_with_metadata`
+        interceptor in new development instead of the `post_get_schema` interceptor.
+        When both interceptors are used, this `post_get_schema_with_metadata` interceptor runs after the
+        `post_get_schema` interceptor. The (possibly modified) response returned by
+        `post_get_schema` will be passed to
+        `post_get_schema_with_metadata`.
+        """
+        return response, metadata
 
     def pre_list_schema_revisions(
         self,
@@ -279,11 +367,36 @@ class SchemaServiceRestInterceptor:
     ) -> schema.ListSchemaRevisionsResponse:
         """Post-rpc interceptor for list_schema_revisions
 
-        Override in a subclass to manipulate the response
+        DEPRECATED. Please use the `post_list_schema_revisions_with_metadata`
+        interceptor instead.
+
+        Override in a subclass to read or manipulate the response
         after it is returned by the SchemaService server but before
-        it is returned to user code.
+        it is returned to user code. This `post_list_schema_revisions` interceptor runs
+        before the `post_list_schema_revisions_with_metadata` interceptor.
         """
         return response
+
+    def post_list_schema_revisions_with_metadata(
+        self,
+        response: schema.ListSchemaRevisionsResponse,
+        metadata: Sequence[Tuple[str, Union[str, bytes]]],
+    ) -> Tuple[
+        schema.ListSchemaRevisionsResponse, Sequence[Tuple[str, Union[str, bytes]]]
+    ]:
+        """Post-rpc interceptor for list_schema_revisions
+
+        Override in a subclass to read or manipulate the response or metadata after it
+        is returned by the SchemaService server but before it is returned to user code.
+
+        We recommend only using this `post_list_schema_revisions_with_metadata`
+        interceptor in new development instead of the `post_list_schema_revisions` interceptor.
+        When both interceptors are used, this `post_list_schema_revisions_with_metadata` interceptor runs after the
+        `post_list_schema_revisions` interceptor. The (possibly modified) response returned by
+        `post_list_schema_revisions` will be passed to
+        `post_list_schema_revisions_with_metadata`.
+        """
+        return response, metadata
 
     def pre_list_schemas(
         self,
@@ -302,11 +415,34 @@ class SchemaServiceRestInterceptor:
     ) -> schema.ListSchemasResponse:
         """Post-rpc interceptor for list_schemas
 
-        Override in a subclass to manipulate the response
+        DEPRECATED. Please use the `post_list_schemas_with_metadata`
+        interceptor instead.
+
+        Override in a subclass to read or manipulate the response
         after it is returned by the SchemaService server but before
-        it is returned to user code.
+        it is returned to user code. This `post_list_schemas` interceptor runs
+        before the `post_list_schemas_with_metadata` interceptor.
         """
         return response
+
+    def post_list_schemas_with_metadata(
+        self,
+        response: schema.ListSchemasResponse,
+        metadata: Sequence[Tuple[str, Union[str, bytes]]],
+    ) -> Tuple[schema.ListSchemasResponse, Sequence[Tuple[str, Union[str, bytes]]]]:
+        """Post-rpc interceptor for list_schemas
+
+        Override in a subclass to read or manipulate the response or metadata after it
+        is returned by the SchemaService server but before it is returned to user code.
+
+        We recommend only using this `post_list_schemas_with_metadata`
+        interceptor in new development instead of the `post_list_schemas` interceptor.
+        When both interceptors are used, this `post_list_schemas_with_metadata` interceptor runs after the
+        `post_list_schemas` interceptor. The (possibly modified) response returned by
+        `post_list_schemas` will be passed to
+        `post_list_schemas_with_metadata`.
+        """
+        return response, metadata
 
     def pre_rollback_schema(
         self,
@@ -323,11 +459,32 @@ class SchemaServiceRestInterceptor:
     def post_rollback_schema(self, response: schema.Schema) -> schema.Schema:
         """Post-rpc interceptor for rollback_schema
 
-        Override in a subclass to manipulate the response
+        DEPRECATED. Please use the `post_rollback_schema_with_metadata`
+        interceptor instead.
+
+        Override in a subclass to read or manipulate the response
         after it is returned by the SchemaService server but before
-        it is returned to user code.
+        it is returned to user code. This `post_rollback_schema` interceptor runs
+        before the `post_rollback_schema_with_metadata` interceptor.
         """
         return response
+
+    def post_rollback_schema_with_metadata(
+        self, response: schema.Schema, metadata: Sequence[Tuple[str, Union[str, bytes]]]
+    ) -> Tuple[schema.Schema, Sequence[Tuple[str, Union[str, bytes]]]]:
+        """Post-rpc interceptor for rollback_schema
+
+        Override in a subclass to read or manipulate the response or metadata after it
+        is returned by the SchemaService server but before it is returned to user code.
+
+        We recommend only using this `post_rollback_schema_with_metadata`
+        interceptor in new development instead of the `post_rollback_schema` interceptor.
+        When both interceptors are used, this `post_rollback_schema_with_metadata` interceptor runs after the
+        `post_rollback_schema` interceptor. The (possibly modified) response returned by
+        `post_rollback_schema` will be passed to
+        `post_rollback_schema_with_metadata`.
+        """
+        return response, metadata
 
     def pre_validate_message(
         self,
@@ -346,11 +503,34 @@ class SchemaServiceRestInterceptor:
     ) -> schema.ValidateMessageResponse:
         """Post-rpc interceptor for validate_message
 
-        Override in a subclass to manipulate the response
+        DEPRECATED. Please use the `post_validate_message_with_metadata`
+        interceptor instead.
+
+        Override in a subclass to read or manipulate the response
         after it is returned by the SchemaService server but before
-        it is returned to user code.
+        it is returned to user code. This `post_validate_message` interceptor runs
+        before the `post_validate_message_with_metadata` interceptor.
         """
         return response
+
+    def post_validate_message_with_metadata(
+        self,
+        response: schema.ValidateMessageResponse,
+        metadata: Sequence[Tuple[str, Union[str, bytes]]],
+    ) -> Tuple[schema.ValidateMessageResponse, Sequence[Tuple[str, Union[str, bytes]]]]:
+        """Post-rpc interceptor for validate_message
+
+        Override in a subclass to read or manipulate the response or metadata after it
+        is returned by the SchemaService server but before it is returned to user code.
+
+        We recommend only using this `post_validate_message_with_metadata`
+        interceptor in new development instead of the `post_validate_message` interceptor.
+        When both interceptors are used, this `post_validate_message_with_metadata` interceptor runs after the
+        `post_validate_message` interceptor. The (possibly modified) response returned by
+        `post_validate_message` will be passed to
+        `post_validate_message_with_metadata`.
+        """
+        return response, metadata
 
     def pre_validate_schema(
         self,
@@ -371,11 +551,36 @@ class SchemaServiceRestInterceptor:
     ) -> gp_schema.ValidateSchemaResponse:
         """Post-rpc interceptor for validate_schema
 
-        Override in a subclass to manipulate the response
+        DEPRECATED. Please use the `post_validate_schema_with_metadata`
+        interceptor instead.
+
+        Override in a subclass to read or manipulate the response
         after it is returned by the SchemaService server but before
-        it is returned to user code.
+        it is returned to user code. This `post_validate_schema` interceptor runs
+        before the `post_validate_schema_with_metadata` interceptor.
         """
         return response
+
+    def post_validate_schema_with_metadata(
+        self,
+        response: gp_schema.ValidateSchemaResponse,
+        metadata: Sequence[Tuple[str, Union[str, bytes]]],
+    ) -> Tuple[
+        gp_schema.ValidateSchemaResponse, Sequence[Tuple[str, Union[str, bytes]]]
+    ]:
+        """Post-rpc interceptor for validate_schema
+
+        Override in a subclass to read or manipulate the response or metadata after it
+        is returned by the SchemaService server but before it is returned to user code.
+
+        We recommend only using this `post_validate_schema_with_metadata`
+        interceptor in new development instead of the `post_validate_schema` interceptor.
+        When both interceptors are used, this `post_validate_schema_with_metadata` interceptor runs after the
+        `post_validate_schema` interceptor. The (possibly modified) response returned by
+        `post_validate_schema` will be passed to
+        `post_validate_schema_with_metadata`.
+        """
+        return response, metadata
 
     def pre_get_iam_policy(
         self,
@@ -659,6 +864,10 @@ class SchemaServiceRestTransport(_BaseSchemaServiceRestTransport):
             json_format.Parse(response.content, pb_resp, ignore_unknown_fields=True)
 
             resp = self._interceptor.post_commit_schema(resp)
+            response_metadata = [(k, str(v)) for k, v in response.headers.items()]
+            resp, _ = self._interceptor.post_commit_schema_with_metadata(
+                resp, response_metadata
+            )
             if CLIENT_LOGGING_SUPPORTED and _LOGGER.isEnabledFor(
                 logging.DEBUG
             ):  # pragma: NO COVER
@@ -805,6 +1014,10 @@ class SchemaServiceRestTransport(_BaseSchemaServiceRestTransport):
             json_format.Parse(response.content, pb_resp, ignore_unknown_fields=True)
 
             resp = self._interceptor.post_create_schema(resp)
+            response_metadata = [(k, str(v)) for k, v in response.headers.items()]
+            resp, _ = self._interceptor.post_create_schema_with_metadata(
+                resp, response_metadata
+            )
             if CLIENT_LOGGING_SUPPORTED and _LOGGER.isEnabledFor(
                 logging.DEBUG
             ):  # pragma: NO COVER
@@ -1053,6 +1266,10 @@ class SchemaServiceRestTransport(_BaseSchemaServiceRestTransport):
             json_format.Parse(response.content, pb_resp, ignore_unknown_fields=True)
 
             resp = self._interceptor.post_delete_schema_revision(resp)
+            response_metadata = [(k, str(v)) for k, v in response.headers.items()]
+            resp, _ = self._interceptor.post_delete_schema_revision_with_metadata(
+                resp, response_metadata
+            )
             if CLIENT_LOGGING_SUPPORTED and _LOGGER.isEnabledFor(
                 logging.DEBUG
             ):  # pragma: NO COVER
@@ -1197,6 +1414,10 @@ class SchemaServiceRestTransport(_BaseSchemaServiceRestTransport):
             json_format.Parse(response.content, pb_resp, ignore_unknown_fields=True)
 
             resp = self._interceptor.post_get_schema(resp)
+            response_metadata = [(k, str(v)) for k, v in response.headers.items()]
+            resp, _ = self._interceptor.post_get_schema_with_metadata(
+                resp, response_metadata
+            )
             if CLIENT_LOGGING_SUPPORTED and _LOGGER.isEnabledFor(
                 logging.DEBUG
             ):  # pragma: NO COVER
@@ -1339,6 +1560,10 @@ class SchemaServiceRestTransport(_BaseSchemaServiceRestTransport):
             json_format.Parse(response.content, pb_resp, ignore_unknown_fields=True)
 
             resp = self._interceptor.post_list_schema_revisions(resp)
+            response_metadata = [(k, str(v)) for k, v in response.headers.items()]
+            resp, _ = self._interceptor.post_list_schema_revisions_with_metadata(
+                resp, response_metadata
+            )
             if CLIENT_LOGGING_SUPPORTED and _LOGGER.isEnabledFor(
                 logging.DEBUG
             ):  # pragma: NO COVER
@@ -1483,6 +1708,10 @@ class SchemaServiceRestTransport(_BaseSchemaServiceRestTransport):
             json_format.Parse(response.content, pb_resp, ignore_unknown_fields=True)
 
             resp = self._interceptor.post_list_schemas(resp)
+            response_metadata = [(k, str(v)) for k, v in response.headers.items()]
+            resp, _ = self._interceptor.post_list_schemas_with_metadata(
+                resp, response_metadata
+            )
             if CLIENT_LOGGING_SUPPORTED and _LOGGER.isEnabledFor(
                 logging.DEBUG
             ):  # pragma: NO COVER
@@ -1629,6 +1858,10 @@ class SchemaServiceRestTransport(_BaseSchemaServiceRestTransport):
             json_format.Parse(response.content, pb_resp, ignore_unknown_fields=True)
 
             resp = self._interceptor.post_rollback_schema(resp)
+            response_metadata = [(k, str(v)) for k, v in response.headers.items()]
+            resp, _ = self._interceptor.post_rollback_schema_with_metadata(
+                resp, response_metadata
+            )
             if CLIENT_LOGGING_SUPPORTED and _LOGGER.isEnabledFor(
                 logging.DEBUG
             ):  # pragma: NO COVER
@@ -1779,6 +2012,10 @@ class SchemaServiceRestTransport(_BaseSchemaServiceRestTransport):
             json_format.Parse(response.content, pb_resp, ignore_unknown_fields=True)
 
             resp = self._interceptor.post_validate_message(resp)
+            response_metadata = [(k, str(v)) for k, v in response.headers.items()]
+            resp, _ = self._interceptor.post_validate_message_with_metadata(
+                resp, response_metadata
+            )
             if CLIENT_LOGGING_SUPPORTED and _LOGGER.isEnabledFor(
                 logging.DEBUG
             ):  # pragma: NO COVER
@@ -1927,6 +2164,10 @@ class SchemaServiceRestTransport(_BaseSchemaServiceRestTransport):
             json_format.Parse(response.content, pb_resp, ignore_unknown_fields=True)
 
             resp = self._interceptor.post_validate_schema(resp)
+            response_metadata = [(k, str(v)) for k, v in response.headers.items()]
+            resp, _ = self._interceptor.post_validate_schema_with_metadata(
+                resp, response_metadata
+            )
             if CLIENT_LOGGING_SUPPORTED and _LOGGER.isEnabledFor(
                 logging.DEBUG
             ):  # pragma: NO COVER

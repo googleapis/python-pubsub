@@ -166,11 +166,32 @@ class PublisherRestInterceptor:
     def post_create_topic(self, response: pubsub.Topic) -> pubsub.Topic:
         """Post-rpc interceptor for create_topic
 
-        Override in a subclass to manipulate the response
+        DEPRECATED. Please use the `post_create_topic_with_metadata`
+        interceptor instead.
+
+        Override in a subclass to read or manipulate the response
         after it is returned by the Publisher server but before
-        it is returned to user code.
+        it is returned to user code. This `post_create_topic` interceptor runs
+        before the `post_create_topic_with_metadata` interceptor.
         """
         return response
+
+    def post_create_topic_with_metadata(
+        self, response: pubsub.Topic, metadata: Sequence[Tuple[str, Union[str, bytes]]]
+    ) -> Tuple[pubsub.Topic, Sequence[Tuple[str, Union[str, bytes]]]]:
+        """Post-rpc interceptor for create_topic
+
+        Override in a subclass to read or manipulate the response or metadata after it
+        is returned by the Publisher server but before it is returned to user code.
+
+        We recommend only using this `post_create_topic_with_metadata`
+        interceptor in new development instead of the `post_create_topic` interceptor.
+        When both interceptors are used, this `post_create_topic_with_metadata` interceptor runs after the
+        `post_create_topic` interceptor. The (possibly modified) response returned by
+        `post_create_topic` will be passed to
+        `post_create_topic_with_metadata`.
+        """
+        return response, metadata
 
     def pre_delete_topic(
         self,
@@ -203,11 +224,36 @@ class PublisherRestInterceptor:
     ) -> pubsub.DetachSubscriptionResponse:
         """Post-rpc interceptor for detach_subscription
 
-        Override in a subclass to manipulate the response
+        DEPRECATED. Please use the `post_detach_subscription_with_metadata`
+        interceptor instead.
+
+        Override in a subclass to read or manipulate the response
         after it is returned by the Publisher server but before
-        it is returned to user code.
+        it is returned to user code. This `post_detach_subscription` interceptor runs
+        before the `post_detach_subscription_with_metadata` interceptor.
         """
         return response
+
+    def post_detach_subscription_with_metadata(
+        self,
+        response: pubsub.DetachSubscriptionResponse,
+        metadata: Sequence[Tuple[str, Union[str, bytes]]],
+    ) -> Tuple[
+        pubsub.DetachSubscriptionResponse, Sequence[Tuple[str, Union[str, bytes]]]
+    ]:
+        """Post-rpc interceptor for detach_subscription
+
+        Override in a subclass to read or manipulate the response or metadata after it
+        is returned by the Publisher server but before it is returned to user code.
+
+        We recommend only using this `post_detach_subscription_with_metadata`
+        interceptor in new development instead of the `post_detach_subscription` interceptor.
+        When both interceptors are used, this `post_detach_subscription_with_metadata` interceptor runs after the
+        `post_detach_subscription` interceptor. The (possibly modified) response returned by
+        `post_detach_subscription` will be passed to
+        `post_detach_subscription_with_metadata`.
+        """
+        return response, metadata
 
     def pre_get_topic(
         self,
@@ -224,11 +270,32 @@ class PublisherRestInterceptor:
     def post_get_topic(self, response: pubsub.Topic) -> pubsub.Topic:
         """Post-rpc interceptor for get_topic
 
-        Override in a subclass to manipulate the response
+        DEPRECATED. Please use the `post_get_topic_with_metadata`
+        interceptor instead.
+
+        Override in a subclass to read or manipulate the response
         after it is returned by the Publisher server but before
-        it is returned to user code.
+        it is returned to user code. This `post_get_topic` interceptor runs
+        before the `post_get_topic_with_metadata` interceptor.
         """
         return response
+
+    def post_get_topic_with_metadata(
+        self, response: pubsub.Topic, metadata: Sequence[Tuple[str, Union[str, bytes]]]
+    ) -> Tuple[pubsub.Topic, Sequence[Tuple[str, Union[str, bytes]]]]:
+        """Post-rpc interceptor for get_topic
+
+        Override in a subclass to read or manipulate the response or metadata after it
+        is returned by the Publisher server but before it is returned to user code.
+
+        We recommend only using this `post_get_topic_with_metadata`
+        interceptor in new development instead of the `post_get_topic` interceptor.
+        When both interceptors are used, this `post_get_topic_with_metadata` interceptor runs after the
+        `post_get_topic` interceptor. The (possibly modified) response returned by
+        `post_get_topic` will be passed to
+        `post_get_topic_with_metadata`.
+        """
+        return response, metadata
 
     def pre_list_topics(
         self,
@@ -247,11 +314,34 @@ class PublisherRestInterceptor:
     ) -> pubsub.ListTopicsResponse:
         """Post-rpc interceptor for list_topics
 
-        Override in a subclass to manipulate the response
+        DEPRECATED. Please use the `post_list_topics_with_metadata`
+        interceptor instead.
+
+        Override in a subclass to read or manipulate the response
         after it is returned by the Publisher server but before
-        it is returned to user code.
+        it is returned to user code. This `post_list_topics` interceptor runs
+        before the `post_list_topics_with_metadata` interceptor.
         """
         return response
+
+    def post_list_topics_with_metadata(
+        self,
+        response: pubsub.ListTopicsResponse,
+        metadata: Sequence[Tuple[str, Union[str, bytes]]],
+    ) -> Tuple[pubsub.ListTopicsResponse, Sequence[Tuple[str, Union[str, bytes]]]]:
+        """Post-rpc interceptor for list_topics
+
+        Override in a subclass to read or manipulate the response or metadata after it
+        is returned by the Publisher server but before it is returned to user code.
+
+        We recommend only using this `post_list_topics_with_metadata`
+        interceptor in new development instead of the `post_list_topics` interceptor.
+        When both interceptors are used, this `post_list_topics_with_metadata` interceptor runs after the
+        `post_list_topics` interceptor. The (possibly modified) response returned by
+        `post_list_topics` will be passed to
+        `post_list_topics_with_metadata`.
+        """
+        return response, metadata
 
     def pre_list_topic_snapshots(
         self,
@@ -272,11 +362,36 @@ class PublisherRestInterceptor:
     ) -> pubsub.ListTopicSnapshotsResponse:
         """Post-rpc interceptor for list_topic_snapshots
 
-        Override in a subclass to manipulate the response
+        DEPRECATED. Please use the `post_list_topic_snapshots_with_metadata`
+        interceptor instead.
+
+        Override in a subclass to read or manipulate the response
         after it is returned by the Publisher server but before
-        it is returned to user code.
+        it is returned to user code. This `post_list_topic_snapshots` interceptor runs
+        before the `post_list_topic_snapshots_with_metadata` interceptor.
         """
         return response
+
+    def post_list_topic_snapshots_with_metadata(
+        self,
+        response: pubsub.ListTopicSnapshotsResponse,
+        metadata: Sequence[Tuple[str, Union[str, bytes]]],
+    ) -> Tuple[
+        pubsub.ListTopicSnapshotsResponse, Sequence[Tuple[str, Union[str, bytes]]]
+    ]:
+        """Post-rpc interceptor for list_topic_snapshots
+
+        Override in a subclass to read or manipulate the response or metadata after it
+        is returned by the Publisher server but before it is returned to user code.
+
+        We recommend only using this `post_list_topic_snapshots_with_metadata`
+        interceptor in new development instead of the `post_list_topic_snapshots` interceptor.
+        When both interceptors are used, this `post_list_topic_snapshots_with_metadata` interceptor runs after the
+        `post_list_topic_snapshots` interceptor. The (possibly modified) response returned by
+        `post_list_topic_snapshots` will be passed to
+        `post_list_topic_snapshots_with_metadata`.
+        """
+        return response, metadata
 
     def pre_list_topic_subscriptions(
         self,
@@ -297,11 +412,36 @@ class PublisherRestInterceptor:
     ) -> pubsub.ListTopicSubscriptionsResponse:
         """Post-rpc interceptor for list_topic_subscriptions
 
-        Override in a subclass to manipulate the response
+        DEPRECATED. Please use the `post_list_topic_subscriptions_with_metadata`
+        interceptor instead.
+
+        Override in a subclass to read or manipulate the response
         after it is returned by the Publisher server but before
-        it is returned to user code.
+        it is returned to user code. This `post_list_topic_subscriptions` interceptor runs
+        before the `post_list_topic_subscriptions_with_metadata` interceptor.
         """
         return response
+
+    def post_list_topic_subscriptions_with_metadata(
+        self,
+        response: pubsub.ListTopicSubscriptionsResponse,
+        metadata: Sequence[Tuple[str, Union[str, bytes]]],
+    ) -> Tuple[
+        pubsub.ListTopicSubscriptionsResponse, Sequence[Tuple[str, Union[str, bytes]]]
+    ]:
+        """Post-rpc interceptor for list_topic_subscriptions
+
+        Override in a subclass to read or manipulate the response or metadata after it
+        is returned by the Publisher server but before it is returned to user code.
+
+        We recommend only using this `post_list_topic_subscriptions_with_metadata`
+        interceptor in new development instead of the `post_list_topic_subscriptions` interceptor.
+        When both interceptors are used, this `post_list_topic_subscriptions_with_metadata` interceptor runs after the
+        `post_list_topic_subscriptions` interceptor. The (possibly modified) response returned by
+        `post_list_topic_subscriptions` will be passed to
+        `post_list_topic_subscriptions_with_metadata`.
+        """
+        return response, metadata
 
     def pre_publish(
         self,
@@ -318,11 +458,34 @@ class PublisherRestInterceptor:
     def post_publish(self, response: pubsub.PublishResponse) -> pubsub.PublishResponse:
         """Post-rpc interceptor for publish
 
-        Override in a subclass to manipulate the response
+        DEPRECATED. Please use the `post_publish_with_metadata`
+        interceptor instead.
+
+        Override in a subclass to read or manipulate the response
         after it is returned by the Publisher server but before
-        it is returned to user code.
+        it is returned to user code. This `post_publish` interceptor runs
+        before the `post_publish_with_metadata` interceptor.
         """
         return response
+
+    def post_publish_with_metadata(
+        self,
+        response: pubsub.PublishResponse,
+        metadata: Sequence[Tuple[str, Union[str, bytes]]],
+    ) -> Tuple[pubsub.PublishResponse, Sequence[Tuple[str, Union[str, bytes]]]]:
+        """Post-rpc interceptor for publish
+
+        Override in a subclass to read or manipulate the response or metadata after it
+        is returned by the Publisher server but before it is returned to user code.
+
+        We recommend only using this `post_publish_with_metadata`
+        interceptor in new development instead of the `post_publish` interceptor.
+        When both interceptors are used, this `post_publish_with_metadata` interceptor runs after the
+        `post_publish` interceptor. The (possibly modified) response returned by
+        `post_publish` will be passed to
+        `post_publish_with_metadata`.
+        """
+        return response, metadata
 
     def pre_update_topic(
         self,
@@ -339,11 +502,32 @@ class PublisherRestInterceptor:
     def post_update_topic(self, response: pubsub.Topic) -> pubsub.Topic:
         """Post-rpc interceptor for update_topic
 
-        Override in a subclass to manipulate the response
+        DEPRECATED. Please use the `post_update_topic_with_metadata`
+        interceptor instead.
+
+        Override in a subclass to read or manipulate the response
         after it is returned by the Publisher server but before
-        it is returned to user code.
+        it is returned to user code. This `post_update_topic` interceptor runs
+        before the `post_update_topic_with_metadata` interceptor.
         """
         return response
+
+    def post_update_topic_with_metadata(
+        self, response: pubsub.Topic, metadata: Sequence[Tuple[str, Union[str, bytes]]]
+    ) -> Tuple[pubsub.Topic, Sequence[Tuple[str, Union[str, bytes]]]]:
+        """Post-rpc interceptor for update_topic
+
+        Override in a subclass to read or manipulate the response or metadata after it
+        is returned by the Publisher server but before it is returned to user code.
+
+        We recommend only using this `post_update_topic_with_metadata`
+        interceptor in new development instead of the `post_update_topic` interceptor.
+        When both interceptors are used, this `post_update_topic_with_metadata` interceptor runs after the
+        `post_update_topic` interceptor. The (possibly modified) response returned by
+        `post_update_topic` will be passed to
+        `post_update_topic_with_metadata`.
+        """
+        return response, metadata
 
     def pre_get_iam_policy(
         self,
@@ -630,6 +814,10 @@ class PublisherRestTransport(_BasePublisherRestTransport):
             json_format.Parse(response.content, pb_resp, ignore_unknown_fields=True)
 
             resp = self._interceptor.post_create_topic(resp)
+            response_metadata = [(k, str(v)) for k, v in response.headers.items()]
+            resp, _ = self._interceptor.post_create_topic_with_metadata(
+                resp, response_metadata
+            )
             if CLIENT_LOGGING_SUPPORTED and _LOGGER.isEnabledFor(
                 logging.DEBUG
             ):  # pragma: NO COVER
@@ -883,6 +1071,10 @@ class PublisherRestTransport(_BasePublisherRestTransport):
             json_format.Parse(response.content, pb_resp, ignore_unknown_fields=True)
 
             resp = self._interceptor.post_detach_subscription(resp)
+            response_metadata = [(k, str(v)) for k, v in response.headers.items()]
+            resp, _ = self._interceptor.post_detach_subscription_with_metadata(
+                resp, response_metadata
+            )
             if CLIENT_LOGGING_SUPPORTED and _LOGGER.isEnabledFor(
                 logging.DEBUG
             ):  # pragma: NO COVER
@@ -1025,6 +1217,10 @@ class PublisherRestTransport(_BasePublisherRestTransport):
             json_format.Parse(response.content, pb_resp, ignore_unknown_fields=True)
 
             resp = self._interceptor.post_get_topic(resp)
+            response_metadata = [(k, str(v)) for k, v in response.headers.items()]
+            resp, _ = self._interceptor.post_get_topic_with_metadata(
+                resp, response_metadata
+            )
             if CLIENT_LOGGING_SUPPORTED and _LOGGER.isEnabledFor(
                 logging.DEBUG
             ):  # pragma: NO COVER
@@ -1167,6 +1363,10 @@ class PublisherRestTransport(_BasePublisherRestTransport):
             json_format.Parse(response.content, pb_resp, ignore_unknown_fields=True)
 
             resp = self._interceptor.post_list_topics(resp)
+            response_metadata = [(k, str(v)) for k, v in response.headers.items()]
+            resp, _ = self._interceptor.post_list_topics_with_metadata(
+                resp, response_metadata
+            )
             if CLIENT_LOGGING_SUPPORTED and _LOGGER.isEnabledFor(
                 logging.DEBUG
             ):  # pragma: NO COVER
@@ -1309,6 +1509,10 @@ class PublisherRestTransport(_BasePublisherRestTransport):
             json_format.Parse(response.content, pb_resp, ignore_unknown_fields=True)
 
             resp = self._interceptor.post_list_topic_snapshots(resp)
+            response_metadata = [(k, str(v)) for k, v in response.headers.items()]
+            resp, _ = self._interceptor.post_list_topic_snapshots_with_metadata(
+                resp, response_metadata
+            )
             if CLIENT_LOGGING_SUPPORTED and _LOGGER.isEnabledFor(
                 logging.DEBUG
             ):  # pragma: NO COVER
@@ -1453,6 +1657,10 @@ class PublisherRestTransport(_BasePublisherRestTransport):
             json_format.Parse(response.content, pb_resp, ignore_unknown_fields=True)
 
             resp = self._interceptor.post_list_topic_subscriptions(resp)
+            response_metadata = [(k, str(v)) for k, v in response.headers.items()]
+            resp, _ = self._interceptor.post_list_topic_subscriptions_with_metadata(
+                resp, response_metadata
+            )
             if CLIENT_LOGGING_SUPPORTED and _LOGGER.isEnabledFor(
                 logging.DEBUG
             ):  # pragma: NO COVER
@@ -1601,6 +1809,10 @@ class PublisherRestTransport(_BasePublisherRestTransport):
             json_format.Parse(response.content, pb_resp, ignore_unknown_fields=True)
 
             resp = self._interceptor.post_publish(resp)
+            response_metadata = [(k, str(v)) for k, v in response.headers.items()]
+            resp, _ = self._interceptor.post_publish_with_metadata(
+                resp, response_metadata
+            )
             if CLIENT_LOGGING_SUPPORTED and _LOGGER.isEnabledFor(
                 logging.DEBUG
             ):  # pragma: NO COVER
@@ -1749,6 +1961,10 @@ class PublisherRestTransport(_BasePublisherRestTransport):
             json_format.Parse(response.content, pb_resp, ignore_unknown_fields=True)
 
             resp = self._interceptor.post_update_topic(resp)
+            response_metadata = [(k, str(v)) for k, v in response.headers.items()]
+            resp, _ = self._interceptor.post_update_topic_with_metadata(
+                resp, response_metadata
+            )
             if CLIENT_LOGGING_SUPPORTED and _LOGGER.isEnabledFor(
                 logging.DEBUG
             ):  # pragma: NO COVER

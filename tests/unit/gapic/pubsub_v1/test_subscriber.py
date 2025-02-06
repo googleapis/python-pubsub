@@ -69,6 +69,14 @@ from google.pubsub_v1.types import pubsub
 import google.auth
 
 
+CRED_INFO_JSON = {
+    "credential_source": "/path/to/file",
+    "credential_type": "service account credentials",
+    "principal": "service-account@example.com",
+}
+CRED_INFO_STRING = json.dumps(CRED_INFO_JSON)
+
+
 async def mock_async_gen(data, chunk_size=1):
     for i in range(0, len(data)):  # pragma: NO COVER
         chunk = data[i : i + chunk_size]
@@ -301,6 +309,49 @@ def test__get_universe_domain():
     with pytest.raises(ValueError) as excinfo:
         SubscriberClient._get_universe_domain("", None)
     assert str(excinfo.value) == "Universe Domain cannot be an empty string."
+
+
+@pytest.mark.parametrize(
+    "error_code,cred_info_json,show_cred_info",
+    [
+        (401, CRED_INFO_JSON, True),
+        (403, CRED_INFO_JSON, True),
+        (404, CRED_INFO_JSON, True),
+        (500, CRED_INFO_JSON, False),
+        (401, None, False),
+        (403, None, False),
+        (404, None, False),
+        (500, None, False),
+    ],
+)
+def test__add_cred_info_for_auth_errors(error_code, cred_info_json, show_cred_info):
+    cred = mock.Mock(["get_cred_info"])
+    cred.get_cred_info = mock.Mock(return_value=cred_info_json)
+    client = SubscriberClient(credentials=cred)
+    client._transport._credentials = cred
+
+    error = core_exceptions.GoogleAPICallError("message", details=["foo"])
+    error.code = error_code
+
+    client._add_cred_info_for_auth_errors(error)
+    if show_cred_info:
+        assert error.details == ["foo", CRED_INFO_STRING]
+    else:
+        assert error.details == ["foo"]
+
+
+@pytest.mark.parametrize("error_code", [401, 403, 404, 500])
+def test__add_cred_info_for_auth_errors_no_get_cred_info(error_code):
+    cred = mock.Mock([])
+    assert not hasattr(cred, "get_cred_info")
+    client = SubscriberClient(credentials=cred)
+    client._transport._credentials = cred
+
+    error = core_exceptions.GoogleAPICallError("message", details=[])
+    error.code = error_code
+
+    client._add_cred_info_for_auth_errors(error)
+    assert error.details == []
 
 
 @pytest.mark.parametrize(
@@ -10416,10 +10467,13 @@ def test_create_subscription_rest_interceptors(null_interceptor):
     ) as transcode, mock.patch.object(
         transports.SubscriberRestInterceptor, "post_create_subscription"
     ) as post, mock.patch.object(
+        transports.SubscriberRestInterceptor, "post_create_subscription_with_metadata"
+    ) as post_with_metadata, mock.patch.object(
         transports.SubscriberRestInterceptor, "pre_create_subscription"
     ) as pre:
         pre.assert_not_called()
         post.assert_not_called()
+        post_with_metadata.assert_not_called()
         pb_message = pubsub.Subscription.pb(pubsub.Subscription())
         transcode.return_value = {
             "method": "post",
@@ -10441,6 +10495,7 @@ def test_create_subscription_rest_interceptors(null_interceptor):
         ]
         pre.return_value = request, metadata
         post.return_value = pubsub.Subscription()
+        post_with_metadata.return_value = pubsub.Subscription(), metadata
 
         client.create_subscription(
             request,
@@ -10452,6 +10507,7 @@ def test_create_subscription_rest_interceptors(null_interceptor):
 
         pre.assert_called_once()
         post.assert_called_once()
+        post_with_metadata.assert_called_once()
 
 
 def test_get_subscription_rest_bad_request(request_type=pubsub.GetSubscriptionRequest):
@@ -10550,10 +10606,13 @@ def test_get_subscription_rest_interceptors(null_interceptor):
     ) as transcode, mock.patch.object(
         transports.SubscriberRestInterceptor, "post_get_subscription"
     ) as post, mock.patch.object(
+        transports.SubscriberRestInterceptor, "post_get_subscription_with_metadata"
+    ) as post_with_metadata, mock.patch.object(
         transports.SubscriberRestInterceptor, "pre_get_subscription"
     ) as pre:
         pre.assert_not_called()
         post.assert_not_called()
+        post_with_metadata.assert_not_called()
         pb_message = pubsub.GetSubscriptionRequest.pb(pubsub.GetSubscriptionRequest())
         transcode.return_value = {
             "method": "post",
@@ -10575,6 +10634,7 @@ def test_get_subscription_rest_interceptors(null_interceptor):
         ]
         pre.return_value = request, metadata
         post.return_value = pubsub.Subscription()
+        post_with_metadata.return_value = pubsub.Subscription(), metadata
 
         client.get_subscription(
             request,
@@ -10586,6 +10646,7 @@ def test_get_subscription_rest_interceptors(null_interceptor):
 
         pre.assert_called_once()
         post.assert_called_once()
+        post_with_metadata.assert_called_once()
 
 
 def test_update_subscription_rest_bad_request(
@@ -10686,10 +10747,13 @@ def test_update_subscription_rest_interceptors(null_interceptor):
     ) as transcode, mock.patch.object(
         transports.SubscriberRestInterceptor, "post_update_subscription"
     ) as post, mock.patch.object(
+        transports.SubscriberRestInterceptor, "post_update_subscription_with_metadata"
+    ) as post_with_metadata, mock.patch.object(
         transports.SubscriberRestInterceptor, "pre_update_subscription"
     ) as pre:
         pre.assert_not_called()
         post.assert_not_called()
+        post_with_metadata.assert_not_called()
         pb_message = pubsub.UpdateSubscriptionRequest.pb(
             pubsub.UpdateSubscriptionRequest()
         )
@@ -10713,6 +10777,7 @@ def test_update_subscription_rest_interceptors(null_interceptor):
         ]
         pre.return_value = request, metadata
         post.return_value = pubsub.Subscription()
+        post_with_metadata.return_value = pubsub.Subscription(), metadata
 
         client.update_subscription(
             request,
@@ -10724,6 +10789,7 @@ def test_update_subscription_rest_interceptors(null_interceptor):
 
         pre.assert_called_once()
         post.assert_called_once()
+        post_with_metadata.assert_called_once()
 
 
 def test_list_subscriptions_rest_bad_request(
@@ -10808,10 +10874,13 @@ def test_list_subscriptions_rest_interceptors(null_interceptor):
     ) as transcode, mock.patch.object(
         transports.SubscriberRestInterceptor, "post_list_subscriptions"
     ) as post, mock.patch.object(
+        transports.SubscriberRestInterceptor, "post_list_subscriptions_with_metadata"
+    ) as post_with_metadata, mock.patch.object(
         transports.SubscriberRestInterceptor, "pre_list_subscriptions"
     ) as pre:
         pre.assert_not_called()
         post.assert_not_called()
+        post_with_metadata.assert_not_called()
         pb_message = pubsub.ListSubscriptionsRequest.pb(
             pubsub.ListSubscriptionsRequest()
         )
@@ -10837,6 +10906,7 @@ def test_list_subscriptions_rest_interceptors(null_interceptor):
         ]
         pre.return_value = request, metadata
         post.return_value = pubsub.ListSubscriptionsResponse()
+        post_with_metadata.return_value = pubsub.ListSubscriptionsResponse(), metadata
 
         client.list_subscriptions(
             request,
@@ -10848,6 +10918,7 @@ def test_list_subscriptions_rest_interceptors(null_interceptor):
 
         pre.assert_called_once()
         post.assert_called_once()
+        post_with_metadata.assert_called_once()
 
 
 def test_delete_subscription_rest_bad_request(
@@ -11250,10 +11321,13 @@ def test_pull_rest_interceptors(null_interceptor):
     ) as transcode, mock.patch.object(
         transports.SubscriberRestInterceptor, "post_pull"
     ) as post, mock.patch.object(
+        transports.SubscriberRestInterceptor, "post_pull_with_metadata"
+    ) as post_with_metadata, mock.patch.object(
         transports.SubscriberRestInterceptor, "pre_pull"
     ) as pre:
         pre.assert_not_called()
         post.assert_not_called()
+        post_with_metadata.assert_not_called()
         pb_message = pubsub.PullRequest.pb(pubsub.PullRequest())
         transcode.return_value = {
             "method": "post",
@@ -11275,6 +11349,7 @@ def test_pull_rest_interceptors(null_interceptor):
         ]
         pre.return_value = request, metadata
         post.return_value = pubsub.PullResponse()
+        post_with_metadata.return_value = pubsub.PullResponse(), metadata
 
         client.pull(
             request,
@@ -11286,6 +11361,7 @@ def test_pull_rest_interceptors(null_interceptor):
 
         pre.assert_called_once()
         post.assert_called_once()
+        post_with_metadata.assert_called_once()
 
 
 def test_streaming_pull_rest_error():
@@ -11489,10 +11565,13 @@ def test_get_snapshot_rest_interceptors(null_interceptor):
     ) as transcode, mock.patch.object(
         transports.SubscriberRestInterceptor, "post_get_snapshot"
     ) as post, mock.patch.object(
+        transports.SubscriberRestInterceptor, "post_get_snapshot_with_metadata"
+    ) as post_with_metadata, mock.patch.object(
         transports.SubscriberRestInterceptor, "pre_get_snapshot"
     ) as pre:
         pre.assert_not_called()
         post.assert_not_called()
+        post_with_metadata.assert_not_called()
         pb_message = pubsub.GetSnapshotRequest.pb(pubsub.GetSnapshotRequest())
         transcode.return_value = {
             "method": "post",
@@ -11514,6 +11593,7 @@ def test_get_snapshot_rest_interceptors(null_interceptor):
         ]
         pre.return_value = request, metadata
         post.return_value = pubsub.Snapshot()
+        post_with_metadata.return_value = pubsub.Snapshot(), metadata
 
         client.get_snapshot(
             request,
@@ -11525,6 +11605,7 @@ def test_get_snapshot_rest_interceptors(null_interceptor):
 
         pre.assert_called_once()
         post.assert_called_once()
+        post_with_metadata.assert_called_once()
 
 
 def test_list_snapshots_rest_bad_request(request_type=pubsub.ListSnapshotsRequest):
@@ -11607,10 +11688,13 @@ def test_list_snapshots_rest_interceptors(null_interceptor):
     ) as transcode, mock.patch.object(
         transports.SubscriberRestInterceptor, "post_list_snapshots"
     ) as post, mock.patch.object(
+        transports.SubscriberRestInterceptor, "post_list_snapshots_with_metadata"
+    ) as post_with_metadata, mock.patch.object(
         transports.SubscriberRestInterceptor, "pre_list_snapshots"
     ) as pre:
         pre.assert_not_called()
         post.assert_not_called()
+        post_with_metadata.assert_not_called()
         pb_message = pubsub.ListSnapshotsRequest.pb(pubsub.ListSnapshotsRequest())
         transcode.return_value = {
             "method": "post",
@@ -11634,6 +11718,7 @@ def test_list_snapshots_rest_interceptors(null_interceptor):
         ]
         pre.return_value = request, metadata
         post.return_value = pubsub.ListSnapshotsResponse()
+        post_with_metadata.return_value = pubsub.ListSnapshotsResponse(), metadata
 
         client.list_snapshots(
             request,
@@ -11645,6 +11730,7 @@ def test_list_snapshots_rest_interceptors(null_interceptor):
 
         pre.assert_called_once()
         post.assert_called_once()
+        post_with_metadata.assert_called_once()
 
 
 def test_create_snapshot_rest_bad_request(request_type=pubsub.CreateSnapshotRequest):
@@ -11729,10 +11815,13 @@ def test_create_snapshot_rest_interceptors(null_interceptor):
     ) as transcode, mock.patch.object(
         transports.SubscriberRestInterceptor, "post_create_snapshot"
     ) as post, mock.patch.object(
+        transports.SubscriberRestInterceptor, "post_create_snapshot_with_metadata"
+    ) as post_with_metadata, mock.patch.object(
         transports.SubscriberRestInterceptor, "pre_create_snapshot"
     ) as pre:
         pre.assert_not_called()
         post.assert_not_called()
+        post_with_metadata.assert_not_called()
         pb_message = pubsub.CreateSnapshotRequest.pb(pubsub.CreateSnapshotRequest())
         transcode.return_value = {
             "method": "post",
@@ -11754,6 +11843,7 @@ def test_create_snapshot_rest_interceptors(null_interceptor):
         ]
         pre.return_value = request, metadata
         post.return_value = pubsub.Snapshot()
+        post_with_metadata.return_value = pubsub.Snapshot(), metadata
 
         client.create_snapshot(
             request,
@@ -11765,6 +11855,7 @@ def test_create_snapshot_rest_interceptors(null_interceptor):
 
         pre.assert_called_once()
         post.assert_called_once()
+        post_with_metadata.assert_called_once()
 
 
 def test_update_snapshot_rest_bad_request(request_type=pubsub.UpdateSnapshotRequest):
@@ -11849,10 +11940,13 @@ def test_update_snapshot_rest_interceptors(null_interceptor):
     ) as transcode, mock.patch.object(
         transports.SubscriberRestInterceptor, "post_update_snapshot"
     ) as post, mock.patch.object(
+        transports.SubscriberRestInterceptor, "post_update_snapshot_with_metadata"
+    ) as post_with_metadata, mock.patch.object(
         transports.SubscriberRestInterceptor, "pre_update_snapshot"
     ) as pre:
         pre.assert_not_called()
         post.assert_not_called()
+        post_with_metadata.assert_not_called()
         pb_message = pubsub.UpdateSnapshotRequest.pb(pubsub.UpdateSnapshotRequest())
         transcode.return_value = {
             "method": "post",
@@ -11874,6 +11968,7 @@ def test_update_snapshot_rest_interceptors(null_interceptor):
         ]
         pre.return_value = request, metadata
         post.return_value = pubsub.Snapshot()
+        post_with_metadata.return_value = pubsub.Snapshot(), metadata
 
         client.update_snapshot(
             request,
@@ -11885,6 +11980,7 @@ def test_update_snapshot_rest_interceptors(null_interceptor):
 
         pre.assert_called_once()
         post.assert_called_once()
+        post_with_metadata.assert_called_once()
 
 
 def test_delete_snapshot_rest_bad_request(request_type=pubsub.DeleteSnapshotRequest):
@@ -12069,10 +12165,13 @@ def test_seek_rest_interceptors(null_interceptor):
     ) as transcode, mock.patch.object(
         transports.SubscriberRestInterceptor, "post_seek"
     ) as post, mock.patch.object(
+        transports.SubscriberRestInterceptor, "post_seek_with_metadata"
+    ) as post_with_metadata, mock.patch.object(
         transports.SubscriberRestInterceptor, "pre_seek"
     ) as pre:
         pre.assert_not_called()
         post.assert_not_called()
+        post_with_metadata.assert_not_called()
         pb_message = pubsub.SeekRequest.pb(pubsub.SeekRequest())
         transcode.return_value = {
             "method": "post",
@@ -12094,6 +12193,7 @@ def test_seek_rest_interceptors(null_interceptor):
         ]
         pre.return_value = request, metadata
         post.return_value = pubsub.SeekResponse()
+        post_with_metadata.return_value = pubsub.SeekResponse(), metadata
 
         client.seek(
             request,
@@ -12105,6 +12205,7 @@ def test_seek_rest_interceptors(null_interceptor):
 
         pre.assert_called_once()
         post.assert_called_once()
+        post_with_metadata.assert_called_once()
 
 
 def test_get_iam_policy_rest_bad_request(
