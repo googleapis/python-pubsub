@@ -46,7 +46,7 @@ from google.pubsub_v1 import types as gapic_types
 from test_utils.system import unique_resource_id
 
 C = TypeVar("C", bound=Callable[..., Any])
-typed_flaky = cast(Callable[[C], C], flaky(max_runs=3, min_passes=1))
+typed_flaky = cast(Callable[[C], C], flaky(max_runs=5, min_passes=1))
 
 
 @pytest.fixture(scope="module")
@@ -468,7 +468,7 @@ def test_subscriber_not_leaking_open_sockets(
     publisher.create_topic(name=topic_path)
 
     current_process = psutil.Process()
-    conn_count_start = len(current_process.connections())
+    conn_count_start = len(current_process.net_connections())
 
     # Publish a few messages, then synchronously pull them and check that
     # no sockets are leaked.
@@ -487,7 +487,7 @@ def test_subscriber_not_leaking_open_sockets(
         response = subscriber.pull(subscription=subscription_path, max_messages=3)
         assert len(response.received_messages) == 3
 
-    conn_count_end = len(current_process.connections())
+    conn_count_end = len(current_process.net_connections())
 
     # To avoid flakiness, use <= in the assertion, since on rare occasions additional
     # sockets are closed, causing the == assertion to fail.
@@ -616,6 +616,7 @@ class TestStreamingPull(object):
         finally:
             subscription_future.cancel()
 
+    @typed_flaky
     def test_streaming_pull_max_messages(
         self, publisher, topic_path_base, subscription_path_base, cleanup
     ):

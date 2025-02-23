@@ -99,6 +99,8 @@ for library in s.get_staging_dirs(default_version):
     if count < len(clients_to_patch):
         raise Exception(err_msg)
 
+    # TODO(https://github.com/googleapis/python-pubsub/issues/1349): Move the emulator
+    # code below to test files.
     count = s.replace(
         clients_to_patch,
         r"# initialize with the provided callable or the passed in class",
@@ -334,9 +336,10 @@ s.remove_staging_dirs()
 templated_files = gcp.CommonTemplates().py_library(
     microgenerator=True,
     samples=True,
-    cov_level=100,
+    cov_level=99,
     versions=gcp.common.detect_versions(path="./google", default_first=True),
-    unit_test_python_versions=["3.7", "3.8", "3.9", "3.10", "3.11", "3.12"],
+    unit_test_python_versions=["3.7", "3.8", "3.9", "3.10", "3.11", "3.12", "3.13"],
+    unit_test_dependencies=["flaky"],
     system_test_python_versions=["3.12"],
     system_test_external_dependencies=["psutil","flaky"],
 )

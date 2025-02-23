@@ -5,6 +5,52 @@
 [1]: https://pypi.org/project/google-cloud-pubsub/#history
 
 
+## [2.28.0](https://github.com/googleapis/python-pubsub/compare/v2.27.3...v2.28.0) (2025-01-30)
+
+
+### Features
+
+* Add support for message transforms to Topic and Subscription ([#1274](https://github.com/googleapis/python-pubsub/issues/1274)) ([e5e2f3f](https://github.com/googleapis/python-pubsub/commit/e5e2f3f732f451d14dfb4c37ae979e5c04045305))
+
+
+### Bug Fixes
+
+* Get channel target for a gRPC request ([#1339](https://github.com/googleapis/python-pubsub/issues/1339)) ([16ea766](https://github.com/googleapis/python-pubsub/commit/16ea76611d121700a3f3119d18919063d12c81c1))
+* Set creds only if transport not provided ([#1348](https://github.com/googleapis/python-pubsub/issues/1348)) ([59965a4](https://github.com/googleapis/python-pubsub/commit/59965a4804a434467a47815cdbdd5ce31bbb3662))
+
+## [2.27.3](https://github.com/googleapis/python-pubsub/compare/v2.27.2...v2.27.3) (2025-01-24)
+
+
+### Bug Fixes
+
+* Stop using api_core default timeouts in publish since they are broken ([#1326](https://github.com/googleapis/python-pubsub/issues/1326)) ([ba2c2ee](https://github.com/googleapis/python-pubsub/commit/ba2c2eef7da89a3c14c14d9b6191cd8738c30341))
+
+## [2.27.2](https://github.com/googleapis/python-pubsub/compare/v2.27.1...v2.27.2) (2025-01-06)
+
+
+### Bug Fixes
+
+* Handle TransportError Exceptions thrown from gapic_publish ([#1318](https://github.com/googleapis/python-pubsub/issues/1318)) ([0e058c7](https://github.com/googleapis/python-pubsub/commit/0e058c73487384100847adcb2f4ab95a61c072c4))
+
+## [2.27.1](https://github.com/googleapis/python-pubsub/compare/v2.27.0...v2.27.1) (2024-11-08)
+
+
+### Bug Fixes
+
+* Add support for Python3.13 ([#1302](https://github.com/googleapis/python-pubsub/issues/1302)) ([ab22e27](https://github.com/googleapis/python-pubsub/commit/ab22e27954450b4e06ec98fe2e3458056aa8ca60))
+
+## [2.27.0](https://github.com/googleapis/python-pubsub/compare/v2.26.1...v2.27.0) (2024-11-02)
+
+
+### Features
+
+* Add support for Python 3.13 ([#1281](https://github.com/googleapis/python-pubsub/issues/1281)) ([0b46a33](https://github.com/googleapis/python-pubsub/commit/0b46a3321d6f19cd72e4f2ccdba73d062c7bd832))
+
+
+### Bug Fixes
+
+* Mark test_streaming_pull_max_messages flaky ([#1288](https://github.com/googleapis/python-pubsub/issues/1288)) ([d6635a0](https://github.com/googleapis/python-pubsub/commit/d6635a00dc2c614dd8608ef32ad4e79f9124e040))
+
 ## [2.26.1](https://github.com/googleapis/python-pubsub/compare/v2.26.0...v2.26.1) (2024-10-10)
 
 
