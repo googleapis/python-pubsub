@@ -577,6 +577,9 @@ class PublisherGrpcTransport(PublisherTransport):
             )
         return self._stubs["detach_subscription"]
 
+    def close(self):
+        self._logged_channel.close()
+
     @property
     def set_iam_policy(
         self,
@@ -656,9 +659,6 @@ class PublisherGrpcTransport(PublisherTransport):
                 response_deserializer=iam_policy_pb2.TestIamPermissionsResponse.FromString,
             )
         return self._stubs["test_iam_permissions"]
-
-    def close(self):
-        self._logged_channel.close()
 
     @property
     def kind(self) -> str:

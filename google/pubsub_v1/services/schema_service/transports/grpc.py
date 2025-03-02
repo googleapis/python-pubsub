@@ -586,6 +586,9 @@ class SchemaServiceGrpcTransport(SchemaServiceTransport):
             )
         return self._stubs["validate_message"]
 
+    def close(self):
+        self._logged_channel.close()
+
     @property
     def set_iam_policy(
         self,
@@ -665,9 +668,6 @@ class SchemaServiceGrpcTransport(SchemaServiceTransport):
                 response_deserializer=iam_policy_pb2.TestIamPermissionsResponse.FromString,
             )
         return self._stubs["test_iam_permissions"]
-
-    def close(self):
-        self._logged_channel.close()
 
     @property
     def kind(self) -> str:
