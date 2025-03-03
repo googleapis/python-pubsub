@@ -5,6 +5,14 @@
 [1]: https://pypi.org/project/google-cloud-pubsub/#history
 
 
+## [2.28.1](https://github.com/googleapis/python-pubsub/compare/v2.28.0...v2.28.1) (2025-03-03)
+
+
+### Documentation
+
+* Add samples and test for ingestion from Kafka sources ([#1354](https://github.com/googleapis/python-pubsub/issues/1354)) ([820f986](https://github.com/googleapis/python-pubsub/commit/820f986104ca39fd0c92ba6816319e939be1ed63))
+* **samples:** Increase example max_bytes setting for cloud storage subscriptions to encourage more performant subscribe ([#1324](https://github.com/googleapis/python-pubsub/issues/1324)) ([cb760a7](https://github.com/googleapis/python-pubsub/commit/cb760a71cd4ad035d0c2c4c0f7b66bf52f18808c))
+
 ## [2.28.0](https://github.com/googleapis/python-pubsub/compare/v2.27.3...v2.28.0) (2025-01-30)
 
 
