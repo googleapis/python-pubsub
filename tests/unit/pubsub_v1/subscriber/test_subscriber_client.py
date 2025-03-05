@@ -36,6 +36,17 @@ from google.cloud.pubsub_v1.open_telemetry.context_propagation import (
 from google.pubsub_v1.types import PubsubMessage
 
 
+# Attempt to use `_thunk` to obtain the underlying grpc channel from 
+# the intercept channel. Default to obtaining the grpc channel directly
+# for backwards compatibility.
+# TODO(https://github.com/grpc/grpc/issues/38519): Workaround to obtain a channel
+# until a public API is available.
+def get_pull_channel(client):
+    try:
+        return client._transport.pull._thunk("")._channel
+    except AttributeError:
+        return client._transport.pull._channel
+
 def test_init_default_client_info(creds):
     client = subscriber.Client(credentials=creds)
 
@@ -129,7 +140,7 @@ def test_init_emulator(monkeypatch):
     #
     # Sadly, there seems to be no good way to do this without poking at
     # the private API of gRPC.
-    channel = client._transport.pull._channel
+    channel = get_pull_channel(client)
     # Behavior to include dns prefix changed in gRPCv1.63
     grpc_major, grpc_minor = [int(part) for part in grpc.__version__.split(".")[0:2]]
     if grpc_major > 1 or (grpc_major == 1 and grpc_minor >= 63):
