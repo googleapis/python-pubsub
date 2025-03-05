@@ -36,7 +36,7 @@ from google.cloud.pubsub_v1.open_telemetry.context_propagation import (
 from google.pubsub_v1.types import PubsubMessage
 
 
-# Attempt to use `_thunk` to obtain the underlying grpc channel from 
+# Attempt to use `_thunk` to obtain the underlying grpc channel from
 # the intercept channel. Default to obtaining the grpc channel directly
 # for backwards compatibility.
 # TODO(https://github.com/grpc/grpc/issues/38519): Workaround to obtain a channel
@@ -46,6 +46,7 @@ def get_pull_channel(client):
         return client._transport.pull._thunk("")._channel
     except AttributeError:
         return client._transport.pull._channel
+
 
 def test_init_default_client_info(creds):
     client = subscriber.Client(credentials=creds)
