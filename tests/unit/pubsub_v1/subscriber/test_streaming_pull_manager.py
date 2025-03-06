@@ -603,7 +603,7 @@ def test__maybe_release_messages_below_overload():
         assert call_args[1].ack_id in ("ack_foo", "ack_bar")
 
 
-def test__maybe_release_messages_negative_on_hold_bytes_warning(caplog):
+def test__maybe_release_messages_negative_on_hold_bytes_warning(caplog, modify_google_logger_propagation):
     manager = make_manager(
         flow_control=types.FlowControl(max_messages=10, max_bytes=1000)
     )
@@ -924,7 +924,7 @@ def test_send_unary_modack_exactly_once_disabled_with_futures():
     assert future3.result() == subscriber_exceptions.AcknowledgeStatus.SUCCESS
 
 
-def test_send_unary_ack_api_call_error(caplog):
+def test_send_unary_ack_api_call_error(caplog, modify_google_logger_propagation):
     caplog.set_level(logging.DEBUG)
 
     manager = make_manager()
@@ -945,7 +945,7 @@ def test_send_unary_ack_api_call_error(caplog):
     assert "The front fell off" in caplog.text
 
 
-def test_send_unary_modack_api_call_error(caplog):
+def test_send_unary_modack_api_call_error(caplog, modify_google_logger_propagation):
     caplog.set_level(logging.DEBUG)
 
     manager = make_manager()
@@ -978,7 +978,7 @@ def test_send_unary_modack_api_call_error(caplog):
     assert "The front fell off" in caplog.text
 
 
-def test_send_unary_ack_retry_error_exactly_once_disabled_no_futures(caplog):
+def test_send_unary_ack_retry_error_exactly_once_disabled_no_futures(caplog, modify_google_logger_propagation):
     caplog.set_level(logging.DEBUG)
 
     manager, _, _, _, _, _ = make_running_manager()
@@ -1014,7 +1014,7 @@ def test_send_unary_ack_retry_error_exactly_once_disabled_no_futures(caplog):
     assert "signaled streaming pull manager shutdown" in caplog.text
 
 
-def test_send_unary_ack_retry_error_exactly_once_disabled_with_futures(caplog):
+def test_send_unary_ack_retry_error_exactly_once_disabled_with_futures(caplog, modify_google_logger_propagation):
     caplog.set_level(logging.DEBUG)
 
     manager, _, _, _, _, _ = make_running_manager()
@@ -1054,7 +1054,7 @@ def test_send_unary_ack_retry_error_exactly_once_disabled_with_futures(caplog):
     assert future2.result() == subscriber_exceptions.AcknowledgeStatus.SUCCESS
 
 
-def test_send_unary_ack_retry_error_exactly_once_enabled_no_futures(caplog):
+def test_send_unary_ack_retry_error_exactly_once_enabled_no_futures(caplog, modify_google_logger_propagation):
     caplog.set_level(logging.DEBUG)
 
     manager, _, _, _, _, _ = make_running_manager()
@@ -1090,7 +1090,7 @@ def test_send_unary_ack_retry_error_exactly_once_enabled_no_futures(caplog):
     assert "signaled streaming pull manager shutdown" in caplog.text
 
 
-def test_send_unary_ack_retry_error_exactly_once_enabled_with_futures(caplog):
+def test_send_unary_ack_retry_error_exactly_once_enabled_with_futures(caplog, modify_google_logger_propagation):
     caplog.set_level(logging.DEBUG)
 
     manager, _, _, _, _, _ = make_running_manager()
@@ -1136,7 +1136,7 @@ def test_send_unary_ack_retry_error_exactly_once_enabled_with_futures(caplog):
     )
 
 
-def test_send_unary_modack_retry_error_exactly_once_disabled_no_future(caplog):
+def test_send_unary_modack_retry_error_exactly_once_disabled_no_future(caplog, modify_google_logger_propagation):
     caplog.set_level(logging.DEBUG)
 
     manager, _, _, _, _, _ = make_running_manager()
@@ -1163,6 +1163,7 @@ def test_send_unary_modack_retry_error_exactly_once_disabled_no_future(caplog):
 
 def test_send_unary_modack_retry_error_exactly_once_disabled_with_futures(
     caplog,
+    modify_google_logger_propagation
 ):
     caplog.set_level(logging.DEBUG)
 
@@ -1192,6 +1193,7 @@ def test_send_unary_modack_retry_error_exactly_once_disabled_with_futures(
 
 def test_send_unary_modack_retry_error_exactly_once_enabled_no_futures(
     caplog,
+    modify_google_logger_propagation
 ):
     caplog.set_level(logging.DEBUG)
 
@@ -1219,6 +1221,7 @@ def test_send_unary_modack_retry_error_exactly_once_enabled_no_futures(
 
 def test_send_unary_modack_retry_error_exactly_once_enabled_with_futures(
     caplog,
+    modify_google_logger_propagation
 ):
     caplog.set_level(logging.DEBUG)
 
@@ -1271,7 +1274,7 @@ def test_heartbeat_inactive():
     assert not result
 
 
-def test_heartbeat_stream_ack_deadline_seconds(caplog):
+def test_heartbeat_stream_ack_deadline_seconds(caplog, modify_google_logger_propagation):
     caplog.set_level(logging.DEBUG)
     manager = make_manager()
     manager._rpc = mock.create_autospec(bidi.BidiRpc, instance=True)
@@ -1922,7 +1925,7 @@ def test__on_response_with_leaser_overload():
             assert msg.message_id in ("2", "3")
 
 
-def test__on_response_none_data(caplog):
+def test__on_response_none_data(caplog, modify_google_logger_propagation):
     caplog.set_level(logging.DEBUG)
 
     manager, _, dispatcher, leaser, _, scheduler = make_running_manager()
@@ -2087,7 +2090,7 @@ def test__on_response_disable_exactly_once():
     assert manager._stream_ack_deadline == 60
 
 
-def test__on_response_exactly_once_immediate_modacks_fail(caplog):
+def test__on_response_exactly_once_immediate_modacks_fail(caplog, modify_google_logger_propagation,):
     manager, _, dispatcher, leaser, _, scheduler = make_running_manager()
     manager._callback = mock.sentinel.callback
 
@@ -2159,7 +2162,7 @@ def test__on_response_exactly_once_immediate_modacks_fail(caplog):
     assert manager.load == 0.001
 
 
-def test__on_response_exactly_once_immediate_modacks_fail_non_invalid(caplog):
+def test__on_response_exactly_once_immediate_modacks_fail_non_invalid(caplog, modify_google_logger_propagation):
     manager, _, dispatcher, leaser, _, scheduler = make_running_manager()
     manager._callback = mock.sentinel.callback
 
