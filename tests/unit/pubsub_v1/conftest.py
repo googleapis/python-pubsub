@@ -45,6 +45,7 @@ def span_exporter():
     provider.add_span_processor(processor)
     yield exporter
 
+
 @pytest.fixture()
 def modify_google_logger_propagation():
     """

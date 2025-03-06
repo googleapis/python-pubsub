@@ -27,7 +27,10 @@ else:
 
 import pytest
 
-def test_heartbeat_inactive_manager_active_rpc(caplog, modify_google_logger_propagation):
+
+def test_heartbeat_inactive_manager_active_rpc(
+    caplog, modify_google_logger_propagation
+):
     caplog.set_level(logging.DEBUG)
 
     manager = mock.create_autospec(
@@ -45,7 +48,10 @@ def test_heartbeat_inactive_manager_active_rpc(caplog, modify_google_logger_prop
     assert "exiting" in caplog.text
 
 
-def test_heartbeat_inactive_manager_inactive_rpc(caplog, modify_google_logger_propagation,):
+def test_heartbeat_inactive_manager_inactive_rpc(
+    caplog,
+    modify_google_logger_propagation,
+):
     caplog.set_level(logging.DEBUG)
 
     manager = mock.create_autospec(
