@@ -1151,9 +1151,11 @@ class MessageTransform(proto.Message):
 
             This field is a member of `oneof`_ ``transform``.
         enabled (bool):
-            Optional. If set to true, the transform is enabled. If
-            false, the transform is disabled and will not be applied to
-            messages. Defaults to ``true``.
+            Optional. This field is deprecated, use the ``disabled``
+            field to disable transforms.
+        disabled (bool):
+            Optional. If true, the transform is disabled and will not be
+            applied to messages. Defaults to ``false``.
     """
 
     javascript_udf: "JavaScriptUDF" = proto.Field(
@@ -1165,6 +1167,10 @@ class MessageTransform(proto.Message):
     enabled: bool = proto.Field(
         proto.BOOL,
         number=3,
+    )
+    disabled: bool = proto.Field(
+        proto.BOOL,
+        number=4,
     )
 
 
