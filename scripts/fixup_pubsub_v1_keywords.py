@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Copyright 2024 Google LLC
+# Copyright 2025 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -43,8 +43,8 @@ class pubsubCallTransformer(cst.CSTTransformer):
         'commit_schema': ('name', 'schema', ),
         'create_schema': ('parent', 'schema', 'schema_id', ),
         'create_snapshot': ('name', 'subscription', 'labels', ),
-        'create_subscription': ('name', 'topic', 'push_config', 'bigquery_config', 'cloud_storage_config', 'ack_deadline_seconds', 'retain_acked_messages', 'message_retention_duration', 'labels', 'enable_message_ordering', 'expiration_policy', 'filter', 'dead_letter_policy', 'retry_policy', 'detached', 'enable_exactly_once_delivery', 'topic_message_retention_duration', 'state', ),
-        'create_topic': ('name', 'labels', 'message_storage_policy', 'kms_key_name', 'schema_settings', 'satisfies_pzs', 'message_retention_duration', 'state', 'ingestion_data_source_settings', ),
+        'create_subscription': ('name', 'topic', 'push_config', 'bigquery_config', 'cloud_storage_config', 'ack_deadline_seconds', 'retain_acked_messages', 'message_retention_duration', 'labels', 'enable_message_ordering', 'expiration_policy', 'filter', 'dead_letter_policy', 'retry_policy', 'detached', 'enable_exactly_once_delivery', 'topic_message_retention_duration', 'state', 'analytics_hub_subscription_info', 'message_transforms', ),
+        'create_topic': ('name', 'labels', 'message_storage_policy', 'kms_key_name', 'schema_settings', 'satisfies_pzs', 'message_retention_duration', 'state', 'ingestion_data_source_settings', 'message_transforms', ),
         'delete_schema': ('name', ),
         'delete_schema_revision': ('name', 'revision_id', ),
         'delete_snapshot': ('snapshot', ),
@@ -74,9 +74,6 @@ class pubsubCallTransformer(cst.CSTTransformer):
         'update_topic': ('topic', 'update_mask', ),
         'validate_message': ('parent', 'name', 'schema', 'message', 'encoding', ),
         'validate_schema': ('parent', 'schema', ),
-    'get_iam_policy': ('resource', 'options', ),
-    'set_iam_policy': ('resource', 'policy', ),
-    'test_iam_permissions': ('resource', 'permissions', ),
     }
 
     def leave_Call(self, original: cst.Call, updated: cst.Call) -> cst.CSTNode:

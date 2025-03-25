@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2024 Google LLC
+# Copyright 2025 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,46 +13,52 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+import logging
+import json  # type: ignore
 
 from google.auth.transport.requests import AuthorizedSession  # type: ignore
-import json  # type: ignore
-import grpc  # type: ignore
-from google.auth.transport.grpc import SslCredentials  # type: ignore
 from google.auth import credentials as ga_credentials  # type: ignore
 from google.api_core import exceptions as core_exceptions
 from google.api_core import retry as retries
 from google.api_core import rest_helpers
 from google.api_core import rest_streaming
-from google.api_core import path_template
 from google.api_core import gapic_v1
 
 from google.protobuf import json_format
 from google.iam.v1 import iam_policy_pb2  # type: ignore
 from google.iam.v1 import policy_pb2  # type: ignore
+
 from requests import __version__ as requests_version
 import dataclasses
-import re
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union
 import warnings
+
+
+from google.protobuf import empty_pb2  # type: ignore
+from google.pubsub_v1.types import pubsub
+
+
+from .rest_base import _BaseSubscriberRestTransport
+from .base import DEFAULT_CLIENT_INFO as BASE_DEFAULT_CLIENT_INFO
 
 try:
     OptionalRetry = Union[retries.Retry, gapic_v1.method._MethodDefault, None]
 except AttributeError:  # pragma: NO COVER
     OptionalRetry = Union[retries.Retry, object, None]  # type: ignore
 
+try:
+    from google.api_core import client_logging  # type: ignore
 
-from google.iam.v1 import iam_policy_pb2  # type: ignore
-from google.iam.v1 import policy_pb2  # type: ignore
-from google.protobuf import empty_pb2  # type: ignore
-from google.pubsub_v1.types import pubsub
+    CLIENT_LOGGING_SUPPORTED = True  # pragma: NO COVER
+except ImportError:  # pragma: NO COVER
+    CLIENT_LOGGING_SUPPORTED = False
 
-from .base import SubscriberTransport, DEFAULT_CLIENT_INFO as BASE_DEFAULT_CLIENT_INFO
-
+_LOGGER = logging.getLogger(__name__)
 
 DEFAULT_CLIENT_INFO = gapic_v1.client_info.ClientInfo(
     gapic_version=BASE_DEFAULT_CLIENT_INFO.gapic_version,
     grpc_version=None,
-    rest_version=requests_version,
+    rest_version=f"requests@{requests_version}",
 )
 
 
@@ -178,8 +184,10 @@ class SubscriberRestInterceptor:
     """
 
     def pre_acknowledge(
-        self, request: pubsub.AcknowledgeRequest, metadata: Sequence[Tuple[str, str]]
-    ) -> Tuple[pubsub.AcknowledgeRequest, Sequence[Tuple[str, str]]]:
+        self,
+        request: pubsub.AcknowledgeRequest,
+        metadata: Sequence[Tuple[str, Union[str, bytes]]],
+    ) -> Tuple[pubsub.AcknowledgeRequest, Sequence[Tuple[str, Union[str, bytes]]]]:
         """Pre-rpc interceptor for acknowledge
 
         Override in a subclass to manipulate the request or metadata
@@ -188,8 +196,10 @@ class SubscriberRestInterceptor:
         return request, metadata
 
     def pre_create_snapshot(
-        self, request: pubsub.CreateSnapshotRequest, metadata: Sequence[Tuple[str, str]]
-    ) -> Tuple[pubsub.CreateSnapshotRequest, Sequence[Tuple[str, str]]]:
+        self,
+        request: pubsub.CreateSnapshotRequest,
+        metadata: Sequence[Tuple[str, Union[str, bytes]]],
+    ) -> Tuple[pubsub.CreateSnapshotRequest, Sequence[Tuple[str, Union[str, bytes]]]]:
         """Pre-rpc interceptor for create_snapshot
 
         Override in a subclass to manipulate the request or metadata
@@ -200,15 +210,40 @@ class SubscriberRestInterceptor:
     def post_create_snapshot(self, response: pubsub.Snapshot) -> pubsub.Snapshot:
         """Post-rpc interceptor for create_snapshot
 
-        Override in a subclass to manipulate the response
+        DEPRECATED. Please use the `post_create_snapshot_with_metadata`
+        interceptor instead.
+
+        Override in a subclass to read or manipulate the response
         after it is returned by the Subscriber server but before
-        it is returned to user code.
+        it is returned to user code. This `post_create_snapshot` interceptor runs
+        before the `post_create_snapshot_with_metadata` interceptor.
         """
         return response
 
+    def post_create_snapshot_with_metadata(
+        self,
+        response: pubsub.Snapshot,
+        metadata: Sequence[Tuple[str, Union[str, bytes]]],
+    ) -> Tuple[pubsub.Snapshot, Sequence[Tuple[str, Union[str, bytes]]]]:
+        """Post-rpc interceptor for create_snapshot
+
+        Override in a subclass to read or manipulate the response or metadata after it
+        is returned by the Subscriber server but before it is returned to user code.
+
+        We recommend only using this `post_create_snapshot_with_metadata`
+        interceptor in new development instead of the `post_create_snapshot` interceptor.
+        When both interceptors are used, this `post_create_snapshot_with_metadata` interceptor runs after the
+        `post_create_snapshot` interceptor. The (possibly modified) response returned by
+        `post_create_snapshot` will be passed to
+        `post_create_snapshot_with_metadata`.
+        """
+        return response, metadata
+
     def pre_create_subscription(
-        self, request: pubsub.Subscription, metadata: Sequence[Tuple[str, str]]
-    ) -> Tuple[pubsub.Subscription, Sequence[Tuple[str, str]]]:
+        self,
+        request: pubsub.Subscription,
+        metadata: Sequence[Tuple[str, Union[str, bytes]]],
+    ) -> Tuple[pubsub.Subscription, Sequence[Tuple[str, Union[str, bytes]]]]:
         """Pre-rpc interceptor for create_subscription
 
         Override in a subclass to manipulate the request or metadata
@@ -221,15 +256,40 @@ class SubscriberRestInterceptor:
     ) -> pubsub.Subscription:
         """Post-rpc interceptor for create_subscription
 
-        Override in a subclass to manipulate the response
+        DEPRECATED. Please use the `post_create_subscription_with_metadata`
+        interceptor instead.
+
+        Override in a subclass to read or manipulate the response
         after it is returned by the Subscriber server but before
-        it is returned to user code.
+        it is returned to user code. This `post_create_subscription` interceptor runs
+        before the `post_create_subscription_with_metadata` interceptor.
         """
         return response
 
+    def post_create_subscription_with_metadata(
+        self,
+        response: pubsub.Subscription,
+        metadata: Sequence[Tuple[str, Union[str, bytes]]],
+    ) -> Tuple[pubsub.Subscription, Sequence[Tuple[str, Union[str, bytes]]]]:
+        """Post-rpc interceptor for create_subscription
+
+        Override in a subclass to read or manipulate the response or metadata after it
+        is returned by the Subscriber server but before it is returned to user code.
+
+        We recommend only using this `post_create_subscription_with_metadata`
+        interceptor in new development instead of the `post_create_subscription` interceptor.
+        When both interceptors are used, this `post_create_subscription_with_metadata` interceptor runs after the
+        `post_create_subscription` interceptor. The (possibly modified) response returned by
+        `post_create_subscription` will be passed to
+        `post_create_subscription_with_metadata`.
+        """
+        return response, metadata
+
     def pre_delete_snapshot(
-        self, request: pubsub.DeleteSnapshotRequest, metadata: Sequence[Tuple[str, str]]
-    ) -> Tuple[pubsub.DeleteSnapshotRequest, Sequence[Tuple[str, str]]]:
+        self,
+        request: pubsub.DeleteSnapshotRequest,
+        metadata: Sequence[Tuple[str, Union[str, bytes]]],
+    ) -> Tuple[pubsub.DeleteSnapshotRequest, Sequence[Tuple[str, Union[str, bytes]]]]:
         """Pre-rpc interceptor for delete_snapshot
 
         Override in a subclass to manipulate the request or metadata
@@ -240,8 +300,10 @@ class SubscriberRestInterceptor:
     def pre_delete_subscription(
         self,
         request: pubsub.DeleteSubscriptionRequest,
-        metadata: Sequence[Tuple[str, str]],
-    ) -> Tuple[pubsub.DeleteSubscriptionRequest, Sequence[Tuple[str, str]]]:
+        metadata: Sequence[Tuple[str, Union[str, bytes]]],
+    ) -> Tuple[
+        pubsub.DeleteSubscriptionRequest, Sequence[Tuple[str, Union[str, bytes]]]
+    ]:
         """Pre-rpc interceptor for delete_subscription
 
         Override in a subclass to manipulate the request or metadata
@@ -250,8 +312,10 @@ class SubscriberRestInterceptor:
         return request, metadata
 
     def pre_get_snapshot(
-        self, request: pubsub.GetSnapshotRequest, metadata: Sequence[Tuple[str, str]]
-    ) -> Tuple[pubsub.GetSnapshotRequest, Sequence[Tuple[str, str]]]:
+        self,
+        request: pubsub.GetSnapshotRequest,
+        metadata: Sequence[Tuple[str, Union[str, bytes]]],
+    ) -> Tuple[pubsub.GetSnapshotRequest, Sequence[Tuple[str, Union[str, bytes]]]]:
         """Pre-rpc interceptor for get_snapshot
 
         Override in a subclass to manipulate the request or metadata
@@ -262,17 +326,40 @@ class SubscriberRestInterceptor:
     def post_get_snapshot(self, response: pubsub.Snapshot) -> pubsub.Snapshot:
         """Post-rpc interceptor for get_snapshot
 
-        Override in a subclass to manipulate the response
+        DEPRECATED. Please use the `post_get_snapshot_with_metadata`
+        interceptor instead.
+
+        Override in a subclass to read or manipulate the response
         after it is returned by the Subscriber server but before
-        it is returned to user code.
+        it is returned to user code. This `post_get_snapshot` interceptor runs
+        before the `post_get_snapshot_with_metadata` interceptor.
         """
         return response
+
+    def post_get_snapshot_with_metadata(
+        self,
+        response: pubsub.Snapshot,
+        metadata: Sequence[Tuple[str, Union[str, bytes]]],
+    ) -> Tuple[pubsub.Snapshot, Sequence[Tuple[str, Union[str, bytes]]]]:
+        """Post-rpc interceptor for get_snapshot
+
+        Override in a subclass to read or manipulate the response or metadata after it
+        is returned by the Subscriber server but before it is returned to user code.
+
+        We recommend only using this `post_get_snapshot_with_metadata`
+        interceptor in new development instead of the `post_get_snapshot` interceptor.
+        When both interceptors are used, this `post_get_snapshot_with_metadata` interceptor runs after the
+        `post_get_snapshot` interceptor. The (possibly modified) response returned by
+        `post_get_snapshot` will be passed to
+        `post_get_snapshot_with_metadata`.
+        """
+        return response, metadata
 
     def pre_get_subscription(
         self,
         request: pubsub.GetSubscriptionRequest,
-        metadata: Sequence[Tuple[str, str]],
-    ) -> Tuple[pubsub.GetSubscriptionRequest, Sequence[Tuple[str, str]]]:
+        metadata: Sequence[Tuple[str, Union[str, bytes]]],
+    ) -> Tuple[pubsub.GetSubscriptionRequest, Sequence[Tuple[str, Union[str, bytes]]]]:
         """Pre-rpc interceptor for get_subscription
 
         Override in a subclass to manipulate the request or metadata
@@ -285,15 +372,40 @@ class SubscriberRestInterceptor:
     ) -> pubsub.Subscription:
         """Post-rpc interceptor for get_subscription
 
-        Override in a subclass to manipulate the response
+        DEPRECATED. Please use the `post_get_subscription_with_metadata`
+        interceptor instead.
+
+        Override in a subclass to read or manipulate the response
         after it is returned by the Subscriber server but before
-        it is returned to user code.
+        it is returned to user code. This `post_get_subscription` interceptor runs
+        before the `post_get_subscription_with_metadata` interceptor.
         """
         return response
 
+    def post_get_subscription_with_metadata(
+        self,
+        response: pubsub.Subscription,
+        metadata: Sequence[Tuple[str, Union[str, bytes]]],
+    ) -> Tuple[pubsub.Subscription, Sequence[Tuple[str, Union[str, bytes]]]]:
+        """Post-rpc interceptor for get_subscription
+
+        Override in a subclass to read or manipulate the response or metadata after it
+        is returned by the Subscriber server but before it is returned to user code.
+
+        We recommend only using this `post_get_subscription_with_metadata`
+        interceptor in new development instead of the `post_get_subscription` interceptor.
+        When both interceptors are used, this `post_get_subscription_with_metadata` interceptor runs after the
+        `post_get_subscription` interceptor. The (possibly modified) response returned by
+        `post_get_subscription` will be passed to
+        `post_get_subscription_with_metadata`.
+        """
+        return response, metadata
+
     def pre_list_snapshots(
-        self, request: pubsub.ListSnapshotsRequest, metadata: Sequence[Tuple[str, str]]
-    ) -> Tuple[pubsub.ListSnapshotsRequest, Sequence[Tuple[str, str]]]:
+        self,
+        request: pubsub.ListSnapshotsRequest,
+        metadata: Sequence[Tuple[str, Union[str, bytes]]],
+    ) -> Tuple[pubsub.ListSnapshotsRequest, Sequence[Tuple[str, Union[str, bytes]]]]:
         """Pre-rpc interceptor for list_snapshots
 
         Override in a subclass to manipulate the request or metadata
@@ -306,17 +418,42 @@ class SubscriberRestInterceptor:
     ) -> pubsub.ListSnapshotsResponse:
         """Post-rpc interceptor for list_snapshots
 
-        Override in a subclass to manipulate the response
+        DEPRECATED. Please use the `post_list_snapshots_with_metadata`
+        interceptor instead.
+
+        Override in a subclass to read or manipulate the response
         after it is returned by the Subscriber server but before
-        it is returned to user code.
+        it is returned to user code. This `post_list_snapshots` interceptor runs
+        before the `post_list_snapshots_with_metadata` interceptor.
         """
         return response
+
+    def post_list_snapshots_with_metadata(
+        self,
+        response: pubsub.ListSnapshotsResponse,
+        metadata: Sequence[Tuple[str, Union[str, bytes]]],
+    ) -> Tuple[pubsub.ListSnapshotsResponse, Sequence[Tuple[str, Union[str, bytes]]]]:
+        """Post-rpc interceptor for list_snapshots
+
+        Override in a subclass to read or manipulate the response or metadata after it
+        is returned by the Subscriber server but before it is returned to user code.
+
+        We recommend only using this `post_list_snapshots_with_metadata`
+        interceptor in new development instead of the `post_list_snapshots` interceptor.
+        When both interceptors are used, this `post_list_snapshots_with_metadata` interceptor runs after the
+        `post_list_snapshots` interceptor. The (possibly modified) response returned by
+        `post_list_snapshots` will be passed to
+        `post_list_snapshots_with_metadata`.
+        """
+        return response, metadata
 
     def pre_list_subscriptions(
         self,
         request: pubsub.ListSubscriptionsRequest,
-        metadata: Sequence[Tuple[str, str]],
-    ) -> Tuple[pubsub.ListSubscriptionsRequest, Sequence[Tuple[str, str]]]:
+        metadata: Sequence[Tuple[str, Union[str, bytes]]],
+    ) -> Tuple[
+        pubsub.ListSubscriptionsRequest, Sequence[Tuple[str, Union[str, bytes]]]
+    ]:
         """Pre-rpc interceptor for list_subscriptions
 
         Override in a subclass to manipulate the request or metadata
@@ -329,17 +466,44 @@ class SubscriberRestInterceptor:
     ) -> pubsub.ListSubscriptionsResponse:
         """Post-rpc interceptor for list_subscriptions
 
-        Override in a subclass to manipulate the response
+        DEPRECATED. Please use the `post_list_subscriptions_with_metadata`
+        interceptor instead.
+
+        Override in a subclass to read or manipulate the response
         after it is returned by the Subscriber server but before
-        it is returned to user code.
+        it is returned to user code. This `post_list_subscriptions` interceptor runs
+        before the `post_list_subscriptions_with_metadata` interceptor.
         """
         return response
+
+    def post_list_subscriptions_with_metadata(
+        self,
+        response: pubsub.ListSubscriptionsResponse,
+        metadata: Sequence[Tuple[str, Union[str, bytes]]],
+    ) -> Tuple[
+        pubsub.ListSubscriptionsResponse, Sequence[Tuple[str, Union[str, bytes]]]
+    ]:
+        """Post-rpc interceptor for list_subscriptions
+
+        Override in a subclass to read or manipulate the response or metadata after it
+        is returned by the Subscriber server but before it is returned to user code.
+
+        We recommend only using this `post_list_subscriptions_with_metadata`
+        interceptor in new development instead of the `post_list_subscriptions` interceptor.
+        When both interceptors are used, this `post_list_subscriptions_with_metadata` interceptor runs after the
+        `post_list_subscriptions` interceptor. The (possibly modified) response returned by
+        `post_list_subscriptions` will be passed to
+        `post_list_subscriptions_with_metadata`.
+        """
+        return response, metadata
 
     def pre_modify_ack_deadline(
         self,
         request: pubsub.ModifyAckDeadlineRequest,
-        metadata: Sequence[Tuple[str, str]],
-    ) -> Tuple[pubsub.ModifyAckDeadlineRequest, Sequence[Tuple[str, str]]]:
+        metadata: Sequence[Tuple[str, Union[str, bytes]]],
+    ) -> Tuple[
+        pubsub.ModifyAckDeadlineRequest, Sequence[Tuple[str, Union[str, bytes]]]
+    ]:
         """Pre-rpc interceptor for modify_ack_deadline
 
         Override in a subclass to manipulate the request or metadata
@@ -350,8 +514,8 @@ class SubscriberRestInterceptor:
     def pre_modify_push_config(
         self,
         request: pubsub.ModifyPushConfigRequest,
-        metadata: Sequence[Tuple[str, str]],
-    ) -> Tuple[pubsub.ModifyPushConfigRequest, Sequence[Tuple[str, str]]]:
+        metadata: Sequence[Tuple[str, Union[str, bytes]]],
+    ) -> Tuple[pubsub.ModifyPushConfigRequest, Sequence[Tuple[str, Union[str, bytes]]]]:
         """Pre-rpc interceptor for modify_push_config
 
         Override in a subclass to manipulate the request or metadata
@@ -360,8 +524,10 @@ class SubscriberRestInterceptor:
         return request, metadata
 
     def pre_pull(
-        self, request: pubsub.PullRequest, metadata: Sequence[Tuple[str, str]]
-    ) -> Tuple[pubsub.PullRequest, Sequence[Tuple[str, str]]]:
+        self,
+        request: pubsub.PullRequest,
+        metadata: Sequence[Tuple[str, Union[str, bytes]]],
+    ) -> Tuple[pubsub.PullRequest, Sequence[Tuple[str, Union[str, bytes]]]]:
         """Pre-rpc interceptor for pull
 
         Override in a subclass to manipulate the request or metadata
@@ -372,15 +538,40 @@ class SubscriberRestInterceptor:
     def post_pull(self, response: pubsub.PullResponse) -> pubsub.PullResponse:
         """Post-rpc interceptor for pull
 
-        Override in a subclass to manipulate the response
+        DEPRECATED. Please use the `post_pull_with_metadata`
+        interceptor instead.
+
+        Override in a subclass to read or manipulate the response
         after it is returned by the Subscriber server but before
-        it is returned to user code.
+        it is returned to user code. This `post_pull` interceptor runs
+        before the `post_pull_with_metadata` interceptor.
         """
         return response
 
+    def post_pull_with_metadata(
+        self,
+        response: pubsub.PullResponse,
+        metadata: Sequence[Tuple[str, Union[str, bytes]]],
+    ) -> Tuple[pubsub.PullResponse, Sequence[Tuple[str, Union[str, bytes]]]]:
+        """Post-rpc interceptor for pull
+
+        Override in a subclass to read or manipulate the response or metadata after it
+        is returned by the Subscriber server but before it is returned to user code.
+
+        We recommend only using this `post_pull_with_metadata`
+        interceptor in new development instead of the `post_pull` interceptor.
+        When both interceptors are used, this `post_pull_with_metadata` interceptor runs after the
+        `post_pull` interceptor. The (possibly modified) response returned by
+        `post_pull` will be passed to
+        `post_pull_with_metadata`.
+        """
+        return response, metadata
+
     def pre_seek(
-        self, request: pubsub.SeekRequest, metadata: Sequence[Tuple[str, str]]
-    ) -> Tuple[pubsub.SeekRequest, Sequence[Tuple[str, str]]]:
+        self,
+        request: pubsub.SeekRequest,
+        metadata: Sequence[Tuple[str, Union[str, bytes]]],
+    ) -> Tuple[pubsub.SeekRequest, Sequence[Tuple[str, Union[str, bytes]]]]:
         """Pre-rpc interceptor for seek
 
         Override in a subclass to manipulate the request or metadata
@@ -391,15 +582,40 @@ class SubscriberRestInterceptor:
     def post_seek(self, response: pubsub.SeekResponse) -> pubsub.SeekResponse:
         """Post-rpc interceptor for seek
 
-        Override in a subclass to manipulate the response
+        DEPRECATED. Please use the `post_seek_with_metadata`
+        interceptor instead.
+
+        Override in a subclass to read or manipulate the response
         after it is returned by the Subscriber server but before
-        it is returned to user code.
+        it is returned to user code. This `post_seek` interceptor runs
+        before the `post_seek_with_metadata` interceptor.
         """
         return response
 
+    def post_seek_with_metadata(
+        self,
+        response: pubsub.SeekResponse,
+        metadata: Sequence[Tuple[str, Union[str, bytes]]],
+    ) -> Tuple[pubsub.SeekResponse, Sequence[Tuple[str, Union[str, bytes]]]]:
+        """Post-rpc interceptor for seek
+
+        Override in a subclass to read or manipulate the response or metadata after it
+        is returned by the Subscriber server but before it is returned to user code.
+
+        We recommend only using this `post_seek_with_metadata`
+        interceptor in new development instead of the `post_seek` interceptor.
+        When both interceptors are used, this `post_seek_with_metadata` interceptor runs after the
+        `post_seek` interceptor. The (possibly modified) response returned by
+        `post_seek` will be passed to
+        `post_seek_with_metadata`.
+        """
+        return response, metadata
+
     def pre_update_snapshot(
-        self, request: pubsub.UpdateSnapshotRequest, metadata: Sequence[Tuple[str, str]]
-    ) -> Tuple[pubsub.UpdateSnapshotRequest, Sequence[Tuple[str, str]]]:
+        self,
+        request: pubsub.UpdateSnapshotRequest,
+        metadata: Sequence[Tuple[str, Union[str, bytes]]],
+    ) -> Tuple[pubsub.UpdateSnapshotRequest, Sequence[Tuple[str, Union[str, bytes]]]]:
         """Pre-rpc interceptor for update_snapshot
 
         Override in a subclass to manipulate the request or metadata
@@ -410,17 +626,42 @@ class SubscriberRestInterceptor:
     def post_update_snapshot(self, response: pubsub.Snapshot) -> pubsub.Snapshot:
         """Post-rpc interceptor for update_snapshot
 
-        Override in a subclass to manipulate the response
+        DEPRECATED. Please use the `post_update_snapshot_with_metadata`
+        interceptor instead.
+
+        Override in a subclass to read or manipulate the response
         after it is returned by the Subscriber server but before
-        it is returned to user code.
+        it is returned to user code. This `post_update_snapshot` interceptor runs
+        before the `post_update_snapshot_with_metadata` interceptor.
         """
         return response
+
+    def post_update_snapshot_with_metadata(
+        self,
+        response: pubsub.Snapshot,
+        metadata: Sequence[Tuple[str, Union[str, bytes]]],
+    ) -> Tuple[pubsub.Snapshot, Sequence[Tuple[str, Union[str, bytes]]]]:
+        """Post-rpc interceptor for update_snapshot
+
+        Override in a subclass to read or manipulate the response or metadata after it
+        is returned by the Subscriber server but before it is returned to user code.
+
+        We recommend only using this `post_update_snapshot_with_metadata`
+        interceptor in new development instead of the `post_update_snapshot` interceptor.
+        When both interceptors are used, this `post_update_snapshot_with_metadata` interceptor runs after the
+        `post_update_snapshot` interceptor. The (possibly modified) response returned by
+        `post_update_snapshot` will be passed to
+        `post_update_snapshot_with_metadata`.
+        """
+        return response, metadata
 
     def pre_update_subscription(
         self,
         request: pubsub.UpdateSubscriptionRequest,
-        metadata: Sequence[Tuple[str, str]],
-    ) -> Tuple[pubsub.UpdateSubscriptionRequest, Sequence[Tuple[str, str]]]:
+        metadata: Sequence[Tuple[str, Union[str, bytes]]],
+    ) -> Tuple[
+        pubsub.UpdateSubscriptionRequest, Sequence[Tuple[str, Union[str, bytes]]]
+    ]:
         """Pre-rpc interceptor for update_subscription
 
         Override in a subclass to manipulate the request or metadata
@@ -433,17 +674,42 @@ class SubscriberRestInterceptor:
     ) -> pubsub.Subscription:
         """Post-rpc interceptor for update_subscription
 
-        Override in a subclass to manipulate the response
+        DEPRECATED. Please use the `post_update_subscription_with_metadata`
+        interceptor instead.
+
+        Override in a subclass to read or manipulate the response
         after it is returned by the Subscriber server but before
-        it is returned to user code.
+        it is returned to user code. This `post_update_subscription` interceptor runs
+        before the `post_update_subscription_with_metadata` interceptor.
         """
         return response
+
+    def post_update_subscription_with_metadata(
+        self,
+        response: pubsub.Subscription,
+        metadata: Sequence[Tuple[str, Union[str, bytes]]],
+    ) -> Tuple[pubsub.Subscription, Sequence[Tuple[str, Union[str, bytes]]]]:
+        """Post-rpc interceptor for update_subscription
+
+        Override in a subclass to read or manipulate the response or metadata after it
+        is returned by the Subscriber server but before it is returned to user code.
+
+        We recommend only using this `post_update_subscription_with_metadata`
+        interceptor in new development instead of the `post_update_subscription` interceptor.
+        When both interceptors are used, this `post_update_subscription_with_metadata` interceptor runs after the
+        `post_update_subscription` interceptor. The (possibly modified) response returned by
+        `post_update_subscription` will be passed to
+        `post_update_subscription_with_metadata`.
+        """
+        return response, metadata
 
     def pre_get_iam_policy(
         self,
         request: iam_policy_pb2.GetIamPolicyRequest,
-        metadata: Sequence[Tuple[str, str]],
-    ) -> Tuple[iam_policy_pb2.GetIamPolicyRequest, Sequence[Tuple[str, str]]]:
+        metadata: Sequence[Tuple[str, Union[str, bytes]]],
+    ) -> Tuple[
+        iam_policy_pb2.GetIamPolicyRequest, Sequence[Tuple[str, Union[str, bytes]]]
+    ]:
         """Pre-rpc interceptor for get_iam_policy
 
         Override in a subclass to manipulate the request or metadata
@@ -463,8 +729,10 @@ class SubscriberRestInterceptor:
     def pre_set_iam_policy(
         self,
         request: iam_policy_pb2.SetIamPolicyRequest,
-        metadata: Sequence[Tuple[str, str]],
-    ) -> Tuple[iam_policy_pb2.SetIamPolicyRequest, Sequence[Tuple[str, str]]]:
+        metadata: Sequence[Tuple[str, Union[str, bytes]]],
+    ) -> Tuple[
+        iam_policy_pb2.SetIamPolicyRequest, Sequence[Tuple[str, Union[str, bytes]]]
+    ]:
         """Pre-rpc interceptor for set_iam_policy
 
         Override in a subclass to manipulate the request or metadata
@@ -484,8 +752,11 @@ class SubscriberRestInterceptor:
     def pre_test_iam_permissions(
         self,
         request: iam_policy_pb2.TestIamPermissionsRequest,
-        metadata: Sequence[Tuple[str, str]],
-    ) -> Tuple[iam_policy_pb2.TestIamPermissionsRequest, Sequence[Tuple[str, str]]]:
+        metadata: Sequence[Tuple[str, Union[str, bytes]]],
+    ) -> Tuple[
+        iam_policy_pb2.TestIamPermissionsRequest,
+        Sequence[Tuple[str, Union[str, bytes]]],
+    ]:
         """Pre-rpc interceptor for test_iam_permissions
 
         Override in a subclass to manipulate the request or metadata
@@ -512,8 +783,8 @@ class SubscriberRestStub:
     _interceptor: SubscriberRestInterceptor
 
 
-class SubscriberRestTransport(SubscriberTransport):
-    """REST backend transport for Subscriber.
+class SubscriberRestTransport(_BaseSubscriberRestTransport):
+    """REST backend synchronous transport for Subscriber.
 
     The service that an application uses to manipulate subscriptions and
     to consume messages from a subscription via the ``Pull`` method or
@@ -525,7 +796,6 @@ class SubscriberRestTransport(SubscriberTransport):
     and call it.
 
     It sends JSON representations of protocol buffers over HTTP/1.1
-
     """
 
     def __init__(
@@ -579,21 +849,12 @@ class SubscriberRestTransport(SubscriberTransport):
         # TODO(yon-mg): resolve other ctor params i.e. scopes, quota, etc.
         # TODO: When custom host (api_endpoint) is set, `scopes` must *also* be set on the
         # credentials object
-        maybe_url_match = re.match("^(?P<scheme>http(?:s)?://)?(?P<host>.*)$", host)
-        if maybe_url_match is None:
-            raise ValueError(
-                f"Unexpected hostname structure: {host}"
-            )  # pragma: NO COVER
-
-        url_match_items = maybe_url_match.groupdict()
-
-        host = f"{url_scheme}://{host}" if not url_match_items["scheme"] else host
-
         super().__init__(
             host=host,
             credentials=credentials,
             client_info=client_info,
             always_use_jwt_access=always_use_jwt_access,
+            url_scheme=url_scheme,
             api_audience=api_audience,
         )
         self._session = AuthorizedSession(
@@ -604,19 +865,34 @@ class SubscriberRestTransport(SubscriberTransport):
         self._interceptor = interceptor or SubscriberRestInterceptor()
         self._prep_wrapped_messages(client_info)
 
-    class _Acknowledge(SubscriberRestStub):
+    class _Acknowledge(
+        _BaseSubscriberRestTransport._BaseAcknowledge, SubscriberRestStub
+    ):
         def __hash__(self):
-            return hash("Acknowledge")
+            return hash("SubscriberRestTransport.Acknowledge")
 
-        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] = {}
-
-        @classmethod
-        def _get_unset_required_fields(cls, message_dict):
-            return {
-                k: v
-                for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items()
-                if k not in message_dict
-            }
+        @staticmethod
+        def _get_response(
+            host,
+            metadata,
+            query_params,
+            session,
+            timeout,
+            transcoded_request,
+            body=None,
+        ):
+            uri = transcoded_request["uri"]
+            method = transcoded_request["method"]
+            headers = dict(metadata)
+            headers["Content-Type"] = "application/json"
+            response = getattr(session, method)(
+                "{host}{uri}".format(host=host, uri=uri),
+                timeout=timeout,
+                headers=headers,
+                params=rest_helpers.flatten_query_params(query_params, strict=True),
+                data=body,
+            )
+            return response
 
         def __call__(
             self,
@@ -624,7 +900,7 @@ class SubscriberRestTransport(SubscriberTransport):
             *,
             retry: OptionalRetry = gapic_v1.method.DEFAULT,
             timeout: Optional[float] = None,
-            metadata: Sequence[Tuple[str, str]] = (),
+            metadata: Sequence[Tuple[str, Union[str, bytes]]] = (),
         ):
             r"""Call the acknowledge method over HTTP.
 
@@ -634,49 +910,70 @@ class SubscriberRestTransport(SubscriberTransport):
                 retry (google.api_core.retry.Retry): Designation of what errors, if any,
                     should be retried.
                 timeout (float): The timeout for this request.
-                metadata (Sequence[Tuple[str, str]]): Strings which should be
-                    sent along with the request as metadata.
+                metadata (Sequence[Tuple[str, Union[str, bytes]]]): Key/value pairs which should be
+                    sent along with the request as metadata. Normally, each value must be of type `str`,
+                    but for metadata keys ending with the suffix `-bin`, the corresponding values must
+                    be of type `bytes`.
             """
 
-            http_options: List[Dict[str, str]] = [
-                {
-                    "method": "post",
-                    "uri": "/v1/{subscription=projects/*/subscriptions/*}:acknowledge",
-                    "body": "*",
-                },
-            ]
-            request, metadata = self._interceptor.pre_acknowledge(request, metadata)
-            pb_request = pubsub.AcknowledgeRequest.pb(request)
-            transcoded_request = path_template.transcode(http_options, pb_request)
-
-            # Jsonify the request body
-
-            body = json_format.MessageToJson(
-                transcoded_request["body"], use_integers_for_enums=True
+            http_options = (
+                _BaseSubscriberRestTransport._BaseAcknowledge._get_http_options()
             )
-            uri = transcoded_request["uri"]
-            method = transcoded_request["method"]
 
-            # Jsonify the query params
-            query_params = json.loads(
-                json_format.MessageToJson(
-                    transcoded_request["query_params"],
-                    use_integers_for_enums=True,
+            request, metadata = self._interceptor.pre_acknowledge(request, metadata)
+            transcoded_request = (
+                _BaseSubscriberRestTransport._BaseAcknowledge._get_transcoded_request(
+                    http_options, request
                 )
             )
-            query_params.update(self._get_unset_required_fields(query_params))
 
-            query_params["$alt"] = "json;enum-encoding=int"
+            body = _BaseSubscriberRestTransport._BaseAcknowledge._get_request_body_json(
+                transcoded_request
+            )
+
+            # Jsonify the query params
+            query_params = (
+                _BaseSubscriberRestTransport._BaseAcknowledge._get_query_params_json(
+                    transcoded_request
+                )
+            )
+
+            if CLIENT_LOGGING_SUPPORTED and _LOGGER.isEnabledFor(
+                logging.DEBUG
+            ):  # pragma: NO COVER
+                request_url = "{host}{uri}".format(
+                    host=self._host, uri=transcoded_request["uri"]
+                )
+                method = transcoded_request["method"]
+                try:
+                    request_payload = json_format.MessageToJson(request)
+                except:
+                    request_payload = None
+                http_request = {
+                    "payload": request_payload,
+                    "requestMethod": method,
+                    "requestUrl": request_url,
+                    "headers": dict(metadata),
+                }
+                _LOGGER.debug(
+                    f"Sending request for google.pubsub_v1.SubscriberClient.Acknowledge",
+                    extra={
+                        "serviceName": "google.pubsub.v1.Subscriber",
+                        "rpcName": "Acknowledge",
+                        "httpRequest": http_request,
+                        "metadata": http_request["headers"],
+                    },
+                )
 
             # Send the request
-            headers = dict(metadata)
-            headers["Content-Type"] = "application/json"
-            response = getattr(self._session, method)(
-                "{host}{uri}".format(host=self._host, uri=uri),
-                timeout=timeout,
-                headers=headers,
-                params=rest_helpers.flatten_query_params(query_params, strict=True),
-                data=body,
+            response = SubscriberRestTransport._Acknowledge._get_response(
+                self._host,
+                metadata,
+                query_params,
+                self._session,
+                timeout,
+                transcoded_request,
+                body,
             )
 
             # In case of error, raise the appropriate core_exceptions.GoogleAPICallError exception
@@ -684,19 +981,34 @@ class SubscriberRestTransport(SubscriberTransport):
             if response.status_code >= 400:
                 raise core_exceptions.from_http_response(response)
 
-    class _CreateSnapshot(SubscriberRestStub):
+    class _CreateSnapshot(
+        _BaseSubscriberRestTransport._BaseCreateSnapshot, SubscriberRestStub
+    ):
         def __hash__(self):
-            return hash("CreateSnapshot")
+            return hash("SubscriberRestTransport.CreateSnapshot")
 
-        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] = {}
-
-        @classmethod
-        def _get_unset_required_fields(cls, message_dict):
-            return {
-                k: v
-                for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items()
-                if k not in message_dict
-            }
+        @staticmethod
+        def _get_response(
+            host,
+            metadata,
+            query_params,
+            session,
+            timeout,
+            transcoded_request,
+            body=None,
+        ):
+            uri = transcoded_request["uri"]
+            method = transcoded_request["method"]
+            headers = dict(metadata)
+            headers["Content-Type"] = "application/json"
+            response = getattr(session, method)(
+                "{host}{uri}".format(host=host, uri=uri),
+                timeout=timeout,
+                headers=headers,
+                params=rest_helpers.flatten_query_params(query_params, strict=True),
+                data=body,
+            )
+            return response
 
         def __call__(
             self,
@@ -704,7 +1016,7 @@ class SubscriberRestTransport(SubscriberTransport):
             *,
             retry: OptionalRetry = gapic_v1.method.DEFAULT,
             timeout: Optional[float] = None,
-            metadata: Sequence[Tuple[str, str]] = (),
+            metadata: Sequence[Tuple[str, Union[str, bytes]]] = (),
         ) -> pubsub.Snapshot:
             r"""Call the create snapshot method over HTTP.
 
@@ -714,8 +1026,10 @@ class SubscriberRestTransport(SubscriberTransport):
                 retry (google.api_core.retry.Retry): Designation of what errors, if any,
                     should be retried.
                 timeout (float): The timeout for this request.
-                metadata (Sequence[Tuple[str, str]]): Strings which should be
-                    sent along with the request as metadata.
+                metadata (Sequence[Tuple[str, Union[str, bytes]]]): Key/value pairs which should be
+                    sent along with the request as metadata. Normally, each value must be of type `str`,
+                    but for metadata keys ending with the suffix `-bin`, the corresponding values must
+                    be of type `bytes`.
 
             Returns:
                 ~.pubsub.Snapshot:
@@ -728,45 +1042,64 @@ class SubscriberRestTransport(SubscriberTransport):
 
             """
 
-            http_options: List[Dict[str, str]] = [
-                {
-                    "method": "put",
-                    "uri": "/v1/{name=projects/*/snapshots/*}",
-                    "body": "*",
-                },
-            ]
-            request, metadata = self._interceptor.pre_create_snapshot(request, metadata)
-            pb_request = pubsub.CreateSnapshotRequest.pb(request)
-            transcoded_request = path_template.transcode(http_options, pb_request)
-
-            # Jsonify the request body
-
-            body = json_format.MessageToJson(
-                transcoded_request["body"], use_integers_for_enums=True
+            http_options = (
+                _BaseSubscriberRestTransport._BaseCreateSnapshot._get_http_options()
             )
-            uri = transcoded_request["uri"]
-            method = transcoded_request["method"]
 
-            # Jsonify the query params
-            query_params = json.loads(
-                json_format.MessageToJson(
-                    transcoded_request["query_params"],
-                    use_integers_for_enums=True,
+            request, metadata = self._interceptor.pre_create_snapshot(request, metadata)
+            transcoded_request = _BaseSubscriberRestTransport._BaseCreateSnapshot._get_transcoded_request(
+                http_options, request
+            )
+
+            body = (
+                _BaseSubscriberRestTransport._BaseCreateSnapshot._get_request_body_json(
+                    transcoded_request
                 )
             )
-            query_params.update(self._get_unset_required_fields(query_params))
 
-            query_params["$alt"] = "json;enum-encoding=int"
+            # Jsonify the query params
+            query_params = (
+                _BaseSubscriberRestTransport._BaseCreateSnapshot._get_query_params_json(
+                    transcoded_request
+                )
+            )
+
+            if CLIENT_LOGGING_SUPPORTED and _LOGGER.isEnabledFor(
+                logging.DEBUG
+            ):  # pragma: NO COVER
+                request_url = "{host}{uri}".format(
+                    host=self._host, uri=transcoded_request["uri"]
+                )
+                method = transcoded_request["method"]
+                try:
+                    request_payload = type(request).to_json(request)
+                except:
+                    request_payload = None
+                http_request = {
+                    "payload": request_payload,
+                    "requestMethod": method,
+                    "requestUrl": request_url,
+                    "headers": dict(metadata),
+                }
+                _LOGGER.debug(
+                    f"Sending request for google.pubsub_v1.SubscriberClient.CreateSnapshot",
+                    extra={
+                        "serviceName": "google.pubsub.v1.Subscriber",
+                        "rpcName": "CreateSnapshot",
+                        "httpRequest": http_request,
+                        "metadata": http_request["headers"],
+                    },
+                )
 
             # Send the request
-            headers = dict(metadata)
-            headers["Content-Type"] = "application/json"
-            response = getattr(self._session, method)(
-                "{host}{uri}".format(host=self._host, uri=uri),
-                timeout=timeout,
-                headers=headers,
-                params=rest_helpers.flatten_query_params(query_params, strict=True),
-                data=body,
+            response = SubscriberRestTransport._CreateSnapshot._get_response(
+                self._host,
+                metadata,
+                query_params,
+                self._session,
+                timeout,
+                transcoded_request,
+                body,
             )
 
             # In case of error, raise the appropriate core_exceptions.GoogleAPICallError exception
@@ -779,22 +1112,63 @@ class SubscriberRestTransport(SubscriberTransport):
             pb_resp = pubsub.Snapshot.pb(resp)
 
             json_format.Parse(response.content, pb_resp, ignore_unknown_fields=True)
+
             resp = self._interceptor.post_create_snapshot(resp)
+            response_metadata = [(k, str(v)) for k, v in response.headers.items()]
+            resp, _ = self._interceptor.post_create_snapshot_with_metadata(
+                resp, response_metadata
+            )
+            if CLIENT_LOGGING_SUPPORTED and _LOGGER.isEnabledFor(
+                logging.DEBUG
+            ):  # pragma: NO COVER
+                try:
+                    response_payload = pubsub.Snapshot.to_json(response)
+                except:
+                    response_payload = None
+                http_response = {
+                    "payload": response_payload,
+                    "headers": dict(response.headers),
+                    "status": response.status_code,
+                }
+                _LOGGER.debug(
+                    "Received response for google.pubsub_v1.SubscriberClient.create_snapshot",
+                    extra={
+                        "serviceName": "google.pubsub.v1.Subscriber",
+                        "rpcName": "CreateSnapshot",
+                        "metadata": http_response["headers"],
+                        "httpResponse": http_response,
+                    },
+                )
             return resp
 
-    class _CreateSubscription(SubscriberRestStub):
+    class _CreateSubscription(
+        _BaseSubscriberRestTransport._BaseCreateSubscription, SubscriberRestStub
+    ):
         def __hash__(self):
-            return hash("CreateSubscription")
+            return hash("SubscriberRestTransport.CreateSubscription")
 
-        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] = {}
-
-        @classmethod
-        def _get_unset_required_fields(cls, message_dict):
-            return {
-                k: v
-                for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items()
-                if k not in message_dict
-            }
+        @staticmethod
+        def _get_response(
+            host,
+            metadata,
+            query_params,
+            session,
+            timeout,
+            transcoded_request,
+            body=None,
+        ):
+            uri = transcoded_request["uri"]
+            method = transcoded_request["method"]
+            headers = dict(metadata)
+            headers["Content-Type"] = "application/json"
+            response = getattr(session, method)(
+                "{host}{uri}".format(host=host, uri=uri),
+                timeout=timeout,
+                headers=headers,
+                params=rest_helpers.flatten_query_params(query_params, strict=True),
+                data=body,
+            )
+            return response
 
         def __call__(
             self,
@@ -802,7 +1176,7 @@ class SubscriberRestTransport(SubscriberTransport):
             *,
             retry: OptionalRetry = gapic_v1.method.DEFAULT,
             timeout: Optional[float] = None,
-            metadata: Sequence[Tuple[str, str]] = (),
+            metadata: Sequence[Tuple[str, Union[str, bytes]]] = (),
         ) -> pubsub.Subscription:
             r"""Call the create subscription method over HTTP.
 
@@ -815,8 +1189,10 @@ class SubscriberRestTransport(SubscriberTransport):
                 retry (google.api_core.retry.Retry): Designation of what errors, if any,
                     should be retried.
                 timeout (float): The timeout for this request.
-                metadata (Sequence[Tuple[str, str]]): Strings which should be
-                    sent along with the request as metadata.
+                metadata (Sequence[Tuple[str, Union[str, bytes]]]): Key/value pairs which should be
+                    sent along with the request as metadata. Normally, each value must be of type `str`,
+                    but for metadata keys ending with the suffix `-bin`, the corresponding values must
+                    be of type `bytes`.
 
             Returns:
                 ~.pubsub.Subscription:
@@ -827,47 +1203,62 @@ class SubscriberRestTransport(SubscriberTransport):
 
             """
 
-            http_options: List[Dict[str, str]] = [
-                {
-                    "method": "put",
-                    "uri": "/v1/{name=projects/*/subscriptions/*}",
-                    "body": "*",
-                },
-            ]
+            http_options = (
+                _BaseSubscriberRestTransport._BaseCreateSubscription._get_http_options()
+            )
+
             request, metadata = self._interceptor.pre_create_subscription(
                 request, metadata
             )
-            pb_request = pubsub.Subscription.pb(request)
-            transcoded_request = path_template.transcode(http_options, pb_request)
-
-            # Jsonify the request body
-
-            body = json_format.MessageToJson(
-                transcoded_request["body"], use_integers_for_enums=True
+            transcoded_request = _BaseSubscriberRestTransport._BaseCreateSubscription._get_transcoded_request(
+                http_options, request
             )
-            uri = transcoded_request["uri"]
-            method = transcoded_request["method"]
+
+            body = _BaseSubscriberRestTransport._BaseCreateSubscription._get_request_body_json(
+                transcoded_request
+            )
 
             # Jsonify the query params
-            query_params = json.loads(
-                json_format.MessageToJson(
-                    transcoded_request["query_params"],
-                    use_integers_for_enums=True,
-                )
+            query_params = _BaseSubscriberRestTransport._BaseCreateSubscription._get_query_params_json(
+                transcoded_request
             )
-            query_params.update(self._get_unset_required_fields(query_params))
 
-            query_params["$alt"] = "json;enum-encoding=int"
+            if CLIENT_LOGGING_SUPPORTED and _LOGGER.isEnabledFor(
+                logging.DEBUG
+            ):  # pragma: NO COVER
+                request_url = "{host}{uri}".format(
+                    host=self._host, uri=transcoded_request["uri"]
+                )
+                method = transcoded_request["method"]
+                try:
+                    request_payload = type(request).to_json(request)
+                except:
+                    request_payload = None
+                http_request = {
+                    "payload": request_payload,
+                    "requestMethod": method,
+                    "requestUrl": request_url,
+                    "headers": dict(metadata),
+                }
+                _LOGGER.debug(
+                    f"Sending request for google.pubsub_v1.SubscriberClient.CreateSubscription",
+                    extra={
+                        "serviceName": "google.pubsub.v1.Subscriber",
+                        "rpcName": "CreateSubscription",
+                        "httpRequest": http_request,
+                        "metadata": http_request["headers"],
+                    },
+                )
 
             # Send the request
-            headers = dict(metadata)
-            headers["Content-Type"] = "application/json"
-            response = getattr(self._session, method)(
-                "{host}{uri}".format(host=self._host, uri=uri),
-                timeout=timeout,
-                headers=headers,
-                params=rest_helpers.flatten_query_params(query_params, strict=True),
-                data=body,
+            response = SubscriberRestTransport._CreateSubscription._get_response(
+                self._host,
+                metadata,
+                query_params,
+                self._session,
+                timeout,
+                transcoded_request,
+                body,
             )
 
             # In case of error, raise the appropriate core_exceptions.GoogleAPICallError exception
@@ -880,22 +1271,62 @@ class SubscriberRestTransport(SubscriberTransport):
             pb_resp = pubsub.Subscription.pb(resp)
 
             json_format.Parse(response.content, pb_resp, ignore_unknown_fields=True)
+
             resp = self._interceptor.post_create_subscription(resp)
+            response_metadata = [(k, str(v)) for k, v in response.headers.items()]
+            resp, _ = self._interceptor.post_create_subscription_with_metadata(
+                resp, response_metadata
+            )
+            if CLIENT_LOGGING_SUPPORTED and _LOGGER.isEnabledFor(
+                logging.DEBUG
+            ):  # pragma: NO COVER
+                try:
+                    response_payload = pubsub.Subscription.to_json(response)
+                except:
+                    response_payload = None
+                http_response = {
+                    "payload": response_payload,
+                    "headers": dict(response.headers),
+                    "status": response.status_code,
+                }
+                _LOGGER.debug(
+                    "Received response for google.pubsub_v1.SubscriberClient.create_subscription",
+                    extra={
+                        "serviceName": "google.pubsub.v1.Subscriber",
+                        "rpcName": "CreateSubscription",
+                        "metadata": http_response["headers"],
+                        "httpResponse": http_response,
+                    },
+                )
             return resp
 
-    class _DeleteSnapshot(SubscriberRestStub):
+    class _DeleteSnapshot(
+        _BaseSubscriberRestTransport._BaseDeleteSnapshot, SubscriberRestStub
+    ):
         def __hash__(self):
-            return hash("DeleteSnapshot")
+            return hash("SubscriberRestTransport.DeleteSnapshot")
 
-        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] = {}
-
-        @classmethod
-        def _get_unset_required_fields(cls, message_dict):
-            return {
-                k: v
-                for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items()
-                if k not in message_dict
-            }
+        @staticmethod
+        def _get_response(
+            host,
+            metadata,
+            query_params,
+            session,
+            timeout,
+            transcoded_request,
+            body=None,
+        ):
+            uri = transcoded_request["uri"]
+            method = transcoded_request["method"]
+            headers = dict(metadata)
+            headers["Content-Type"] = "application/json"
+            response = getattr(session, method)(
+                "{host}{uri}".format(host=host, uri=uri),
+                timeout=timeout,
+                headers=headers,
+                params=rest_helpers.flatten_query_params(query_params, strict=True),
+            )
+            return response
 
         def __call__(
             self,
@@ -903,7 +1334,7 @@ class SubscriberRestTransport(SubscriberTransport):
             *,
             retry: OptionalRetry = gapic_v1.method.DEFAULT,
             timeout: Optional[float] = None,
-            metadata: Sequence[Tuple[str, str]] = (),
+            metadata: Sequence[Tuple[str, Union[str, bytes]]] = (),
         ):
             r"""Call the delete snapshot method over HTTP.
 
@@ -913,42 +1344,63 @@ class SubscriberRestTransport(SubscriberTransport):
                 retry (google.api_core.retry.Retry): Designation of what errors, if any,
                     should be retried.
                 timeout (float): The timeout for this request.
-                metadata (Sequence[Tuple[str, str]]): Strings which should be
-                    sent along with the request as metadata.
+                metadata (Sequence[Tuple[str, Union[str, bytes]]]): Key/value pairs which should be
+                    sent along with the request as metadata. Normally, each value must be of type `str`,
+                    but for metadata keys ending with the suffix `-bin`, the corresponding values must
+                    be of type `bytes`.
             """
 
-            http_options: List[Dict[str, str]] = [
-                {
-                    "method": "delete",
-                    "uri": "/v1/{snapshot=projects/*/snapshots/*}",
-                },
-            ]
-            request, metadata = self._interceptor.pre_delete_snapshot(request, metadata)
-            pb_request = pubsub.DeleteSnapshotRequest.pb(request)
-            transcoded_request = path_template.transcode(http_options, pb_request)
+            http_options = (
+                _BaseSubscriberRestTransport._BaseDeleteSnapshot._get_http_options()
+            )
 
-            uri = transcoded_request["uri"]
-            method = transcoded_request["method"]
+            request, metadata = self._interceptor.pre_delete_snapshot(request, metadata)
+            transcoded_request = _BaseSubscriberRestTransport._BaseDeleteSnapshot._get_transcoded_request(
+                http_options, request
+            )
 
             # Jsonify the query params
-            query_params = json.loads(
-                json_format.MessageToJson(
-                    transcoded_request["query_params"],
-                    use_integers_for_enums=True,
+            query_params = (
+                _BaseSubscriberRestTransport._BaseDeleteSnapshot._get_query_params_json(
+                    transcoded_request
                 )
             )
-            query_params.update(self._get_unset_required_fields(query_params))
 
-            query_params["$alt"] = "json;enum-encoding=int"
+            if CLIENT_LOGGING_SUPPORTED and _LOGGER.isEnabledFor(
+                logging.DEBUG
+            ):  # pragma: NO COVER
+                request_url = "{host}{uri}".format(
+                    host=self._host, uri=transcoded_request["uri"]
+                )
+                method = transcoded_request["method"]
+                try:
+                    request_payload = json_format.MessageToJson(request)
+                except:
+                    request_payload = None
+                http_request = {
+                    "payload": request_payload,
+                    "requestMethod": method,
+                    "requestUrl": request_url,
+                    "headers": dict(metadata),
+                }
+                _LOGGER.debug(
+                    f"Sending request for google.pubsub_v1.SubscriberClient.DeleteSnapshot",
+                    extra={
+                        "serviceName": "google.pubsub.v1.Subscriber",
+                        "rpcName": "DeleteSnapshot",
+                        "httpRequest": http_request,
+                        "metadata": http_request["headers"],
+                    },
+                )
 
             # Send the request
-            headers = dict(metadata)
-            headers["Content-Type"] = "application/json"
-            response = getattr(self._session, method)(
-                "{host}{uri}".format(host=self._host, uri=uri),
-                timeout=timeout,
-                headers=headers,
-                params=rest_helpers.flatten_query_params(query_params, strict=True),
+            response = SubscriberRestTransport._DeleteSnapshot._get_response(
+                self._host,
+                metadata,
+                query_params,
+                self._session,
+                timeout,
+                transcoded_request,
             )
 
             # In case of error, raise the appropriate core_exceptions.GoogleAPICallError exception
@@ -956,19 +1408,33 @@ class SubscriberRestTransport(SubscriberTransport):
             if response.status_code >= 400:
                 raise core_exceptions.from_http_response(response)
 
-    class _DeleteSubscription(SubscriberRestStub):
+    class _DeleteSubscription(
+        _BaseSubscriberRestTransport._BaseDeleteSubscription, SubscriberRestStub
+    ):
         def __hash__(self):
-            return hash("DeleteSubscription")
+            return hash("SubscriberRestTransport.DeleteSubscription")
 
-        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] = {}
-
-        @classmethod
-        def _get_unset_required_fields(cls, message_dict):
-            return {
-                k: v
-                for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items()
-                if k not in message_dict
-            }
+        @staticmethod
+        def _get_response(
+            host,
+            metadata,
+            query_params,
+            session,
+            timeout,
+            transcoded_request,
+            body=None,
+        ):
+            uri = transcoded_request["uri"]
+            method = transcoded_request["method"]
+            headers = dict(metadata)
+            headers["Content-Type"] = "application/json"
+            response = getattr(session, method)(
+                "{host}{uri}".format(host=host, uri=uri),
+                timeout=timeout,
+                headers=headers,
+                params=rest_helpers.flatten_query_params(query_params, strict=True),
+            )
+            return response
 
         def __call__(
             self,
@@ -976,7 +1442,7 @@ class SubscriberRestTransport(SubscriberTransport):
             *,
             retry: OptionalRetry = gapic_v1.method.DEFAULT,
             timeout: Optional[float] = None,
-            metadata: Sequence[Tuple[str, str]] = (),
+            metadata: Sequence[Tuple[str, Union[str, bytes]]] = (),
         ):
             r"""Call the delete subscription method over HTTP.
 
@@ -987,44 +1453,63 @@ class SubscriberRestTransport(SubscriberTransport):
                 retry (google.api_core.retry.Retry): Designation of what errors, if any,
                     should be retried.
                 timeout (float): The timeout for this request.
-                metadata (Sequence[Tuple[str, str]]): Strings which should be
-                    sent along with the request as metadata.
+                metadata (Sequence[Tuple[str, Union[str, bytes]]]): Key/value pairs which should be
+                    sent along with the request as metadata. Normally, each value must be of type `str`,
+                    but for metadata keys ending with the suffix `-bin`, the corresponding values must
+                    be of type `bytes`.
             """
 
-            http_options: List[Dict[str, str]] = [
-                {
-                    "method": "delete",
-                    "uri": "/v1/{subscription=projects/*/subscriptions/*}",
-                },
-            ]
+            http_options = (
+                _BaseSubscriberRestTransport._BaseDeleteSubscription._get_http_options()
+            )
+
             request, metadata = self._interceptor.pre_delete_subscription(
                 request, metadata
             )
-            pb_request = pubsub.DeleteSubscriptionRequest.pb(request)
-            transcoded_request = path_template.transcode(http_options, pb_request)
-
-            uri = transcoded_request["uri"]
-            method = transcoded_request["method"]
+            transcoded_request = _BaseSubscriberRestTransport._BaseDeleteSubscription._get_transcoded_request(
+                http_options, request
+            )
 
             # Jsonify the query params
-            query_params = json.loads(
-                json_format.MessageToJson(
-                    transcoded_request["query_params"],
-                    use_integers_for_enums=True,
-                )
+            query_params = _BaseSubscriberRestTransport._BaseDeleteSubscription._get_query_params_json(
+                transcoded_request
             )
-            query_params.update(self._get_unset_required_fields(query_params))
 
-            query_params["$alt"] = "json;enum-encoding=int"
+            if CLIENT_LOGGING_SUPPORTED and _LOGGER.isEnabledFor(
+                logging.DEBUG
+            ):  # pragma: NO COVER
+                request_url = "{host}{uri}".format(
+                    host=self._host, uri=transcoded_request["uri"]
+                )
+                method = transcoded_request["method"]
+                try:
+                    request_payload = json_format.MessageToJson(request)
+                except:
+                    request_payload = None
+                http_request = {
+                    "payload": request_payload,
+                    "requestMethod": method,
+                    "requestUrl": request_url,
+                    "headers": dict(metadata),
+                }
+                _LOGGER.debug(
+                    f"Sending request for google.pubsub_v1.SubscriberClient.DeleteSubscription",
+                    extra={
+                        "serviceName": "google.pubsub.v1.Subscriber",
+                        "rpcName": "DeleteSubscription",
+                        "httpRequest": http_request,
+                        "metadata": http_request["headers"],
+                    },
+                )
 
             # Send the request
-            headers = dict(metadata)
-            headers["Content-Type"] = "application/json"
-            response = getattr(self._session, method)(
-                "{host}{uri}".format(host=self._host, uri=uri),
-                timeout=timeout,
-                headers=headers,
-                params=rest_helpers.flatten_query_params(query_params, strict=True),
+            response = SubscriberRestTransport._DeleteSubscription._get_response(
+                self._host,
+                metadata,
+                query_params,
+                self._session,
+                timeout,
+                transcoded_request,
             )
 
             # In case of error, raise the appropriate core_exceptions.GoogleAPICallError exception
@@ -1032,19 +1517,33 @@ class SubscriberRestTransport(SubscriberTransport):
             if response.status_code >= 400:
                 raise core_exceptions.from_http_response(response)
 
-    class _GetSnapshot(SubscriberRestStub):
+    class _GetSnapshot(
+        _BaseSubscriberRestTransport._BaseGetSnapshot, SubscriberRestStub
+    ):
         def __hash__(self):
-            return hash("GetSnapshot")
+            return hash("SubscriberRestTransport.GetSnapshot")
 
-        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] = {}
-
-        @classmethod
-        def _get_unset_required_fields(cls, message_dict):
-            return {
-                k: v
-                for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items()
-                if k not in message_dict
-            }
+        @staticmethod
+        def _get_response(
+            host,
+            metadata,
+            query_params,
+            session,
+            timeout,
+            transcoded_request,
+            body=None,
+        ):
+            uri = transcoded_request["uri"]
+            method = transcoded_request["method"]
+            headers = dict(metadata)
+            headers["Content-Type"] = "application/json"
+            response = getattr(session, method)(
+                "{host}{uri}".format(host=host, uri=uri),
+                timeout=timeout,
+                headers=headers,
+                params=rest_helpers.flatten_query_params(query_params, strict=True),
+            )
+            return response
 
         def __call__(
             self,
@@ -1052,7 +1551,7 @@ class SubscriberRestTransport(SubscriberTransport):
             *,
             retry: OptionalRetry = gapic_v1.method.DEFAULT,
             timeout: Optional[float] = None,
-            metadata: Sequence[Tuple[str, str]] = (),
+            metadata: Sequence[Tuple[str, Union[str, bytes]]] = (),
         ) -> pubsub.Snapshot:
             r"""Call the get snapshot method over HTTP.
 
@@ -1062,8 +1561,10 @@ class SubscriberRestTransport(SubscriberTransport):
                 retry (google.api_core.retry.Retry): Designation of what errors, if any,
                     should be retried.
                 timeout (float): The timeout for this request.
-                metadata (Sequence[Tuple[str, str]]): Strings which should be
-                    sent along with the request as metadata.
+                metadata (Sequence[Tuple[str, Union[str, bytes]]]): Key/value pairs which should be
+                    sent along with the request as metadata. Normally, each value must be of type `str`,
+                    but for metadata keys ending with the suffix `-bin`, the corresponding values must
+                    be of type `bytes`.
 
             Returns:
                 ~.pubsub.Snapshot:
@@ -1076,38 +1577,59 @@ class SubscriberRestTransport(SubscriberTransport):
 
             """
 
-            http_options: List[Dict[str, str]] = [
-                {
-                    "method": "get",
-                    "uri": "/v1/{snapshot=projects/*/snapshots/*}",
-                },
-            ]
+            http_options = (
+                _BaseSubscriberRestTransport._BaseGetSnapshot._get_http_options()
+            )
+
             request, metadata = self._interceptor.pre_get_snapshot(request, metadata)
-            pb_request = pubsub.GetSnapshotRequest.pb(request)
-            transcoded_request = path_template.transcode(http_options, pb_request)
-
-            uri = transcoded_request["uri"]
-            method = transcoded_request["method"]
-
-            # Jsonify the query params
-            query_params = json.loads(
-                json_format.MessageToJson(
-                    transcoded_request["query_params"],
-                    use_integers_for_enums=True,
+            transcoded_request = (
+                _BaseSubscriberRestTransport._BaseGetSnapshot._get_transcoded_request(
+                    http_options, request
                 )
             )
-            query_params.update(self._get_unset_required_fields(query_params))
 
-            query_params["$alt"] = "json;enum-encoding=int"
+            # Jsonify the query params
+            query_params = (
+                _BaseSubscriberRestTransport._BaseGetSnapshot._get_query_params_json(
+                    transcoded_request
+                )
+            )
+
+            if CLIENT_LOGGING_SUPPORTED and _LOGGER.isEnabledFor(
+                logging.DEBUG
+            ):  # pragma: NO COVER
+                request_url = "{host}{uri}".format(
+                    host=self._host, uri=transcoded_request["uri"]
+                )
+                method = transcoded_request["method"]
+                try:
+                    request_payload = type(request).to_json(request)
+                except:
+                    request_payload = None
+                http_request = {
+                    "payload": request_payload,
+                    "requestMethod": method,
+                    "requestUrl": request_url,
+                    "headers": dict(metadata),
+                }
+                _LOGGER.debug(
+                    f"Sending request for google.pubsub_v1.SubscriberClient.GetSnapshot",
+                    extra={
+                        "serviceName": "google.pubsub.v1.Subscriber",
+                        "rpcName": "GetSnapshot",
+                        "httpRequest": http_request,
+                        "metadata": http_request["headers"],
+                    },
+                )
 
             # Send the request
-            headers = dict(metadata)
-            headers["Content-Type"] = "application/json"
-            response = getattr(self._session, method)(
-                "{host}{uri}".format(host=self._host, uri=uri),
-                timeout=timeout,
-                headers=headers,
-                params=rest_helpers.flatten_query_params(query_params, strict=True),
+            response = SubscriberRestTransport._GetSnapshot._get_response(
+                self._host,
+                metadata,
+                query_params,
+                self._session,
+                timeout,
+                transcoded_request,
             )
 
             # In case of error, raise the appropriate core_exceptions.GoogleAPICallError exception
@@ -1120,22 +1642,62 @@ class SubscriberRestTransport(SubscriberTransport):
             pb_resp = pubsub.Snapshot.pb(resp)
 
             json_format.Parse(response.content, pb_resp, ignore_unknown_fields=True)
+
             resp = self._interceptor.post_get_snapshot(resp)
+            response_metadata = [(k, str(v)) for k, v in response.headers.items()]
+            resp, _ = self._interceptor.post_get_snapshot_with_metadata(
+                resp, response_metadata
+            )
+            if CLIENT_LOGGING_SUPPORTED and _LOGGER.isEnabledFor(
+                logging.DEBUG
+            ):  # pragma: NO COVER
+                try:
+                    response_payload = pubsub.Snapshot.to_json(response)
+                except:
+                    response_payload = None
+                http_response = {
+                    "payload": response_payload,
+                    "headers": dict(response.headers),
+                    "status": response.status_code,
+                }
+                _LOGGER.debug(
+                    "Received response for google.pubsub_v1.SubscriberClient.get_snapshot",
+                    extra={
+                        "serviceName": "google.pubsub.v1.Subscriber",
+                        "rpcName": "GetSnapshot",
+                        "metadata": http_response["headers"],
+                        "httpResponse": http_response,
+                    },
+                )
             return resp
 
-    class _GetSubscription(SubscriberRestStub):
+    class _GetSubscription(
+        _BaseSubscriberRestTransport._BaseGetSubscription, SubscriberRestStub
+    ):
         def __hash__(self):
-            return hash("GetSubscription")
+            return hash("SubscriberRestTransport.GetSubscription")
 
-        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] = {}
-
-        @classmethod
-        def _get_unset_required_fields(cls, message_dict):
-            return {
-                k: v
-                for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items()
-                if k not in message_dict
-            }
+        @staticmethod
+        def _get_response(
+            host,
+            metadata,
+            query_params,
+            session,
+            timeout,
+            transcoded_request,
+            body=None,
+        ):
+            uri = transcoded_request["uri"]
+            method = transcoded_request["method"]
+            headers = dict(metadata)
+            headers["Content-Type"] = "application/json"
+            response = getattr(session, method)(
+                "{host}{uri}".format(host=host, uri=uri),
+                timeout=timeout,
+                headers=headers,
+                params=rest_helpers.flatten_query_params(query_params, strict=True),
+            )
+            return response
 
         def __call__(
             self,
@@ -1143,7 +1705,7 @@ class SubscriberRestTransport(SubscriberTransport):
             *,
             retry: OptionalRetry = gapic_v1.method.DEFAULT,
             timeout: Optional[float] = None,
-            metadata: Sequence[Tuple[str, str]] = (),
+            metadata: Sequence[Tuple[str, Union[str, bytes]]] = (),
         ) -> pubsub.Subscription:
             r"""Call the get subscription method over HTTP.
 
@@ -1154,8 +1716,10 @@ class SubscriberRestTransport(SubscriberTransport):
                 retry (google.api_core.retry.Retry): Designation of what errors, if any,
                     should be retried.
                 timeout (float): The timeout for this request.
-                metadata (Sequence[Tuple[str, str]]): Strings which should be
-                    sent along with the request as metadata.
+                metadata (Sequence[Tuple[str, Union[str, bytes]]]): Key/value pairs which should be
+                    sent along with the request as metadata. Normally, each value must be of type `str`,
+                    but for metadata keys ending with the suffix `-bin`, the corresponding values must
+                    be of type `bytes`.
 
             Returns:
                 ~.pubsub.Subscription:
@@ -1166,40 +1730,57 @@ class SubscriberRestTransport(SubscriberTransport):
 
             """
 
-            http_options: List[Dict[str, str]] = [
-                {
-                    "method": "get",
-                    "uri": "/v1/{subscription=projects/*/subscriptions/*}",
-                },
-            ]
+            http_options = (
+                _BaseSubscriberRestTransport._BaseGetSubscription._get_http_options()
+            )
+
             request, metadata = self._interceptor.pre_get_subscription(
                 request, metadata
             )
-            pb_request = pubsub.GetSubscriptionRequest.pb(request)
-            transcoded_request = path_template.transcode(http_options, pb_request)
-
-            uri = transcoded_request["uri"]
-            method = transcoded_request["method"]
+            transcoded_request = _BaseSubscriberRestTransport._BaseGetSubscription._get_transcoded_request(
+                http_options, request
+            )
 
             # Jsonify the query params
-            query_params = json.loads(
-                json_format.MessageToJson(
-                    transcoded_request["query_params"],
-                    use_integers_for_enums=True,
-                )
+            query_params = _BaseSubscriberRestTransport._BaseGetSubscription._get_query_params_json(
+                transcoded_request
             )
-            query_params.update(self._get_unset_required_fields(query_params))
 
-            query_params["$alt"] = "json;enum-encoding=int"
+            if CLIENT_LOGGING_SUPPORTED and _LOGGER.isEnabledFor(
+                logging.DEBUG
+            ):  # pragma: NO COVER
+                request_url = "{host}{uri}".format(
+                    host=self._host, uri=transcoded_request["uri"]
+                )
+                method = transcoded_request["method"]
+                try:
+                    request_payload = type(request).to_json(request)
+                except:
+                    request_payload = None
+                http_request = {
+                    "payload": request_payload,
+                    "requestMethod": method,
+                    "requestUrl": request_url,
+                    "headers": dict(metadata),
+                }
+                _LOGGER.debug(
+                    f"Sending request for google.pubsub_v1.SubscriberClient.GetSubscription",
+                    extra={
+                        "serviceName": "google.pubsub.v1.Subscriber",
+                        "rpcName": "GetSubscription",
+                        "httpRequest": http_request,
+                        "metadata": http_request["headers"],
+                    },
+                )
 
             # Send the request
-            headers = dict(metadata)
-            headers["Content-Type"] = "application/json"
-            response = getattr(self._session, method)(
-                "{host}{uri}".format(host=self._host, uri=uri),
-                timeout=timeout,
-                headers=headers,
-                params=rest_helpers.flatten_query_params(query_params, strict=True),
+            response = SubscriberRestTransport._GetSubscription._get_response(
+                self._host,
+                metadata,
+                query_params,
+                self._session,
+                timeout,
+                transcoded_request,
             )
 
             # In case of error, raise the appropriate core_exceptions.GoogleAPICallError exception
@@ -1212,22 +1793,62 @@ class SubscriberRestTransport(SubscriberTransport):
             pb_resp = pubsub.Subscription.pb(resp)
 
             json_format.Parse(response.content, pb_resp, ignore_unknown_fields=True)
+
             resp = self._interceptor.post_get_subscription(resp)
+            response_metadata = [(k, str(v)) for k, v in response.headers.items()]
+            resp, _ = self._interceptor.post_get_subscription_with_metadata(
+                resp, response_metadata
+            )
+            if CLIENT_LOGGING_SUPPORTED and _LOGGER.isEnabledFor(
+                logging.DEBUG
+            ):  # pragma: NO COVER
+                try:
+                    response_payload = pubsub.Subscription.to_json(response)
+                except:
+                    response_payload = None
+                http_response = {
+                    "payload": response_payload,
+                    "headers": dict(response.headers),
+                    "status": response.status_code,
+                }
+                _LOGGER.debug(
+                    "Received response for google.pubsub_v1.SubscriberClient.get_subscription",
+                    extra={
+                        "serviceName": "google.pubsub.v1.Subscriber",
+                        "rpcName": "GetSubscription",
+                        "metadata": http_response["headers"],
+                        "httpResponse": http_response,
+                    },
+                )
             return resp
 
-    class _ListSnapshots(SubscriberRestStub):
+    class _ListSnapshots(
+        _BaseSubscriberRestTransport._BaseListSnapshots, SubscriberRestStub
+    ):
         def __hash__(self):
-            return hash("ListSnapshots")
+            return hash("SubscriberRestTransport.ListSnapshots")
 
-        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] = {}
-
-        @classmethod
-        def _get_unset_required_fields(cls, message_dict):
-            return {
-                k: v
-                for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items()
-                if k not in message_dict
-            }
+        @staticmethod
+        def _get_response(
+            host,
+            metadata,
+            query_params,
+            session,
+            timeout,
+            transcoded_request,
+            body=None,
+        ):
+            uri = transcoded_request["uri"]
+            method = transcoded_request["method"]
+            headers = dict(metadata)
+            headers["Content-Type"] = "application/json"
+            response = getattr(session, method)(
+                "{host}{uri}".format(host=host, uri=uri),
+                timeout=timeout,
+                headers=headers,
+                params=rest_helpers.flatten_query_params(query_params, strict=True),
+            )
+            return response
 
         def __call__(
             self,
@@ -1235,7 +1856,7 @@ class SubscriberRestTransport(SubscriberTransport):
             *,
             retry: OptionalRetry = gapic_v1.method.DEFAULT,
             timeout: Optional[float] = None,
-            metadata: Sequence[Tuple[str, str]] = (),
+            metadata: Sequence[Tuple[str, Union[str, bytes]]] = (),
         ) -> pubsub.ListSnapshotsResponse:
             r"""Call the list snapshots method over HTTP.
 
@@ -1245,46 +1866,69 @@ class SubscriberRestTransport(SubscriberTransport):
                 retry (google.api_core.retry.Retry): Designation of what errors, if any,
                     should be retried.
                 timeout (float): The timeout for this request.
-                metadata (Sequence[Tuple[str, str]]): Strings which should be
-                    sent along with the request as metadata.
+                metadata (Sequence[Tuple[str, Union[str, bytes]]]): Key/value pairs which should be
+                    sent along with the request as metadata. Normally, each value must be of type `str`,
+                    but for metadata keys ending with the suffix `-bin`, the corresponding values must
+                    be of type `bytes`.
 
             Returns:
                 ~.pubsub.ListSnapshotsResponse:
                     Response for the ``ListSnapshots`` method.
             """
 
-            http_options: List[Dict[str, str]] = [
-                {
-                    "method": "get",
-                    "uri": "/v1/{project=projects/*}/snapshots",
-                },
-            ]
+            http_options = (
+                _BaseSubscriberRestTransport._BaseListSnapshots._get_http_options()
+            )
+
             request, metadata = self._interceptor.pre_list_snapshots(request, metadata)
-            pb_request = pubsub.ListSnapshotsRequest.pb(request)
-            transcoded_request = path_template.transcode(http_options, pb_request)
-
-            uri = transcoded_request["uri"]
-            method = transcoded_request["method"]
-
-            # Jsonify the query params
-            query_params = json.loads(
-                json_format.MessageToJson(
-                    transcoded_request["query_params"],
-                    use_integers_for_enums=True,
+            transcoded_request = (
+                _BaseSubscriberRestTransport._BaseListSnapshots._get_transcoded_request(
+                    http_options, request
                 )
             )
-            query_params.update(self._get_unset_required_fields(query_params))
 
-            query_params["$alt"] = "json;enum-encoding=int"
+            # Jsonify the query params
+            query_params = (
+                _BaseSubscriberRestTransport._BaseListSnapshots._get_query_params_json(
+                    transcoded_request
+                )
+            )
+
+            if CLIENT_LOGGING_SUPPORTED and _LOGGER.isEnabledFor(
+                logging.DEBUG
+            ):  # pragma: NO COVER
+                request_url = "{host}{uri}".format(
+                    host=self._host, uri=transcoded_request["uri"]
+                )
+                method = transcoded_request["method"]
+                try:
+                    request_payload = type(request).to_json(request)
+                except:
+                    request_payload = None
+                http_request = {
+                    "payload": request_payload,
+                    "requestMethod": method,
+                    "requestUrl": request_url,
+                    "headers": dict(metadata),
+                }
+                _LOGGER.debug(
+                    f"Sending request for google.pubsub_v1.SubscriberClient.ListSnapshots",
+                    extra={
+                        "serviceName": "google.pubsub.v1.Subscriber",
+                        "rpcName": "ListSnapshots",
+                        "httpRequest": http_request,
+                        "metadata": http_request["headers"],
+                    },
+                )
 
             # Send the request
-            headers = dict(metadata)
-            headers["Content-Type"] = "application/json"
-            response = getattr(self._session, method)(
-                "{host}{uri}".format(host=self._host, uri=uri),
-                timeout=timeout,
-                headers=headers,
-                params=rest_helpers.flatten_query_params(query_params, strict=True),
+            response = SubscriberRestTransport._ListSnapshots._get_response(
+                self._host,
+                metadata,
+                query_params,
+                self._session,
+                timeout,
+                transcoded_request,
             )
 
             # In case of error, raise the appropriate core_exceptions.GoogleAPICallError exception
@@ -1297,22 +1941,62 @@ class SubscriberRestTransport(SubscriberTransport):
             pb_resp = pubsub.ListSnapshotsResponse.pb(resp)
 
             json_format.Parse(response.content, pb_resp, ignore_unknown_fields=True)
+
             resp = self._interceptor.post_list_snapshots(resp)
+            response_metadata = [(k, str(v)) for k, v in response.headers.items()]
+            resp, _ = self._interceptor.post_list_snapshots_with_metadata(
+                resp, response_metadata
+            )
+            if CLIENT_LOGGING_SUPPORTED and _LOGGER.isEnabledFor(
+                logging.DEBUG
+            ):  # pragma: NO COVER
+                try:
+                    response_payload = pubsub.ListSnapshotsResponse.to_json(response)
+                except:
+                    response_payload = None
+                http_response = {
+                    "payload": response_payload,
+                    "headers": dict(response.headers),
+                    "status": response.status_code,
+                }
+                _LOGGER.debug(
+                    "Received response for google.pubsub_v1.SubscriberClient.list_snapshots",
+                    extra={
+                        "serviceName": "google.pubsub.v1.Subscriber",
+                        "rpcName": "ListSnapshots",
+                        "metadata": http_response["headers"],
+                        "httpResponse": http_response,
+                    },
+                )
             return resp
 
-    class _ListSubscriptions(SubscriberRestStub):
+    class _ListSubscriptions(
+        _BaseSubscriberRestTransport._BaseListSubscriptions, SubscriberRestStub
+    ):
         def __hash__(self):
-            return hash("ListSubscriptions")
+            return hash("SubscriberRestTransport.ListSubscriptions")
 
-        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] = {}
-
-        @classmethod
-        def _get_unset_required_fields(cls, message_dict):
-            return {
-                k: v
-                for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items()
-                if k not in message_dict
-            }
+        @staticmethod
+        def _get_response(
+            host,
+            metadata,
+            query_params,
+            session,
+            timeout,
+            transcoded_request,
+            body=None,
+        ):
+            uri = transcoded_request["uri"]
+            method = transcoded_request["method"]
+            headers = dict(metadata)
+            headers["Content-Type"] = "application/json"
+            response = getattr(session, method)(
+                "{host}{uri}".format(host=host, uri=uri),
+                timeout=timeout,
+                headers=headers,
+                params=rest_helpers.flatten_query_params(query_params, strict=True),
+            )
+            return response
 
         def __call__(
             self,
@@ -1320,7 +2004,7 @@ class SubscriberRestTransport(SubscriberTransport):
             *,
             retry: OptionalRetry = gapic_v1.method.DEFAULT,
             timeout: Optional[float] = None,
-            metadata: Sequence[Tuple[str, str]] = (),
+            metadata: Sequence[Tuple[str, Union[str, bytes]]] = (),
         ) -> pubsub.ListSubscriptionsResponse:
             r"""Call the list subscriptions method over HTTP.
 
@@ -1330,48 +2014,67 @@ class SubscriberRestTransport(SubscriberTransport):
                 retry (google.api_core.retry.Retry): Designation of what errors, if any,
                     should be retried.
                 timeout (float): The timeout for this request.
-                metadata (Sequence[Tuple[str, str]]): Strings which should be
-                    sent along with the request as metadata.
+                metadata (Sequence[Tuple[str, Union[str, bytes]]]): Key/value pairs which should be
+                    sent along with the request as metadata. Normally, each value must be of type `str`,
+                    but for metadata keys ending with the suffix `-bin`, the corresponding values must
+                    be of type `bytes`.
 
             Returns:
                 ~.pubsub.ListSubscriptionsResponse:
                     Response for the ``ListSubscriptions`` method.
             """
 
-            http_options: List[Dict[str, str]] = [
-                {
-                    "method": "get",
-                    "uri": "/v1/{project=projects/*}/subscriptions",
-                },
-            ]
+            http_options = (
+                _BaseSubscriberRestTransport._BaseListSubscriptions._get_http_options()
+            )
+
             request, metadata = self._interceptor.pre_list_subscriptions(
                 request, metadata
             )
-            pb_request = pubsub.ListSubscriptionsRequest.pb(request)
-            transcoded_request = path_template.transcode(http_options, pb_request)
-
-            uri = transcoded_request["uri"]
-            method = transcoded_request["method"]
+            transcoded_request = _BaseSubscriberRestTransport._BaseListSubscriptions._get_transcoded_request(
+                http_options, request
+            )
 
             # Jsonify the query params
-            query_params = json.loads(
-                json_format.MessageToJson(
-                    transcoded_request["query_params"],
-                    use_integers_for_enums=True,
-                )
+            query_params = _BaseSubscriberRestTransport._BaseListSubscriptions._get_query_params_json(
+                transcoded_request
             )
-            query_params.update(self._get_unset_required_fields(query_params))
 
-            query_params["$alt"] = "json;enum-encoding=int"
+            if CLIENT_LOGGING_SUPPORTED and _LOGGER.isEnabledFor(
+                logging.DEBUG
+            ):  # pragma: NO COVER
+                request_url = "{host}{uri}".format(
+                    host=self._host, uri=transcoded_request["uri"]
+                )
+                method = transcoded_request["method"]
+                try:
+                    request_payload = type(request).to_json(request)
+                except:
+                    request_payload = None
+                http_request = {
+                    "payload": request_payload,
+                    "requestMethod": method,
+                    "requestUrl": request_url,
+                    "headers": dict(metadata),
+                }
+                _LOGGER.debug(
+                    f"Sending request for google.pubsub_v1.SubscriberClient.ListSubscriptions",
+                    extra={
+                        "serviceName": "google.pubsub.v1.Subscriber",
+                        "rpcName": "ListSubscriptions",
+                        "httpRequest": http_request,
+                        "metadata": http_request["headers"],
+                    },
+                )
 
             # Send the request
-            headers = dict(metadata)
-            headers["Content-Type"] = "application/json"
-            response = getattr(self._session, method)(
-                "{host}{uri}".format(host=self._host, uri=uri),
-                timeout=timeout,
-                headers=headers,
-                params=rest_helpers.flatten_query_params(query_params, strict=True),
+            response = SubscriberRestTransport._ListSubscriptions._get_response(
+                self._host,
+                metadata,
+                query_params,
+                self._session,
+                timeout,
+                transcoded_request,
             )
 
             # In case of error, raise the appropriate core_exceptions.GoogleAPICallError exception
@@ -1384,22 +2087,65 @@ class SubscriberRestTransport(SubscriberTransport):
             pb_resp = pubsub.ListSubscriptionsResponse.pb(resp)
 
             json_format.Parse(response.content, pb_resp, ignore_unknown_fields=True)
+
             resp = self._interceptor.post_list_subscriptions(resp)
+            response_metadata = [(k, str(v)) for k, v in response.headers.items()]
+            resp, _ = self._interceptor.post_list_subscriptions_with_metadata(
+                resp, response_metadata
+            )
+            if CLIENT_LOGGING_SUPPORTED and _LOGGER.isEnabledFor(
+                logging.DEBUG
+            ):  # pragma: NO COVER
+                try:
+                    response_payload = pubsub.ListSubscriptionsResponse.to_json(
+                        response
+                    )
+                except:
+                    response_payload = None
+                http_response = {
+                    "payload": response_payload,
+                    "headers": dict(response.headers),
+                    "status": response.status_code,
+                }
+                _LOGGER.debug(
+                    "Received response for google.pubsub_v1.SubscriberClient.list_subscriptions",
+                    extra={
+                        "serviceName": "google.pubsub.v1.Subscriber",
+                        "rpcName": "ListSubscriptions",
+                        "metadata": http_response["headers"],
+                        "httpResponse": http_response,
+                    },
+                )
             return resp
 
-    class _ModifyAckDeadline(SubscriberRestStub):
+    class _ModifyAckDeadline(
+        _BaseSubscriberRestTransport._BaseModifyAckDeadline, SubscriberRestStub
+    ):
         def __hash__(self):
-            return hash("ModifyAckDeadline")
+            return hash("SubscriberRestTransport.ModifyAckDeadline")
 
-        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] = {}
-
-        @classmethod
-        def _get_unset_required_fields(cls, message_dict):
-            return {
-                k: v
-                for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items()
-                if k not in message_dict
-            }
+        @staticmethod
+        def _get_response(
+            host,
+            metadata,
+            query_params,
+            session,
+            timeout,
+            transcoded_request,
+            body=None,
+        ):
+            uri = transcoded_request["uri"]
+            method = transcoded_request["method"]
+            headers = dict(metadata)
+            headers["Content-Type"] = "application/json"
+            response = getattr(session, method)(
+                "{host}{uri}".format(host=host, uri=uri),
+                timeout=timeout,
+                headers=headers,
+                params=rest_helpers.flatten_query_params(query_params, strict=True),
+                data=body,
+            )
+            return response
 
         def __call__(
             self,
@@ -1407,7 +2153,7 @@ class SubscriberRestTransport(SubscriberTransport):
             *,
             retry: OptionalRetry = gapic_v1.method.DEFAULT,
             timeout: Optional[float] = None,
-            metadata: Sequence[Tuple[str, str]] = (),
+            metadata: Sequence[Tuple[str, Union[str, bytes]]] = (),
         ):
             r"""Call the modify ack deadline method over HTTP.
 
@@ -1418,51 +2164,68 @@ class SubscriberRestTransport(SubscriberTransport):
                 retry (google.api_core.retry.Retry): Designation of what errors, if any,
                     should be retried.
                 timeout (float): The timeout for this request.
-                metadata (Sequence[Tuple[str, str]]): Strings which should be
-                    sent along with the request as metadata.
+                metadata (Sequence[Tuple[str, Union[str, bytes]]]): Key/value pairs which should be
+                    sent along with the request as metadata. Normally, each value must be of type `str`,
+                    but for metadata keys ending with the suffix `-bin`, the corresponding values must
+                    be of type `bytes`.
             """
 
-            http_options: List[Dict[str, str]] = [
-                {
-                    "method": "post",
-                    "uri": "/v1/{subscription=projects/*/subscriptions/*}:modifyAckDeadline",
-                    "body": "*",
-                },
-            ]
+            http_options = (
+                _BaseSubscriberRestTransport._BaseModifyAckDeadline._get_http_options()
+            )
+
             request, metadata = self._interceptor.pre_modify_ack_deadline(
                 request, metadata
             )
-            pb_request = pubsub.ModifyAckDeadlineRequest.pb(request)
-            transcoded_request = path_template.transcode(http_options, pb_request)
-
-            # Jsonify the request body
-
-            body = json_format.MessageToJson(
-                transcoded_request["body"], use_integers_for_enums=True
+            transcoded_request = _BaseSubscriberRestTransport._BaseModifyAckDeadline._get_transcoded_request(
+                http_options, request
             )
-            uri = transcoded_request["uri"]
-            method = transcoded_request["method"]
+
+            body = _BaseSubscriberRestTransport._BaseModifyAckDeadline._get_request_body_json(
+                transcoded_request
+            )
 
             # Jsonify the query params
-            query_params = json.loads(
-                json_format.MessageToJson(
-                    transcoded_request["query_params"],
-                    use_integers_for_enums=True,
-                )
+            query_params = _BaseSubscriberRestTransport._BaseModifyAckDeadline._get_query_params_json(
+                transcoded_request
             )
-            query_params.update(self._get_unset_required_fields(query_params))
 
-            query_params["$alt"] = "json;enum-encoding=int"
+            if CLIENT_LOGGING_SUPPORTED and _LOGGER.isEnabledFor(
+                logging.DEBUG
+            ):  # pragma: NO COVER
+                request_url = "{host}{uri}".format(
+                    host=self._host, uri=transcoded_request["uri"]
+                )
+                method = transcoded_request["method"]
+                try:
+                    request_payload = json_format.MessageToJson(request)
+                except:
+                    request_payload = None
+                http_request = {
+                    "payload": request_payload,
+                    "requestMethod": method,
+                    "requestUrl": request_url,
+                    "headers": dict(metadata),
+                }
+                _LOGGER.debug(
+                    f"Sending request for google.pubsub_v1.SubscriberClient.ModifyAckDeadline",
+                    extra={
+                        "serviceName": "google.pubsub.v1.Subscriber",
+                        "rpcName": "ModifyAckDeadline",
+                        "httpRequest": http_request,
+                        "metadata": http_request["headers"],
+                    },
+                )
 
             # Send the request
-            headers = dict(metadata)
-            headers["Content-Type"] = "application/json"
-            response = getattr(self._session, method)(
-                "{host}{uri}".format(host=self._host, uri=uri),
-                timeout=timeout,
-                headers=headers,
-                params=rest_helpers.flatten_query_params(query_params, strict=True),
-                data=body,
+            response = SubscriberRestTransport._ModifyAckDeadline._get_response(
+                self._host,
+                metadata,
+                query_params,
+                self._session,
+                timeout,
+                transcoded_request,
+                body,
             )
 
             # In case of error, raise the appropriate core_exceptions.GoogleAPICallError exception
@@ -1470,19 +2233,34 @@ class SubscriberRestTransport(SubscriberTransport):
             if response.status_code >= 400:
                 raise core_exceptions.from_http_response(response)
 
-    class _ModifyPushConfig(SubscriberRestStub):
+    class _ModifyPushConfig(
+        _BaseSubscriberRestTransport._BaseModifyPushConfig, SubscriberRestStub
+    ):
         def __hash__(self):
-            return hash("ModifyPushConfig")
+            return hash("SubscriberRestTransport.ModifyPushConfig")
 
-        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] = {}
-
-        @classmethod
-        def _get_unset_required_fields(cls, message_dict):
-            return {
-                k: v
-                for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items()
-                if k not in message_dict
-            }
+        @staticmethod
+        def _get_response(
+            host,
+            metadata,
+            query_params,
+            session,
+            timeout,
+            transcoded_request,
+            body=None,
+        ):
+            uri = transcoded_request["uri"]
+            method = transcoded_request["method"]
+            headers = dict(metadata)
+            headers["Content-Type"] = "application/json"
+            response = getattr(session, method)(
+                "{host}{uri}".format(host=host, uri=uri),
+                timeout=timeout,
+                headers=headers,
+                params=rest_helpers.flatten_query_params(query_params, strict=True),
+                data=body,
+            )
+            return response
 
         def __call__(
             self,
@@ -1490,7 +2268,7 @@ class SubscriberRestTransport(SubscriberTransport):
             *,
             retry: OptionalRetry = gapic_v1.method.DEFAULT,
             timeout: Optional[float] = None,
-            metadata: Sequence[Tuple[str, str]] = (),
+            metadata: Sequence[Tuple[str, Union[str, bytes]]] = (),
         ):
             r"""Call the modify push config method over HTTP.
 
@@ -1501,51 +2279,68 @@ class SubscriberRestTransport(SubscriberTransport):
                 retry (google.api_core.retry.Retry): Designation of what errors, if any,
                     should be retried.
                 timeout (float): The timeout for this request.
-                metadata (Sequence[Tuple[str, str]]): Strings which should be
-                    sent along with the request as metadata.
+                metadata (Sequence[Tuple[str, Union[str, bytes]]]): Key/value pairs which should be
+                    sent along with the request as metadata. Normally, each value must be of type `str`,
+                    but for metadata keys ending with the suffix `-bin`, the corresponding values must
+                    be of type `bytes`.
             """
 
-            http_options: List[Dict[str, str]] = [
-                {
-                    "method": "post",
-                    "uri": "/v1/{subscription=projects/*/subscriptions/*}:modifyPushConfig",
-                    "body": "*",
-                },
-            ]
+            http_options = (
+                _BaseSubscriberRestTransport._BaseModifyPushConfig._get_http_options()
+            )
+
             request, metadata = self._interceptor.pre_modify_push_config(
                 request, metadata
             )
-            pb_request = pubsub.ModifyPushConfigRequest.pb(request)
-            transcoded_request = path_template.transcode(http_options, pb_request)
-
-            # Jsonify the request body
-
-            body = json_format.MessageToJson(
-                transcoded_request["body"], use_integers_for_enums=True
+            transcoded_request = _BaseSubscriberRestTransport._BaseModifyPushConfig._get_transcoded_request(
+                http_options, request
             )
-            uri = transcoded_request["uri"]
-            method = transcoded_request["method"]
+
+            body = _BaseSubscriberRestTransport._BaseModifyPushConfig._get_request_body_json(
+                transcoded_request
+            )
 
             # Jsonify the query params
-            query_params = json.loads(
-                json_format.MessageToJson(
-                    transcoded_request["query_params"],
-                    use_integers_for_enums=True,
-                )
+            query_params = _BaseSubscriberRestTransport._BaseModifyPushConfig._get_query_params_json(
+                transcoded_request
             )
-            query_params.update(self._get_unset_required_fields(query_params))
 
-            query_params["$alt"] = "json;enum-encoding=int"
+            if CLIENT_LOGGING_SUPPORTED and _LOGGER.isEnabledFor(
+                logging.DEBUG
+            ):  # pragma: NO COVER
+                request_url = "{host}{uri}".format(
+                    host=self._host, uri=transcoded_request["uri"]
+                )
+                method = transcoded_request["method"]
+                try:
+                    request_payload = json_format.MessageToJson(request)
+                except:
+                    request_payload = None
+                http_request = {
+                    "payload": request_payload,
+                    "requestMethod": method,
+                    "requestUrl": request_url,
+                    "headers": dict(metadata),
+                }
+                _LOGGER.debug(
+                    f"Sending request for google.pubsub_v1.SubscriberClient.ModifyPushConfig",
+                    extra={
+                        "serviceName": "google.pubsub.v1.Subscriber",
+                        "rpcName": "ModifyPushConfig",
+                        "httpRequest": http_request,
+                        "metadata": http_request["headers"],
+                    },
+                )
 
             # Send the request
-            headers = dict(metadata)
-            headers["Content-Type"] = "application/json"
-            response = getattr(self._session, method)(
-                "{host}{uri}".format(host=self._host, uri=uri),
-                timeout=timeout,
-                headers=headers,
-                params=rest_helpers.flatten_query_params(query_params, strict=True),
-                data=body,
+            response = SubscriberRestTransport._ModifyPushConfig._get_response(
+                self._host,
+                metadata,
+                query_params,
+                self._session,
+                timeout,
+                transcoded_request,
+                body,
             )
 
             # In case of error, raise the appropriate core_exceptions.GoogleAPICallError exception
@@ -1553,19 +2348,32 @@ class SubscriberRestTransport(SubscriberTransport):
             if response.status_code >= 400:
                 raise core_exceptions.from_http_response(response)
 
-    class _Pull(SubscriberRestStub):
+    class _Pull(_BaseSubscriberRestTransport._BasePull, SubscriberRestStub):
         def __hash__(self):
-            return hash("Pull")
+            return hash("SubscriberRestTransport.Pull")
 
-        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] = {}
-
-        @classmethod
-        def _get_unset_required_fields(cls, message_dict):
-            return {
-                k: v
-                for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items()
-                if k not in message_dict
-            }
+        @staticmethod
+        def _get_response(
+            host,
+            metadata,
+            query_params,
+            session,
+            timeout,
+            transcoded_request,
+            body=None,
+        ):
+            uri = transcoded_request["uri"]
+            method = transcoded_request["method"]
+            headers = dict(metadata)
+            headers["Content-Type"] = "application/json"
+            response = getattr(session, method)(
+                "{host}{uri}".format(host=host, uri=uri),
+                timeout=timeout,
+                headers=headers,
+                params=rest_helpers.flatten_query_params(query_params, strict=True),
+                data=body,
+            )
+            return response
 
         def __call__(
             self,
@@ -1573,7 +2381,7 @@ class SubscriberRestTransport(SubscriberTransport):
             *,
             retry: OptionalRetry = gapic_v1.method.DEFAULT,
             timeout: Optional[float] = None,
-            metadata: Sequence[Tuple[str, str]] = (),
+            metadata: Sequence[Tuple[str, Union[str, bytes]]] = (),
         ) -> pubsub.PullResponse:
             r"""Call the pull method over HTTP.
 
@@ -1583,53 +2391,72 @@ class SubscriberRestTransport(SubscriberTransport):
                 retry (google.api_core.retry.Retry): Designation of what errors, if any,
                     should be retried.
                 timeout (float): The timeout for this request.
-                metadata (Sequence[Tuple[str, str]]): Strings which should be
-                    sent along with the request as metadata.
+                metadata (Sequence[Tuple[str, Union[str, bytes]]]): Key/value pairs which should be
+                    sent along with the request as metadata. Normally, each value must be of type `str`,
+                    but for metadata keys ending with the suffix `-bin`, the corresponding values must
+                    be of type `bytes`.
 
             Returns:
                 ~.pubsub.PullResponse:
                     Response for the ``Pull`` method.
             """
 
-            http_options: List[Dict[str, str]] = [
-                {
-                    "method": "post",
-                    "uri": "/v1/{subscription=projects/*/subscriptions/*}:pull",
-                    "body": "*",
-                },
-            ]
+            http_options = _BaseSubscriberRestTransport._BasePull._get_http_options()
+
             request, metadata = self._interceptor.pre_pull(request, metadata)
-            pb_request = pubsub.PullRequest.pb(request)
-            transcoded_request = path_template.transcode(http_options, pb_request)
-
-            # Jsonify the request body
-
-            body = json_format.MessageToJson(
-                transcoded_request["body"], use_integers_for_enums=True
-            )
-            uri = transcoded_request["uri"]
-            method = transcoded_request["method"]
-
-            # Jsonify the query params
-            query_params = json.loads(
-                json_format.MessageToJson(
-                    transcoded_request["query_params"],
-                    use_integers_for_enums=True,
+            transcoded_request = (
+                _BaseSubscriberRestTransport._BasePull._get_transcoded_request(
+                    http_options, request
                 )
             )
-            query_params.update(self._get_unset_required_fields(query_params))
 
-            query_params["$alt"] = "json;enum-encoding=int"
+            body = _BaseSubscriberRestTransport._BasePull._get_request_body_json(
+                transcoded_request
+            )
+
+            # Jsonify the query params
+            query_params = (
+                _BaseSubscriberRestTransport._BasePull._get_query_params_json(
+                    transcoded_request
+                )
+            )
+
+            if CLIENT_LOGGING_SUPPORTED and _LOGGER.isEnabledFor(
+                logging.DEBUG
+            ):  # pragma: NO COVER
+                request_url = "{host}{uri}".format(
+                    host=self._host, uri=transcoded_request["uri"]
+                )
+                method = transcoded_request["method"]
+                try:
+                    request_payload = type(request).to_json(request)
+                except:
+                    request_payload = None
+                http_request = {
+                    "payload": request_payload,
+                    "requestMethod": method,
+                    "requestUrl": request_url,
+                    "headers": dict(metadata),
+                }
+                _LOGGER.debug(
+                    f"Sending request for google.pubsub_v1.SubscriberClient.Pull",
+                    extra={
+                        "serviceName": "google.pubsub.v1.Subscriber",
+                        "rpcName": "Pull",
+                        "httpRequest": http_request,
+                        "metadata": http_request["headers"],
+                    },
+                )
 
             # Send the request
-            headers = dict(metadata)
-            headers["Content-Type"] = "application/json"
-            response = getattr(self._session, method)(
-                "{host}{uri}".format(host=self._host, uri=uri),
-                timeout=timeout,
-                headers=headers,
-                params=rest_helpers.flatten_query_params(query_params, strict=True),
-                data=body,
+            response = SubscriberRestTransport._Pull._get_response(
+                self._host,
+                metadata,
+                query_params,
+                self._session,
+                timeout,
+                transcoded_request,
+                body,
             )
 
             # In case of error, raise the appropriate core_exceptions.GoogleAPICallError exception
@@ -1642,22 +2469,59 @@ class SubscriberRestTransport(SubscriberTransport):
             pb_resp = pubsub.PullResponse.pb(resp)
 
             json_format.Parse(response.content, pb_resp, ignore_unknown_fields=True)
+
             resp = self._interceptor.post_pull(resp)
+            response_metadata = [(k, str(v)) for k, v in response.headers.items()]
+            resp, _ = self._interceptor.post_pull_with_metadata(resp, response_metadata)
+            if CLIENT_LOGGING_SUPPORTED and _LOGGER.isEnabledFor(
+                logging.DEBUG
+            ):  # pragma: NO COVER
+                try:
+                    response_payload = pubsub.PullResponse.to_json(response)
+                except:
+                    response_payload = None
+                http_response = {
+                    "payload": response_payload,
+                    "headers": dict(response.headers),
+                    "status": response.status_code,
+                }
+                _LOGGER.debug(
+                    "Received response for google.pubsub_v1.SubscriberClient.pull",
+                    extra={
+                        "serviceName": "google.pubsub.v1.Subscriber",
+                        "rpcName": "Pull",
+                        "metadata": http_response["headers"],
+                        "httpResponse": http_response,
+                    },
+                )
             return resp
 
-    class _Seek(SubscriberRestStub):
+    class _Seek(_BaseSubscriberRestTransport._BaseSeek, SubscriberRestStub):
         def __hash__(self):
-            return hash("Seek")
+            return hash("SubscriberRestTransport.Seek")
 
-        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] = {}
-
-        @classmethod
-        def _get_unset_required_fields(cls, message_dict):
-            return {
-                k: v
-                for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items()
-                if k not in message_dict
-            }
+        @staticmethod
+        def _get_response(
+            host,
+            metadata,
+            query_params,
+            session,
+            timeout,
+            transcoded_request,
+            body=None,
+        ):
+            uri = transcoded_request["uri"]
+            method = transcoded_request["method"]
+            headers = dict(metadata)
+            headers["Content-Type"] = "application/json"
+            response = getattr(session, method)(
+                "{host}{uri}".format(host=host, uri=uri),
+                timeout=timeout,
+                headers=headers,
+                params=rest_helpers.flatten_query_params(query_params, strict=True),
+                data=body,
+            )
+            return response
 
         def __call__(
             self,
@@ -1665,7 +2529,7 @@ class SubscriberRestTransport(SubscriberTransport):
             *,
             retry: OptionalRetry = gapic_v1.method.DEFAULT,
             timeout: Optional[float] = None,
-            metadata: Sequence[Tuple[str, str]] = (),
+            metadata: Sequence[Tuple[str, Union[str, bytes]]] = (),
         ) -> pubsub.SeekResponse:
             r"""Call the seek method over HTTP.
 
@@ -1675,8 +2539,10 @@ class SubscriberRestTransport(SubscriberTransport):
                 retry (google.api_core.retry.Retry): Designation of what errors, if any,
                     should be retried.
                 timeout (float): The timeout for this request.
-                metadata (Sequence[Tuple[str, str]]): Strings which should be
-                    sent along with the request as metadata.
+                metadata (Sequence[Tuple[str, Union[str, bytes]]]): Key/value pairs which should be
+                    sent along with the request as metadata. Normally, each value must be of type `str`,
+                    but for metadata keys ending with the suffix `-bin`, the corresponding values must
+                    be of type `bytes`.
 
             Returns:
                 ~.pubsub.SeekResponse:
@@ -1685,45 +2551,62 @@ class SubscriberRestTransport(SubscriberTransport):
 
             """
 
-            http_options: List[Dict[str, str]] = [
-                {
-                    "method": "post",
-                    "uri": "/v1/{subscription=projects/*/subscriptions/*}:seek",
-                    "body": "*",
-                },
-            ]
+            http_options = _BaseSubscriberRestTransport._BaseSeek._get_http_options()
+
             request, metadata = self._interceptor.pre_seek(request, metadata)
-            pb_request = pubsub.SeekRequest.pb(request)
-            transcoded_request = path_template.transcode(http_options, pb_request)
-
-            # Jsonify the request body
-
-            body = json_format.MessageToJson(
-                transcoded_request["body"], use_integers_for_enums=True
-            )
-            uri = transcoded_request["uri"]
-            method = transcoded_request["method"]
-
-            # Jsonify the query params
-            query_params = json.loads(
-                json_format.MessageToJson(
-                    transcoded_request["query_params"],
-                    use_integers_for_enums=True,
+            transcoded_request = (
+                _BaseSubscriberRestTransport._BaseSeek._get_transcoded_request(
+                    http_options, request
                 )
             )
-            query_params.update(self._get_unset_required_fields(query_params))
 
-            query_params["$alt"] = "json;enum-encoding=int"
+            body = _BaseSubscriberRestTransport._BaseSeek._get_request_body_json(
+                transcoded_request
+            )
+
+            # Jsonify the query params
+            query_params = (
+                _BaseSubscriberRestTransport._BaseSeek._get_query_params_json(
+                    transcoded_request
+                )
+            )
+
+            if CLIENT_LOGGING_SUPPORTED and _LOGGER.isEnabledFor(
+                logging.DEBUG
+            ):  # pragma: NO COVER
+                request_url = "{host}{uri}".format(
+                    host=self._host, uri=transcoded_request["uri"]
+                )
+                method = transcoded_request["method"]
+                try:
+                    request_payload = type(request).to_json(request)
+                except:
+                    request_payload = None
+                http_request = {
+                    "payload": request_payload,
+                    "requestMethod": method,
+                    "requestUrl": request_url,
+                    "headers": dict(metadata),
+                }
+                _LOGGER.debug(
+                    f"Sending request for google.pubsub_v1.SubscriberClient.Seek",
+                    extra={
+                        "serviceName": "google.pubsub.v1.Subscriber",
+                        "rpcName": "Seek",
+                        "httpRequest": http_request,
+                        "metadata": http_request["headers"],
+                    },
+                )
 
             # Send the request
-            headers = dict(metadata)
-            headers["Content-Type"] = "application/json"
-            response = getattr(self._session, method)(
-                "{host}{uri}".format(host=self._host, uri=uri),
-                timeout=timeout,
-                headers=headers,
-                params=rest_helpers.flatten_query_params(query_params, strict=True),
-                data=body,
+            response = SubscriberRestTransport._Seek._get_response(
+                self._host,
+                metadata,
+                query_params,
+                self._session,
+                timeout,
+                transcoded_request,
+                body,
             )
 
             # In case of error, raise the appropriate core_exceptions.GoogleAPICallError exception
@@ -1736,12 +2619,38 @@ class SubscriberRestTransport(SubscriberTransport):
             pb_resp = pubsub.SeekResponse.pb(resp)
 
             json_format.Parse(response.content, pb_resp, ignore_unknown_fields=True)
+
             resp = self._interceptor.post_seek(resp)
+            response_metadata = [(k, str(v)) for k, v in response.headers.items()]
+            resp, _ = self._interceptor.post_seek_with_metadata(resp, response_metadata)
+            if CLIENT_LOGGING_SUPPORTED and _LOGGER.isEnabledFor(
+                logging.DEBUG
+            ):  # pragma: NO COVER
+                try:
+                    response_payload = pubsub.SeekResponse.to_json(response)
+                except:
+                    response_payload = None
+                http_response = {
+                    "payload": response_payload,
+                    "headers": dict(response.headers),
+                    "status": response.status_code,
+                }
+                _LOGGER.debug(
+                    "Received response for google.pubsub_v1.SubscriberClient.seek",
+                    extra={
+                        "serviceName": "google.pubsub.v1.Subscriber",
+                        "rpcName": "Seek",
+                        "metadata": http_response["headers"],
+                        "httpResponse": http_response,
+                    },
+                )
             return resp
 
-    class _StreamingPull(SubscriberRestStub):
+    class _StreamingPull(
+        _BaseSubscriberRestTransport._BaseStreamingPull, SubscriberRestStub
+    ):
         def __hash__(self):
-            return hash("StreamingPull")
+            return hash("SubscriberRestTransport.StreamingPull")
 
         def __call__(
             self,
@@ -1749,25 +2658,40 @@ class SubscriberRestTransport(SubscriberTransport):
             *,
             retry: OptionalRetry = gapic_v1.method.DEFAULT,
             timeout: Optional[float] = None,
-            metadata: Sequence[Tuple[str, str]] = (),
+            metadata: Sequence[Tuple[str, Union[str, bytes]]] = (),
         ) -> rest_streaming.ResponseIterator:
             raise NotImplementedError(
                 "Method StreamingPull is not available over REST transport"
             )
 
-    class _UpdateSnapshot(SubscriberRestStub):
+    class _UpdateSnapshot(
+        _BaseSubscriberRestTransport._BaseUpdateSnapshot, SubscriberRestStub
+    ):
         def __hash__(self):
-            return hash("UpdateSnapshot")
+            return hash("SubscriberRestTransport.UpdateSnapshot")
 
-        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] = {}
-
-        @classmethod
-        def _get_unset_required_fields(cls, message_dict):
-            return {
-                k: v
-                for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items()
-                if k not in message_dict
-            }
+        @staticmethod
+        def _get_response(
+            host,
+            metadata,
+            query_params,
+            session,
+            timeout,
+            transcoded_request,
+            body=None,
+        ):
+            uri = transcoded_request["uri"]
+            method = transcoded_request["method"]
+            headers = dict(metadata)
+            headers["Content-Type"] = "application/json"
+            response = getattr(session, method)(
+                "{host}{uri}".format(host=host, uri=uri),
+                timeout=timeout,
+                headers=headers,
+                params=rest_helpers.flatten_query_params(query_params, strict=True),
+                data=body,
+            )
+            return response
 
         def __call__(
             self,
@@ -1775,7 +2699,7 @@ class SubscriberRestTransport(SubscriberTransport):
             *,
             retry: OptionalRetry = gapic_v1.method.DEFAULT,
             timeout: Optional[float] = None,
-            metadata: Sequence[Tuple[str, str]] = (),
+            metadata: Sequence[Tuple[str, Union[str, bytes]]] = (),
         ) -> pubsub.Snapshot:
             r"""Call the update snapshot method over HTTP.
 
@@ -1786,8 +2710,10 @@ class SubscriberRestTransport(SubscriberTransport):
                 retry (google.api_core.retry.Retry): Designation of what errors, if any,
                     should be retried.
                 timeout (float): The timeout for this request.
-                metadata (Sequence[Tuple[str, str]]): Strings which should be
-                    sent along with the request as metadata.
+                metadata (Sequence[Tuple[str, Union[str, bytes]]]): Key/value pairs which should be
+                    sent along with the request as metadata. Normally, each value must be of type `str`,
+                    but for metadata keys ending with the suffix `-bin`, the corresponding values must
+                    be of type `bytes`.
 
             Returns:
                 ~.pubsub.Snapshot:
@@ -1800,45 +2726,64 @@ class SubscriberRestTransport(SubscriberTransport):
 
             """
 
-            http_options: List[Dict[str, str]] = [
-                {
-                    "method": "patch",
-                    "uri": "/v1/{snapshot.name=projects/*/snapshots/*}",
-                    "body": "*",
-                },
-            ]
-            request, metadata = self._interceptor.pre_update_snapshot(request, metadata)
-            pb_request = pubsub.UpdateSnapshotRequest.pb(request)
-            transcoded_request = path_template.transcode(http_options, pb_request)
-
-            # Jsonify the request body
-
-            body = json_format.MessageToJson(
-                transcoded_request["body"], use_integers_for_enums=True
+            http_options = (
+                _BaseSubscriberRestTransport._BaseUpdateSnapshot._get_http_options()
             )
-            uri = transcoded_request["uri"]
-            method = transcoded_request["method"]
 
-            # Jsonify the query params
-            query_params = json.loads(
-                json_format.MessageToJson(
-                    transcoded_request["query_params"],
-                    use_integers_for_enums=True,
+            request, metadata = self._interceptor.pre_update_snapshot(request, metadata)
+            transcoded_request = _BaseSubscriberRestTransport._BaseUpdateSnapshot._get_transcoded_request(
+                http_options, request
+            )
+
+            body = (
+                _BaseSubscriberRestTransport._BaseUpdateSnapshot._get_request_body_json(
+                    transcoded_request
                 )
             )
-            query_params.update(self._get_unset_required_fields(query_params))
 
-            query_params["$alt"] = "json;enum-encoding=int"
+            # Jsonify the query params
+            query_params = (
+                _BaseSubscriberRestTransport._BaseUpdateSnapshot._get_query_params_json(
+                    transcoded_request
+                )
+            )
+
+            if CLIENT_LOGGING_SUPPORTED and _LOGGER.isEnabledFor(
+                logging.DEBUG
+            ):  # pragma: NO COVER
+                request_url = "{host}{uri}".format(
+                    host=self._host, uri=transcoded_request["uri"]
+                )
+                method = transcoded_request["method"]
+                try:
+                    request_payload = type(request).to_json(request)
+                except:
+                    request_payload = None
+                http_request = {
+                    "payload": request_payload,
+                    "requestMethod": method,
+                    "requestUrl": request_url,
+                    "headers": dict(metadata),
+                }
+                _LOGGER.debug(
+                    f"Sending request for google.pubsub_v1.SubscriberClient.UpdateSnapshot",
+                    extra={
+                        "serviceName": "google.pubsub.v1.Subscriber",
+                        "rpcName": "UpdateSnapshot",
+                        "httpRequest": http_request,
+                        "metadata": http_request["headers"],
+                    },
+                )
 
             # Send the request
-            headers = dict(metadata)
-            headers["Content-Type"] = "application/json"
-            response = getattr(self._session, method)(
-                "{host}{uri}".format(host=self._host, uri=uri),
-                timeout=timeout,
-                headers=headers,
-                params=rest_helpers.flatten_query_params(query_params, strict=True),
-                data=body,
+            response = SubscriberRestTransport._UpdateSnapshot._get_response(
+                self._host,
+                metadata,
+                query_params,
+                self._session,
+                timeout,
+                transcoded_request,
+                body,
             )
 
             # In case of error, raise the appropriate core_exceptions.GoogleAPICallError exception
@@ -1851,22 +2796,63 @@ class SubscriberRestTransport(SubscriberTransport):
             pb_resp = pubsub.Snapshot.pb(resp)
 
             json_format.Parse(response.content, pb_resp, ignore_unknown_fields=True)
+
             resp = self._interceptor.post_update_snapshot(resp)
+            response_metadata = [(k, str(v)) for k, v in response.headers.items()]
+            resp, _ = self._interceptor.post_update_snapshot_with_metadata(
+                resp, response_metadata
+            )
+            if CLIENT_LOGGING_SUPPORTED and _LOGGER.isEnabledFor(
+                logging.DEBUG
+            ):  # pragma: NO COVER
+                try:
+                    response_payload = pubsub.Snapshot.to_json(response)
+                except:
+                    response_payload = None
+                http_response = {
+                    "payload": response_payload,
+                    "headers": dict(response.headers),
+                    "status": response.status_code,
+                }
+                _LOGGER.debug(
+                    "Received response for google.pubsub_v1.SubscriberClient.update_snapshot",
+                    extra={
+                        "serviceName": "google.pubsub.v1.Subscriber",
+                        "rpcName": "UpdateSnapshot",
+                        "metadata": http_response["headers"],
+                        "httpResponse": http_response,
+                    },
+                )
             return resp
 
-    class _UpdateSubscription(SubscriberRestStub):
+    class _UpdateSubscription(
+        _BaseSubscriberRestTransport._BaseUpdateSubscription, SubscriberRestStub
+    ):
         def __hash__(self):
-            return hash("UpdateSubscription")
+            return hash("SubscriberRestTransport.UpdateSubscription")
 
-        __REQUIRED_FIELDS_DEFAULT_VALUES: Dict[str, Any] = {}
-
-        @classmethod
-        def _get_unset_required_fields(cls, message_dict):
-            return {
-                k: v
-                for k, v in cls.__REQUIRED_FIELDS_DEFAULT_VALUES.items()
-                if k not in message_dict
-            }
+        @staticmethod
+        def _get_response(
+            host,
+            metadata,
+            query_params,
+            session,
+            timeout,
+            transcoded_request,
+            body=None,
+        ):
+            uri = transcoded_request["uri"]
+            method = transcoded_request["method"]
+            headers = dict(metadata)
+            headers["Content-Type"] = "application/json"
+            response = getattr(session, method)(
+                "{host}{uri}".format(host=host, uri=uri),
+                timeout=timeout,
+                headers=headers,
+                params=rest_helpers.flatten_query_params(query_params, strict=True),
+                data=body,
+            )
+            return response
 
         def __call__(
             self,
@@ -1874,7 +2860,7 @@ class SubscriberRestTransport(SubscriberTransport):
             *,
             retry: OptionalRetry = gapic_v1.method.DEFAULT,
             timeout: Optional[float] = None,
-            metadata: Sequence[Tuple[str, str]] = (),
+            metadata: Sequence[Tuple[str, Union[str, bytes]]] = (),
         ) -> pubsub.Subscription:
             r"""Call the update subscription method over HTTP.
 
@@ -1885,8 +2871,10 @@ class SubscriberRestTransport(SubscriberTransport):
                 retry (google.api_core.retry.Retry): Designation of what errors, if any,
                     should be retried.
                 timeout (float): The timeout for this request.
-                metadata (Sequence[Tuple[str, str]]): Strings which should be
-                    sent along with the request as metadata.
+                metadata (Sequence[Tuple[str, Union[str, bytes]]]): Key/value pairs which should be
+                    sent along with the request as metadata. Normally, each value must be of type `str`,
+                    but for metadata keys ending with the suffix `-bin`, the corresponding values must
+                    be of type `bytes`.
 
             Returns:
                 ~.pubsub.Subscription:
@@ -1897,47 +2885,62 @@ class SubscriberRestTransport(SubscriberTransport):
 
             """
 
-            http_options: List[Dict[str, str]] = [
-                {
-                    "method": "patch",
-                    "uri": "/v1/{subscription.name=projects/*/subscriptions/*}",
-                    "body": "*",
-                },
-            ]
+            http_options = (
+                _BaseSubscriberRestTransport._BaseUpdateSubscription._get_http_options()
+            )
+
             request, metadata = self._interceptor.pre_update_subscription(
                 request, metadata
             )
-            pb_request = pubsub.UpdateSubscriptionRequest.pb(request)
-            transcoded_request = path_template.transcode(http_options, pb_request)
-
-            # Jsonify the request body
-
-            body = json_format.MessageToJson(
-                transcoded_request["body"], use_integers_for_enums=True
+            transcoded_request = _BaseSubscriberRestTransport._BaseUpdateSubscription._get_transcoded_request(
+                http_options, request
             )
-            uri = transcoded_request["uri"]
-            method = transcoded_request["method"]
+
+            body = _BaseSubscriberRestTransport._BaseUpdateSubscription._get_request_body_json(
+                transcoded_request
+            )
 
             # Jsonify the query params
-            query_params = json.loads(
-                json_format.MessageToJson(
-                    transcoded_request["query_params"],
-                    use_integers_for_enums=True,
-                )
+            query_params = _BaseSubscriberRestTransport._BaseUpdateSubscription._get_query_params_json(
+                transcoded_request
             )
-            query_params.update(self._get_unset_required_fields(query_params))
 
-            query_params["$alt"] = "json;enum-encoding=int"
+            if CLIENT_LOGGING_SUPPORTED and _LOGGER.isEnabledFor(
+                logging.DEBUG
+            ):  # pragma: NO COVER
+                request_url = "{host}{uri}".format(
+                    host=self._host, uri=transcoded_request["uri"]
+                )
+                method = transcoded_request["method"]
+                try:
+                    request_payload = type(request).to_json(request)
+                except:
+                    request_payload = None
+                http_request = {
+                    "payload": request_payload,
+                    "requestMethod": method,
+                    "requestUrl": request_url,
+                    "headers": dict(metadata),
+                }
+                _LOGGER.debug(
+                    f"Sending request for google.pubsub_v1.SubscriberClient.UpdateSubscription",
+                    extra={
+                        "serviceName": "google.pubsub.v1.Subscriber",
+                        "rpcName": "UpdateSubscription",
+                        "httpRequest": http_request,
+                        "metadata": http_request["headers"],
+                    },
+                )
 
             # Send the request
-            headers = dict(metadata)
-            headers["Content-Type"] = "application/json"
-            response = getattr(self._session, method)(
-                "{host}{uri}".format(host=self._host, uri=uri),
-                timeout=timeout,
-                headers=headers,
-                params=rest_helpers.flatten_query_params(query_params, strict=True),
-                data=body,
+            response = SubscriberRestTransport._UpdateSubscription._get_response(
+                self._host,
+                metadata,
+                query_params,
+                self._session,
+                timeout,
+                transcoded_request,
+                body,
             )
 
             # In case of error, raise the appropriate core_exceptions.GoogleAPICallError exception
@@ -1950,7 +2953,33 @@ class SubscriberRestTransport(SubscriberTransport):
             pb_resp = pubsub.Subscription.pb(resp)
 
             json_format.Parse(response.content, pb_resp, ignore_unknown_fields=True)
+
             resp = self._interceptor.post_update_subscription(resp)
+            response_metadata = [(k, str(v)) for k, v in response.headers.items()]
+            resp, _ = self._interceptor.post_update_subscription_with_metadata(
+                resp, response_metadata
+            )
+            if CLIENT_LOGGING_SUPPORTED and _LOGGER.isEnabledFor(
+                logging.DEBUG
+            ):  # pragma: NO COVER
+                try:
+                    response_payload = pubsub.Subscription.to_json(response)
+                except:
+                    response_payload = None
+                http_response = {
+                    "payload": response_payload,
+                    "headers": dict(response.headers),
+                    "status": response.status_code,
+                }
+                _LOGGER.debug(
+                    "Received response for google.pubsub_v1.SubscriberClient.update_subscription",
+                    extra={
+                        "serviceName": "google.pubsub.v1.Subscriber",
+                        "rpcName": "UpdateSubscription",
+                        "metadata": http_response["headers"],
+                        "httpResponse": http_response,
+                    },
+                )
             return resp
 
     @property
@@ -2077,14 +3106,41 @@ class SubscriberRestTransport(SubscriberTransport):
     def get_iam_policy(self):
         return self._GetIamPolicy(self._session, self._host, self._interceptor)  # type: ignore
 
-    class _GetIamPolicy(SubscriberRestStub):
+    class _GetIamPolicy(
+        _BaseSubscriberRestTransport._BaseGetIamPolicy, SubscriberRestStub
+    ):
+        def __hash__(self):
+            return hash("SubscriberRestTransport.GetIamPolicy")
+
+        @staticmethod
+        def _get_response(
+            host,
+            metadata,
+            query_params,
+            session,
+            timeout,
+            transcoded_request,
+            body=None,
+        ):
+            uri = transcoded_request["uri"]
+            method = transcoded_request["method"]
+            headers = dict(metadata)
+            headers["Content-Type"] = "application/json"
+            response = getattr(session, method)(
+                "{host}{uri}".format(host=host, uri=uri),
+                timeout=timeout,
+                headers=headers,
+                params=rest_helpers.flatten_query_params(query_params, strict=True),
+            )
+            return response
+
         def __call__(
             self,
             request: iam_policy_pb2.GetIamPolicyRequest,
             *,
             retry: OptionalRetry = gapic_v1.method.DEFAULT,
             timeout: Optional[float] = None,
-            metadata: Sequence[Tuple[str, str]] = (),
+            metadata: Sequence[Tuple[str, Union[str, bytes]]] = (),
         ) -> policy_pb2.Policy:
             r"""Call the get iam policy method over HTTP.
 
@@ -2094,51 +3150,68 @@ class SubscriberRestTransport(SubscriberTransport):
                 retry (google.api_core.retry.Retry): Designation of what errors, if any,
                     should be retried.
                 timeout (float): The timeout for this request.
-                metadata (Sequence[Tuple[str, str]]): Strings which should be
-                    sent along with the request as metadata.
+                metadata (Sequence[Tuple[str, Union[str, bytes]]]): Key/value pairs which should be
+                    sent along with the request as metadata. Normally, each value must be of type `str`,
+                    but for metadata keys ending with the suffix `-bin`, the corresponding values must
+                    be of type `bytes`.
 
             Returns:
                 policy_pb2.Policy: Response from GetIamPolicy method.
             """
 
-            http_options: List[Dict[str, str]] = [
-                {
-                    "method": "get",
-                    "uri": "/v1/{resource=projects/*/topics/*}:getIamPolicy",
-                },
-                {
-                    "method": "get",
-                    "uri": "/v1/{resource=projects/*/subscriptions/*}:getIamPolicy",
-                },
-                {
-                    "method": "get",
-                    "uri": "/v1/{resource=projects/*/snapshots/*}:getIamPolicy",
-                },
-                {
-                    "method": "get",
-                    "uri": "/v1/{resource=projects/*/schemas/*}:getIamPolicy",
-                },
-            ]
+            http_options = (
+                _BaseSubscriberRestTransport._BaseGetIamPolicy._get_http_options()
+            )
 
             request, metadata = self._interceptor.pre_get_iam_policy(request, metadata)
-            request_kwargs = json_format.MessageToDict(request)
-            transcoded_request = path_template.transcode(http_options, **request_kwargs)
-
-            uri = transcoded_request["uri"]
-            method = transcoded_request["method"]
+            transcoded_request = (
+                _BaseSubscriberRestTransport._BaseGetIamPolicy._get_transcoded_request(
+                    http_options, request
+                )
+            )
 
             # Jsonify the query params
-            query_params = json.loads(json.dumps(transcoded_request["query_params"]))
+            query_params = (
+                _BaseSubscriberRestTransport._BaseGetIamPolicy._get_query_params_json(
+                    transcoded_request
+                )
+            )
+
+            if CLIENT_LOGGING_SUPPORTED and _LOGGER.isEnabledFor(
+                logging.DEBUG
+            ):  # pragma: NO COVER
+                request_url = "{host}{uri}".format(
+                    host=self._host, uri=transcoded_request["uri"]
+                )
+                method = transcoded_request["method"]
+                try:
+                    request_payload = json_format.MessageToJson(request)
+                except:
+                    request_payload = None
+                http_request = {
+                    "payload": request_payload,
+                    "requestMethod": method,
+                    "requestUrl": request_url,
+                    "headers": dict(metadata),
+                }
+                _LOGGER.debug(
+                    f"Sending request for google.pubsub_v1.SubscriberClient.GetIamPolicy",
+                    extra={
+                        "serviceName": "google.pubsub.v1.Subscriber",
+                        "rpcName": "GetIamPolicy",
+                        "httpRequest": http_request,
+                        "metadata": http_request["headers"],
+                    },
+                )
 
             # Send the request
-            headers = dict(metadata)
-            headers["Content-Type"] = "application/json"
-
-            response = getattr(self._session, method)(
-                "{host}{uri}".format(host=self._host, uri=uri),
-                timeout=timeout,
-                headers=headers,
-                params=rest_helpers.flatten_query_params(query_params),
+            response = SubscriberRestTransport._GetIamPolicy._get_response(
+                self._host,
+                metadata,
+                query_params,
+                self._session,
+                timeout,
+                transcoded_request,
             )
 
             # In case of error, raise the appropriate core_exceptions.GoogleAPICallError exception
@@ -2146,23 +3219,73 @@ class SubscriberRestTransport(SubscriberTransport):
             if response.status_code >= 400:
                 raise core_exceptions.from_http_response(response)
 
+            content = response.content.decode("utf-8")
             resp = policy_pb2.Policy()
-            resp = json_format.Parse(response.content.decode("utf-8"), resp)
+            resp = json_format.Parse(content, resp)
             resp = self._interceptor.post_get_iam_policy(resp)
+            if CLIENT_LOGGING_SUPPORTED and _LOGGER.isEnabledFor(
+                logging.DEBUG
+            ):  # pragma: NO COVER
+                try:
+                    response_payload = json_format.MessageToJson(resp)
+                except:
+                    response_payload = None
+                http_response = {
+                    "payload": response_payload,
+                    "headers": dict(response.headers),
+                    "status": response.status_code,
+                }
+                _LOGGER.debug(
+                    "Received response for google.pubsub_v1.SubscriberAsyncClient.GetIamPolicy",
+                    extra={
+                        "serviceName": "google.pubsub.v1.Subscriber",
+                        "rpcName": "GetIamPolicy",
+                        "httpResponse": http_response,
+                        "metadata": http_response["headers"],
+                    },
+                )
             return resp
 
     @property
     def set_iam_policy(self):
         return self._SetIamPolicy(self._session, self._host, self._interceptor)  # type: ignore
 
-    class _SetIamPolicy(SubscriberRestStub):
+    class _SetIamPolicy(
+        _BaseSubscriberRestTransport._BaseSetIamPolicy, SubscriberRestStub
+    ):
+        def __hash__(self):
+            return hash("SubscriberRestTransport.SetIamPolicy")
+
+        @staticmethod
+        def _get_response(
+            host,
+            metadata,
+            query_params,
+            session,
+            timeout,
+            transcoded_request,
+            body=None,
+        ):
+            uri = transcoded_request["uri"]
+            method = transcoded_request["method"]
+            headers = dict(metadata)
+            headers["Content-Type"] = "application/json"
+            response = getattr(session, method)(
+                "{host}{uri}".format(host=host, uri=uri),
+                timeout=timeout,
+                headers=headers,
+                params=rest_helpers.flatten_query_params(query_params, strict=True),
+                data=body,
+            )
+            return response
+
         def __call__(
             self,
             request: iam_policy_pb2.SetIamPolicyRequest,
             *,
             retry: OptionalRetry = gapic_v1.method.DEFAULT,
             timeout: Optional[float] = None,
-            metadata: Sequence[Tuple[str, str]] = (),
+            metadata: Sequence[Tuple[str, Union[str, bytes]]] = (),
         ) -> policy_pb2.Policy:
             r"""Call the set iam policy method over HTTP.
 
@@ -2172,57 +3295,75 @@ class SubscriberRestTransport(SubscriberTransport):
                 retry (google.api_core.retry.Retry): Designation of what errors, if any,
                     should be retried.
                 timeout (float): The timeout for this request.
-                metadata (Sequence[Tuple[str, str]]): Strings which should be
-                    sent along with the request as metadata.
+                metadata (Sequence[Tuple[str, Union[str, bytes]]]): Key/value pairs which should be
+                    sent along with the request as metadata. Normally, each value must be of type `str`,
+                    but for metadata keys ending with the suffix `-bin`, the corresponding values must
+                    be of type `bytes`.
 
             Returns:
                 policy_pb2.Policy: Response from SetIamPolicy method.
             """
 
-            http_options: List[Dict[str, str]] = [
-                {
-                    "method": "post",
-                    "uri": "/v1/{resource=projects/*/topics/*}:setIamPolicy",
-                    "body": "*",
-                },
-                {
-                    "method": "post",
-                    "uri": "/v1/{resource=projects/*/subscriptions/*}:setIamPolicy",
-                    "body": "*",
-                },
-                {
-                    "method": "post",
-                    "uri": "/v1/{resource=projects/*/snapshots/*}:setIamPolicy",
-                    "body": "*",
-                },
-                {
-                    "method": "post",
-                    "uri": "/v1/{resource=projects/*/schemas/*}:setIamPolicy",
-                    "body": "*",
-                },
-            ]
+            http_options = (
+                _BaseSubscriberRestTransport._BaseSetIamPolicy._get_http_options()
+            )
 
             request, metadata = self._interceptor.pre_set_iam_policy(request, metadata)
-            request_kwargs = json_format.MessageToDict(request)
-            transcoded_request = path_template.transcode(http_options, **request_kwargs)
+            transcoded_request = (
+                _BaseSubscriberRestTransport._BaseSetIamPolicy._get_transcoded_request(
+                    http_options, request
+                )
+            )
 
-            body = json.dumps(transcoded_request["body"])
-            uri = transcoded_request["uri"]
-            method = transcoded_request["method"]
+            body = (
+                _BaseSubscriberRestTransport._BaseSetIamPolicy._get_request_body_json(
+                    transcoded_request
+                )
+            )
 
             # Jsonify the query params
-            query_params = json.loads(json.dumps(transcoded_request["query_params"]))
+            query_params = (
+                _BaseSubscriberRestTransport._BaseSetIamPolicy._get_query_params_json(
+                    transcoded_request
+                )
+            )
+
+            if CLIENT_LOGGING_SUPPORTED and _LOGGER.isEnabledFor(
+                logging.DEBUG
+            ):  # pragma: NO COVER
+                request_url = "{host}{uri}".format(
+                    host=self._host, uri=transcoded_request["uri"]
+                )
+                method = transcoded_request["method"]
+                try:
+                    request_payload = json_format.MessageToJson(request)
+                except:
+                    request_payload = None
+                http_request = {
+                    "payload": request_payload,
+                    "requestMethod": method,
+                    "requestUrl": request_url,
+                    "headers": dict(metadata),
+                }
+                _LOGGER.debug(
+                    f"Sending request for google.pubsub_v1.SubscriberClient.SetIamPolicy",
+                    extra={
+                        "serviceName": "google.pubsub.v1.Subscriber",
+                        "rpcName": "SetIamPolicy",
+                        "httpRequest": http_request,
+                        "metadata": http_request["headers"],
+                    },
+                )
 
             # Send the request
-            headers = dict(metadata)
-            headers["Content-Type"] = "application/json"
-
-            response = getattr(self._session, method)(
-                "{host}{uri}".format(host=self._host, uri=uri),
-                timeout=timeout,
-                headers=headers,
-                params=rest_helpers.flatten_query_params(query_params),
-                data=body,
+            response = SubscriberRestTransport._SetIamPolicy._get_response(
+                self._host,
+                metadata,
+                query_params,
+                self._session,
+                timeout,
+                transcoded_request,
+                body,
             )
 
             # In case of error, raise the appropriate core_exceptions.GoogleAPICallError exception
@@ -2230,23 +3371,73 @@ class SubscriberRestTransport(SubscriberTransport):
             if response.status_code >= 400:
                 raise core_exceptions.from_http_response(response)
 
+            content = response.content.decode("utf-8")
             resp = policy_pb2.Policy()
-            resp = json_format.Parse(response.content.decode("utf-8"), resp)
+            resp = json_format.Parse(content, resp)
             resp = self._interceptor.post_set_iam_policy(resp)
+            if CLIENT_LOGGING_SUPPORTED and _LOGGER.isEnabledFor(
+                logging.DEBUG
+            ):  # pragma: NO COVER
+                try:
+                    response_payload = json_format.MessageToJson(resp)
+                except:
+                    response_payload = None
+                http_response = {
+                    "payload": response_payload,
+                    "headers": dict(response.headers),
+                    "status": response.status_code,
+                }
+                _LOGGER.debug(
+                    "Received response for google.pubsub_v1.SubscriberAsyncClient.SetIamPolicy",
+                    extra={
+                        "serviceName": "google.pubsub.v1.Subscriber",
+                        "rpcName": "SetIamPolicy",
+                        "httpResponse": http_response,
+                        "metadata": http_response["headers"],
+                    },
+                )
             return resp
 
     @property
     def test_iam_permissions(self):
         return self._TestIamPermissions(self._session, self._host, self._interceptor)  # type: ignore
 
-    class _TestIamPermissions(SubscriberRestStub):
+    class _TestIamPermissions(
+        _BaseSubscriberRestTransport._BaseTestIamPermissions, SubscriberRestStub
+    ):
+        def __hash__(self):
+            return hash("SubscriberRestTransport.TestIamPermissions")
+
+        @staticmethod
+        def _get_response(
+            host,
+            metadata,
+            query_params,
+            session,
+            timeout,
+            transcoded_request,
+            body=None,
+        ):
+            uri = transcoded_request["uri"]
+            method = transcoded_request["method"]
+            headers = dict(metadata)
+            headers["Content-Type"] = "application/json"
+            response = getattr(session, method)(
+                "{host}{uri}".format(host=host, uri=uri),
+                timeout=timeout,
+                headers=headers,
+                params=rest_helpers.flatten_query_params(query_params, strict=True),
+                data=body,
+            )
+            return response
+
         def __call__(
             self,
             request: iam_policy_pb2.TestIamPermissionsRequest,
             *,
             retry: OptionalRetry = gapic_v1.method.DEFAULT,
             timeout: Optional[float] = None,
-            metadata: Sequence[Tuple[str, str]] = (),
+            metadata: Sequence[Tuple[str, Union[str, bytes]]] = (),
         ) -> iam_policy_pb2.TestIamPermissionsResponse:
             r"""Call the test iam permissions method over HTTP.
 
@@ -2256,59 +3447,71 @@ class SubscriberRestTransport(SubscriberTransport):
                 retry (google.api_core.retry.Retry): Designation of what errors, if any,
                     should be retried.
                 timeout (float): The timeout for this request.
-                metadata (Sequence[Tuple[str, str]]): Strings which should be
-                    sent along with the request as metadata.
+                metadata (Sequence[Tuple[str, Union[str, bytes]]]): Key/value pairs which should be
+                    sent along with the request as metadata. Normally, each value must be of type `str`,
+                    but for metadata keys ending with the suffix `-bin`, the corresponding values must
+                    be of type `bytes`.
 
             Returns:
                 iam_policy_pb2.TestIamPermissionsResponse: Response from TestIamPermissions method.
             """
 
-            http_options: List[Dict[str, str]] = [
-                {
-                    "method": "post",
-                    "uri": "/v1/{resource=projects/*/subscriptions/*}:testIamPermissions",
-                    "body": "*",
-                },
-                {
-                    "method": "post",
-                    "uri": "/v1/{resource=projects/*/topics/*}:testIamPermissions",
-                    "body": "*",
-                },
-                {
-                    "method": "post",
-                    "uri": "/v1/{resource=projects/*/snapshots/*}:testIamPermissions",
-                    "body": "*",
-                },
-                {
-                    "method": "post",
-                    "uri": "/v1/{resource=projects/*/schemas/*}:testIamPermissions",
-                    "body": "*",
-                },
-            ]
+            http_options = (
+                _BaseSubscriberRestTransport._BaseTestIamPermissions._get_http_options()
+            )
 
             request, metadata = self._interceptor.pre_test_iam_permissions(
                 request, metadata
             )
-            request_kwargs = json_format.MessageToDict(request)
-            transcoded_request = path_template.transcode(http_options, **request_kwargs)
+            transcoded_request = _BaseSubscriberRestTransport._BaseTestIamPermissions._get_transcoded_request(
+                http_options, request
+            )
 
-            body = json.dumps(transcoded_request["body"])
-            uri = transcoded_request["uri"]
-            method = transcoded_request["method"]
+            body = _BaseSubscriberRestTransport._BaseTestIamPermissions._get_request_body_json(
+                transcoded_request
+            )
 
             # Jsonify the query params
-            query_params = json.loads(json.dumps(transcoded_request["query_params"]))
+            query_params = _BaseSubscriberRestTransport._BaseTestIamPermissions._get_query_params_json(
+                transcoded_request
+            )
+
+            if CLIENT_LOGGING_SUPPORTED and _LOGGER.isEnabledFor(
+                logging.DEBUG
+            ):  # pragma: NO COVER
+                request_url = "{host}{uri}".format(
+                    host=self._host, uri=transcoded_request["uri"]
+                )
+                method = transcoded_request["method"]
+                try:
+                    request_payload = json_format.MessageToJson(request)
+                except:
+                    request_payload = None
+                http_request = {
+                    "payload": request_payload,
+                    "requestMethod": method,
+                    "requestUrl": request_url,
+                    "headers": dict(metadata),
+                }
+                _LOGGER.debug(
+                    f"Sending request for google.pubsub_v1.SubscriberClient.TestIamPermissions",
+                    extra={
+                        "serviceName": "google.pubsub.v1.Subscriber",
+                        "rpcName": "TestIamPermissions",
+                        "httpRequest": http_request,
+                        "metadata": http_request["headers"],
+                    },
+                )
 
             # Send the request
-            headers = dict(metadata)
-            headers["Content-Type"] = "application/json"
-
-            response = getattr(self._session, method)(
-                "{host}{uri}".format(host=self._host, uri=uri),
-                timeout=timeout,
-                headers=headers,
-                params=rest_helpers.flatten_query_params(query_params),
-                data=body,
+            response = SubscriberRestTransport._TestIamPermissions._get_response(
+                self._host,
+                metadata,
+                query_params,
+                self._session,
+                timeout,
+                transcoded_request,
+                body,
             )
 
             # In case of error, raise the appropriate core_exceptions.GoogleAPICallError exception
@@ -2316,9 +3519,31 @@ class SubscriberRestTransport(SubscriberTransport):
             if response.status_code >= 400:
                 raise core_exceptions.from_http_response(response)
 
+            content = response.content.decode("utf-8")
             resp = iam_policy_pb2.TestIamPermissionsResponse()
-            resp = json_format.Parse(response.content.decode("utf-8"), resp)
+            resp = json_format.Parse(content, resp)
             resp = self._interceptor.post_test_iam_permissions(resp)
+            if CLIENT_LOGGING_SUPPORTED and _LOGGER.isEnabledFor(
+                logging.DEBUG
+            ):  # pragma: NO COVER
+                try:
+                    response_payload = json_format.MessageToJson(resp)
+                except:
+                    response_payload = None
+                http_response = {
+                    "payload": response_payload,
+                    "headers": dict(response.headers),
+                    "status": response.status_code,
+                }
+                _LOGGER.debug(
+                    "Received response for google.pubsub_v1.SubscriberAsyncClient.TestIamPermissions",
+                    extra={
+                        "serviceName": "google.pubsub.v1.Subscriber",
+                        "rpcName": "TestIamPermissions",
+                        "httpResponse": http_response,
+                        "metadata": http_response["headers"],
+                    },
+                )
             return resp
 
     @property

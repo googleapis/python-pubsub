@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2024 Google LLC
+# Copyright 2025 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -42,6 +42,8 @@ from google.pubsub_v1.types.pubsub import GetSnapshotRequest
 from google.pubsub_v1.types.pubsub import GetSubscriptionRequest
 from google.pubsub_v1.types.pubsub import GetTopicRequest
 from google.pubsub_v1.types.pubsub import IngestionDataSourceSettings
+from google.pubsub_v1.types.pubsub import IngestionFailureEvent
+from google.pubsub_v1.types.pubsub import JavaScriptUDF
 from google.pubsub_v1.types.pubsub import ListSnapshotsRequest
 from google.pubsub_v1.types.pubsub import ListSnapshotsResponse
 from google.pubsub_v1.types.pubsub import ListSubscriptionsRequest
@@ -53,8 +55,10 @@ from google.pubsub_v1.types.pubsub import ListTopicsResponse
 from google.pubsub_v1.types.pubsub import ListTopicSubscriptionsRequest
 from google.pubsub_v1.types.pubsub import ListTopicSubscriptionsResponse
 from google.pubsub_v1.types.pubsub import MessageStoragePolicy
+from google.pubsub_v1.types.pubsub import MessageTransform
 from google.pubsub_v1.types.pubsub import ModifyAckDeadlineRequest
 from google.pubsub_v1.types.pubsub import ModifyPushConfigRequest
+from google.pubsub_v1.types.pubsub import PlatformLogsSettings
 from google.pubsub_v1.types.pubsub import PublishRequest
 from google.pubsub_v1.types.pubsub import PublishResponse
 from google.pubsub_v1.types.pubsub import PubsubMessage
@@ -114,6 +118,8 @@ __all__ = (
     "GetSubscriptionRequest",
     "GetTopicRequest",
     "IngestionDataSourceSettings",
+    "IngestionFailureEvent",
+    "JavaScriptUDF",
     "ListSnapshotsRequest",
     "ListSnapshotsResponse",
     "ListSubscriptionsRequest",
@@ -125,8 +131,10 @@ __all__ = (
     "ListTopicSubscriptionsRequest",
     "ListTopicSubscriptionsResponse",
     "MessageStoragePolicy",
+    "MessageTransform",
     "ModifyAckDeadlineRequest",
     "ModifyPushConfigRequest",
+    "PlatformLogsSettings",
     "PublishRequest",
     "PublishResponse",
     "PubsubMessage",

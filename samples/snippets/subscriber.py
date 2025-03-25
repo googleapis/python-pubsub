@@ -68,6 +68,94 @@ def list_subscriptions_in_project(project_id: str) -> None:
     # [END pubsub_list_subscriptions]
 
 
+def pubsub_subscribe_otel_tracing(
+    subscription_project_id: str,
+    cloud_trace_project_id: str,
+    subscription_id: str,
+    timeout: Optional[float] = None,
+) -> None:
+    """
+    Subscribe to `subscription_id` in `subscription_project_id` with OpenTelemetry enabled.
+    Export the OpenTelemetry traces to Google Cloud Trace in project
+    `trace_project_id`
+    Args:
+        subscription_project_id: project ID of the subscription.
+        cloud_trace_project_id: project ID to export Cloud Trace to.
+        subscription_id: subscription ID to subscribe from.
+        timeout: time until which to subscribe to.
+    Returns:
+        None
+    """
+    # [START pubsub_subscribe_otel_tracing]
+    from opentelemetry import trace
+    from opentelemetry.sdk.trace import TracerProvider
+    from opentelemetry.sdk.trace.export import (
+        BatchSpanProcessor,
+    )
+    from opentelemetry.exporter.cloud_trace import CloudTraceSpanExporter
+    from opentelemetry.sdk.trace.sampling import TraceIdRatioBased, ParentBased
+
+    from google.cloud import pubsub_v1
+    from google.cloud.pubsub_v1 import SubscriberClient
+    from google.cloud.pubsub_v1.types import SubscriberOptions
+
+    # TODO(developer)
+    # subscription_project_id = "your-subscription-project-id"
+    # subscription_id = "your-subscription-id"
+    # cloud_trace_project_id = "your-cloud-trace-project-id"
+    # timeout = 300.0
+
+    # In this sample, we use a Google Cloud Trace to export the OpenTelemetry
+    # traces: https://cloud.google.com/trace/docs/setup/python-ot
+    # Choose and configure the exporter for your set up accordingly.
+
+    sampler = ParentBased(root=TraceIdRatioBased(1))
+    trace.set_tracer_provider(TracerProvider(sampler=sampler))
+
+    # Export to Google Trace
+    cloud_trace_exporter = CloudTraceSpanExporter(
+        project_id=cloud_trace_project_id,
+    )
+    trace.get_tracer_provider().add_span_processor(
+        BatchSpanProcessor(cloud_trace_exporter)
+    )
+    # Set the `enable_open_telemetry_tracing` option to True when creating
+    # the subscriber client. This in itself is necessary and sufficient for
+    # the library to export OpenTelemetry traces. However, where the traces
+    # must be exported to needs to be configured based on your OpenTelemetry
+    # set up. Refer: https://opentelemetry.io/docs/languages/python/exporters/
+    subscriber = SubscriberClient(
+        subscriber_options=SubscriberOptions(enable_open_telemetry_tracing=True)
+    )
+
+    # The `subscription_path` method creates a fully qualified identifier
+    # in the form `projects/{project_id}/subscriptions/{subscription_id}`
+    subscription_path = subscriber.subscription_path(
+        subscription_project_id, subscription_id
+    )
+
+    # Define callback to be called when a message is received.
+    def callback(message: pubsub_v1.subscriber.message.Message) -> None:
+        # Ack message after processing it.
+        print(message.data)
+        message.ack()
+
+    # Wrap subscriber in a 'with' block to automatically call close() when done.
+    with subscriber:
+        try:
+            # Optimistically subscribe to messages on the subscription.
+            streaming_pull_future = subscriber.subscribe(
+                subscription_path, callback=callback
+            )
+            streaming_pull_future.result(timeout=timeout)
+        except TimeoutError:
+            print("Successfully subscribed until the timeout passed.")
+            streaming_pull_future.cancel()  # Trigger the shutdown.
+            streaming_pull_future.result()  # Block until the shutdown is complete.
+
+    # [END pubsub_subscribe_otel_tracing]
+
+
 def create_subscription(project_id: str, topic_id: str, subscription_id: str) -> None:
     """Create a new pull subscription on the given topic."""
     # [START pubsub_create_pull_subscription]
@@ -92,6 +180,86 @@ def create_subscription(project_id: str, topic_id: str, subscription_id: str) ->
 
     print(f"Subscription created: {subscription}")
     # [END pubsub_create_pull_subscription]
+
+
+def optimistic_subscribe(
+    project_id: str,
+    topic_id: str,
+    subscription_id: str,
+    timeout: Optional[float] = None,
+) -> None:
+    """Optimistically subscribe to messages instead of making calls to verify existence
+    of a subscription first and then subscribing to messages from it. This avoids admin
+    operation calls to verify the existence of a subscription and reduces the probability
+    of running out of quota for admin operations."""
+    # [START pubsub_optimistic_subscribe]
+    from google.api_core.exceptions import NotFound
+    from google.cloud import pubsub_v1
+    from concurrent.futures import TimeoutError
+
+    # TODO(developer)
+    # project_id = "your-project-id"
+    # subscription_id = "your-subscription-id"
+    # Number of seconds the subscriber should listen for messages
+    # timeout = 5.0
+    # topic_id = "your-topic-id"
+
+    # Create a subscriber client.
+    subscriber = pubsub_v1.SubscriberClient()
+
+    # The `subscription_path` method creates a fully qualified identifier
+    # in the form `projects/{project_id}/subscriptions/{subscription_id}`
+    subscription_path = subscriber.subscription_path(project_id, subscription_id)
+
+    # Define callback to be called when a message is received.
+    def callback(message: pubsub_v1.subscriber.message.Message) -> None:
+        # Ack message after processing it.
+        message.ack()
+
+    # Wrap subscriber in a 'with' block to automatically call close() when done.
+    with subscriber:
+        try:
+            # Optimistically subscribe to messages on the subscription.
+            streaming_pull_future = subscriber.subscribe(
+                subscription_path, callback=callback
+            )
+            streaming_pull_future.result(timeout=timeout)
+        except TimeoutError:
+            print("Successfully subscribed until the timeout passed.")
+            streaming_pull_future.cancel()  # Trigger the shutdown.
+            streaming_pull_future.result()  # Block until the shutdown is complete.
+        except NotFound:
+            print(f"Subscription {subscription_path} not found, creating it.")
+
+            try:
+                # If the subscription does not exist, then create it.
+                publisher = pubsub_v1.PublisherClient()
+                topic_path = publisher.topic_path(project_id, topic_id)
+                subscription = subscriber.create_subscription(
+                    request={"name": subscription_path, "topic": topic_path}
+                )
+
+                if subscription:
+                    print(f"Subscription {subscription.name} created")
+                else:
+                    raise ValueError("Subscription creation failed.")
+
+                # Subscribe on the created subscription.
+                try:
+                    streaming_pull_future = subscriber.subscribe(
+                        subscription.name, callback=callback
+                    )
+                    streaming_pull_future.result(timeout=timeout)
+                except TimeoutError:
+                    streaming_pull_future.cancel()  # Trigger the shutdown.
+                    streaming_pull_future.result()  # Block until the shutdown is complete.
+            except Exception as e:
+                print(
+                    f"Exception occurred when creating subscription and subscribing to it: {e}"
+                )
+        except Exception as e:
+            print(f"Exception occurred when attempting optimistic subscribe: {e}")
+    # [END pubsub_optimistic_subscribe]
 
 
 def create_subscription_with_dead_letter_topic(
@@ -389,7 +557,7 @@ def create_cloudstorage_subscription(
         # Min 1 minutes, max 10 minutes
         max_duration=max_duration,
         # Min 1 KB, max 10 GiB
-        max_bytes=2000,
+        max_bytes=10000000,
     )
 
     # Wrap the subscriber in a 'with' block to automatically call close() to
@@ -528,8 +696,10 @@ def update_subscription_with_dead_letter_policy(
     )
 
     with subscriber:
-        subscription_after_update = subscriber.update_subscription(
-            request={"subscription": subscription, "update_mask": update_mask}
+        subscription_after_update: gapic_types.Subscription = (
+            subscriber.update_subscription(
+                request={"subscription": subscription, "update_mask": update_mask}
+            )
         )
 
     print(f"After the update: {subscription_after_update}.")
@@ -573,8 +743,10 @@ def remove_dead_letter_policy(
     )
 
     with subscriber:
-        subscription_after_update = subscriber.update_subscription(
-            request={"subscription": subscription, "update_mask": update_mask}
+        subscription_after_update: gapic_types.Subscription = (
+            subscriber.update_subscription(
+                request={"subscription": subscription, "update_mask": update_mask}
+            )
         )
 
     print(f"After removing the policy: {subscription_after_update}.")
@@ -1063,6 +1235,14 @@ if __name__ == "__main__":  # noqa
         "list-in-project", help=list_subscriptions_in_project.__doc__
     )
 
+    otel_subscribe_parse = subparsers.add_parser(
+        "otel-subscribe", help=pubsub_subscribe_otel_tracing.__doc__
+    )
+    otel_subscribe_parse.add_argument("subscription_project_id")
+    otel_subscribe_parse.add_argument("cloud_trace_project_id")
+    otel_subscribe_parse.add_argument("subscription_id")
+    otel_subscribe_parse.add_argument("timeout", default=None, type=float, nargs="?")
+
     create_parser = subparsers.add_parser("create", help=create_subscription.__doc__)
     create_parser.add_argument("topic_id")
     create_parser.add_argument("subscription_id")
@@ -1156,6 +1336,15 @@ if __name__ == "__main__":  # noqa
     )
     remove_dead_letter_policy_parser.add_argument("topic_id")
     remove_dead_letter_policy_parser.add_argument("subscription_id")
+
+    optimistic_subscribe_parser = subparsers.add_parser(
+        "optimistic-subscribe", help=optimistic_subscribe.__doc__
+    )
+    optimistic_subscribe_parser.add_argument("topic_id")
+    optimistic_subscribe_parser.add_argument("subscription_id")
+    optimistic_subscribe_parser.add_argument(
+        "timeout", default=None, type=float, nargs="?"
+    )
 
     receive_parser = subparsers.add_parser("receive", help=receive_messages.__doc__)
     receive_parser.add_argument("subscription_id")
@@ -1299,6 +1488,10 @@ if __name__ == "__main__":  # noqa
         )
     elif args.command == "remove-dead-letter-policy":
         remove_dead_letter_policy(args.project_id, args.topic_id, args.subscription_id)
+    elif args.command == "optimistic-subscribe":
+        optimistic_subscribe(
+            args.project_id, args.topic_id, args.subscription_id, args.timeout
+        )
     elif args.command == "receive":
         receive_messages(args.project_id, args.subscription_id, args.timeout)
     elif args.command == "receive-custom-attributes":
@@ -1330,4 +1523,11 @@ if __name__ == "__main__":  # noqa
     elif args.command == "receive-messages-with-concurrency-control":
         receive_messages_with_concurrency_control(
             args.project_id, args.subscription_id, args.timeout
+        )
+    elif args.command == "otel-subscribe":
+        pubsub_subscribe_otel_tracing(
+            args.subscription_project_id,
+            args.cloud_trace_project_id,
+            args.subscription_id,
+            args.timeout,
         )

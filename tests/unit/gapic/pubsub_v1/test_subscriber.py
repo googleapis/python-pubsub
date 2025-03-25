@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2024 Google LLC
+# Copyright 2025 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ except ImportError:  # pragma: NO COVER
 
 import grpc
 from grpc.experimental import aio
-from collections.abc import Iterable
+from collections.abc import Iterable, AsyncIterable
 from google.protobuf import json_format
 import json
 import math
@@ -38,12 +38,20 @@ from requests import Request, PreparedRequest
 from requests.sessions import Session
 from google.protobuf import json_format
 
+try:
+    from google.auth.aio import credentials as ga_credentials_async
+
+    HAS_GOOGLE_AUTH_AIO = True
+except ImportError:  # pragma: NO COVER
+    HAS_GOOGLE_AUTH_AIO = False
+
 from google.api_core import client_options
 from google.api_core import exceptions as core_exceptions
 from google.api_core import gapic_v1
 from google.api_core import grpc_helpers
 from google.api_core import grpc_helpers_async
 from google.api_core import path_template
+from google.api_core import retry as retries
 from google.auth import credentials as ga_credentials
 from google.auth.exceptions import MutualTLSChannelError
 from google.iam.v1 import iam_policy_pb2  # type: ignore
@@ -61,8 +69,30 @@ from google.pubsub_v1.types import pubsub
 import google.auth
 
 
+CRED_INFO_JSON = {
+    "credential_source": "/path/to/file",
+    "credential_type": "service account credentials",
+    "principal": "service-account@example.com",
+}
+CRED_INFO_STRING = json.dumps(CRED_INFO_JSON)
+
+
+async def mock_async_gen(data, chunk_size=1):
+    for i in range(0, len(data)):  # pragma: NO COVER
+        chunk = data[i : i + chunk_size]
+        yield chunk.encode("utf-8")
+
+
 def client_cert_source_callback():
     return b"cert bytes", b"key bytes"
+
+
+# TODO: use async auth anon credentials by default once the minimum version of google-auth is upgraded.
+# See related issue: https://github.com/googleapis/gapic-generator-python/issues/2107.
+def async_anonymous_credentials():
+    if HAS_GOOGLE_AUTH_AIO:
+        return ga_credentials_async.AnonymousCredentials()
+    return ga_credentials.AnonymousCredentials()
 
 
 # If default endpoint is localhost, then default mtls endpoint will be the same.
@@ -282,83 +312,46 @@ def test__get_universe_domain():
 
 
 @pytest.mark.parametrize(
-    "client_class,transport_class,transport_name",
+    "error_code,cred_info_json,show_cred_info",
     [
-        (SubscriberClient, transports.SubscriberGrpcTransport, "grpc"),
-        (SubscriberClient, transports.SubscriberRestTransport, "rest"),
+        (401, CRED_INFO_JSON, True),
+        (403, CRED_INFO_JSON, True),
+        (404, CRED_INFO_JSON, True),
+        (500, CRED_INFO_JSON, False),
+        (401, None, False),
+        (403, None, False),
+        (404, None, False),
+        (500, None, False),
     ],
 )
-def test__validate_universe_domain(client_class, transport_class, transport_name):
-    client = client_class(
-        transport=transport_class(credentials=ga_credentials.AnonymousCredentials())
-    )
-    assert client._validate_universe_domain() == True
+def test__add_cred_info_for_auth_errors(error_code, cred_info_json, show_cred_info):
+    cred = mock.Mock(["get_cred_info"])
+    cred.get_cred_info = mock.Mock(return_value=cred_info_json)
+    client = SubscriberClient(credentials=cred)
+    client._transport._credentials = cred
 
-    # Test the case when universe is already validated.
-    assert client._validate_universe_domain() == True
+    error = core_exceptions.GoogleAPICallError("message", details=["foo"])
+    error.code = error_code
 
-    if transport_name == "grpc":
-        # Test the case where credentials are provided by the
-        # `local_channel_credentials`. The default universes in both match.
-        channel = grpc.secure_channel(
-            "http://localhost/", grpc.local_channel_credentials()
-        )
-        client = client_class(transport=transport_class(channel=channel))
-        assert client._validate_universe_domain() == True
+    client._add_cred_info_for_auth_errors(error)
+    if show_cred_info:
+        assert error.details == ["foo", CRED_INFO_STRING]
+    else:
+        assert error.details == ["foo"]
 
-        # Test the case where credentials do not exist: e.g. a transport is provided
-        # with no credentials. Validation should still succeed because there is no
-        # mismatch with non-existent credentials.
-        channel = grpc.secure_channel(
-            "http://localhost/", grpc.local_channel_credentials()
-        )
-        transport = transport_class(channel=channel)
-        transport._credentials = None
-        client = client_class(transport=transport)
-        assert client._validate_universe_domain() == True
 
-    # TODO: This is needed to cater for older versions of google-auth
-    # Make this test unconditional once the minimum supported version of
-    # google-auth becomes 2.23.0 or higher.
-    google_auth_major, google_auth_minor = [
-        int(part) for part in google.auth.__version__.split(".")[0:2]
-    ]
-    if google_auth_major > 2 or (google_auth_major == 2 and google_auth_minor >= 23):
-        credentials = ga_credentials.AnonymousCredentials()
-        credentials._universe_domain = "foo.com"
-        # Test the case when there is a universe mismatch from the credentials.
-        client = client_class(transport=transport_class(credentials=credentials))
-        with pytest.raises(ValueError) as excinfo:
-            client._validate_universe_domain()
-        assert (
-            str(excinfo.value)
-            == "The configured universe domain (googleapis.com) does not match the universe domain found in the credentials (foo.com). If you haven't configured the universe domain explicitly, `googleapis.com` is the default."
-        )
+@pytest.mark.parametrize("error_code", [401, 403, 404, 500])
+def test__add_cred_info_for_auth_errors_no_get_cred_info(error_code):
+    cred = mock.Mock([])
+    assert not hasattr(cred, "get_cred_info")
+    client = SubscriberClient(credentials=cred)
+    client._transport._credentials = cred
 
-        # Test the case when there is a universe mismatch from the client.
-        #
-        # TODO: Make this test unconditional once the minimum supported version of
-        # google-api-core becomes 2.15.0 or higher.
-        api_core_major, api_core_minor = [
-            int(part) for part in api_core_version.__version__.split(".")[0:2]
-        ]
-        if api_core_major > 2 or (api_core_major == 2 and api_core_minor >= 15):
-            client = client_class(
-                client_options={"universe_domain": "bar.com"},
-                transport=transport_class(
-                    credentials=ga_credentials.AnonymousCredentials(),
-                ),
-            )
-            with pytest.raises(ValueError) as excinfo:
-                client._validate_universe_domain()
-            assert (
-                str(excinfo.value)
-                == "The configured universe domain (bar.com) does not match the universe domain found in the credentials (googleapis.com). If you haven't configured the universe domain explicitly, `googleapis.com` is the default."
-            )
+    error = core_exceptions.GoogleAPICallError("message", details=[])
+    error.code = error_code
 
-    # Test that ValueError is raised if universe_domain is provided via client options and credentials is None
-    with pytest.raises(ValueError):
-        client._compare_universes("foo.bar", None)
+    client._add_cred_info_for_auth_errors(error)
+    assert error.details == []
 
 
 @pytest.mark.parametrize(
@@ -1144,24 +1137,6 @@ def test_create_subscription(request_type, transport: str = "grpc"):
     assert response.state == pubsub.Subscription.State.ACTIVE
 
 
-def test_create_subscription_empty_call():
-    # This test is a coverage failsafe to make sure that totally empty calls,
-    # i.e. request == None and no flattened fields passed, work.
-    client = SubscriberClient(
-        credentials=ga_credentials.AnonymousCredentials(),
-        transport="grpc",
-    )
-
-    # Mock the actual call within the gRPC stub, and fake the request.
-    with mock.patch.object(
-        type(client.transport.create_subscription), "__call__"
-    ) as call:
-        client.create_subscription()
-        call.assert_called()
-        _, args, _ = call.mock_calls[0]
-        assert args[0] == pubsub.Subscription()
-
-
 def test_create_subscription_non_empty_request_with_auto_populated_field():
     # This test is a coverage failsafe to make sure that UUID4 fields are
     # automatically populated, according to AIP-4235, with non-empty requests.
@@ -1183,6 +1158,9 @@ def test_create_subscription_non_empty_request_with_auto_populated_field():
     with mock.patch.object(
         type(client.transport.create_subscription), "__call__"
     ) as call:
+        call.return_value.name = (
+            "foo"  # operation_request.operation in compute client(s) expect a string.
+        )
         client.create_subscription(request=request)
         call.assert_called()
         _, args, _ = call.mock_calls[0]
@@ -1193,37 +1171,85 @@ def test_create_subscription_non_empty_request_with_auto_populated_field():
         )
 
 
-@pytest.mark.asyncio
-async def test_create_subscription_empty_call_async():
-    # This test is a coverage failsafe to make sure that totally empty calls,
-    # i.e. request == None and no flattened fields passed, work.
-    client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
-        transport="grpc_asyncio",
-    )
-
-    # Mock the actual call within the gRPC stub, and fake the request.
-    with mock.patch.object(
-        type(client.transport.create_subscription), "__call__"
-    ) as call:
-        # Designate an appropriate return value for the call.
-        call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(
-            pubsub.Subscription(
-                name="name_value",
-                topic="topic_value",
-                ack_deadline_seconds=2066,
-                retain_acked_messages=True,
-                enable_message_ordering=True,
-                filter="filter_value",
-                detached=True,
-                enable_exactly_once_delivery=True,
-                state=pubsub.Subscription.State.ACTIVE,
-            )
+def test_create_subscription_use_cached_wrapped_rpc():
+    # Clients should use _prep_wrapped_messages to create cached wrapped rpcs,
+    # instead of constructing them on each call
+    with mock.patch("google.api_core.gapic_v1.method.wrap_method") as wrapper_fn:
+        client = SubscriberClient(
+            credentials=ga_credentials.AnonymousCredentials(),
+            transport="grpc",
         )
-        response = await client.create_subscription()
-        call.assert_called()
-        _, args, _ = call.mock_calls[0]
-        assert args[0] == pubsub.Subscription()
+
+        # Should wrap all calls on client creation
+        assert wrapper_fn.call_count > 0
+        wrapper_fn.reset_mock()
+
+        # Ensure method has been cached
+        assert (
+            client._transport.create_subscription in client._transport._wrapped_methods
+        )
+
+        # Replace cached wrapped function with mock
+        mock_rpc = mock.Mock()
+        mock_rpc.return_value.name = (
+            "foo"  # operation_request.operation in compute client(s) expect a string.
+        )
+        client._transport._wrapped_methods[
+            client._transport.create_subscription
+        ] = mock_rpc
+        request = {}
+        client.create_subscription(request)
+
+        # Establish that the underlying gRPC stub method was called.
+        assert mock_rpc.call_count == 1
+
+        client.create_subscription(request)
+
+        # Establish that a new wrapper was not created for this call
+        assert wrapper_fn.call_count == 0
+        assert mock_rpc.call_count == 2
+
+
+@pytest.mark.asyncio
+async def test_create_subscription_async_use_cached_wrapped_rpc(
+    transport: str = "grpc_asyncio",
+):
+    # Clients should use _prep_wrapped_messages to create cached wrapped rpcs,
+    # instead of constructing them on each call
+    with mock.patch("google.api_core.gapic_v1.method_async.wrap_method") as wrapper_fn:
+        client = SubscriberAsyncClient(
+            credentials=async_anonymous_credentials(),
+            transport=transport,
+        )
+
+        # Should wrap all calls on client creation
+        assert wrapper_fn.call_count > 0
+        wrapper_fn.reset_mock()
+
+        # Ensure method has been cached
+        assert (
+            client._client._transport.create_subscription
+            in client._client._transport._wrapped_methods
+        )
+
+        # Replace cached wrapped function with mock
+        mock_rpc = mock.AsyncMock()
+        mock_rpc.return_value = mock.Mock()
+        client._client._transport._wrapped_methods[
+            client._client._transport.create_subscription
+        ] = mock_rpc
+
+        request = {}
+        await client.create_subscription(request)
+
+        # Establish that the underlying gRPC stub method was called.
+        assert mock_rpc.call_count == 1
+
+        await client.create_subscription(request)
+
+        # Establish that a new wrapper was not created for this call
+        assert wrapper_fn.call_count == 0
+        assert mock_rpc.call_count == 2
 
 
 @pytest.mark.asyncio
@@ -1231,7 +1257,7 @@ async def test_create_subscription_async(
     transport: str = "grpc_asyncio", request_type=pubsub.Subscription
 ):
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
         transport=transport,
     )
 
@@ -1317,7 +1343,7 @@ def test_create_subscription_field_headers():
 @pytest.mark.asyncio
 async def test_create_subscription_field_headers_async():
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
     )
 
     # Any value that is part of the HTTP/1.1 URI should be sent as
@@ -1404,7 +1430,7 @@ def test_create_subscription_flattened_error():
 @pytest.mark.asyncio
 async def test_create_subscription_flattened_async():
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
     )
 
     # Mock the actual call within the gRPC stub, and fake the request.
@@ -1445,7 +1471,7 @@ async def test_create_subscription_flattened_async():
 @pytest.mark.asyncio
 async def test_create_subscription_flattened_error_async():
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
     )
 
     # Attempting to call a method with both a request object and flattened
@@ -1512,22 +1538,6 @@ def test_get_subscription(request_type, transport: str = "grpc"):
     assert response.state == pubsub.Subscription.State.ACTIVE
 
 
-def test_get_subscription_empty_call():
-    # This test is a coverage failsafe to make sure that totally empty calls,
-    # i.e. request == None and no flattened fields passed, work.
-    client = SubscriberClient(
-        credentials=ga_credentials.AnonymousCredentials(),
-        transport="grpc",
-    )
-
-    # Mock the actual call within the gRPC stub, and fake the request.
-    with mock.patch.object(type(client.transport.get_subscription), "__call__") as call:
-        client.get_subscription()
-        call.assert_called()
-        _, args, _ = call.mock_calls[0]
-        assert args[0] == pubsub.GetSubscriptionRequest()
-
-
 def test_get_subscription_non_empty_request_with_auto_populated_field():
     # This test is a coverage failsafe to make sure that UUID4 fields are
     # automatically populated, according to AIP-4235, with non-empty requests.
@@ -1545,6 +1555,9 @@ def test_get_subscription_non_empty_request_with_auto_populated_field():
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(type(client.transport.get_subscription), "__call__") as call:
+        call.return_value.name = (
+            "foo"  # operation_request.operation in compute client(s) expect a string.
+        )
         client.get_subscription(request=request)
         call.assert_called()
         _, args, _ = call.mock_calls[0]
@@ -1553,35 +1566,83 @@ def test_get_subscription_non_empty_request_with_auto_populated_field():
         )
 
 
-@pytest.mark.asyncio
-async def test_get_subscription_empty_call_async():
-    # This test is a coverage failsafe to make sure that totally empty calls,
-    # i.e. request == None and no flattened fields passed, work.
-    client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
-        transport="grpc_asyncio",
-    )
-
-    # Mock the actual call within the gRPC stub, and fake the request.
-    with mock.patch.object(type(client.transport.get_subscription), "__call__") as call:
-        # Designate an appropriate return value for the call.
-        call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(
-            pubsub.Subscription(
-                name="name_value",
-                topic="topic_value",
-                ack_deadline_seconds=2066,
-                retain_acked_messages=True,
-                enable_message_ordering=True,
-                filter="filter_value",
-                detached=True,
-                enable_exactly_once_delivery=True,
-                state=pubsub.Subscription.State.ACTIVE,
-            )
+def test_get_subscription_use_cached_wrapped_rpc():
+    # Clients should use _prep_wrapped_messages to create cached wrapped rpcs,
+    # instead of constructing them on each call
+    with mock.patch("google.api_core.gapic_v1.method.wrap_method") as wrapper_fn:
+        client = SubscriberClient(
+            credentials=ga_credentials.AnonymousCredentials(),
+            transport="grpc",
         )
-        response = await client.get_subscription()
-        call.assert_called()
-        _, args, _ = call.mock_calls[0]
-        assert args[0] == pubsub.GetSubscriptionRequest()
+
+        # Should wrap all calls on client creation
+        assert wrapper_fn.call_count > 0
+        wrapper_fn.reset_mock()
+
+        # Ensure method has been cached
+        assert client._transport.get_subscription in client._transport._wrapped_methods
+
+        # Replace cached wrapped function with mock
+        mock_rpc = mock.Mock()
+        mock_rpc.return_value.name = (
+            "foo"  # operation_request.operation in compute client(s) expect a string.
+        )
+        client._transport._wrapped_methods[
+            client._transport.get_subscription
+        ] = mock_rpc
+        request = {}
+        client.get_subscription(request)
+
+        # Establish that the underlying gRPC stub method was called.
+        assert mock_rpc.call_count == 1
+
+        client.get_subscription(request)
+
+        # Establish that a new wrapper was not created for this call
+        assert wrapper_fn.call_count == 0
+        assert mock_rpc.call_count == 2
+
+
+@pytest.mark.asyncio
+async def test_get_subscription_async_use_cached_wrapped_rpc(
+    transport: str = "grpc_asyncio",
+):
+    # Clients should use _prep_wrapped_messages to create cached wrapped rpcs,
+    # instead of constructing them on each call
+    with mock.patch("google.api_core.gapic_v1.method_async.wrap_method") as wrapper_fn:
+        client = SubscriberAsyncClient(
+            credentials=async_anonymous_credentials(),
+            transport=transport,
+        )
+
+        # Should wrap all calls on client creation
+        assert wrapper_fn.call_count > 0
+        wrapper_fn.reset_mock()
+
+        # Ensure method has been cached
+        assert (
+            client._client._transport.get_subscription
+            in client._client._transport._wrapped_methods
+        )
+
+        # Replace cached wrapped function with mock
+        mock_rpc = mock.AsyncMock()
+        mock_rpc.return_value = mock.Mock()
+        client._client._transport._wrapped_methods[
+            client._client._transport.get_subscription
+        ] = mock_rpc
+
+        request = {}
+        await client.get_subscription(request)
+
+        # Establish that the underlying gRPC stub method was called.
+        assert mock_rpc.call_count == 1
+
+        await client.get_subscription(request)
+
+        # Establish that a new wrapper was not created for this call
+        assert wrapper_fn.call_count == 0
+        assert mock_rpc.call_count == 2
 
 
 @pytest.mark.asyncio
@@ -1589,7 +1650,7 @@ async def test_get_subscription_async(
     transport: str = "grpc_asyncio", request_type=pubsub.GetSubscriptionRequest
 ):
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
         transport=transport,
     )
 
@@ -1671,7 +1732,7 @@ def test_get_subscription_field_headers():
 @pytest.mark.asyncio
 async def test_get_subscription_field_headers_async():
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
     )
 
     # Any value that is part of the HTTP/1.1 URI should be sent as
@@ -1739,7 +1800,7 @@ def test_get_subscription_flattened_error():
 @pytest.mark.asyncio
 async def test_get_subscription_flattened_async():
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
     )
 
     # Mock the actual call within the gRPC stub, and fake the request.
@@ -1766,7 +1827,7 @@ async def test_get_subscription_flattened_async():
 @pytest.mark.asyncio
 async def test_get_subscription_flattened_error_async():
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
     )
 
     # Attempting to call a method with both a request object and flattened
@@ -1832,24 +1893,6 @@ def test_update_subscription(request_type, transport: str = "grpc"):
     assert response.state == pubsub.Subscription.State.ACTIVE
 
 
-def test_update_subscription_empty_call():
-    # This test is a coverage failsafe to make sure that totally empty calls,
-    # i.e. request == None and no flattened fields passed, work.
-    client = SubscriberClient(
-        credentials=ga_credentials.AnonymousCredentials(),
-        transport="grpc",
-    )
-
-    # Mock the actual call within the gRPC stub, and fake the request.
-    with mock.patch.object(
-        type(client.transport.update_subscription), "__call__"
-    ) as call:
-        client.update_subscription()
-        call.assert_called()
-        _, args, _ = call.mock_calls[0]
-        assert args[0] == pubsub.UpdateSubscriptionRequest()
-
-
 def test_update_subscription_non_empty_request_with_auto_populated_field():
     # This test is a coverage failsafe to make sure that UUID4 fields are
     # automatically populated, according to AIP-4235, with non-empty requests.
@@ -1867,43 +1910,94 @@ def test_update_subscription_non_empty_request_with_auto_populated_field():
     with mock.patch.object(
         type(client.transport.update_subscription), "__call__"
     ) as call:
+        call.return_value.name = (
+            "foo"  # operation_request.operation in compute client(s) expect a string.
+        )
         client.update_subscription(request=request)
         call.assert_called()
         _, args, _ = call.mock_calls[0]
         assert args[0] == pubsub.UpdateSubscriptionRequest()
 
 
-@pytest.mark.asyncio
-async def test_update_subscription_empty_call_async():
-    # This test is a coverage failsafe to make sure that totally empty calls,
-    # i.e. request == None and no flattened fields passed, work.
-    client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
-        transport="grpc_asyncio",
-    )
-
-    # Mock the actual call within the gRPC stub, and fake the request.
-    with mock.patch.object(
-        type(client.transport.update_subscription), "__call__"
-    ) as call:
-        # Designate an appropriate return value for the call.
-        call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(
-            pubsub.Subscription(
-                name="name_value",
-                topic="topic_value",
-                ack_deadline_seconds=2066,
-                retain_acked_messages=True,
-                enable_message_ordering=True,
-                filter="filter_value",
-                detached=True,
-                enable_exactly_once_delivery=True,
-                state=pubsub.Subscription.State.ACTIVE,
-            )
+def test_update_subscription_use_cached_wrapped_rpc():
+    # Clients should use _prep_wrapped_messages to create cached wrapped rpcs,
+    # instead of constructing them on each call
+    with mock.patch("google.api_core.gapic_v1.method.wrap_method") as wrapper_fn:
+        client = SubscriberClient(
+            credentials=ga_credentials.AnonymousCredentials(),
+            transport="grpc",
         )
-        response = await client.update_subscription()
-        call.assert_called()
-        _, args, _ = call.mock_calls[0]
-        assert args[0] == pubsub.UpdateSubscriptionRequest()
+
+        # Should wrap all calls on client creation
+        assert wrapper_fn.call_count > 0
+        wrapper_fn.reset_mock()
+
+        # Ensure method has been cached
+        assert (
+            client._transport.update_subscription in client._transport._wrapped_methods
+        )
+
+        # Replace cached wrapped function with mock
+        mock_rpc = mock.Mock()
+        mock_rpc.return_value.name = (
+            "foo"  # operation_request.operation in compute client(s) expect a string.
+        )
+        client._transport._wrapped_methods[
+            client._transport.update_subscription
+        ] = mock_rpc
+        request = {}
+        client.update_subscription(request)
+
+        # Establish that the underlying gRPC stub method was called.
+        assert mock_rpc.call_count == 1
+
+        client.update_subscription(request)
+
+        # Establish that a new wrapper was not created for this call
+        assert wrapper_fn.call_count == 0
+        assert mock_rpc.call_count == 2
+
+
+@pytest.mark.asyncio
+async def test_update_subscription_async_use_cached_wrapped_rpc(
+    transport: str = "grpc_asyncio",
+):
+    # Clients should use _prep_wrapped_messages to create cached wrapped rpcs,
+    # instead of constructing them on each call
+    with mock.patch("google.api_core.gapic_v1.method_async.wrap_method") as wrapper_fn:
+        client = SubscriberAsyncClient(
+            credentials=async_anonymous_credentials(),
+            transport=transport,
+        )
+
+        # Should wrap all calls on client creation
+        assert wrapper_fn.call_count > 0
+        wrapper_fn.reset_mock()
+
+        # Ensure method has been cached
+        assert (
+            client._client._transport.update_subscription
+            in client._client._transport._wrapped_methods
+        )
+
+        # Replace cached wrapped function with mock
+        mock_rpc = mock.AsyncMock()
+        mock_rpc.return_value = mock.Mock()
+        client._client._transport._wrapped_methods[
+            client._client._transport.update_subscription
+        ] = mock_rpc
+
+        request = {}
+        await client.update_subscription(request)
+
+        # Establish that the underlying gRPC stub method was called.
+        assert mock_rpc.call_count == 1
+
+        await client.update_subscription(request)
+
+        # Establish that a new wrapper was not created for this call
+        assert wrapper_fn.call_count == 0
+        assert mock_rpc.call_count == 2
 
 
 @pytest.mark.asyncio
@@ -1911,7 +2005,7 @@ async def test_update_subscription_async(
     transport: str = "grpc_asyncio", request_type=pubsub.UpdateSubscriptionRequest
 ):
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
         transport=transport,
     )
 
@@ -1997,7 +2091,7 @@ def test_update_subscription_field_headers():
 @pytest.mark.asyncio
 async def test_update_subscription_field_headers_async():
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
     )
 
     # Any value that is part of the HTTP/1.1 URI should be sent as
@@ -2074,7 +2168,7 @@ def test_update_subscription_flattened_error():
 @pytest.mark.asyncio
 async def test_update_subscription_flattened_async():
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
     )
 
     # Mock the actual call within the gRPC stub, and fake the request.
@@ -2107,7 +2201,7 @@ async def test_update_subscription_flattened_async():
 @pytest.mark.asyncio
 async def test_update_subscription_flattened_error_async():
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
     )
 
     # Attempting to call a method with both a request object and flattened
@@ -2158,24 +2252,6 @@ def test_list_subscriptions(request_type, transport: str = "grpc"):
     assert response.next_page_token == "next_page_token_value"
 
 
-def test_list_subscriptions_empty_call():
-    # This test is a coverage failsafe to make sure that totally empty calls,
-    # i.e. request == None and no flattened fields passed, work.
-    client = SubscriberClient(
-        credentials=ga_credentials.AnonymousCredentials(),
-        transport="grpc",
-    )
-
-    # Mock the actual call within the gRPC stub, and fake the request.
-    with mock.patch.object(
-        type(client.transport.list_subscriptions), "__call__"
-    ) as call:
-        client.list_subscriptions()
-        call.assert_called()
-        _, args, _ = call.mock_calls[0]
-        assert args[0] == pubsub.ListSubscriptionsRequest()
-
-
 def test_list_subscriptions_non_empty_request_with_auto_populated_field():
     # This test is a coverage failsafe to make sure that UUID4 fields are
     # automatically populated, according to AIP-4235, with non-empty requests.
@@ -2196,6 +2272,9 @@ def test_list_subscriptions_non_empty_request_with_auto_populated_field():
     with mock.patch.object(
         type(client.transport.list_subscriptions), "__call__"
     ) as call:
+        call.return_value.name = (
+            "foo"  # operation_request.operation in compute client(s) expect a string.
+        )
         client.list_subscriptions(request=request)
         call.assert_called()
         _, args, _ = call.mock_calls[0]
@@ -2205,29 +2284,85 @@ def test_list_subscriptions_non_empty_request_with_auto_populated_field():
         )
 
 
-@pytest.mark.asyncio
-async def test_list_subscriptions_empty_call_async():
-    # This test is a coverage failsafe to make sure that totally empty calls,
-    # i.e. request == None and no flattened fields passed, work.
-    client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
-        transport="grpc_asyncio",
-    )
-
-    # Mock the actual call within the gRPC stub, and fake the request.
-    with mock.patch.object(
-        type(client.transport.list_subscriptions), "__call__"
-    ) as call:
-        # Designate an appropriate return value for the call.
-        call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(
-            pubsub.ListSubscriptionsResponse(
-                next_page_token="next_page_token_value",
-            )
+def test_list_subscriptions_use_cached_wrapped_rpc():
+    # Clients should use _prep_wrapped_messages to create cached wrapped rpcs,
+    # instead of constructing them on each call
+    with mock.patch("google.api_core.gapic_v1.method.wrap_method") as wrapper_fn:
+        client = SubscriberClient(
+            credentials=ga_credentials.AnonymousCredentials(),
+            transport="grpc",
         )
-        response = await client.list_subscriptions()
-        call.assert_called()
-        _, args, _ = call.mock_calls[0]
-        assert args[0] == pubsub.ListSubscriptionsRequest()
+
+        # Should wrap all calls on client creation
+        assert wrapper_fn.call_count > 0
+        wrapper_fn.reset_mock()
+
+        # Ensure method has been cached
+        assert (
+            client._transport.list_subscriptions in client._transport._wrapped_methods
+        )
+
+        # Replace cached wrapped function with mock
+        mock_rpc = mock.Mock()
+        mock_rpc.return_value.name = (
+            "foo"  # operation_request.operation in compute client(s) expect a string.
+        )
+        client._transport._wrapped_methods[
+            client._transport.list_subscriptions
+        ] = mock_rpc
+        request = {}
+        client.list_subscriptions(request)
+
+        # Establish that the underlying gRPC stub method was called.
+        assert mock_rpc.call_count == 1
+
+        client.list_subscriptions(request)
+
+        # Establish that a new wrapper was not created for this call
+        assert wrapper_fn.call_count == 0
+        assert mock_rpc.call_count == 2
+
+
+@pytest.mark.asyncio
+async def test_list_subscriptions_async_use_cached_wrapped_rpc(
+    transport: str = "grpc_asyncio",
+):
+    # Clients should use _prep_wrapped_messages to create cached wrapped rpcs,
+    # instead of constructing them on each call
+    with mock.patch("google.api_core.gapic_v1.method_async.wrap_method") as wrapper_fn:
+        client = SubscriberAsyncClient(
+            credentials=async_anonymous_credentials(),
+            transport=transport,
+        )
+
+        # Should wrap all calls on client creation
+        assert wrapper_fn.call_count > 0
+        wrapper_fn.reset_mock()
+
+        # Ensure method has been cached
+        assert (
+            client._client._transport.list_subscriptions
+            in client._client._transport._wrapped_methods
+        )
+
+        # Replace cached wrapped function with mock
+        mock_rpc = mock.AsyncMock()
+        mock_rpc.return_value = mock.Mock()
+        client._client._transport._wrapped_methods[
+            client._client._transport.list_subscriptions
+        ] = mock_rpc
+
+        request = {}
+        await client.list_subscriptions(request)
+
+        # Establish that the underlying gRPC stub method was called.
+        assert mock_rpc.call_count == 1
+
+        await client.list_subscriptions(request)
+
+        # Establish that a new wrapper was not created for this call
+        assert wrapper_fn.call_count == 0
+        assert mock_rpc.call_count == 2
 
 
 @pytest.mark.asyncio
@@ -2235,7 +2370,7 @@ async def test_list_subscriptions_async(
     transport: str = "grpc_asyncio", request_type=pubsub.ListSubscriptionsRequest
 ):
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
         transport=transport,
     )
 
@@ -2305,7 +2440,7 @@ def test_list_subscriptions_field_headers():
 @pytest.mark.asyncio
 async def test_list_subscriptions_field_headers_async():
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
     )
 
     # Any value that is part of the HTTP/1.1 URI should be sent as
@@ -2379,7 +2514,7 @@ def test_list_subscriptions_flattened_error():
 @pytest.mark.asyncio
 async def test_list_subscriptions_flattened_async():
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
     )
 
     # Mock the actual call within the gRPC stub, and fake the request.
@@ -2410,7 +2545,7 @@ async def test_list_subscriptions_flattened_async():
 @pytest.mark.asyncio
 async def test_list_subscriptions_flattened_error_async():
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
     )
 
     # Attempting to call a method with both a request object and flattened
@@ -2461,13 +2596,17 @@ def test_list_subscriptions_pager(transport_name: str = "grpc"):
             RuntimeError,
         )
 
-        metadata = ()
-        metadata = tuple(metadata) + (
+        expected_metadata = ()
+        retry = retries.Retry()
+        timeout = 5
+        expected_metadata = tuple(expected_metadata) + (
             gapic_v1.routing_header.to_grpc_metadata((("project", ""),)),
         )
-        pager = client.list_subscriptions(request={})
+        pager = client.list_subscriptions(request={}, retry=retry, timeout=timeout)
 
-        assert pager._metadata == metadata
+        assert pager._metadata == expected_metadata
+        assert pager._retry == retry
+        assert pager._timeout == timeout
 
         results = list(pager)
         assert len(results) == 6
@@ -2520,7 +2659,7 @@ def test_list_subscriptions_pages(transport_name: str = "grpc"):
 @pytest.mark.asyncio
 async def test_list_subscriptions_async_pager():
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
     )
 
     # Mock the actual call within the gRPC stub, and fake the request.
@@ -2572,7 +2711,7 @@ async def test_list_subscriptions_async_pager():
 @pytest.mark.asyncio
 async def test_list_subscriptions_async_pages():
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
     )
 
     # Mock the actual call within the gRPC stub, and fake the request.
@@ -2655,24 +2794,6 @@ def test_delete_subscription(request_type, transport: str = "grpc"):
     assert response is None
 
 
-def test_delete_subscription_empty_call():
-    # This test is a coverage failsafe to make sure that totally empty calls,
-    # i.e. request == None and no flattened fields passed, work.
-    client = SubscriberClient(
-        credentials=ga_credentials.AnonymousCredentials(),
-        transport="grpc",
-    )
-
-    # Mock the actual call within the gRPC stub, and fake the request.
-    with mock.patch.object(
-        type(client.transport.delete_subscription), "__call__"
-    ) as call:
-        client.delete_subscription()
-        call.assert_called()
-        _, args, _ = call.mock_calls[0]
-        assert args[0] == pubsub.DeleteSubscriptionRequest()
-
-
 def test_delete_subscription_non_empty_request_with_auto_populated_field():
     # This test is a coverage failsafe to make sure that UUID4 fields are
     # automatically populated, according to AIP-4235, with non-empty requests.
@@ -2692,6 +2813,9 @@ def test_delete_subscription_non_empty_request_with_auto_populated_field():
     with mock.patch.object(
         type(client.transport.delete_subscription), "__call__"
     ) as call:
+        call.return_value.name = (
+            "foo"  # operation_request.operation in compute client(s) expect a string.
+        )
         client.delete_subscription(request=request)
         call.assert_called()
         _, args, _ = call.mock_calls[0]
@@ -2700,25 +2824,85 @@ def test_delete_subscription_non_empty_request_with_auto_populated_field():
         )
 
 
-@pytest.mark.asyncio
-async def test_delete_subscription_empty_call_async():
-    # This test is a coverage failsafe to make sure that totally empty calls,
-    # i.e. request == None and no flattened fields passed, work.
-    client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
-        transport="grpc_asyncio",
-    )
+def test_delete_subscription_use_cached_wrapped_rpc():
+    # Clients should use _prep_wrapped_messages to create cached wrapped rpcs,
+    # instead of constructing them on each call
+    with mock.patch("google.api_core.gapic_v1.method.wrap_method") as wrapper_fn:
+        client = SubscriberClient(
+            credentials=ga_credentials.AnonymousCredentials(),
+            transport="grpc",
+        )
 
-    # Mock the actual call within the gRPC stub, and fake the request.
-    with mock.patch.object(
-        type(client.transport.delete_subscription), "__call__"
-    ) as call:
-        # Designate an appropriate return value for the call.
-        call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(None)
-        response = await client.delete_subscription()
-        call.assert_called()
-        _, args, _ = call.mock_calls[0]
-        assert args[0] == pubsub.DeleteSubscriptionRequest()
+        # Should wrap all calls on client creation
+        assert wrapper_fn.call_count > 0
+        wrapper_fn.reset_mock()
+
+        # Ensure method has been cached
+        assert (
+            client._transport.delete_subscription in client._transport._wrapped_methods
+        )
+
+        # Replace cached wrapped function with mock
+        mock_rpc = mock.Mock()
+        mock_rpc.return_value.name = (
+            "foo"  # operation_request.operation in compute client(s) expect a string.
+        )
+        client._transport._wrapped_methods[
+            client._transport.delete_subscription
+        ] = mock_rpc
+        request = {}
+        client.delete_subscription(request)
+
+        # Establish that the underlying gRPC stub method was called.
+        assert mock_rpc.call_count == 1
+
+        client.delete_subscription(request)
+
+        # Establish that a new wrapper was not created for this call
+        assert wrapper_fn.call_count == 0
+        assert mock_rpc.call_count == 2
+
+
+@pytest.mark.asyncio
+async def test_delete_subscription_async_use_cached_wrapped_rpc(
+    transport: str = "grpc_asyncio",
+):
+    # Clients should use _prep_wrapped_messages to create cached wrapped rpcs,
+    # instead of constructing them on each call
+    with mock.patch("google.api_core.gapic_v1.method_async.wrap_method") as wrapper_fn:
+        client = SubscriberAsyncClient(
+            credentials=async_anonymous_credentials(),
+            transport=transport,
+        )
+
+        # Should wrap all calls on client creation
+        assert wrapper_fn.call_count > 0
+        wrapper_fn.reset_mock()
+
+        # Ensure method has been cached
+        assert (
+            client._client._transport.delete_subscription
+            in client._client._transport._wrapped_methods
+        )
+
+        # Replace cached wrapped function with mock
+        mock_rpc = mock.AsyncMock()
+        mock_rpc.return_value = mock.Mock()
+        client._client._transport._wrapped_methods[
+            client._client._transport.delete_subscription
+        ] = mock_rpc
+
+        request = {}
+        await client.delete_subscription(request)
+
+        # Establish that the underlying gRPC stub method was called.
+        assert mock_rpc.call_count == 1
+
+        await client.delete_subscription(request)
+
+        # Establish that a new wrapper was not created for this call
+        assert wrapper_fn.call_count == 0
+        assert mock_rpc.call_count == 2
 
 
 @pytest.mark.asyncio
@@ -2726,7 +2910,7 @@ async def test_delete_subscription_async(
     transport: str = "grpc_asyncio", request_type=pubsub.DeleteSubscriptionRequest
 ):
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
         transport=transport,
     )
 
@@ -2791,7 +2975,7 @@ def test_delete_subscription_field_headers():
 @pytest.mark.asyncio
 async def test_delete_subscription_field_headers_async():
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
     )
 
     # Any value that is part of the HTTP/1.1 URI should be sent as
@@ -2863,7 +3047,7 @@ def test_delete_subscription_flattened_error():
 @pytest.mark.asyncio
 async def test_delete_subscription_flattened_async():
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
     )
 
     # Mock the actual call within the gRPC stub, and fake the request.
@@ -2892,7 +3076,7 @@ async def test_delete_subscription_flattened_async():
 @pytest.mark.asyncio
 async def test_delete_subscription_flattened_error_async():
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
     )
 
     # Attempting to call a method with both a request object and flattened
@@ -2939,24 +3123,6 @@ def test_modify_ack_deadline(request_type, transport: str = "grpc"):
     assert response is None
 
 
-def test_modify_ack_deadline_empty_call():
-    # This test is a coverage failsafe to make sure that totally empty calls,
-    # i.e. request == None and no flattened fields passed, work.
-    client = SubscriberClient(
-        credentials=ga_credentials.AnonymousCredentials(),
-        transport="grpc",
-    )
-
-    # Mock the actual call within the gRPC stub, and fake the request.
-    with mock.patch.object(
-        type(client.transport.modify_ack_deadline), "__call__"
-    ) as call:
-        client.modify_ack_deadline()
-        call.assert_called()
-        _, args, _ = call.mock_calls[0]
-        assert args[0] == pubsub.ModifyAckDeadlineRequest()
-
-
 def test_modify_ack_deadline_non_empty_request_with_auto_populated_field():
     # This test is a coverage failsafe to make sure that UUID4 fields are
     # automatically populated, according to AIP-4235, with non-empty requests.
@@ -2976,6 +3142,9 @@ def test_modify_ack_deadline_non_empty_request_with_auto_populated_field():
     with mock.patch.object(
         type(client.transport.modify_ack_deadline), "__call__"
     ) as call:
+        call.return_value.name = (
+            "foo"  # operation_request.operation in compute client(s) expect a string.
+        )
         client.modify_ack_deadline(request=request)
         call.assert_called()
         _, args, _ = call.mock_calls[0]
@@ -2984,25 +3153,85 @@ def test_modify_ack_deadline_non_empty_request_with_auto_populated_field():
         )
 
 
-@pytest.mark.asyncio
-async def test_modify_ack_deadline_empty_call_async():
-    # This test is a coverage failsafe to make sure that totally empty calls,
-    # i.e. request == None and no flattened fields passed, work.
-    client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
-        transport="grpc_asyncio",
-    )
+def test_modify_ack_deadline_use_cached_wrapped_rpc():
+    # Clients should use _prep_wrapped_messages to create cached wrapped rpcs,
+    # instead of constructing them on each call
+    with mock.patch("google.api_core.gapic_v1.method.wrap_method") as wrapper_fn:
+        client = SubscriberClient(
+            credentials=ga_credentials.AnonymousCredentials(),
+            transport="grpc",
+        )
 
-    # Mock the actual call within the gRPC stub, and fake the request.
-    with mock.patch.object(
-        type(client.transport.modify_ack_deadline), "__call__"
-    ) as call:
-        # Designate an appropriate return value for the call.
-        call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(None)
-        response = await client.modify_ack_deadline()
-        call.assert_called()
-        _, args, _ = call.mock_calls[0]
-        assert args[0] == pubsub.ModifyAckDeadlineRequest()
+        # Should wrap all calls on client creation
+        assert wrapper_fn.call_count > 0
+        wrapper_fn.reset_mock()
+
+        # Ensure method has been cached
+        assert (
+            client._transport.modify_ack_deadline in client._transport._wrapped_methods
+        )
+
+        # Replace cached wrapped function with mock
+        mock_rpc = mock.Mock()
+        mock_rpc.return_value.name = (
+            "foo"  # operation_request.operation in compute client(s) expect a string.
+        )
+        client._transport._wrapped_methods[
+            client._transport.modify_ack_deadline
+        ] = mock_rpc
+        request = {}
+        client.modify_ack_deadline(request)
+
+        # Establish that the underlying gRPC stub method was called.
+        assert mock_rpc.call_count == 1
+
+        client.modify_ack_deadline(request)
+
+        # Establish that a new wrapper was not created for this call
+        assert wrapper_fn.call_count == 0
+        assert mock_rpc.call_count == 2
+
+
+@pytest.mark.asyncio
+async def test_modify_ack_deadline_async_use_cached_wrapped_rpc(
+    transport: str = "grpc_asyncio",
+):
+    # Clients should use _prep_wrapped_messages to create cached wrapped rpcs,
+    # instead of constructing them on each call
+    with mock.patch("google.api_core.gapic_v1.method_async.wrap_method") as wrapper_fn:
+        client = SubscriberAsyncClient(
+            credentials=async_anonymous_credentials(),
+            transport=transport,
+        )
+
+        # Should wrap all calls on client creation
+        assert wrapper_fn.call_count > 0
+        wrapper_fn.reset_mock()
+
+        # Ensure method has been cached
+        assert (
+            client._client._transport.modify_ack_deadline
+            in client._client._transport._wrapped_methods
+        )
+
+        # Replace cached wrapped function with mock
+        mock_rpc = mock.AsyncMock()
+        mock_rpc.return_value = mock.Mock()
+        client._client._transport._wrapped_methods[
+            client._client._transport.modify_ack_deadline
+        ] = mock_rpc
+
+        request = {}
+        await client.modify_ack_deadline(request)
+
+        # Establish that the underlying gRPC stub method was called.
+        assert mock_rpc.call_count == 1
+
+        await client.modify_ack_deadline(request)
+
+        # Establish that a new wrapper was not created for this call
+        assert wrapper_fn.call_count == 0
+        assert mock_rpc.call_count == 2
 
 
 @pytest.mark.asyncio
@@ -3010,7 +3239,7 @@ async def test_modify_ack_deadline_async(
     transport: str = "grpc_asyncio", request_type=pubsub.ModifyAckDeadlineRequest
 ):
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
         transport=transport,
     )
 
@@ -3075,7 +3304,7 @@ def test_modify_ack_deadline_field_headers():
 @pytest.mark.asyncio
 async def test_modify_ack_deadline_field_headers_async():
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
     )
 
     # Any value that is part of the HTTP/1.1 URI should be sent as
@@ -3157,7 +3386,7 @@ def test_modify_ack_deadline_flattened_error():
 @pytest.mark.asyncio
 async def test_modify_ack_deadline_flattened_async():
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
     )
 
     # Mock the actual call within the gRPC stub, and fake the request.
@@ -3194,7 +3423,7 @@ async def test_modify_ack_deadline_flattened_async():
 @pytest.mark.asyncio
 async def test_modify_ack_deadline_flattened_error_async():
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
     )
 
     # Attempting to call a method with both a request object and flattened
@@ -3241,22 +3470,6 @@ def test_acknowledge(request_type, transport: str = "grpc"):
     assert response is None
 
 
-def test_acknowledge_empty_call():
-    # This test is a coverage failsafe to make sure that totally empty calls,
-    # i.e. request == None and no flattened fields passed, work.
-    client = SubscriberClient(
-        credentials=ga_credentials.AnonymousCredentials(),
-        transport="grpc",
-    )
-
-    # Mock the actual call within the gRPC stub, and fake the request.
-    with mock.patch.object(type(client.transport.acknowledge), "__call__") as call:
-        client.acknowledge()
-        call.assert_called()
-        _, args, _ = call.mock_calls[0]
-        assert args[0] == pubsub.AcknowledgeRequest()
-
-
 def test_acknowledge_non_empty_request_with_auto_populated_field():
     # This test is a coverage failsafe to make sure that UUID4 fields are
     # automatically populated, according to AIP-4235, with non-empty requests.
@@ -3274,6 +3487,9 @@ def test_acknowledge_non_empty_request_with_auto_populated_field():
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(type(client.transport.acknowledge), "__call__") as call:
+        call.return_value.name = (
+            "foo"  # operation_request.operation in compute client(s) expect a string.
+        )
         client.acknowledge(request=request)
         call.assert_called()
         _, args, _ = call.mock_calls[0]
@@ -3282,23 +3498,81 @@ def test_acknowledge_non_empty_request_with_auto_populated_field():
         )
 
 
-@pytest.mark.asyncio
-async def test_acknowledge_empty_call_async():
-    # This test is a coverage failsafe to make sure that totally empty calls,
-    # i.e. request == None and no flattened fields passed, work.
-    client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
-        transport="grpc_asyncio",
-    )
+def test_acknowledge_use_cached_wrapped_rpc():
+    # Clients should use _prep_wrapped_messages to create cached wrapped rpcs,
+    # instead of constructing them on each call
+    with mock.patch("google.api_core.gapic_v1.method.wrap_method") as wrapper_fn:
+        client = SubscriberClient(
+            credentials=ga_credentials.AnonymousCredentials(),
+            transport="grpc",
+        )
 
-    # Mock the actual call within the gRPC stub, and fake the request.
-    with mock.patch.object(type(client.transport.acknowledge), "__call__") as call:
-        # Designate an appropriate return value for the call.
-        call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(None)
-        response = await client.acknowledge()
-        call.assert_called()
-        _, args, _ = call.mock_calls[0]
-        assert args[0] == pubsub.AcknowledgeRequest()
+        # Should wrap all calls on client creation
+        assert wrapper_fn.call_count > 0
+        wrapper_fn.reset_mock()
+
+        # Ensure method has been cached
+        assert client._transport.acknowledge in client._transport._wrapped_methods
+
+        # Replace cached wrapped function with mock
+        mock_rpc = mock.Mock()
+        mock_rpc.return_value.name = (
+            "foo"  # operation_request.operation in compute client(s) expect a string.
+        )
+        client._transport._wrapped_methods[client._transport.acknowledge] = mock_rpc
+        request = {}
+        client.acknowledge(request)
+
+        # Establish that the underlying gRPC stub method was called.
+        assert mock_rpc.call_count == 1
+
+        client.acknowledge(request)
+
+        # Establish that a new wrapper was not created for this call
+        assert wrapper_fn.call_count == 0
+        assert mock_rpc.call_count == 2
+
+
+@pytest.mark.asyncio
+async def test_acknowledge_async_use_cached_wrapped_rpc(
+    transport: str = "grpc_asyncio",
+):
+    # Clients should use _prep_wrapped_messages to create cached wrapped rpcs,
+    # instead of constructing them on each call
+    with mock.patch("google.api_core.gapic_v1.method_async.wrap_method") as wrapper_fn:
+        client = SubscriberAsyncClient(
+            credentials=async_anonymous_credentials(),
+            transport=transport,
+        )
+
+        # Should wrap all calls on client creation
+        assert wrapper_fn.call_count > 0
+        wrapper_fn.reset_mock()
+
+        # Ensure method has been cached
+        assert (
+            client._client._transport.acknowledge
+            in client._client._transport._wrapped_methods
+        )
+
+        # Replace cached wrapped function with mock
+        mock_rpc = mock.AsyncMock()
+        mock_rpc.return_value = mock.Mock()
+        client._client._transport._wrapped_methods[
+            client._client._transport.acknowledge
+        ] = mock_rpc
+
+        request = {}
+        await client.acknowledge(request)
+
+        # Establish that the underlying gRPC stub method was called.
+        assert mock_rpc.call_count == 1
+
+        await client.acknowledge(request)
+
+        # Establish that a new wrapper was not created for this call
+        assert wrapper_fn.call_count == 0
+        assert mock_rpc.call_count == 2
 
 
 @pytest.mark.asyncio
@@ -3306,7 +3580,7 @@ async def test_acknowledge_async(
     transport: str = "grpc_asyncio", request_type=pubsub.AcknowledgeRequest
 ):
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
         transport=transport,
     )
 
@@ -3367,7 +3641,7 @@ def test_acknowledge_field_headers():
 @pytest.mark.asyncio
 async def test_acknowledge_field_headers_async():
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
     )
 
     # Any value that is part of the HTTP/1.1 URI should be sent as
@@ -3440,7 +3714,7 @@ def test_acknowledge_flattened_error():
 @pytest.mark.asyncio
 async def test_acknowledge_flattened_async():
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
     )
 
     # Mock the actual call within the gRPC stub, and fake the request.
@@ -3471,7 +3745,7 @@ async def test_acknowledge_flattened_async():
 @pytest.mark.asyncio
 async def test_acknowledge_flattened_error_async():
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
     )
 
     # Attempting to call a method with both a request object and flattened
@@ -3517,22 +3791,6 @@ def test_pull(request_type, transport: str = "grpc"):
     assert isinstance(response, pubsub.PullResponse)
 
 
-def test_pull_empty_call():
-    # This test is a coverage failsafe to make sure that totally empty calls,
-    # i.e. request == None and no flattened fields passed, work.
-    client = SubscriberClient(
-        credentials=ga_credentials.AnonymousCredentials(),
-        transport="grpc",
-    )
-
-    # Mock the actual call within the gRPC stub, and fake the request.
-    with mock.patch.object(type(client.transport.pull), "__call__") as call:
-        client.pull()
-        call.assert_called()
-        _, args, _ = call.mock_calls[0]
-        assert args[0] == pubsub.PullRequest()
-
-
 def test_pull_non_empty_request_with_auto_populated_field():
     # This test is a coverage failsafe to make sure that UUID4 fields are
     # automatically populated, according to AIP-4235, with non-empty requests.
@@ -3550,6 +3808,9 @@ def test_pull_non_empty_request_with_auto_populated_field():
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(type(client.transport.pull), "__call__") as call:
+        call.return_value.name = (
+            "foo"  # operation_request.operation in compute client(s) expect a string.
+        )
         client.pull(request=request)
         call.assert_called()
         _, args, _ = call.mock_calls[0]
@@ -3558,23 +3819,78 @@ def test_pull_non_empty_request_with_auto_populated_field():
         )
 
 
-@pytest.mark.asyncio
-async def test_pull_empty_call_async():
-    # This test is a coverage failsafe to make sure that totally empty calls,
-    # i.e. request == None and no flattened fields passed, work.
-    client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
-        transport="grpc_asyncio",
-    )
+def test_pull_use_cached_wrapped_rpc():
+    # Clients should use _prep_wrapped_messages to create cached wrapped rpcs,
+    # instead of constructing them on each call
+    with mock.patch("google.api_core.gapic_v1.method.wrap_method") as wrapper_fn:
+        client = SubscriberClient(
+            credentials=ga_credentials.AnonymousCredentials(),
+            transport="grpc",
+        )
 
-    # Mock the actual call within the gRPC stub, and fake the request.
-    with mock.patch.object(type(client.transport.pull), "__call__") as call:
-        # Designate an appropriate return value for the call.
-        call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(pubsub.PullResponse())
-        response = await client.pull()
-        call.assert_called()
-        _, args, _ = call.mock_calls[0]
-        assert args[0] == pubsub.PullRequest()
+        # Should wrap all calls on client creation
+        assert wrapper_fn.call_count > 0
+        wrapper_fn.reset_mock()
+
+        # Ensure method has been cached
+        assert client._transport.pull in client._transport._wrapped_methods
+
+        # Replace cached wrapped function with mock
+        mock_rpc = mock.Mock()
+        mock_rpc.return_value.name = (
+            "foo"  # operation_request.operation in compute client(s) expect a string.
+        )
+        client._transport._wrapped_methods[client._transport.pull] = mock_rpc
+        request = {}
+        client.pull(request)
+
+        # Establish that the underlying gRPC stub method was called.
+        assert mock_rpc.call_count == 1
+
+        client.pull(request)
+
+        # Establish that a new wrapper was not created for this call
+        assert wrapper_fn.call_count == 0
+        assert mock_rpc.call_count == 2
+
+
+@pytest.mark.asyncio
+async def test_pull_async_use_cached_wrapped_rpc(transport: str = "grpc_asyncio"):
+    # Clients should use _prep_wrapped_messages to create cached wrapped rpcs,
+    # instead of constructing them on each call
+    with mock.patch("google.api_core.gapic_v1.method_async.wrap_method") as wrapper_fn:
+        client = SubscriberAsyncClient(
+            credentials=async_anonymous_credentials(),
+            transport=transport,
+        )
+
+        # Should wrap all calls on client creation
+        assert wrapper_fn.call_count > 0
+        wrapper_fn.reset_mock()
+
+        # Ensure method has been cached
+        assert (
+            client._client._transport.pull in client._client._transport._wrapped_methods
+        )
+
+        # Replace cached wrapped function with mock
+        mock_rpc = mock.AsyncMock()
+        mock_rpc.return_value = mock.Mock()
+        client._client._transport._wrapped_methods[
+            client._client._transport.pull
+        ] = mock_rpc
+
+        request = {}
+        await client.pull(request)
+
+        # Establish that the underlying gRPC stub method was called.
+        assert mock_rpc.call_count == 1
+
+        await client.pull(request)
+
+        # Establish that a new wrapper was not created for this call
+        assert wrapper_fn.call_count == 0
+        assert mock_rpc.call_count == 2
 
 
 @pytest.mark.asyncio
@@ -3582,7 +3898,7 @@ async def test_pull_async(
     transport: str = "grpc_asyncio", request_type=pubsub.PullRequest
 ):
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
         transport=transport,
     )
 
@@ -3643,7 +3959,7 @@ def test_pull_field_headers():
 @pytest.mark.asyncio
 async def test_pull_field_headers_async():
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
     )
 
     # Any value that is part of the HTTP/1.1 URI should be sent as
@@ -3723,7 +4039,7 @@ def test_pull_flattened_error():
 @pytest.mark.asyncio
 async def test_pull_flattened_async():
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
     )
 
     # Mock the actual call within the gRPC stub, and fake the request.
@@ -3760,7 +4076,7 @@ async def test_pull_flattened_async():
 @pytest.mark.asyncio
 async def test_pull_flattened_error_async():
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
     )
 
     # Attempting to call a method with both a request object and flattened
@@ -3808,12 +4124,89 @@ def test_streaming_pull(request_type, transport: str = "grpc"):
         assert isinstance(message, pubsub.StreamingPullResponse)
 
 
+def test_streaming_pull_use_cached_wrapped_rpc():
+    # Clients should use _prep_wrapped_messages to create cached wrapped rpcs,
+    # instead of constructing them on each call
+    with mock.patch("google.api_core.gapic_v1.method.wrap_method") as wrapper_fn:
+        client = SubscriberClient(
+            credentials=ga_credentials.AnonymousCredentials(),
+            transport="grpc",
+        )
+
+        # Should wrap all calls on client creation
+        assert wrapper_fn.call_count > 0
+        wrapper_fn.reset_mock()
+
+        # Ensure method has been cached
+        assert client._transport.streaming_pull in client._transport._wrapped_methods
+
+        # Replace cached wrapped function with mock
+        mock_rpc = mock.Mock()
+        mock_rpc.return_value.name = (
+            "foo"  # operation_request.operation in compute client(s) expect a string.
+        )
+        client._transport._wrapped_methods[client._transport.streaming_pull] = mock_rpc
+        request = [{}]
+        client.streaming_pull(request)
+
+        # Establish that the underlying gRPC stub method was called.
+        assert mock_rpc.call_count == 1
+
+        client.streaming_pull(request)
+
+        # Establish that a new wrapper was not created for this call
+        assert wrapper_fn.call_count == 0
+        assert mock_rpc.call_count == 2
+
+
+@pytest.mark.asyncio
+async def test_streaming_pull_async_use_cached_wrapped_rpc(
+    transport: str = "grpc_asyncio",
+):
+    # Clients should use _prep_wrapped_messages to create cached wrapped rpcs,
+    # instead of constructing them on each call
+    with mock.patch("google.api_core.gapic_v1.method_async.wrap_method") as wrapper_fn:
+        client = SubscriberAsyncClient(
+            credentials=async_anonymous_credentials(),
+            transport=transport,
+        )
+
+        # Should wrap all calls on client creation
+        assert wrapper_fn.call_count > 0
+        wrapper_fn.reset_mock()
+
+        # Ensure method has been cached
+        assert (
+            client._client._transport.streaming_pull
+            in client._client._transport._wrapped_methods
+        )
+
+        # Replace cached wrapped function with mock
+        mock_rpc = mock.AsyncMock()
+        mock_rpc.return_value = mock.Mock()
+        client._client._transport._wrapped_methods[
+            client._client._transport.streaming_pull
+        ] = mock_rpc
+
+        request = [{}]
+        await client.streaming_pull(request)
+
+        # Establish that the underlying gRPC stub method was called.
+        assert mock_rpc.call_count == 1
+
+        await client.streaming_pull(request)
+
+        # Establish that a new wrapper was not created for this call
+        assert wrapper_fn.call_count == 0
+        assert mock_rpc.call_count == 2
+
+
 @pytest.mark.asyncio
 async def test_streaming_pull_async(
     transport: str = "grpc_asyncio", request_type=pubsub.StreamingPullRequest
 ):
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
         transport=transport,
     )
 
@@ -3881,24 +4274,6 @@ def test_modify_push_config(request_type, transport: str = "grpc"):
     assert response is None
 
 
-def test_modify_push_config_empty_call():
-    # This test is a coverage failsafe to make sure that totally empty calls,
-    # i.e. request == None and no flattened fields passed, work.
-    client = SubscriberClient(
-        credentials=ga_credentials.AnonymousCredentials(),
-        transport="grpc",
-    )
-
-    # Mock the actual call within the gRPC stub, and fake the request.
-    with mock.patch.object(
-        type(client.transport.modify_push_config), "__call__"
-    ) as call:
-        client.modify_push_config()
-        call.assert_called()
-        _, args, _ = call.mock_calls[0]
-        assert args[0] == pubsub.ModifyPushConfigRequest()
-
-
 def test_modify_push_config_non_empty_request_with_auto_populated_field():
     # This test is a coverage failsafe to make sure that UUID4 fields are
     # automatically populated, according to AIP-4235, with non-empty requests.
@@ -3918,6 +4293,9 @@ def test_modify_push_config_non_empty_request_with_auto_populated_field():
     with mock.patch.object(
         type(client.transport.modify_push_config), "__call__"
     ) as call:
+        call.return_value.name = (
+            "foo"  # operation_request.operation in compute client(s) expect a string.
+        )
         client.modify_push_config(request=request)
         call.assert_called()
         _, args, _ = call.mock_calls[0]
@@ -3926,25 +4304,85 @@ def test_modify_push_config_non_empty_request_with_auto_populated_field():
         )
 
 
-@pytest.mark.asyncio
-async def test_modify_push_config_empty_call_async():
-    # This test is a coverage failsafe to make sure that totally empty calls,
-    # i.e. request == None and no flattened fields passed, work.
-    client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
-        transport="grpc_asyncio",
-    )
+def test_modify_push_config_use_cached_wrapped_rpc():
+    # Clients should use _prep_wrapped_messages to create cached wrapped rpcs,
+    # instead of constructing them on each call
+    with mock.patch("google.api_core.gapic_v1.method.wrap_method") as wrapper_fn:
+        client = SubscriberClient(
+            credentials=ga_credentials.AnonymousCredentials(),
+            transport="grpc",
+        )
 
-    # Mock the actual call within the gRPC stub, and fake the request.
-    with mock.patch.object(
-        type(client.transport.modify_push_config), "__call__"
-    ) as call:
-        # Designate an appropriate return value for the call.
-        call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(None)
-        response = await client.modify_push_config()
-        call.assert_called()
-        _, args, _ = call.mock_calls[0]
-        assert args[0] == pubsub.ModifyPushConfigRequest()
+        # Should wrap all calls on client creation
+        assert wrapper_fn.call_count > 0
+        wrapper_fn.reset_mock()
+
+        # Ensure method has been cached
+        assert (
+            client._transport.modify_push_config in client._transport._wrapped_methods
+        )
+
+        # Replace cached wrapped function with mock
+        mock_rpc = mock.Mock()
+        mock_rpc.return_value.name = (
+            "foo"  # operation_request.operation in compute client(s) expect a string.
+        )
+        client._transport._wrapped_methods[
+            client._transport.modify_push_config
+        ] = mock_rpc
+        request = {}
+        client.modify_push_config(request)
+
+        # Establish that the underlying gRPC stub method was called.
+        assert mock_rpc.call_count == 1
+
+        client.modify_push_config(request)
+
+        # Establish that a new wrapper was not created for this call
+        assert wrapper_fn.call_count == 0
+        assert mock_rpc.call_count == 2
+
+
+@pytest.mark.asyncio
+async def test_modify_push_config_async_use_cached_wrapped_rpc(
+    transport: str = "grpc_asyncio",
+):
+    # Clients should use _prep_wrapped_messages to create cached wrapped rpcs,
+    # instead of constructing them on each call
+    with mock.patch("google.api_core.gapic_v1.method_async.wrap_method") as wrapper_fn:
+        client = SubscriberAsyncClient(
+            credentials=async_anonymous_credentials(),
+            transport=transport,
+        )
+
+        # Should wrap all calls on client creation
+        assert wrapper_fn.call_count > 0
+        wrapper_fn.reset_mock()
+
+        # Ensure method has been cached
+        assert (
+            client._client._transport.modify_push_config
+            in client._client._transport._wrapped_methods
+        )
+
+        # Replace cached wrapped function with mock
+        mock_rpc = mock.AsyncMock()
+        mock_rpc.return_value = mock.Mock()
+        client._client._transport._wrapped_methods[
+            client._client._transport.modify_push_config
+        ] = mock_rpc
+
+        request = {}
+        await client.modify_push_config(request)
+
+        # Establish that the underlying gRPC stub method was called.
+        assert mock_rpc.call_count == 1
+
+        await client.modify_push_config(request)
+
+        # Establish that a new wrapper was not created for this call
+        assert wrapper_fn.call_count == 0
+        assert mock_rpc.call_count == 2
 
 
 @pytest.mark.asyncio
@@ -3952,7 +4390,7 @@ async def test_modify_push_config_async(
     transport: str = "grpc_asyncio", request_type=pubsub.ModifyPushConfigRequest
 ):
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
         transport=transport,
     )
 
@@ -4017,7 +4455,7 @@ def test_modify_push_config_field_headers():
 @pytest.mark.asyncio
 async def test_modify_push_config_field_headers_async():
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
     )
 
     # Any value that is part of the HTTP/1.1 URI should be sent as
@@ -4094,7 +4532,7 @@ def test_modify_push_config_flattened_error():
 @pytest.mark.asyncio
 async def test_modify_push_config_flattened_async():
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
     )
 
     # Mock the actual call within the gRPC stub, and fake the request.
@@ -4127,7 +4565,7 @@ async def test_modify_push_config_flattened_async():
 @pytest.mark.asyncio
 async def test_modify_push_config_flattened_error_async():
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
     )
 
     # Attempting to call a method with both a request object and flattened
@@ -4178,22 +4616,6 @@ def test_get_snapshot(request_type, transport: str = "grpc"):
     assert response.topic == "topic_value"
 
 
-def test_get_snapshot_empty_call():
-    # This test is a coverage failsafe to make sure that totally empty calls,
-    # i.e. request == None and no flattened fields passed, work.
-    client = SubscriberClient(
-        credentials=ga_credentials.AnonymousCredentials(),
-        transport="grpc",
-    )
-
-    # Mock the actual call within the gRPC stub, and fake the request.
-    with mock.patch.object(type(client.transport.get_snapshot), "__call__") as call:
-        client.get_snapshot()
-        call.assert_called()
-        _, args, _ = call.mock_calls[0]
-        assert args[0] == pubsub.GetSnapshotRequest()
-
-
 def test_get_snapshot_non_empty_request_with_auto_populated_field():
     # This test is a coverage failsafe to make sure that UUID4 fields are
     # automatically populated, according to AIP-4235, with non-empty requests.
@@ -4211,6 +4633,9 @@ def test_get_snapshot_non_empty_request_with_auto_populated_field():
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(type(client.transport.get_snapshot), "__call__") as call:
+        call.return_value.name = (
+            "foo"  # operation_request.operation in compute client(s) expect a string.
+        )
         client.get_snapshot(request=request)
         call.assert_called()
         _, args, _ = call.mock_calls[0]
@@ -4219,28 +4644,81 @@ def test_get_snapshot_non_empty_request_with_auto_populated_field():
         )
 
 
-@pytest.mark.asyncio
-async def test_get_snapshot_empty_call_async():
-    # This test is a coverage failsafe to make sure that totally empty calls,
-    # i.e. request == None and no flattened fields passed, work.
-    client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
-        transport="grpc_asyncio",
-    )
-
-    # Mock the actual call within the gRPC stub, and fake the request.
-    with mock.patch.object(type(client.transport.get_snapshot), "__call__") as call:
-        # Designate an appropriate return value for the call.
-        call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(
-            pubsub.Snapshot(
-                name="name_value",
-                topic="topic_value",
-            )
+def test_get_snapshot_use_cached_wrapped_rpc():
+    # Clients should use _prep_wrapped_messages to create cached wrapped rpcs,
+    # instead of constructing them on each call
+    with mock.patch("google.api_core.gapic_v1.method.wrap_method") as wrapper_fn:
+        client = SubscriberClient(
+            credentials=ga_credentials.AnonymousCredentials(),
+            transport="grpc",
         )
-        response = await client.get_snapshot()
-        call.assert_called()
-        _, args, _ = call.mock_calls[0]
-        assert args[0] == pubsub.GetSnapshotRequest()
+
+        # Should wrap all calls on client creation
+        assert wrapper_fn.call_count > 0
+        wrapper_fn.reset_mock()
+
+        # Ensure method has been cached
+        assert client._transport.get_snapshot in client._transport._wrapped_methods
+
+        # Replace cached wrapped function with mock
+        mock_rpc = mock.Mock()
+        mock_rpc.return_value.name = (
+            "foo"  # operation_request.operation in compute client(s) expect a string.
+        )
+        client._transport._wrapped_methods[client._transport.get_snapshot] = mock_rpc
+        request = {}
+        client.get_snapshot(request)
+
+        # Establish that the underlying gRPC stub method was called.
+        assert mock_rpc.call_count == 1
+
+        client.get_snapshot(request)
+
+        # Establish that a new wrapper was not created for this call
+        assert wrapper_fn.call_count == 0
+        assert mock_rpc.call_count == 2
+
+
+@pytest.mark.asyncio
+async def test_get_snapshot_async_use_cached_wrapped_rpc(
+    transport: str = "grpc_asyncio",
+):
+    # Clients should use _prep_wrapped_messages to create cached wrapped rpcs,
+    # instead of constructing them on each call
+    with mock.patch("google.api_core.gapic_v1.method_async.wrap_method") as wrapper_fn:
+        client = SubscriberAsyncClient(
+            credentials=async_anonymous_credentials(),
+            transport=transport,
+        )
+
+        # Should wrap all calls on client creation
+        assert wrapper_fn.call_count > 0
+        wrapper_fn.reset_mock()
+
+        # Ensure method has been cached
+        assert (
+            client._client._transport.get_snapshot
+            in client._client._transport._wrapped_methods
+        )
+
+        # Replace cached wrapped function with mock
+        mock_rpc = mock.AsyncMock()
+        mock_rpc.return_value = mock.Mock()
+        client._client._transport._wrapped_methods[
+            client._client._transport.get_snapshot
+        ] = mock_rpc
+
+        request = {}
+        await client.get_snapshot(request)
+
+        # Establish that the underlying gRPC stub method was called.
+        assert mock_rpc.call_count == 1
+
+        await client.get_snapshot(request)
+
+        # Establish that a new wrapper was not created for this call
+        assert wrapper_fn.call_count == 0
+        assert mock_rpc.call_count == 2
 
 
 @pytest.mark.asyncio
@@ -4248,7 +4726,7 @@ async def test_get_snapshot_async(
     transport: str = "grpc_asyncio", request_type=pubsub.GetSnapshotRequest
 ):
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
         transport=transport,
     )
 
@@ -4316,7 +4794,7 @@ def test_get_snapshot_field_headers():
 @pytest.mark.asyncio
 async def test_get_snapshot_field_headers_async():
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
     )
 
     # Any value that is part of the HTTP/1.1 URI should be sent as
@@ -4384,7 +4862,7 @@ def test_get_snapshot_flattened_error():
 @pytest.mark.asyncio
 async def test_get_snapshot_flattened_async():
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
     )
 
     # Mock the actual call within the gRPC stub, and fake the request.
@@ -4411,7 +4889,7 @@ async def test_get_snapshot_flattened_async():
 @pytest.mark.asyncio
 async def test_get_snapshot_flattened_error_async():
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
     )
 
     # Attempting to call a method with both a request object and flattened
@@ -4459,22 +4937,6 @@ def test_list_snapshots(request_type, transport: str = "grpc"):
     assert response.next_page_token == "next_page_token_value"
 
 
-def test_list_snapshots_empty_call():
-    # This test is a coverage failsafe to make sure that totally empty calls,
-    # i.e. request == None and no flattened fields passed, work.
-    client = SubscriberClient(
-        credentials=ga_credentials.AnonymousCredentials(),
-        transport="grpc",
-    )
-
-    # Mock the actual call within the gRPC stub, and fake the request.
-    with mock.patch.object(type(client.transport.list_snapshots), "__call__") as call:
-        client.list_snapshots()
-        call.assert_called()
-        _, args, _ = call.mock_calls[0]
-        assert args[0] == pubsub.ListSnapshotsRequest()
-
-
 def test_list_snapshots_non_empty_request_with_auto_populated_field():
     # This test is a coverage failsafe to make sure that UUID4 fields are
     # automatically populated, according to AIP-4235, with non-empty requests.
@@ -4493,6 +4955,9 @@ def test_list_snapshots_non_empty_request_with_auto_populated_field():
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(type(client.transport.list_snapshots), "__call__") as call:
+        call.return_value.name = (
+            "foo"  # operation_request.operation in compute client(s) expect a string.
+        )
         client.list_snapshots(request=request)
         call.assert_called()
         _, args, _ = call.mock_calls[0]
@@ -4502,27 +4967,81 @@ def test_list_snapshots_non_empty_request_with_auto_populated_field():
         )
 
 
-@pytest.mark.asyncio
-async def test_list_snapshots_empty_call_async():
-    # This test is a coverage failsafe to make sure that totally empty calls,
-    # i.e. request == None and no flattened fields passed, work.
-    client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
-        transport="grpc_asyncio",
-    )
-
-    # Mock the actual call within the gRPC stub, and fake the request.
-    with mock.patch.object(type(client.transport.list_snapshots), "__call__") as call:
-        # Designate an appropriate return value for the call.
-        call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(
-            pubsub.ListSnapshotsResponse(
-                next_page_token="next_page_token_value",
-            )
+def test_list_snapshots_use_cached_wrapped_rpc():
+    # Clients should use _prep_wrapped_messages to create cached wrapped rpcs,
+    # instead of constructing them on each call
+    with mock.patch("google.api_core.gapic_v1.method.wrap_method") as wrapper_fn:
+        client = SubscriberClient(
+            credentials=ga_credentials.AnonymousCredentials(),
+            transport="grpc",
         )
-        response = await client.list_snapshots()
-        call.assert_called()
-        _, args, _ = call.mock_calls[0]
-        assert args[0] == pubsub.ListSnapshotsRequest()
+
+        # Should wrap all calls on client creation
+        assert wrapper_fn.call_count > 0
+        wrapper_fn.reset_mock()
+
+        # Ensure method has been cached
+        assert client._transport.list_snapshots in client._transport._wrapped_methods
+
+        # Replace cached wrapped function with mock
+        mock_rpc = mock.Mock()
+        mock_rpc.return_value.name = (
+            "foo"  # operation_request.operation in compute client(s) expect a string.
+        )
+        client._transport._wrapped_methods[client._transport.list_snapshots] = mock_rpc
+        request = {}
+        client.list_snapshots(request)
+
+        # Establish that the underlying gRPC stub method was called.
+        assert mock_rpc.call_count == 1
+
+        client.list_snapshots(request)
+
+        # Establish that a new wrapper was not created for this call
+        assert wrapper_fn.call_count == 0
+        assert mock_rpc.call_count == 2
+
+
+@pytest.mark.asyncio
+async def test_list_snapshots_async_use_cached_wrapped_rpc(
+    transport: str = "grpc_asyncio",
+):
+    # Clients should use _prep_wrapped_messages to create cached wrapped rpcs,
+    # instead of constructing them on each call
+    with mock.patch("google.api_core.gapic_v1.method_async.wrap_method") as wrapper_fn:
+        client = SubscriberAsyncClient(
+            credentials=async_anonymous_credentials(),
+            transport=transport,
+        )
+
+        # Should wrap all calls on client creation
+        assert wrapper_fn.call_count > 0
+        wrapper_fn.reset_mock()
+
+        # Ensure method has been cached
+        assert (
+            client._client._transport.list_snapshots
+            in client._client._transport._wrapped_methods
+        )
+
+        # Replace cached wrapped function with mock
+        mock_rpc = mock.AsyncMock()
+        mock_rpc.return_value = mock.Mock()
+        client._client._transport._wrapped_methods[
+            client._client._transport.list_snapshots
+        ] = mock_rpc
+
+        request = {}
+        await client.list_snapshots(request)
+
+        # Establish that the underlying gRPC stub method was called.
+        assert mock_rpc.call_count == 1
+
+        await client.list_snapshots(request)
+
+        # Establish that a new wrapper was not created for this call
+        assert wrapper_fn.call_count == 0
+        assert mock_rpc.call_count == 2
 
 
 @pytest.mark.asyncio
@@ -4530,7 +5049,7 @@ async def test_list_snapshots_async(
     transport: str = "grpc_asyncio", request_type=pubsub.ListSnapshotsRequest
 ):
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
         transport=transport,
     )
 
@@ -4596,7 +5115,7 @@ def test_list_snapshots_field_headers():
 @pytest.mark.asyncio
 async def test_list_snapshots_field_headers_async():
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
     )
 
     # Any value that is part of the HTTP/1.1 URI should be sent as
@@ -4666,7 +5185,7 @@ def test_list_snapshots_flattened_error():
 @pytest.mark.asyncio
 async def test_list_snapshots_flattened_async():
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
     )
 
     # Mock the actual call within the gRPC stub, and fake the request.
@@ -4695,7 +5214,7 @@ async def test_list_snapshots_flattened_async():
 @pytest.mark.asyncio
 async def test_list_snapshots_flattened_error_async():
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
     )
 
     # Attempting to call a method with both a request object and flattened
@@ -4744,13 +5263,17 @@ def test_list_snapshots_pager(transport_name: str = "grpc"):
             RuntimeError,
         )
 
-        metadata = ()
-        metadata = tuple(metadata) + (
+        expected_metadata = ()
+        retry = retries.Retry()
+        timeout = 5
+        expected_metadata = tuple(expected_metadata) + (
             gapic_v1.routing_header.to_grpc_metadata((("project", ""),)),
         )
-        pager = client.list_snapshots(request={})
+        pager = client.list_snapshots(request={}, retry=retry, timeout=timeout)
 
-        assert pager._metadata == metadata
+        assert pager._metadata == expected_metadata
+        assert pager._retry == retry
+        assert pager._timeout == timeout
 
         results = list(pager)
         assert len(results) == 6
@@ -4801,7 +5324,7 @@ def test_list_snapshots_pages(transport_name: str = "grpc"):
 @pytest.mark.asyncio
 async def test_list_snapshots_async_pager():
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
     )
 
     # Mock the actual call within the gRPC stub, and fake the request.
@@ -4851,7 +5374,7 @@ async def test_list_snapshots_async_pager():
 @pytest.mark.asyncio
 async def test_list_snapshots_async_pages():
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
     )
 
     # Mock the actual call within the gRPC stub, and fake the request.
@@ -4935,22 +5458,6 @@ def test_create_snapshot(request_type, transport: str = "grpc"):
     assert response.topic == "topic_value"
 
 
-def test_create_snapshot_empty_call():
-    # This test is a coverage failsafe to make sure that totally empty calls,
-    # i.e. request == None and no flattened fields passed, work.
-    client = SubscriberClient(
-        credentials=ga_credentials.AnonymousCredentials(),
-        transport="grpc",
-    )
-
-    # Mock the actual call within the gRPC stub, and fake the request.
-    with mock.patch.object(type(client.transport.create_snapshot), "__call__") as call:
-        client.create_snapshot()
-        call.assert_called()
-        _, args, _ = call.mock_calls[0]
-        assert args[0] == pubsub.CreateSnapshotRequest()
-
-
 def test_create_snapshot_non_empty_request_with_auto_populated_field():
     # This test is a coverage failsafe to make sure that UUID4 fields are
     # automatically populated, according to AIP-4235, with non-empty requests.
@@ -4969,6 +5476,9 @@ def test_create_snapshot_non_empty_request_with_auto_populated_field():
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(type(client.transport.create_snapshot), "__call__") as call:
+        call.return_value.name = (
+            "foo"  # operation_request.operation in compute client(s) expect a string.
+        )
         client.create_snapshot(request=request)
         call.assert_called()
         _, args, _ = call.mock_calls[0]
@@ -4978,28 +5488,81 @@ def test_create_snapshot_non_empty_request_with_auto_populated_field():
         )
 
 
-@pytest.mark.asyncio
-async def test_create_snapshot_empty_call_async():
-    # This test is a coverage failsafe to make sure that totally empty calls,
-    # i.e. request == None and no flattened fields passed, work.
-    client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
-        transport="grpc_asyncio",
-    )
-
-    # Mock the actual call within the gRPC stub, and fake the request.
-    with mock.patch.object(type(client.transport.create_snapshot), "__call__") as call:
-        # Designate an appropriate return value for the call.
-        call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(
-            pubsub.Snapshot(
-                name="name_value",
-                topic="topic_value",
-            )
+def test_create_snapshot_use_cached_wrapped_rpc():
+    # Clients should use _prep_wrapped_messages to create cached wrapped rpcs,
+    # instead of constructing them on each call
+    with mock.patch("google.api_core.gapic_v1.method.wrap_method") as wrapper_fn:
+        client = SubscriberClient(
+            credentials=ga_credentials.AnonymousCredentials(),
+            transport="grpc",
         )
-        response = await client.create_snapshot()
-        call.assert_called()
-        _, args, _ = call.mock_calls[0]
-        assert args[0] == pubsub.CreateSnapshotRequest()
+
+        # Should wrap all calls on client creation
+        assert wrapper_fn.call_count > 0
+        wrapper_fn.reset_mock()
+
+        # Ensure method has been cached
+        assert client._transport.create_snapshot in client._transport._wrapped_methods
+
+        # Replace cached wrapped function with mock
+        mock_rpc = mock.Mock()
+        mock_rpc.return_value.name = (
+            "foo"  # operation_request.operation in compute client(s) expect a string.
+        )
+        client._transport._wrapped_methods[client._transport.create_snapshot] = mock_rpc
+        request = {}
+        client.create_snapshot(request)
+
+        # Establish that the underlying gRPC stub method was called.
+        assert mock_rpc.call_count == 1
+
+        client.create_snapshot(request)
+
+        # Establish that a new wrapper was not created for this call
+        assert wrapper_fn.call_count == 0
+        assert mock_rpc.call_count == 2
+
+
+@pytest.mark.asyncio
+async def test_create_snapshot_async_use_cached_wrapped_rpc(
+    transport: str = "grpc_asyncio",
+):
+    # Clients should use _prep_wrapped_messages to create cached wrapped rpcs,
+    # instead of constructing them on each call
+    with mock.patch("google.api_core.gapic_v1.method_async.wrap_method") as wrapper_fn:
+        client = SubscriberAsyncClient(
+            credentials=async_anonymous_credentials(),
+            transport=transport,
+        )
+
+        # Should wrap all calls on client creation
+        assert wrapper_fn.call_count > 0
+        wrapper_fn.reset_mock()
+
+        # Ensure method has been cached
+        assert (
+            client._client._transport.create_snapshot
+            in client._client._transport._wrapped_methods
+        )
+
+        # Replace cached wrapped function with mock
+        mock_rpc = mock.AsyncMock()
+        mock_rpc.return_value = mock.Mock()
+        client._client._transport._wrapped_methods[
+            client._client._transport.create_snapshot
+        ] = mock_rpc
+
+        request = {}
+        await client.create_snapshot(request)
+
+        # Establish that the underlying gRPC stub method was called.
+        assert mock_rpc.call_count == 1
+
+        await client.create_snapshot(request)
+
+        # Establish that a new wrapper was not created for this call
+        assert wrapper_fn.call_count == 0
+        assert mock_rpc.call_count == 2
 
 
 @pytest.mark.asyncio
@@ -5007,7 +5570,7 @@ async def test_create_snapshot_async(
     transport: str = "grpc_asyncio", request_type=pubsub.CreateSnapshotRequest
 ):
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
         transport=transport,
     )
 
@@ -5075,7 +5638,7 @@ def test_create_snapshot_field_headers():
 @pytest.mark.asyncio
 async def test_create_snapshot_field_headers_async():
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
     )
 
     # Any value that is part of the HTTP/1.1 URI should be sent as
@@ -5148,7 +5711,7 @@ def test_create_snapshot_flattened_error():
 @pytest.mark.asyncio
 async def test_create_snapshot_flattened_async():
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
     )
 
     # Mock the actual call within the gRPC stub, and fake the request.
@@ -5179,7 +5742,7 @@ async def test_create_snapshot_flattened_async():
 @pytest.mark.asyncio
 async def test_create_snapshot_flattened_error_async():
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
     )
 
     # Attempting to call a method with both a request object and flattened
@@ -5230,22 +5793,6 @@ def test_update_snapshot(request_type, transport: str = "grpc"):
     assert response.topic == "topic_value"
 
 
-def test_update_snapshot_empty_call():
-    # This test is a coverage failsafe to make sure that totally empty calls,
-    # i.e. request == None and no flattened fields passed, work.
-    client = SubscriberClient(
-        credentials=ga_credentials.AnonymousCredentials(),
-        transport="grpc",
-    )
-
-    # Mock the actual call within the gRPC stub, and fake the request.
-    with mock.patch.object(type(client.transport.update_snapshot), "__call__") as call:
-        client.update_snapshot()
-        call.assert_called()
-        _, args, _ = call.mock_calls[0]
-        assert args[0] == pubsub.UpdateSnapshotRequest()
-
-
 def test_update_snapshot_non_empty_request_with_auto_populated_field():
     # This test is a coverage failsafe to make sure that UUID4 fields are
     # automatically populated, according to AIP-4235, with non-empty requests.
@@ -5261,34 +5808,90 @@ def test_update_snapshot_non_empty_request_with_auto_populated_field():
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(type(client.transport.update_snapshot), "__call__") as call:
+        call.return_value.name = (
+            "foo"  # operation_request.operation in compute client(s) expect a string.
+        )
         client.update_snapshot(request=request)
         call.assert_called()
         _, args, _ = call.mock_calls[0]
         assert args[0] == pubsub.UpdateSnapshotRequest()
 
 
-@pytest.mark.asyncio
-async def test_update_snapshot_empty_call_async():
-    # This test is a coverage failsafe to make sure that totally empty calls,
-    # i.e. request == None and no flattened fields passed, work.
-    client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
-        transport="grpc_asyncio",
-    )
-
-    # Mock the actual call within the gRPC stub, and fake the request.
-    with mock.patch.object(type(client.transport.update_snapshot), "__call__") as call:
-        # Designate an appropriate return value for the call.
-        call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(
-            pubsub.Snapshot(
-                name="name_value",
-                topic="topic_value",
-            )
+def test_update_snapshot_use_cached_wrapped_rpc():
+    # Clients should use _prep_wrapped_messages to create cached wrapped rpcs,
+    # instead of constructing them on each call
+    with mock.patch("google.api_core.gapic_v1.method.wrap_method") as wrapper_fn:
+        client = SubscriberClient(
+            credentials=ga_credentials.AnonymousCredentials(),
+            transport="grpc",
         )
-        response = await client.update_snapshot()
-        call.assert_called()
-        _, args, _ = call.mock_calls[0]
-        assert args[0] == pubsub.UpdateSnapshotRequest()
+
+        # Should wrap all calls on client creation
+        assert wrapper_fn.call_count > 0
+        wrapper_fn.reset_mock()
+
+        # Ensure method has been cached
+        assert client._transport.update_snapshot in client._transport._wrapped_methods
+
+        # Replace cached wrapped function with mock
+        mock_rpc = mock.Mock()
+        mock_rpc.return_value.name = (
+            "foo"  # operation_request.operation in compute client(s) expect a string.
+        )
+        client._transport._wrapped_methods[client._transport.update_snapshot] = mock_rpc
+        request = {}
+        client.update_snapshot(request)
+
+        # Establish that the underlying gRPC stub method was called.
+        assert mock_rpc.call_count == 1
+
+        client.update_snapshot(request)
+
+        # Establish that a new wrapper was not created for this call
+        assert wrapper_fn.call_count == 0
+        assert mock_rpc.call_count == 2
+
+
+@pytest.mark.asyncio
+async def test_update_snapshot_async_use_cached_wrapped_rpc(
+    transport: str = "grpc_asyncio",
+):
+    # Clients should use _prep_wrapped_messages to create cached wrapped rpcs,
+    # instead of constructing them on each call
+    with mock.patch("google.api_core.gapic_v1.method_async.wrap_method") as wrapper_fn:
+        client = SubscriberAsyncClient(
+            credentials=async_anonymous_credentials(),
+            transport=transport,
+        )
+
+        # Should wrap all calls on client creation
+        assert wrapper_fn.call_count > 0
+        wrapper_fn.reset_mock()
+
+        # Ensure method has been cached
+        assert (
+            client._client._transport.update_snapshot
+            in client._client._transport._wrapped_methods
+        )
+
+        # Replace cached wrapped function with mock
+        mock_rpc = mock.AsyncMock()
+        mock_rpc.return_value = mock.Mock()
+        client._client._transport._wrapped_methods[
+            client._client._transport.update_snapshot
+        ] = mock_rpc
+
+        request = {}
+        await client.update_snapshot(request)
+
+        # Establish that the underlying gRPC stub method was called.
+        assert mock_rpc.call_count == 1
+
+        await client.update_snapshot(request)
+
+        # Establish that a new wrapper was not created for this call
+        assert wrapper_fn.call_count == 0
+        assert mock_rpc.call_count == 2
 
 
 @pytest.mark.asyncio
@@ -5296,7 +5899,7 @@ async def test_update_snapshot_async(
     transport: str = "grpc_asyncio", request_type=pubsub.UpdateSnapshotRequest
 ):
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
         transport=transport,
     )
 
@@ -5364,7 +5967,7 @@ def test_update_snapshot_field_headers():
 @pytest.mark.asyncio
 async def test_update_snapshot_field_headers_async():
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
     )
 
     # Any value that is part of the HTTP/1.1 URI should be sent as
@@ -5437,7 +6040,7 @@ def test_update_snapshot_flattened_error():
 @pytest.mark.asyncio
 async def test_update_snapshot_flattened_async():
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
     )
 
     # Mock the actual call within the gRPC stub, and fake the request.
@@ -5468,7 +6071,7 @@ async def test_update_snapshot_flattened_async():
 @pytest.mark.asyncio
 async def test_update_snapshot_flattened_error_async():
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
     )
 
     # Attempting to call a method with both a request object and flattened
@@ -5514,22 +6117,6 @@ def test_delete_snapshot(request_type, transport: str = "grpc"):
     assert response is None
 
 
-def test_delete_snapshot_empty_call():
-    # This test is a coverage failsafe to make sure that totally empty calls,
-    # i.e. request == None and no flattened fields passed, work.
-    client = SubscriberClient(
-        credentials=ga_credentials.AnonymousCredentials(),
-        transport="grpc",
-    )
-
-    # Mock the actual call within the gRPC stub, and fake the request.
-    with mock.patch.object(type(client.transport.delete_snapshot), "__call__") as call:
-        client.delete_snapshot()
-        call.assert_called()
-        _, args, _ = call.mock_calls[0]
-        assert args[0] == pubsub.DeleteSnapshotRequest()
-
-
 def test_delete_snapshot_non_empty_request_with_auto_populated_field():
     # This test is a coverage failsafe to make sure that UUID4 fields are
     # automatically populated, according to AIP-4235, with non-empty requests.
@@ -5547,6 +6134,9 @@ def test_delete_snapshot_non_empty_request_with_auto_populated_field():
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(type(client.transport.delete_snapshot), "__call__") as call:
+        call.return_value.name = (
+            "foo"  # operation_request.operation in compute client(s) expect a string.
+        )
         client.delete_snapshot(request=request)
         call.assert_called()
         _, args, _ = call.mock_calls[0]
@@ -5555,23 +6145,81 @@ def test_delete_snapshot_non_empty_request_with_auto_populated_field():
         )
 
 
-@pytest.mark.asyncio
-async def test_delete_snapshot_empty_call_async():
-    # This test is a coverage failsafe to make sure that totally empty calls,
-    # i.e. request == None and no flattened fields passed, work.
-    client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
-        transport="grpc_asyncio",
-    )
+def test_delete_snapshot_use_cached_wrapped_rpc():
+    # Clients should use _prep_wrapped_messages to create cached wrapped rpcs,
+    # instead of constructing them on each call
+    with mock.patch("google.api_core.gapic_v1.method.wrap_method") as wrapper_fn:
+        client = SubscriberClient(
+            credentials=ga_credentials.AnonymousCredentials(),
+            transport="grpc",
+        )
 
-    # Mock the actual call within the gRPC stub, and fake the request.
-    with mock.patch.object(type(client.transport.delete_snapshot), "__call__") as call:
-        # Designate an appropriate return value for the call.
-        call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(None)
-        response = await client.delete_snapshot()
-        call.assert_called()
-        _, args, _ = call.mock_calls[0]
-        assert args[0] == pubsub.DeleteSnapshotRequest()
+        # Should wrap all calls on client creation
+        assert wrapper_fn.call_count > 0
+        wrapper_fn.reset_mock()
+
+        # Ensure method has been cached
+        assert client._transport.delete_snapshot in client._transport._wrapped_methods
+
+        # Replace cached wrapped function with mock
+        mock_rpc = mock.Mock()
+        mock_rpc.return_value.name = (
+            "foo"  # operation_request.operation in compute client(s) expect a string.
+        )
+        client._transport._wrapped_methods[client._transport.delete_snapshot] = mock_rpc
+        request = {}
+        client.delete_snapshot(request)
+
+        # Establish that the underlying gRPC stub method was called.
+        assert mock_rpc.call_count == 1
+
+        client.delete_snapshot(request)
+
+        # Establish that a new wrapper was not created for this call
+        assert wrapper_fn.call_count == 0
+        assert mock_rpc.call_count == 2
+
+
+@pytest.mark.asyncio
+async def test_delete_snapshot_async_use_cached_wrapped_rpc(
+    transport: str = "grpc_asyncio",
+):
+    # Clients should use _prep_wrapped_messages to create cached wrapped rpcs,
+    # instead of constructing them on each call
+    with mock.patch("google.api_core.gapic_v1.method_async.wrap_method") as wrapper_fn:
+        client = SubscriberAsyncClient(
+            credentials=async_anonymous_credentials(),
+            transport=transport,
+        )
+
+        # Should wrap all calls on client creation
+        assert wrapper_fn.call_count > 0
+        wrapper_fn.reset_mock()
+
+        # Ensure method has been cached
+        assert (
+            client._client._transport.delete_snapshot
+            in client._client._transport._wrapped_methods
+        )
+
+        # Replace cached wrapped function with mock
+        mock_rpc = mock.AsyncMock()
+        mock_rpc.return_value = mock.Mock()
+        client._client._transport._wrapped_methods[
+            client._client._transport.delete_snapshot
+        ] = mock_rpc
+
+        request = {}
+        await client.delete_snapshot(request)
+
+        # Establish that the underlying gRPC stub method was called.
+        assert mock_rpc.call_count == 1
+
+        await client.delete_snapshot(request)
+
+        # Establish that a new wrapper was not created for this call
+        assert wrapper_fn.call_count == 0
+        assert mock_rpc.call_count == 2
 
 
 @pytest.mark.asyncio
@@ -5579,7 +6227,7 @@ async def test_delete_snapshot_async(
     transport: str = "grpc_asyncio", request_type=pubsub.DeleteSnapshotRequest
 ):
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
         transport=transport,
     )
 
@@ -5640,7 +6288,7 @@ def test_delete_snapshot_field_headers():
 @pytest.mark.asyncio
 async def test_delete_snapshot_field_headers_async():
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
     )
 
     # Any value that is part of the HTTP/1.1 URI should be sent as
@@ -5708,7 +6356,7 @@ def test_delete_snapshot_flattened_error():
 @pytest.mark.asyncio
 async def test_delete_snapshot_flattened_async():
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
     )
 
     # Mock the actual call within the gRPC stub, and fake the request.
@@ -5735,7 +6383,7 @@ async def test_delete_snapshot_flattened_async():
 @pytest.mark.asyncio
 async def test_delete_snapshot_flattened_error_async():
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
     )
 
     # Attempting to call a method with both a request object and flattened
@@ -5780,22 +6428,6 @@ def test_seek(request_type, transport: str = "grpc"):
     assert isinstance(response, pubsub.SeekResponse)
 
 
-def test_seek_empty_call():
-    # This test is a coverage failsafe to make sure that totally empty calls,
-    # i.e. request == None and no flattened fields passed, work.
-    client = SubscriberClient(
-        credentials=ga_credentials.AnonymousCredentials(),
-        transport="grpc",
-    )
-
-    # Mock the actual call within the gRPC stub, and fake the request.
-    with mock.patch.object(type(client.transport.seek), "__call__") as call:
-        client.seek()
-        call.assert_called()
-        _, args, _ = call.mock_calls[0]
-        assert args[0] == pubsub.SeekRequest()
-
-
 def test_seek_non_empty_request_with_auto_populated_field():
     # This test is a coverage failsafe to make sure that UUID4 fields are
     # automatically populated, according to AIP-4235, with non-empty requests.
@@ -5814,6 +6446,9 @@ def test_seek_non_empty_request_with_auto_populated_field():
 
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(type(client.transport.seek), "__call__") as call:
+        call.return_value.name = (
+            "foo"  # operation_request.operation in compute client(s) expect a string.
+        )
         client.seek(request=request)
         call.assert_called()
         _, args, _ = call.mock_calls[0]
@@ -5823,23 +6458,78 @@ def test_seek_non_empty_request_with_auto_populated_field():
         )
 
 
-@pytest.mark.asyncio
-async def test_seek_empty_call_async():
-    # This test is a coverage failsafe to make sure that totally empty calls,
-    # i.e. request == None and no flattened fields passed, work.
-    client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
-        transport="grpc_asyncio",
-    )
+def test_seek_use_cached_wrapped_rpc():
+    # Clients should use _prep_wrapped_messages to create cached wrapped rpcs,
+    # instead of constructing them on each call
+    with mock.patch("google.api_core.gapic_v1.method.wrap_method") as wrapper_fn:
+        client = SubscriberClient(
+            credentials=ga_credentials.AnonymousCredentials(),
+            transport="grpc",
+        )
 
-    # Mock the actual call within the gRPC stub, and fake the request.
-    with mock.patch.object(type(client.transport.seek), "__call__") as call:
-        # Designate an appropriate return value for the call.
-        call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(pubsub.SeekResponse())
-        response = await client.seek()
-        call.assert_called()
-        _, args, _ = call.mock_calls[0]
-        assert args[0] == pubsub.SeekRequest()
+        # Should wrap all calls on client creation
+        assert wrapper_fn.call_count > 0
+        wrapper_fn.reset_mock()
+
+        # Ensure method has been cached
+        assert client._transport.seek in client._transport._wrapped_methods
+
+        # Replace cached wrapped function with mock
+        mock_rpc = mock.Mock()
+        mock_rpc.return_value.name = (
+            "foo"  # operation_request.operation in compute client(s) expect a string.
+        )
+        client._transport._wrapped_methods[client._transport.seek] = mock_rpc
+        request = {}
+        client.seek(request)
+
+        # Establish that the underlying gRPC stub method was called.
+        assert mock_rpc.call_count == 1
+
+        client.seek(request)
+
+        # Establish that a new wrapper was not created for this call
+        assert wrapper_fn.call_count == 0
+        assert mock_rpc.call_count == 2
+
+
+@pytest.mark.asyncio
+async def test_seek_async_use_cached_wrapped_rpc(transport: str = "grpc_asyncio"):
+    # Clients should use _prep_wrapped_messages to create cached wrapped rpcs,
+    # instead of constructing them on each call
+    with mock.patch("google.api_core.gapic_v1.method_async.wrap_method") as wrapper_fn:
+        client = SubscriberAsyncClient(
+            credentials=async_anonymous_credentials(),
+            transport=transport,
+        )
+
+        # Should wrap all calls on client creation
+        assert wrapper_fn.call_count > 0
+        wrapper_fn.reset_mock()
+
+        # Ensure method has been cached
+        assert (
+            client._client._transport.seek in client._client._transport._wrapped_methods
+        )
+
+        # Replace cached wrapped function with mock
+        mock_rpc = mock.AsyncMock()
+        mock_rpc.return_value = mock.Mock()
+        client._client._transport._wrapped_methods[
+            client._client._transport.seek
+        ] = mock_rpc
+
+        request = {}
+        await client.seek(request)
+
+        # Establish that the underlying gRPC stub method was called.
+        assert mock_rpc.call_count == 1
+
+        await client.seek(request)
+
+        # Establish that a new wrapper was not created for this call
+        assert wrapper_fn.call_count == 0
+        assert mock_rpc.call_count == 2
 
 
 @pytest.mark.asyncio
@@ -5847,7 +6537,7 @@ async def test_seek_async(
     transport: str = "grpc_asyncio", request_type=pubsub.SeekRequest
 ):
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
         transport=transport,
     )
 
@@ -5908,7 +6598,7 @@ def test_seek_field_headers():
 @pytest.mark.asyncio
 async def test_seek_field_headers_async():
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
     )
 
     # Any value that is part of the HTTP/1.1 URI should be sent as
@@ -5935,60 +6625,44 @@ async def test_seek_field_headers_async():
     ) in kw["metadata"]
 
 
-@pytest.mark.parametrize(
-    "request_type",
-    [
-        pubsub.Subscription,
-        dict,
-    ],
-)
-def test_create_subscription_rest(request_type):
-    client = SubscriberClient(
-        credentials=ga_credentials.AnonymousCredentials(),
-        transport="rest",
-    )
-
-    # send a request that will satisfy transcoding
-    request_init = {"name": "projects/sample1/subscriptions/sample2"}
-    request = request_type(**request_init)
-
-    # Mock the http request call within the method and fake a response.
-    with mock.patch.object(type(client.transport._session), "request") as req:
-        # Designate an appropriate value for the returned response.
-        return_value = pubsub.Subscription(
-            name="name_value",
-            topic="topic_value",
-            ack_deadline_seconds=2066,
-            retain_acked_messages=True,
-            enable_message_ordering=True,
-            filter="filter_value",
-            detached=True,
-            enable_exactly_once_delivery=True,
-            state=pubsub.Subscription.State.ACTIVE,
+def test_create_subscription_rest_use_cached_wrapped_rpc():
+    # Clients should use _prep_wrapped_messages to create cached wrapped rpcs,
+    # instead of constructing them on each call
+    with mock.patch("google.api_core.gapic_v1.method.wrap_method") as wrapper_fn:
+        client = SubscriberClient(
+            credentials=ga_credentials.AnonymousCredentials(),
+            transport="rest",
         )
 
-        # Wrap the value into a proper Response obj
-        response_value = Response()
-        response_value.status_code = 200
-        # Convert return value to protobuf type
-        return_value = pubsub.Subscription.pb(return_value)
-        json_return_value = json_format.MessageToJson(return_value)
+        # Should wrap all calls on client creation
+        assert wrapper_fn.call_count > 0
+        wrapper_fn.reset_mock()
 
-        response_value._content = json_return_value.encode("UTF-8")
-        req.return_value = response_value
-        response = client.create_subscription(request)
+        # Ensure method has been cached
+        assert (
+            client._transport.create_subscription in client._transport._wrapped_methods
+        )
 
-    # Establish that the response is the type that we expect.
-    assert isinstance(response, pubsub.Subscription)
-    assert response.name == "name_value"
-    assert response.topic == "topic_value"
-    assert response.ack_deadline_seconds == 2066
-    assert response.retain_acked_messages is True
-    assert response.enable_message_ordering is True
-    assert response.filter == "filter_value"
-    assert response.detached is True
-    assert response.enable_exactly_once_delivery is True
-    assert response.state == pubsub.Subscription.State.ACTIVE
+        # Replace cached wrapped function with mock
+        mock_rpc = mock.Mock()
+        mock_rpc.return_value.name = (
+            "foo"  # operation_request.operation in compute client(s) expect a string.
+        )
+        client._transport._wrapped_methods[
+            client._transport.create_subscription
+        ] = mock_rpc
+
+        request = {}
+        client.create_subscription(request)
+
+        # Establish that the underlying gRPC stub method was called.
+        assert mock_rpc.call_count == 1
+
+        client.create_subscription(request)
+
+        # Establish that a new wrapper was not created for this call
+        assert wrapper_fn.call_count == 0
+        assert mock_rpc.call_count == 2
 
 
 def test_create_subscription_rest_required_fields(request_type=pubsub.Subscription):
@@ -6060,6 +6734,7 @@ def test_create_subscription_rest_required_fields(request_type=pubsub.Subscripti
 
             response_value._content = json_return_value.encode("UTF-8")
             req.return_value = response_value
+            req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
 
             response = client.create_subscription(request)
 
@@ -6083,83 +6758,6 @@ def test_create_subscription_rest_unset_required_fields():
             )
         )
     )
-
-
-@pytest.mark.parametrize("null_interceptor", [True, False])
-def test_create_subscription_rest_interceptors(null_interceptor):
-    transport = transports.SubscriberRestTransport(
-        credentials=ga_credentials.AnonymousCredentials(),
-        interceptor=None
-        if null_interceptor
-        else transports.SubscriberRestInterceptor(),
-    )
-    client = SubscriberClient(transport=transport)
-    with mock.patch.object(
-        type(client.transport._session), "request"
-    ) as req, mock.patch.object(
-        path_template, "transcode"
-    ) as transcode, mock.patch.object(
-        transports.SubscriberRestInterceptor, "post_create_subscription"
-    ) as post, mock.patch.object(
-        transports.SubscriberRestInterceptor, "pre_create_subscription"
-    ) as pre:
-        pre.assert_not_called()
-        post.assert_not_called()
-        pb_message = pubsub.Subscription.pb(pubsub.Subscription())
-        transcode.return_value = {
-            "method": "post",
-            "uri": "my_uri",
-            "body": pb_message,
-            "query_params": pb_message,
-        }
-
-        req.return_value = Response()
-        req.return_value.status_code = 200
-        req.return_value.request = PreparedRequest()
-        req.return_value._content = pubsub.Subscription.to_json(pubsub.Subscription())
-
-        request = pubsub.Subscription()
-        metadata = [
-            ("key", "val"),
-            ("cephalopod", "squid"),
-        ]
-        pre.return_value = request, metadata
-        post.return_value = pubsub.Subscription()
-
-        client.create_subscription(
-            request,
-            metadata=[
-                ("key", "val"),
-                ("cephalopod", "squid"),
-            ],
-        )
-
-        pre.assert_called_once()
-        post.assert_called_once()
-
-
-def test_create_subscription_rest_bad_request(
-    transport: str = "rest", request_type=pubsub.Subscription
-):
-    client = SubscriberClient(
-        credentials=ga_credentials.AnonymousCredentials(),
-        transport=transport,
-    )
-
-    # send a request that will satisfy transcoding
-    request_init = {"name": "projects/sample1/subscriptions/sample2"}
-    request = request_type(**request_init)
-
-    # Mock the http request call within the method and fake a BadRequest error.
-    with mock.patch.object(Session, "request") as req, pytest.raises(
-        core_exceptions.BadRequest
-    ):
-        # Wrap the value into a proper Response obj
-        response_value = Response()
-        response_value.status_code = 400
-        response_value.request = Request()
-        req.return_value = response_value
-        client.create_subscription(request)
 
 
 def test_create_subscription_rest_flattened():
@@ -6193,6 +6791,7 @@ def test_create_subscription_rest_flattened():
         json_return_value = json_format.MessageToJson(return_value)
         response_value._content = json_return_value.encode("UTF-8")
         req.return_value = response_value
+        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
 
         client.create_subscription(**mock_args)
 
@@ -6223,66 +6822,42 @@ def test_create_subscription_rest_flattened_error(transport: str = "rest"):
         )
 
 
-def test_create_subscription_rest_error():
-    client = SubscriberClient(
-        credentials=ga_credentials.AnonymousCredentials(), transport="rest"
-    )
-
-
-@pytest.mark.parametrize(
-    "request_type",
-    [
-        pubsub.GetSubscriptionRequest,
-        dict,
-    ],
-)
-def test_get_subscription_rest(request_type):
-    client = SubscriberClient(
-        credentials=ga_credentials.AnonymousCredentials(),
-        transport="rest",
-    )
-
-    # send a request that will satisfy transcoding
-    request_init = {"subscription": "projects/sample1/subscriptions/sample2"}
-    request = request_type(**request_init)
-
-    # Mock the http request call within the method and fake a response.
-    with mock.patch.object(type(client.transport._session), "request") as req:
-        # Designate an appropriate value for the returned response.
-        return_value = pubsub.Subscription(
-            name="name_value",
-            topic="topic_value",
-            ack_deadline_seconds=2066,
-            retain_acked_messages=True,
-            enable_message_ordering=True,
-            filter="filter_value",
-            detached=True,
-            enable_exactly_once_delivery=True,
-            state=pubsub.Subscription.State.ACTIVE,
+def test_get_subscription_rest_use_cached_wrapped_rpc():
+    # Clients should use _prep_wrapped_messages to create cached wrapped rpcs,
+    # instead of constructing them on each call
+    with mock.patch("google.api_core.gapic_v1.method.wrap_method") as wrapper_fn:
+        client = SubscriberClient(
+            credentials=ga_credentials.AnonymousCredentials(),
+            transport="rest",
         )
 
-        # Wrap the value into a proper Response obj
-        response_value = Response()
-        response_value.status_code = 200
-        # Convert return value to protobuf type
-        return_value = pubsub.Subscription.pb(return_value)
-        json_return_value = json_format.MessageToJson(return_value)
+        # Should wrap all calls on client creation
+        assert wrapper_fn.call_count > 0
+        wrapper_fn.reset_mock()
 
-        response_value._content = json_return_value.encode("UTF-8")
-        req.return_value = response_value
-        response = client.get_subscription(request)
+        # Ensure method has been cached
+        assert client._transport.get_subscription in client._transport._wrapped_methods
 
-    # Establish that the response is the type that we expect.
-    assert isinstance(response, pubsub.Subscription)
-    assert response.name == "name_value"
-    assert response.topic == "topic_value"
-    assert response.ack_deadline_seconds == 2066
-    assert response.retain_acked_messages is True
-    assert response.enable_message_ordering is True
-    assert response.filter == "filter_value"
-    assert response.detached is True
-    assert response.enable_exactly_once_delivery is True
-    assert response.state == pubsub.Subscription.State.ACTIVE
+        # Replace cached wrapped function with mock
+        mock_rpc = mock.Mock()
+        mock_rpc.return_value.name = (
+            "foo"  # operation_request.operation in compute client(s) expect a string.
+        )
+        client._transport._wrapped_methods[
+            client._transport.get_subscription
+        ] = mock_rpc
+
+        request = {}
+        client.get_subscription(request)
+
+        # Establish that the underlying gRPC stub method was called.
+        assert mock_rpc.call_count == 1
+
+        client.get_subscription(request)
+
+        # Establish that a new wrapper was not created for this call
+        assert wrapper_fn.call_count == 0
+        assert mock_rpc.call_count == 2
 
 
 def test_get_subscription_rest_required_fields(
@@ -6351,6 +6926,7 @@ def test_get_subscription_rest_required_fields(
 
             response_value._content = json_return_value.encode("UTF-8")
             req.return_value = response_value
+            req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
 
             response = client.get_subscription(request)
 
@@ -6366,83 +6942,6 @@ def test_get_subscription_rest_unset_required_fields():
 
     unset_fields = transport.get_subscription._get_unset_required_fields({})
     assert set(unset_fields) == (set(()) & set(("subscription",)))
-
-
-@pytest.mark.parametrize("null_interceptor", [True, False])
-def test_get_subscription_rest_interceptors(null_interceptor):
-    transport = transports.SubscriberRestTransport(
-        credentials=ga_credentials.AnonymousCredentials(),
-        interceptor=None
-        if null_interceptor
-        else transports.SubscriberRestInterceptor(),
-    )
-    client = SubscriberClient(transport=transport)
-    with mock.patch.object(
-        type(client.transport._session), "request"
-    ) as req, mock.patch.object(
-        path_template, "transcode"
-    ) as transcode, mock.patch.object(
-        transports.SubscriberRestInterceptor, "post_get_subscription"
-    ) as post, mock.patch.object(
-        transports.SubscriberRestInterceptor, "pre_get_subscription"
-    ) as pre:
-        pre.assert_not_called()
-        post.assert_not_called()
-        pb_message = pubsub.GetSubscriptionRequest.pb(pubsub.GetSubscriptionRequest())
-        transcode.return_value = {
-            "method": "post",
-            "uri": "my_uri",
-            "body": pb_message,
-            "query_params": pb_message,
-        }
-
-        req.return_value = Response()
-        req.return_value.status_code = 200
-        req.return_value.request = PreparedRequest()
-        req.return_value._content = pubsub.Subscription.to_json(pubsub.Subscription())
-
-        request = pubsub.GetSubscriptionRequest()
-        metadata = [
-            ("key", "val"),
-            ("cephalopod", "squid"),
-        ]
-        pre.return_value = request, metadata
-        post.return_value = pubsub.Subscription()
-
-        client.get_subscription(
-            request,
-            metadata=[
-                ("key", "val"),
-                ("cephalopod", "squid"),
-            ],
-        )
-
-        pre.assert_called_once()
-        post.assert_called_once()
-
-
-def test_get_subscription_rest_bad_request(
-    transport: str = "rest", request_type=pubsub.GetSubscriptionRequest
-):
-    client = SubscriberClient(
-        credentials=ga_credentials.AnonymousCredentials(),
-        transport=transport,
-    )
-
-    # send a request that will satisfy transcoding
-    request_init = {"subscription": "projects/sample1/subscriptions/sample2"}
-    request = request_type(**request_init)
-
-    # Mock the http request call within the method and fake a BadRequest error.
-    with mock.patch.object(Session, "request") as req, pytest.raises(
-        core_exceptions.BadRequest
-    ):
-        # Wrap the value into a proper Response obj
-        response_value = Response()
-        response_value.status_code = 400
-        response_value.request = Request()
-        req.return_value = response_value
-        client.get_subscription(request)
 
 
 def test_get_subscription_rest_flattened():
@@ -6473,6 +6972,7 @@ def test_get_subscription_rest_flattened():
         json_return_value = json_format.MessageToJson(return_value)
         response_value._content = json_return_value.encode("UTF-8")
         req.return_value = response_value
+        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
 
         client.get_subscription(**mock_args)
 
@@ -6501,66 +7001,44 @@ def test_get_subscription_rest_flattened_error(transport: str = "rest"):
         )
 
 
-def test_get_subscription_rest_error():
-    client = SubscriberClient(
-        credentials=ga_credentials.AnonymousCredentials(), transport="rest"
-    )
-
-
-@pytest.mark.parametrize(
-    "request_type",
-    [
-        pubsub.UpdateSubscriptionRequest,
-        dict,
-    ],
-)
-def test_update_subscription_rest(request_type):
-    client = SubscriberClient(
-        credentials=ga_credentials.AnonymousCredentials(),
-        transport="rest",
-    )
-
-    # send a request that will satisfy transcoding
-    request_init = {"subscription": {"name": "projects/sample1/subscriptions/sample2"}}
-    request = request_type(**request_init)
-
-    # Mock the http request call within the method and fake a response.
-    with mock.patch.object(type(client.transport._session), "request") as req:
-        # Designate an appropriate value for the returned response.
-        return_value = pubsub.Subscription(
-            name="name_value",
-            topic="topic_value",
-            ack_deadline_seconds=2066,
-            retain_acked_messages=True,
-            enable_message_ordering=True,
-            filter="filter_value",
-            detached=True,
-            enable_exactly_once_delivery=True,
-            state=pubsub.Subscription.State.ACTIVE,
+def test_update_subscription_rest_use_cached_wrapped_rpc():
+    # Clients should use _prep_wrapped_messages to create cached wrapped rpcs,
+    # instead of constructing them on each call
+    with mock.patch("google.api_core.gapic_v1.method.wrap_method") as wrapper_fn:
+        client = SubscriberClient(
+            credentials=ga_credentials.AnonymousCredentials(),
+            transport="rest",
         )
 
-        # Wrap the value into a proper Response obj
-        response_value = Response()
-        response_value.status_code = 200
-        # Convert return value to protobuf type
-        return_value = pubsub.Subscription.pb(return_value)
-        json_return_value = json_format.MessageToJson(return_value)
+        # Should wrap all calls on client creation
+        assert wrapper_fn.call_count > 0
+        wrapper_fn.reset_mock()
 
-        response_value._content = json_return_value.encode("UTF-8")
-        req.return_value = response_value
-        response = client.update_subscription(request)
+        # Ensure method has been cached
+        assert (
+            client._transport.update_subscription in client._transport._wrapped_methods
+        )
 
-    # Establish that the response is the type that we expect.
-    assert isinstance(response, pubsub.Subscription)
-    assert response.name == "name_value"
-    assert response.topic == "topic_value"
-    assert response.ack_deadline_seconds == 2066
-    assert response.retain_acked_messages is True
-    assert response.enable_message_ordering is True
-    assert response.filter == "filter_value"
-    assert response.detached is True
-    assert response.enable_exactly_once_delivery is True
-    assert response.state == pubsub.Subscription.State.ACTIVE
+        # Replace cached wrapped function with mock
+        mock_rpc = mock.Mock()
+        mock_rpc.return_value.name = (
+            "foo"  # operation_request.operation in compute client(s) expect a string.
+        )
+        client._transport._wrapped_methods[
+            client._transport.update_subscription
+        ] = mock_rpc
+
+        request = {}
+        client.update_subscription(request)
+
+        # Establish that the underlying gRPC stub method was called.
+        assert mock_rpc.call_count == 1
+
+        client.update_subscription(request)
+
+        # Establish that a new wrapper was not created for this call
+        assert wrapper_fn.call_count == 0
+        assert mock_rpc.call_count == 2
 
 
 def test_update_subscription_rest_required_fields(
@@ -6625,6 +7103,7 @@ def test_update_subscription_rest_required_fields(
 
             response_value._content = json_return_value.encode("UTF-8")
             req.return_value = response_value
+            req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
 
             response = client.update_subscription(request)
 
@@ -6648,85 +7127,6 @@ def test_update_subscription_rest_unset_required_fields():
             )
         )
     )
-
-
-@pytest.mark.parametrize("null_interceptor", [True, False])
-def test_update_subscription_rest_interceptors(null_interceptor):
-    transport = transports.SubscriberRestTransport(
-        credentials=ga_credentials.AnonymousCredentials(),
-        interceptor=None
-        if null_interceptor
-        else transports.SubscriberRestInterceptor(),
-    )
-    client = SubscriberClient(transport=transport)
-    with mock.patch.object(
-        type(client.transport._session), "request"
-    ) as req, mock.patch.object(
-        path_template, "transcode"
-    ) as transcode, mock.patch.object(
-        transports.SubscriberRestInterceptor, "post_update_subscription"
-    ) as post, mock.patch.object(
-        transports.SubscriberRestInterceptor, "pre_update_subscription"
-    ) as pre:
-        pre.assert_not_called()
-        post.assert_not_called()
-        pb_message = pubsub.UpdateSubscriptionRequest.pb(
-            pubsub.UpdateSubscriptionRequest()
-        )
-        transcode.return_value = {
-            "method": "post",
-            "uri": "my_uri",
-            "body": pb_message,
-            "query_params": pb_message,
-        }
-
-        req.return_value = Response()
-        req.return_value.status_code = 200
-        req.return_value.request = PreparedRequest()
-        req.return_value._content = pubsub.Subscription.to_json(pubsub.Subscription())
-
-        request = pubsub.UpdateSubscriptionRequest()
-        metadata = [
-            ("key", "val"),
-            ("cephalopod", "squid"),
-        ]
-        pre.return_value = request, metadata
-        post.return_value = pubsub.Subscription()
-
-        client.update_subscription(
-            request,
-            metadata=[
-                ("key", "val"),
-                ("cephalopod", "squid"),
-            ],
-        )
-
-        pre.assert_called_once()
-        post.assert_called_once()
-
-
-def test_update_subscription_rest_bad_request(
-    transport: str = "rest", request_type=pubsub.UpdateSubscriptionRequest
-):
-    client = SubscriberClient(
-        credentials=ga_credentials.AnonymousCredentials(),
-        transport=transport,
-    )
-
-    # send a request that will satisfy transcoding
-    request_init = {"subscription": {"name": "projects/sample1/subscriptions/sample2"}}
-    request = request_type(**request_init)
-
-    # Mock the http request call within the method and fake a BadRequest error.
-    with mock.patch.object(Session, "request") as req, pytest.raises(
-        core_exceptions.BadRequest
-    ):
-        # Wrap the value into a proper Response obj
-        response_value = Response()
-        response_value.status_code = 400
-        response_value.request = Request()
-        req.return_value = response_value
-        client.update_subscription(request)
 
 
 def test_update_subscription_rest_flattened():
@@ -6760,6 +7160,7 @@ def test_update_subscription_rest_flattened():
         json_return_value = json_format.MessageToJson(return_value)
         response_value._content = json_return_value.encode("UTF-8")
         req.return_value = response_value
+        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
 
         client.update_subscription(**mock_args)
 
@@ -6790,50 +7191,44 @@ def test_update_subscription_rest_flattened_error(transport: str = "rest"):
         )
 
 
-def test_update_subscription_rest_error():
-    client = SubscriberClient(
-        credentials=ga_credentials.AnonymousCredentials(), transport="rest"
-    )
-
-
-@pytest.mark.parametrize(
-    "request_type",
-    [
-        pubsub.ListSubscriptionsRequest,
-        dict,
-    ],
-)
-def test_list_subscriptions_rest(request_type):
-    client = SubscriberClient(
-        credentials=ga_credentials.AnonymousCredentials(),
-        transport="rest",
-    )
-
-    # send a request that will satisfy transcoding
-    request_init = {"project": "projects/sample1"}
-    request = request_type(**request_init)
-
-    # Mock the http request call within the method and fake a response.
-    with mock.patch.object(type(client.transport._session), "request") as req:
-        # Designate an appropriate value for the returned response.
-        return_value = pubsub.ListSubscriptionsResponse(
-            next_page_token="next_page_token_value",
+def test_list_subscriptions_rest_use_cached_wrapped_rpc():
+    # Clients should use _prep_wrapped_messages to create cached wrapped rpcs,
+    # instead of constructing them on each call
+    with mock.patch("google.api_core.gapic_v1.method.wrap_method") as wrapper_fn:
+        client = SubscriberClient(
+            credentials=ga_credentials.AnonymousCredentials(),
+            transport="rest",
         )
 
-        # Wrap the value into a proper Response obj
-        response_value = Response()
-        response_value.status_code = 200
-        # Convert return value to protobuf type
-        return_value = pubsub.ListSubscriptionsResponse.pb(return_value)
-        json_return_value = json_format.MessageToJson(return_value)
+        # Should wrap all calls on client creation
+        assert wrapper_fn.call_count > 0
+        wrapper_fn.reset_mock()
 
-        response_value._content = json_return_value.encode("UTF-8")
-        req.return_value = response_value
-        response = client.list_subscriptions(request)
+        # Ensure method has been cached
+        assert (
+            client._transport.list_subscriptions in client._transport._wrapped_methods
+        )
 
-    # Establish that the response is the type that we expect.
-    assert isinstance(response, pagers.ListSubscriptionsPager)
-    assert response.next_page_token == "next_page_token_value"
+        # Replace cached wrapped function with mock
+        mock_rpc = mock.Mock()
+        mock_rpc.return_value.name = (
+            "foo"  # operation_request.operation in compute client(s) expect a string.
+        )
+        client._transport._wrapped_methods[
+            client._transport.list_subscriptions
+        ] = mock_rpc
+
+        request = {}
+        client.list_subscriptions(request)
+
+        # Establish that the underlying gRPC stub method was called.
+        assert mock_rpc.call_count == 1
+
+        client.list_subscriptions(request)
+
+        # Establish that a new wrapper was not created for this call
+        assert wrapper_fn.call_count == 0
+        assert mock_rpc.call_count == 2
 
 
 def test_list_subscriptions_rest_required_fields(
@@ -6909,6 +7304,7 @@ def test_list_subscriptions_rest_required_fields(
 
             response_value._content = json_return_value.encode("UTF-8")
             req.return_value = response_value
+            req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
 
             response = client.list_subscriptions(request)
 
@@ -6932,87 +7328,6 @@ def test_list_subscriptions_rest_unset_required_fields():
         )
         & set(("project",))
     )
-
-
-@pytest.mark.parametrize("null_interceptor", [True, False])
-def test_list_subscriptions_rest_interceptors(null_interceptor):
-    transport = transports.SubscriberRestTransport(
-        credentials=ga_credentials.AnonymousCredentials(),
-        interceptor=None
-        if null_interceptor
-        else transports.SubscriberRestInterceptor(),
-    )
-    client = SubscriberClient(transport=transport)
-    with mock.patch.object(
-        type(client.transport._session), "request"
-    ) as req, mock.patch.object(
-        path_template, "transcode"
-    ) as transcode, mock.patch.object(
-        transports.SubscriberRestInterceptor, "post_list_subscriptions"
-    ) as post, mock.patch.object(
-        transports.SubscriberRestInterceptor, "pre_list_subscriptions"
-    ) as pre:
-        pre.assert_not_called()
-        post.assert_not_called()
-        pb_message = pubsub.ListSubscriptionsRequest.pb(
-            pubsub.ListSubscriptionsRequest()
-        )
-        transcode.return_value = {
-            "method": "post",
-            "uri": "my_uri",
-            "body": pb_message,
-            "query_params": pb_message,
-        }
-
-        req.return_value = Response()
-        req.return_value.status_code = 200
-        req.return_value.request = PreparedRequest()
-        req.return_value._content = pubsub.ListSubscriptionsResponse.to_json(
-            pubsub.ListSubscriptionsResponse()
-        )
-
-        request = pubsub.ListSubscriptionsRequest()
-        metadata = [
-            ("key", "val"),
-            ("cephalopod", "squid"),
-        ]
-        pre.return_value = request, metadata
-        post.return_value = pubsub.ListSubscriptionsResponse()
-
-        client.list_subscriptions(
-            request,
-            metadata=[
-                ("key", "val"),
-                ("cephalopod", "squid"),
-            ],
-        )
-
-        pre.assert_called_once()
-        post.assert_called_once()
-
-
-def test_list_subscriptions_rest_bad_request(
-    transport: str = "rest", request_type=pubsub.ListSubscriptionsRequest
-):
-    client = SubscriberClient(
-        credentials=ga_credentials.AnonymousCredentials(),
-        transport=transport,
-    )
-
-    # send a request that will satisfy transcoding
-    request_init = {"project": "projects/sample1"}
-    request = request_type(**request_init)
-
-    # Mock the http request call within the method and fake a BadRequest error.
-    with mock.patch.object(Session, "request") as req, pytest.raises(
-        core_exceptions.BadRequest
-    ):
-        # Wrap the value into a proper Response obj
-        response_value = Response()
-        response_value.status_code = 400
-        response_value.request = Request()
-        req.return_value = response_value
-        client.list_subscriptions(request)
 
 
 def test_list_subscriptions_rest_flattened():
@@ -7043,6 +7358,7 @@ def test_list_subscriptions_rest_flattened():
         json_return_value = json_format.MessageToJson(return_value)
         response_value._content = json_return_value.encode("UTF-8")
         req.return_value = response_value
+        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
 
         client.list_subscriptions(**mock_args)
 
@@ -7131,39 +7447,44 @@ def test_list_subscriptions_rest_pager(transport: str = "rest"):
             assert page_.raw_page.next_page_token == token
 
 
-@pytest.mark.parametrize(
-    "request_type",
-    [
-        pubsub.DeleteSubscriptionRequest,
-        dict,
-    ],
-)
-def test_delete_subscription_rest(request_type):
-    client = SubscriberClient(
-        credentials=ga_credentials.AnonymousCredentials(),
-        transport="rest",
-    )
+def test_delete_subscription_rest_use_cached_wrapped_rpc():
+    # Clients should use _prep_wrapped_messages to create cached wrapped rpcs,
+    # instead of constructing them on each call
+    with mock.patch("google.api_core.gapic_v1.method.wrap_method") as wrapper_fn:
+        client = SubscriberClient(
+            credentials=ga_credentials.AnonymousCredentials(),
+            transport="rest",
+        )
 
-    # send a request that will satisfy transcoding
-    request_init = {"subscription": "projects/sample1/subscriptions/sample2"}
-    request = request_type(**request_init)
+        # Should wrap all calls on client creation
+        assert wrapper_fn.call_count > 0
+        wrapper_fn.reset_mock()
 
-    # Mock the http request call within the method and fake a response.
-    with mock.patch.object(type(client.transport._session), "request") as req:
-        # Designate an appropriate value for the returned response.
-        return_value = None
+        # Ensure method has been cached
+        assert (
+            client._transport.delete_subscription in client._transport._wrapped_methods
+        )
 
-        # Wrap the value into a proper Response obj
-        response_value = Response()
-        response_value.status_code = 200
-        json_return_value = ""
+        # Replace cached wrapped function with mock
+        mock_rpc = mock.Mock()
+        mock_rpc.return_value.name = (
+            "foo"  # operation_request.operation in compute client(s) expect a string.
+        )
+        client._transport._wrapped_methods[
+            client._transport.delete_subscription
+        ] = mock_rpc
 
-        response_value._content = json_return_value.encode("UTF-8")
-        req.return_value = response_value
-        response = client.delete_subscription(request)
+        request = {}
+        client.delete_subscription(request)
 
-    # Establish that the response is the type that we expect.
-    assert response is None
+        # Establish that the underlying gRPC stub method was called.
+        assert mock_rpc.call_count == 1
+
+        client.delete_subscription(request)
+
+        # Establish that a new wrapper was not created for this call
+        assert wrapper_fn.call_count == 0
+        assert mock_rpc.call_count == 2
 
 
 def test_delete_subscription_rest_required_fields(
@@ -7229,6 +7550,7 @@ def test_delete_subscription_rest_required_fields(
 
             response_value._content = json_return_value.encode("UTF-8")
             req.return_value = response_value
+            req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
 
             response = client.delete_subscription(request)
 
@@ -7244,79 +7566,6 @@ def test_delete_subscription_rest_unset_required_fields():
 
     unset_fields = transport.delete_subscription._get_unset_required_fields({})
     assert set(unset_fields) == (set(()) & set(("subscription",)))
-
-
-@pytest.mark.parametrize("null_interceptor", [True, False])
-def test_delete_subscription_rest_interceptors(null_interceptor):
-    transport = transports.SubscriberRestTransport(
-        credentials=ga_credentials.AnonymousCredentials(),
-        interceptor=None
-        if null_interceptor
-        else transports.SubscriberRestInterceptor(),
-    )
-    client = SubscriberClient(transport=transport)
-    with mock.patch.object(
-        type(client.transport._session), "request"
-    ) as req, mock.patch.object(
-        path_template, "transcode"
-    ) as transcode, mock.patch.object(
-        transports.SubscriberRestInterceptor, "pre_delete_subscription"
-    ) as pre:
-        pre.assert_not_called()
-        pb_message = pubsub.DeleteSubscriptionRequest.pb(
-            pubsub.DeleteSubscriptionRequest()
-        )
-        transcode.return_value = {
-            "method": "post",
-            "uri": "my_uri",
-            "body": pb_message,
-            "query_params": pb_message,
-        }
-
-        req.return_value = Response()
-        req.return_value.status_code = 200
-        req.return_value.request = PreparedRequest()
-
-        request = pubsub.DeleteSubscriptionRequest()
-        metadata = [
-            ("key", "val"),
-            ("cephalopod", "squid"),
-        ]
-        pre.return_value = request, metadata
-
-        client.delete_subscription(
-            request,
-            metadata=[
-                ("key", "val"),
-                ("cephalopod", "squid"),
-            ],
-        )
-
-        pre.assert_called_once()
-
-
-def test_delete_subscription_rest_bad_request(
-    transport: str = "rest", request_type=pubsub.DeleteSubscriptionRequest
-):
-    client = SubscriberClient(
-        credentials=ga_credentials.AnonymousCredentials(),
-        transport=transport,
-    )
-
-    # send a request that will satisfy transcoding
-    request_init = {"subscription": "projects/sample1/subscriptions/sample2"}
-    request = request_type(**request_init)
-
-    # Mock the http request call within the method and fake a BadRequest error.
-    with mock.patch.object(Session, "request") as req, pytest.raises(
-        core_exceptions.BadRequest
-    ):
-        # Wrap the value into a proper Response obj
-        response_value = Response()
-        response_value.status_code = 400
-        response_value.request = Request()
-        req.return_value = response_value
-        client.delete_subscription(request)
 
 
 def test_delete_subscription_rest_flattened():
@@ -7345,6 +7594,7 @@ def test_delete_subscription_rest_flattened():
         json_return_value = ""
         response_value._content = json_return_value.encode("UTF-8")
         req.return_value = response_value
+        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
 
         client.delete_subscription(**mock_args)
 
@@ -7373,45 +7623,44 @@ def test_delete_subscription_rest_flattened_error(transport: str = "rest"):
         )
 
 
-def test_delete_subscription_rest_error():
-    client = SubscriberClient(
-        credentials=ga_credentials.AnonymousCredentials(), transport="rest"
-    )
+def test_modify_ack_deadline_rest_use_cached_wrapped_rpc():
+    # Clients should use _prep_wrapped_messages to create cached wrapped rpcs,
+    # instead of constructing them on each call
+    with mock.patch("google.api_core.gapic_v1.method.wrap_method") as wrapper_fn:
+        client = SubscriberClient(
+            credentials=ga_credentials.AnonymousCredentials(),
+            transport="rest",
+        )
 
+        # Should wrap all calls on client creation
+        assert wrapper_fn.call_count > 0
+        wrapper_fn.reset_mock()
 
-@pytest.mark.parametrize(
-    "request_type",
-    [
-        pubsub.ModifyAckDeadlineRequest,
-        dict,
-    ],
-)
-def test_modify_ack_deadline_rest(request_type):
-    client = SubscriberClient(
-        credentials=ga_credentials.AnonymousCredentials(),
-        transport="rest",
-    )
+        # Ensure method has been cached
+        assert (
+            client._transport.modify_ack_deadline in client._transport._wrapped_methods
+        )
 
-    # send a request that will satisfy transcoding
-    request_init = {"subscription": "projects/sample1/subscriptions/sample2"}
-    request = request_type(**request_init)
+        # Replace cached wrapped function with mock
+        mock_rpc = mock.Mock()
+        mock_rpc.return_value.name = (
+            "foo"  # operation_request.operation in compute client(s) expect a string.
+        )
+        client._transport._wrapped_methods[
+            client._transport.modify_ack_deadline
+        ] = mock_rpc
 
-    # Mock the http request call within the method and fake a response.
-    with mock.patch.object(type(client.transport._session), "request") as req:
-        # Designate an appropriate value for the returned response.
-        return_value = None
+        request = {}
+        client.modify_ack_deadline(request)
 
-        # Wrap the value into a proper Response obj
-        response_value = Response()
-        response_value.status_code = 200
-        json_return_value = ""
+        # Establish that the underlying gRPC stub method was called.
+        assert mock_rpc.call_count == 1
 
-        response_value._content = json_return_value.encode("UTF-8")
-        req.return_value = response_value
-        response = client.modify_ack_deadline(request)
+        client.modify_ack_deadline(request)
 
-    # Establish that the response is the type that we expect.
-    assert response is None
+        # Establish that a new wrapper was not created for this call
+        assert wrapper_fn.call_count == 0
+        assert mock_rpc.call_count == 2
 
 
 def test_modify_ack_deadline_rest_required_fields(
@@ -7486,6 +7735,7 @@ def test_modify_ack_deadline_rest_required_fields(
 
             response_value._content = json_return_value.encode("UTF-8")
             req.return_value = response_value
+            req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
 
             response = client.modify_ack_deadline(request)
 
@@ -7510,79 +7760,6 @@ def test_modify_ack_deadline_rest_unset_required_fields():
             )
         )
     )
-
-
-@pytest.mark.parametrize("null_interceptor", [True, False])
-def test_modify_ack_deadline_rest_interceptors(null_interceptor):
-    transport = transports.SubscriberRestTransport(
-        credentials=ga_credentials.AnonymousCredentials(),
-        interceptor=None
-        if null_interceptor
-        else transports.SubscriberRestInterceptor(),
-    )
-    client = SubscriberClient(transport=transport)
-    with mock.patch.object(
-        type(client.transport._session), "request"
-    ) as req, mock.patch.object(
-        path_template, "transcode"
-    ) as transcode, mock.patch.object(
-        transports.SubscriberRestInterceptor, "pre_modify_ack_deadline"
-    ) as pre:
-        pre.assert_not_called()
-        pb_message = pubsub.ModifyAckDeadlineRequest.pb(
-            pubsub.ModifyAckDeadlineRequest()
-        )
-        transcode.return_value = {
-            "method": "post",
-            "uri": "my_uri",
-            "body": pb_message,
-            "query_params": pb_message,
-        }
-
-        req.return_value = Response()
-        req.return_value.status_code = 200
-        req.return_value.request = PreparedRequest()
-
-        request = pubsub.ModifyAckDeadlineRequest()
-        metadata = [
-            ("key", "val"),
-            ("cephalopod", "squid"),
-        ]
-        pre.return_value = request, metadata
-
-        client.modify_ack_deadline(
-            request,
-            metadata=[
-                ("key", "val"),
-                ("cephalopod", "squid"),
-            ],
-        )
-
-        pre.assert_called_once()
-
-
-def test_modify_ack_deadline_rest_bad_request(
-    transport: str = "rest", request_type=pubsub.ModifyAckDeadlineRequest
-):
-    client = SubscriberClient(
-        credentials=ga_credentials.AnonymousCredentials(),
-        transport=transport,
-    )
-
-    # send a request that will satisfy transcoding
-    request_init = {"subscription": "projects/sample1/subscriptions/sample2"}
-    request = request_type(**request_init)
-
-    # Mock the http request call within the method and fake a BadRequest error.
-    with mock.patch.object(Session, "request") as req, pytest.raises(
-        core_exceptions.BadRequest
-    ):
-        # Wrap the value into a proper Response obj
-        response_value = Response()
-        response_value.status_code = 400
-        response_value.request = Request()
-        req.return_value = response_value
-        client.modify_ack_deadline(request)
 
 
 def test_modify_ack_deadline_rest_flattened():
@@ -7613,6 +7790,7 @@ def test_modify_ack_deadline_rest_flattened():
         json_return_value = ""
         response_value._content = json_return_value.encode("UTF-8")
         req.return_value = response_value
+        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
 
         client.modify_ack_deadline(**mock_args)
 
@@ -7644,45 +7822,40 @@ def test_modify_ack_deadline_rest_flattened_error(transport: str = "rest"):
         )
 
 
-def test_modify_ack_deadline_rest_error():
-    client = SubscriberClient(
-        credentials=ga_credentials.AnonymousCredentials(), transport="rest"
-    )
+def test_acknowledge_rest_use_cached_wrapped_rpc():
+    # Clients should use _prep_wrapped_messages to create cached wrapped rpcs,
+    # instead of constructing them on each call
+    with mock.patch("google.api_core.gapic_v1.method.wrap_method") as wrapper_fn:
+        client = SubscriberClient(
+            credentials=ga_credentials.AnonymousCredentials(),
+            transport="rest",
+        )
 
+        # Should wrap all calls on client creation
+        assert wrapper_fn.call_count > 0
+        wrapper_fn.reset_mock()
 
-@pytest.mark.parametrize(
-    "request_type",
-    [
-        pubsub.AcknowledgeRequest,
-        dict,
-    ],
-)
-def test_acknowledge_rest(request_type):
-    client = SubscriberClient(
-        credentials=ga_credentials.AnonymousCredentials(),
-        transport="rest",
-    )
+        # Ensure method has been cached
+        assert client._transport.acknowledge in client._transport._wrapped_methods
 
-    # send a request that will satisfy transcoding
-    request_init = {"subscription": "projects/sample1/subscriptions/sample2"}
-    request = request_type(**request_init)
+        # Replace cached wrapped function with mock
+        mock_rpc = mock.Mock()
+        mock_rpc.return_value.name = (
+            "foo"  # operation_request.operation in compute client(s) expect a string.
+        )
+        client._transport._wrapped_methods[client._transport.acknowledge] = mock_rpc
 
-    # Mock the http request call within the method and fake a response.
-    with mock.patch.object(type(client.transport._session), "request") as req:
-        # Designate an appropriate value for the returned response.
-        return_value = None
+        request = {}
+        client.acknowledge(request)
 
-        # Wrap the value into a proper Response obj
-        response_value = Response()
-        response_value.status_code = 200
-        json_return_value = ""
+        # Establish that the underlying gRPC stub method was called.
+        assert mock_rpc.call_count == 1
 
-        response_value._content = json_return_value.encode("UTF-8")
-        req.return_value = response_value
-        response = client.acknowledge(request)
+        client.acknowledge(request)
 
-    # Establish that the response is the type that we expect.
-    assert response is None
+        # Establish that a new wrapper was not created for this call
+        assert wrapper_fn.call_count == 0
+        assert mock_rpc.call_count == 2
 
 
 def test_acknowledge_rest_required_fields(request_type=pubsub.AcknowledgeRequest):
@@ -7751,6 +7924,7 @@ def test_acknowledge_rest_required_fields(request_type=pubsub.AcknowledgeRequest
 
             response_value._content = json_return_value.encode("UTF-8")
             req.return_value = response_value
+            req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
 
             response = client.acknowledge(request)
 
@@ -7774,77 +7948,6 @@ def test_acknowledge_rest_unset_required_fields():
             )
         )
     )
-
-
-@pytest.mark.parametrize("null_interceptor", [True, False])
-def test_acknowledge_rest_interceptors(null_interceptor):
-    transport = transports.SubscriberRestTransport(
-        credentials=ga_credentials.AnonymousCredentials(),
-        interceptor=None
-        if null_interceptor
-        else transports.SubscriberRestInterceptor(),
-    )
-    client = SubscriberClient(transport=transport)
-    with mock.patch.object(
-        type(client.transport._session), "request"
-    ) as req, mock.patch.object(
-        path_template, "transcode"
-    ) as transcode, mock.patch.object(
-        transports.SubscriberRestInterceptor, "pre_acknowledge"
-    ) as pre:
-        pre.assert_not_called()
-        pb_message = pubsub.AcknowledgeRequest.pb(pubsub.AcknowledgeRequest())
-        transcode.return_value = {
-            "method": "post",
-            "uri": "my_uri",
-            "body": pb_message,
-            "query_params": pb_message,
-        }
-
-        req.return_value = Response()
-        req.return_value.status_code = 200
-        req.return_value.request = PreparedRequest()
-
-        request = pubsub.AcknowledgeRequest()
-        metadata = [
-            ("key", "val"),
-            ("cephalopod", "squid"),
-        ]
-        pre.return_value = request, metadata
-
-        client.acknowledge(
-            request,
-            metadata=[
-                ("key", "val"),
-                ("cephalopod", "squid"),
-            ],
-        )
-
-        pre.assert_called_once()
-
-
-def test_acknowledge_rest_bad_request(
-    transport: str = "rest", request_type=pubsub.AcknowledgeRequest
-):
-    client = SubscriberClient(
-        credentials=ga_credentials.AnonymousCredentials(),
-        transport=transport,
-    )
-
-    # send a request that will satisfy transcoding
-    request_init = {"subscription": "projects/sample1/subscriptions/sample2"}
-    request = request_type(**request_init)
-
-    # Mock the http request call within the method and fake a BadRequest error.
-    with mock.patch.object(Session, "request") as req, pytest.raises(
-        core_exceptions.BadRequest
-    ):
-        # Wrap the value into a proper Response obj
-        response_value = Response()
-        response_value.status_code = 400
-        response_value.request = Request()
-        req.return_value = response_value
-        client.acknowledge(request)
 
 
 def test_acknowledge_rest_flattened():
@@ -7874,6 +7977,7 @@ def test_acknowledge_rest_flattened():
         json_return_value = ""
         response_value._content = json_return_value.encode("UTF-8")
         req.return_value = response_value
+        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
 
         client.acknowledge(**mock_args)
 
@@ -7904,47 +8008,40 @@ def test_acknowledge_rest_flattened_error(transport: str = "rest"):
         )
 
 
-def test_acknowledge_rest_error():
-    client = SubscriberClient(
-        credentials=ga_credentials.AnonymousCredentials(), transport="rest"
-    )
+def test_pull_rest_use_cached_wrapped_rpc():
+    # Clients should use _prep_wrapped_messages to create cached wrapped rpcs,
+    # instead of constructing them on each call
+    with mock.patch("google.api_core.gapic_v1.method.wrap_method") as wrapper_fn:
+        client = SubscriberClient(
+            credentials=ga_credentials.AnonymousCredentials(),
+            transport="rest",
+        )
 
+        # Should wrap all calls on client creation
+        assert wrapper_fn.call_count > 0
+        wrapper_fn.reset_mock()
 
-@pytest.mark.parametrize(
-    "request_type",
-    [
-        pubsub.PullRequest,
-        dict,
-    ],
-)
-def test_pull_rest(request_type):
-    client = SubscriberClient(
-        credentials=ga_credentials.AnonymousCredentials(),
-        transport="rest",
-    )
+        # Ensure method has been cached
+        assert client._transport.pull in client._transport._wrapped_methods
 
-    # send a request that will satisfy transcoding
-    request_init = {"subscription": "projects/sample1/subscriptions/sample2"}
-    request = request_type(**request_init)
+        # Replace cached wrapped function with mock
+        mock_rpc = mock.Mock()
+        mock_rpc.return_value.name = (
+            "foo"  # operation_request.operation in compute client(s) expect a string.
+        )
+        client._transport._wrapped_methods[client._transport.pull] = mock_rpc
 
-    # Mock the http request call within the method and fake a response.
-    with mock.patch.object(type(client.transport._session), "request") as req:
-        # Designate an appropriate value for the returned response.
-        return_value = pubsub.PullResponse()
+        request = {}
+        client.pull(request)
 
-        # Wrap the value into a proper Response obj
-        response_value = Response()
-        response_value.status_code = 200
-        # Convert return value to protobuf type
-        return_value = pubsub.PullResponse.pb(return_value)
-        json_return_value = json_format.MessageToJson(return_value)
+        # Establish that the underlying gRPC stub method was called.
+        assert mock_rpc.call_count == 1
 
-        response_value._content = json_return_value.encode("UTF-8")
-        req.return_value = response_value
-        response = client.pull(request)
+        client.pull(request)
 
-    # Establish that the response is the type that we expect.
-    assert isinstance(response, pubsub.PullResponse)
+        # Establish that a new wrapper was not created for this call
+        assert wrapper_fn.call_count == 0
+        assert mock_rpc.call_count == 2
 
 
 def test_pull_rest_required_fields(request_type=pubsub.PullRequest):
@@ -8016,6 +8113,7 @@ def test_pull_rest_required_fields(request_type=pubsub.PullRequest):
 
             response_value._content = json_return_value.encode("UTF-8")
             req.return_value = response_value
+            req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
 
             response = client.pull(request)
 
@@ -8039,83 +8137,6 @@ def test_pull_rest_unset_required_fields():
             )
         )
     )
-
-
-@pytest.mark.parametrize("null_interceptor", [True, False])
-def test_pull_rest_interceptors(null_interceptor):
-    transport = transports.SubscriberRestTransport(
-        credentials=ga_credentials.AnonymousCredentials(),
-        interceptor=None
-        if null_interceptor
-        else transports.SubscriberRestInterceptor(),
-    )
-    client = SubscriberClient(transport=transport)
-    with mock.patch.object(
-        type(client.transport._session), "request"
-    ) as req, mock.patch.object(
-        path_template, "transcode"
-    ) as transcode, mock.patch.object(
-        transports.SubscriberRestInterceptor, "post_pull"
-    ) as post, mock.patch.object(
-        transports.SubscriberRestInterceptor, "pre_pull"
-    ) as pre:
-        pre.assert_not_called()
-        post.assert_not_called()
-        pb_message = pubsub.PullRequest.pb(pubsub.PullRequest())
-        transcode.return_value = {
-            "method": "post",
-            "uri": "my_uri",
-            "body": pb_message,
-            "query_params": pb_message,
-        }
-
-        req.return_value = Response()
-        req.return_value.status_code = 200
-        req.return_value.request = PreparedRequest()
-        req.return_value._content = pubsub.PullResponse.to_json(pubsub.PullResponse())
-
-        request = pubsub.PullRequest()
-        metadata = [
-            ("key", "val"),
-            ("cephalopod", "squid"),
-        ]
-        pre.return_value = request, metadata
-        post.return_value = pubsub.PullResponse()
-
-        client.pull(
-            request,
-            metadata=[
-                ("key", "val"),
-                ("cephalopod", "squid"),
-            ],
-        )
-
-        pre.assert_called_once()
-        post.assert_called_once()
-
-
-def test_pull_rest_bad_request(
-    transport: str = "rest", request_type=pubsub.PullRequest
-):
-    client = SubscriberClient(
-        credentials=ga_credentials.AnonymousCredentials(),
-        transport=transport,
-    )
-
-    # send a request that will satisfy transcoding
-    request_init = {"subscription": "projects/sample1/subscriptions/sample2"}
-    request = request_type(**request_init)
-
-    # Mock the http request call within the method and fake a BadRequest error.
-    with mock.patch.object(Session, "request") as req, pytest.raises(
-        core_exceptions.BadRequest
-    ):
-        # Wrap the value into a proper Response obj
-        response_value = Response()
-        response_value.status_code = 400
-        response_value.request = Request()
-        req.return_value = response_value
-        client.pull(request)
 
 
 def test_pull_rest_flattened():
@@ -8148,6 +8169,7 @@ def test_pull_rest_flattened():
         json_return_value = json_format.MessageToJson(return_value)
         response_value._content = json_return_value.encode("UTF-8")
         req.return_value = response_value
+        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
 
         client.pull(**mock_args)
 
@@ -8179,12 +8201,6 @@ def test_pull_rest_flattened_error(transport: str = "rest"):
         )
 
 
-def test_pull_rest_error():
-    client = SubscriberClient(
-        credentials=ga_credentials.AnonymousCredentials(), transport="rest"
-    )
-
-
 def test_streaming_pull_rest_no_http_options():
     client = SubscriberClient(
         credentials=ga_credentials.AnonymousCredentials(),
@@ -8196,39 +8212,44 @@ def test_streaming_pull_rest_no_http_options():
         client.streaming_pull(requests)
 
 
-@pytest.mark.parametrize(
-    "request_type",
-    [
-        pubsub.ModifyPushConfigRequest,
-        dict,
-    ],
-)
-def test_modify_push_config_rest(request_type):
-    client = SubscriberClient(
-        credentials=ga_credentials.AnonymousCredentials(),
-        transport="rest",
-    )
+def test_modify_push_config_rest_use_cached_wrapped_rpc():
+    # Clients should use _prep_wrapped_messages to create cached wrapped rpcs,
+    # instead of constructing them on each call
+    with mock.patch("google.api_core.gapic_v1.method.wrap_method") as wrapper_fn:
+        client = SubscriberClient(
+            credentials=ga_credentials.AnonymousCredentials(),
+            transport="rest",
+        )
 
-    # send a request that will satisfy transcoding
-    request_init = {"subscription": "projects/sample1/subscriptions/sample2"}
-    request = request_type(**request_init)
+        # Should wrap all calls on client creation
+        assert wrapper_fn.call_count > 0
+        wrapper_fn.reset_mock()
 
-    # Mock the http request call within the method and fake a response.
-    with mock.patch.object(type(client.transport._session), "request") as req:
-        # Designate an appropriate value for the returned response.
-        return_value = None
+        # Ensure method has been cached
+        assert (
+            client._transport.modify_push_config in client._transport._wrapped_methods
+        )
 
-        # Wrap the value into a proper Response obj
-        response_value = Response()
-        response_value.status_code = 200
-        json_return_value = ""
+        # Replace cached wrapped function with mock
+        mock_rpc = mock.Mock()
+        mock_rpc.return_value.name = (
+            "foo"  # operation_request.operation in compute client(s) expect a string.
+        )
+        client._transport._wrapped_methods[
+            client._transport.modify_push_config
+        ] = mock_rpc
 
-        response_value._content = json_return_value.encode("UTF-8")
-        req.return_value = response_value
-        response = client.modify_push_config(request)
+        request = {}
+        client.modify_push_config(request)
 
-    # Establish that the response is the type that we expect.
-    assert response is None
+        # Establish that the underlying gRPC stub method was called.
+        assert mock_rpc.call_count == 1
+
+        client.modify_push_config(request)
+
+        # Establish that a new wrapper was not created for this call
+        assert wrapper_fn.call_count == 0
+        assert mock_rpc.call_count == 2
 
 
 def test_modify_push_config_rest_required_fields(
@@ -8295,6 +8316,7 @@ def test_modify_push_config_rest_required_fields(
 
             response_value._content = json_return_value.encode("UTF-8")
             req.return_value = response_value
+            req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
 
             response = client.modify_push_config(request)
 
@@ -8318,77 +8340,6 @@ def test_modify_push_config_rest_unset_required_fields():
             )
         )
     )
-
-
-@pytest.mark.parametrize("null_interceptor", [True, False])
-def test_modify_push_config_rest_interceptors(null_interceptor):
-    transport = transports.SubscriberRestTransport(
-        credentials=ga_credentials.AnonymousCredentials(),
-        interceptor=None
-        if null_interceptor
-        else transports.SubscriberRestInterceptor(),
-    )
-    client = SubscriberClient(transport=transport)
-    with mock.patch.object(
-        type(client.transport._session), "request"
-    ) as req, mock.patch.object(
-        path_template, "transcode"
-    ) as transcode, mock.patch.object(
-        transports.SubscriberRestInterceptor, "pre_modify_push_config"
-    ) as pre:
-        pre.assert_not_called()
-        pb_message = pubsub.ModifyPushConfigRequest.pb(pubsub.ModifyPushConfigRequest())
-        transcode.return_value = {
-            "method": "post",
-            "uri": "my_uri",
-            "body": pb_message,
-            "query_params": pb_message,
-        }
-
-        req.return_value = Response()
-        req.return_value.status_code = 200
-        req.return_value.request = PreparedRequest()
-
-        request = pubsub.ModifyPushConfigRequest()
-        metadata = [
-            ("key", "val"),
-            ("cephalopod", "squid"),
-        ]
-        pre.return_value = request, metadata
-
-        client.modify_push_config(
-            request,
-            metadata=[
-                ("key", "val"),
-                ("cephalopod", "squid"),
-            ],
-        )
-
-        pre.assert_called_once()
-
-
-def test_modify_push_config_rest_bad_request(
-    transport: str = "rest", request_type=pubsub.ModifyPushConfigRequest
-):
-    client = SubscriberClient(
-        credentials=ga_credentials.AnonymousCredentials(),
-        transport=transport,
-    )
-
-    # send a request that will satisfy transcoding
-    request_init = {"subscription": "projects/sample1/subscriptions/sample2"}
-    request = request_type(**request_init)
-
-    # Mock the http request call within the method and fake a BadRequest error.
-    with mock.patch.object(Session, "request") as req, pytest.raises(
-        core_exceptions.BadRequest
-    ):
-        # Wrap the value into a proper Response obj
-        response_value = Response()
-        response_value.status_code = 400
-        response_value.request = Request()
-        req.return_value = response_value
-        client.modify_push_config(request)
 
 
 def test_modify_push_config_rest_flattened():
@@ -8418,6 +8369,7 @@ def test_modify_push_config_rest_flattened():
         json_return_value = ""
         response_value._content = json_return_value.encode("UTF-8")
         req.return_value = response_value
+        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
 
         client.modify_push_config(**mock_args)
 
@@ -8448,52 +8400,40 @@ def test_modify_push_config_rest_flattened_error(transport: str = "rest"):
         )
 
 
-def test_modify_push_config_rest_error():
-    client = SubscriberClient(
-        credentials=ga_credentials.AnonymousCredentials(), transport="rest"
-    )
-
-
-@pytest.mark.parametrize(
-    "request_type",
-    [
-        pubsub.GetSnapshotRequest,
-        dict,
-    ],
-)
-def test_get_snapshot_rest(request_type):
-    client = SubscriberClient(
-        credentials=ga_credentials.AnonymousCredentials(),
-        transport="rest",
-    )
-
-    # send a request that will satisfy transcoding
-    request_init = {"snapshot": "projects/sample1/snapshots/sample2"}
-    request = request_type(**request_init)
-
-    # Mock the http request call within the method and fake a response.
-    with mock.patch.object(type(client.transport._session), "request") as req:
-        # Designate an appropriate value for the returned response.
-        return_value = pubsub.Snapshot(
-            name="name_value",
-            topic="topic_value",
+def test_get_snapshot_rest_use_cached_wrapped_rpc():
+    # Clients should use _prep_wrapped_messages to create cached wrapped rpcs,
+    # instead of constructing them on each call
+    with mock.patch("google.api_core.gapic_v1.method.wrap_method") as wrapper_fn:
+        client = SubscriberClient(
+            credentials=ga_credentials.AnonymousCredentials(),
+            transport="rest",
         )
 
-        # Wrap the value into a proper Response obj
-        response_value = Response()
-        response_value.status_code = 200
-        # Convert return value to protobuf type
-        return_value = pubsub.Snapshot.pb(return_value)
-        json_return_value = json_format.MessageToJson(return_value)
+        # Should wrap all calls on client creation
+        assert wrapper_fn.call_count > 0
+        wrapper_fn.reset_mock()
 
-        response_value._content = json_return_value.encode("UTF-8")
-        req.return_value = response_value
-        response = client.get_snapshot(request)
+        # Ensure method has been cached
+        assert client._transport.get_snapshot in client._transport._wrapped_methods
 
-    # Establish that the response is the type that we expect.
-    assert isinstance(response, pubsub.Snapshot)
-    assert response.name == "name_value"
-    assert response.topic == "topic_value"
+        # Replace cached wrapped function with mock
+        mock_rpc = mock.Mock()
+        mock_rpc.return_value.name = (
+            "foo"  # operation_request.operation in compute client(s) expect a string.
+        )
+        client._transport._wrapped_methods[client._transport.get_snapshot] = mock_rpc
+
+        request = {}
+        client.get_snapshot(request)
+
+        # Establish that the underlying gRPC stub method was called.
+        assert mock_rpc.call_count == 1
+
+        client.get_snapshot(request)
+
+        # Establish that a new wrapper was not created for this call
+        assert wrapper_fn.call_count == 0
+        assert mock_rpc.call_count == 2
 
 
 def test_get_snapshot_rest_required_fields(request_type=pubsub.GetSnapshotRequest):
@@ -8560,6 +8500,7 @@ def test_get_snapshot_rest_required_fields(request_type=pubsub.GetSnapshotReques
 
             response_value._content = json_return_value.encode("UTF-8")
             req.return_value = response_value
+            req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
 
             response = client.get_snapshot(request)
 
@@ -8575,83 +8516,6 @@ def test_get_snapshot_rest_unset_required_fields():
 
     unset_fields = transport.get_snapshot._get_unset_required_fields({})
     assert set(unset_fields) == (set(()) & set(("snapshot",)))
-
-
-@pytest.mark.parametrize("null_interceptor", [True, False])
-def test_get_snapshot_rest_interceptors(null_interceptor):
-    transport = transports.SubscriberRestTransport(
-        credentials=ga_credentials.AnonymousCredentials(),
-        interceptor=None
-        if null_interceptor
-        else transports.SubscriberRestInterceptor(),
-    )
-    client = SubscriberClient(transport=transport)
-    with mock.patch.object(
-        type(client.transport._session), "request"
-    ) as req, mock.patch.object(
-        path_template, "transcode"
-    ) as transcode, mock.patch.object(
-        transports.SubscriberRestInterceptor, "post_get_snapshot"
-    ) as post, mock.patch.object(
-        transports.SubscriberRestInterceptor, "pre_get_snapshot"
-    ) as pre:
-        pre.assert_not_called()
-        post.assert_not_called()
-        pb_message = pubsub.GetSnapshotRequest.pb(pubsub.GetSnapshotRequest())
-        transcode.return_value = {
-            "method": "post",
-            "uri": "my_uri",
-            "body": pb_message,
-            "query_params": pb_message,
-        }
-
-        req.return_value = Response()
-        req.return_value.status_code = 200
-        req.return_value.request = PreparedRequest()
-        req.return_value._content = pubsub.Snapshot.to_json(pubsub.Snapshot())
-
-        request = pubsub.GetSnapshotRequest()
-        metadata = [
-            ("key", "val"),
-            ("cephalopod", "squid"),
-        ]
-        pre.return_value = request, metadata
-        post.return_value = pubsub.Snapshot()
-
-        client.get_snapshot(
-            request,
-            metadata=[
-                ("key", "val"),
-                ("cephalopod", "squid"),
-            ],
-        )
-
-        pre.assert_called_once()
-        post.assert_called_once()
-
-
-def test_get_snapshot_rest_bad_request(
-    transport: str = "rest", request_type=pubsub.GetSnapshotRequest
-):
-    client = SubscriberClient(
-        credentials=ga_credentials.AnonymousCredentials(),
-        transport=transport,
-    )
-
-    # send a request that will satisfy transcoding
-    request_init = {"snapshot": "projects/sample1/snapshots/sample2"}
-    request = request_type(**request_init)
-
-    # Mock the http request call within the method and fake a BadRequest error.
-    with mock.patch.object(Session, "request") as req, pytest.raises(
-        core_exceptions.BadRequest
-    ):
-        # Wrap the value into a proper Response obj
-        response_value = Response()
-        response_value.status_code = 400
-        response_value.request = Request()
-        req.return_value = response_value
-        client.get_snapshot(request)
 
 
 def test_get_snapshot_rest_flattened():
@@ -8682,6 +8546,7 @@ def test_get_snapshot_rest_flattened():
         json_return_value = json_format.MessageToJson(return_value)
         response_value._content = json_return_value.encode("UTF-8")
         req.return_value = response_value
+        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
 
         client.get_snapshot(**mock_args)
 
@@ -8709,50 +8574,40 @@ def test_get_snapshot_rest_flattened_error(transport: str = "rest"):
         )
 
 
-def test_get_snapshot_rest_error():
-    client = SubscriberClient(
-        credentials=ga_credentials.AnonymousCredentials(), transport="rest"
-    )
-
-
-@pytest.mark.parametrize(
-    "request_type",
-    [
-        pubsub.ListSnapshotsRequest,
-        dict,
-    ],
-)
-def test_list_snapshots_rest(request_type):
-    client = SubscriberClient(
-        credentials=ga_credentials.AnonymousCredentials(),
-        transport="rest",
-    )
-
-    # send a request that will satisfy transcoding
-    request_init = {"project": "projects/sample1"}
-    request = request_type(**request_init)
-
-    # Mock the http request call within the method and fake a response.
-    with mock.patch.object(type(client.transport._session), "request") as req:
-        # Designate an appropriate value for the returned response.
-        return_value = pubsub.ListSnapshotsResponse(
-            next_page_token="next_page_token_value",
+def test_list_snapshots_rest_use_cached_wrapped_rpc():
+    # Clients should use _prep_wrapped_messages to create cached wrapped rpcs,
+    # instead of constructing them on each call
+    with mock.patch("google.api_core.gapic_v1.method.wrap_method") as wrapper_fn:
+        client = SubscriberClient(
+            credentials=ga_credentials.AnonymousCredentials(),
+            transport="rest",
         )
 
-        # Wrap the value into a proper Response obj
-        response_value = Response()
-        response_value.status_code = 200
-        # Convert return value to protobuf type
-        return_value = pubsub.ListSnapshotsResponse.pb(return_value)
-        json_return_value = json_format.MessageToJson(return_value)
+        # Should wrap all calls on client creation
+        assert wrapper_fn.call_count > 0
+        wrapper_fn.reset_mock()
 
-        response_value._content = json_return_value.encode("UTF-8")
-        req.return_value = response_value
-        response = client.list_snapshots(request)
+        # Ensure method has been cached
+        assert client._transport.list_snapshots in client._transport._wrapped_methods
 
-    # Establish that the response is the type that we expect.
-    assert isinstance(response, pagers.ListSnapshotsPager)
-    assert response.next_page_token == "next_page_token_value"
+        # Replace cached wrapped function with mock
+        mock_rpc = mock.Mock()
+        mock_rpc.return_value.name = (
+            "foo"  # operation_request.operation in compute client(s) expect a string.
+        )
+        client._transport._wrapped_methods[client._transport.list_snapshots] = mock_rpc
+
+        request = {}
+        client.list_snapshots(request)
+
+        # Establish that the underlying gRPC stub method was called.
+        assert mock_rpc.call_count == 1
+
+        client.list_snapshots(request)
+
+        # Establish that a new wrapper was not created for this call
+        assert wrapper_fn.call_count == 0
+        assert mock_rpc.call_count == 2
 
 
 def test_list_snapshots_rest_required_fields(request_type=pubsub.ListSnapshotsRequest):
@@ -8826,6 +8681,7 @@ def test_list_snapshots_rest_required_fields(request_type=pubsub.ListSnapshotsRe
 
             response_value._content = json_return_value.encode("UTF-8")
             req.return_value = response_value
+            req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
 
             response = client.list_snapshots(request)
 
@@ -8849,85 +8705,6 @@ def test_list_snapshots_rest_unset_required_fields():
         )
         & set(("project",))
     )
-
-
-@pytest.mark.parametrize("null_interceptor", [True, False])
-def test_list_snapshots_rest_interceptors(null_interceptor):
-    transport = transports.SubscriberRestTransport(
-        credentials=ga_credentials.AnonymousCredentials(),
-        interceptor=None
-        if null_interceptor
-        else transports.SubscriberRestInterceptor(),
-    )
-    client = SubscriberClient(transport=transport)
-    with mock.patch.object(
-        type(client.transport._session), "request"
-    ) as req, mock.patch.object(
-        path_template, "transcode"
-    ) as transcode, mock.patch.object(
-        transports.SubscriberRestInterceptor, "post_list_snapshots"
-    ) as post, mock.patch.object(
-        transports.SubscriberRestInterceptor, "pre_list_snapshots"
-    ) as pre:
-        pre.assert_not_called()
-        post.assert_not_called()
-        pb_message = pubsub.ListSnapshotsRequest.pb(pubsub.ListSnapshotsRequest())
-        transcode.return_value = {
-            "method": "post",
-            "uri": "my_uri",
-            "body": pb_message,
-            "query_params": pb_message,
-        }
-
-        req.return_value = Response()
-        req.return_value.status_code = 200
-        req.return_value.request = PreparedRequest()
-        req.return_value._content = pubsub.ListSnapshotsResponse.to_json(
-            pubsub.ListSnapshotsResponse()
-        )
-
-        request = pubsub.ListSnapshotsRequest()
-        metadata = [
-            ("key", "val"),
-            ("cephalopod", "squid"),
-        ]
-        pre.return_value = request, metadata
-        post.return_value = pubsub.ListSnapshotsResponse()
-
-        client.list_snapshots(
-            request,
-            metadata=[
-                ("key", "val"),
-                ("cephalopod", "squid"),
-            ],
-        )
-
-        pre.assert_called_once()
-        post.assert_called_once()
-
-
-def test_list_snapshots_rest_bad_request(
-    transport: str = "rest", request_type=pubsub.ListSnapshotsRequest
-):
-    client = SubscriberClient(
-        credentials=ga_credentials.AnonymousCredentials(),
-        transport=transport,
-    )
-
-    # send a request that will satisfy transcoding
-    request_init = {"project": "projects/sample1"}
-    request = request_type(**request_init)
-
-    # Mock the http request call within the method and fake a BadRequest error.
-    with mock.patch.object(Session, "request") as req, pytest.raises(
-        core_exceptions.BadRequest
-    ):
-        # Wrap the value into a proper Response obj
-        response_value = Response()
-        response_value.status_code = 400
-        response_value.request = Request()
-        req.return_value = response_value
-        client.list_snapshots(request)
 
 
 def test_list_snapshots_rest_flattened():
@@ -8958,6 +8735,7 @@ def test_list_snapshots_rest_flattened():
         json_return_value = json_format.MessageToJson(return_value)
         response_value._content = json_return_value.encode("UTF-8")
         req.return_value = response_value
+        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
 
         client.list_snapshots(**mock_args)
 
@@ -9046,46 +8824,40 @@ def test_list_snapshots_rest_pager(transport: str = "rest"):
             assert page_.raw_page.next_page_token == token
 
 
-@pytest.mark.parametrize(
-    "request_type",
-    [
-        pubsub.CreateSnapshotRequest,
-        dict,
-    ],
-)
-def test_create_snapshot_rest(request_type):
-    client = SubscriberClient(
-        credentials=ga_credentials.AnonymousCredentials(),
-        transport="rest",
-    )
-
-    # send a request that will satisfy transcoding
-    request_init = {"name": "projects/sample1/snapshots/sample2"}
-    request = request_type(**request_init)
-
-    # Mock the http request call within the method and fake a response.
-    with mock.patch.object(type(client.transport._session), "request") as req:
-        # Designate an appropriate value for the returned response.
-        return_value = pubsub.Snapshot(
-            name="name_value",
-            topic="topic_value",
+def test_create_snapshot_rest_use_cached_wrapped_rpc():
+    # Clients should use _prep_wrapped_messages to create cached wrapped rpcs,
+    # instead of constructing them on each call
+    with mock.patch("google.api_core.gapic_v1.method.wrap_method") as wrapper_fn:
+        client = SubscriberClient(
+            credentials=ga_credentials.AnonymousCredentials(),
+            transport="rest",
         )
 
-        # Wrap the value into a proper Response obj
-        response_value = Response()
-        response_value.status_code = 200
-        # Convert return value to protobuf type
-        return_value = pubsub.Snapshot.pb(return_value)
-        json_return_value = json_format.MessageToJson(return_value)
+        # Should wrap all calls on client creation
+        assert wrapper_fn.call_count > 0
+        wrapper_fn.reset_mock()
 
-        response_value._content = json_return_value.encode("UTF-8")
-        req.return_value = response_value
-        response = client.create_snapshot(request)
+        # Ensure method has been cached
+        assert client._transport.create_snapshot in client._transport._wrapped_methods
 
-    # Establish that the response is the type that we expect.
-    assert isinstance(response, pubsub.Snapshot)
-    assert response.name == "name_value"
-    assert response.topic == "topic_value"
+        # Replace cached wrapped function with mock
+        mock_rpc = mock.Mock()
+        mock_rpc.return_value.name = (
+            "foo"  # operation_request.operation in compute client(s) expect a string.
+        )
+        client._transport._wrapped_methods[client._transport.create_snapshot] = mock_rpc
+
+        request = {}
+        client.create_snapshot(request)
+
+        # Establish that the underlying gRPC stub method was called.
+        assert mock_rpc.call_count == 1
+
+        client.create_snapshot(request)
+
+        # Establish that a new wrapper was not created for this call
+        assert wrapper_fn.call_count == 0
+        assert mock_rpc.call_count == 2
 
 
 def test_create_snapshot_rest_required_fields(
@@ -9159,6 +8931,7 @@ def test_create_snapshot_rest_required_fields(
 
             response_value._content = json_return_value.encode("UTF-8")
             req.return_value = response_value
+            req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
 
             response = client.create_snapshot(request)
 
@@ -9182,83 +8955,6 @@ def test_create_snapshot_rest_unset_required_fields():
             )
         )
     )
-
-
-@pytest.mark.parametrize("null_interceptor", [True, False])
-def test_create_snapshot_rest_interceptors(null_interceptor):
-    transport = transports.SubscriberRestTransport(
-        credentials=ga_credentials.AnonymousCredentials(),
-        interceptor=None
-        if null_interceptor
-        else transports.SubscriberRestInterceptor(),
-    )
-    client = SubscriberClient(transport=transport)
-    with mock.patch.object(
-        type(client.transport._session), "request"
-    ) as req, mock.patch.object(
-        path_template, "transcode"
-    ) as transcode, mock.patch.object(
-        transports.SubscriberRestInterceptor, "post_create_snapshot"
-    ) as post, mock.patch.object(
-        transports.SubscriberRestInterceptor, "pre_create_snapshot"
-    ) as pre:
-        pre.assert_not_called()
-        post.assert_not_called()
-        pb_message = pubsub.CreateSnapshotRequest.pb(pubsub.CreateSnapshotRequest())
-        transcode.return_value = {
-            "method": "post",
-            "uri": "my_uri",
-            "body": pb_message,
-            "query_params": pb_message,
-        }
-
-        req.return_value = Response()
-        req.return_value.status_code = 200
-        req.return_value.request = PreparedRequest()
-        req.return_value._content = pubsub.Snapshot.to_json(pubsub.Snapshot())
-
-        request = pubsub.CreateSnapshotRequest()
-        metadata = [
-            ("key", "val"),
-            ("cephalopod", "squid"),
-        ]
-        pre.return_value = request, metadata
-        post.return_value = pubsub.Snapshot()
-
-        client.create_snapshot(
-            request,
-            metadata=[
-                ("key", "val"),
-                ("cephalopod", "squid"),
-            ],
-        )
-
-        pre.assert_called_once()
-        post.assert_called_once()
-
-
-def test_create_snapshot_rest_bad_request(
-    transport: str = "rest", request_type=pubsub.CreateSnapshotRequest
-):
-    client = SubscriberClient(
-        credentials=ga_credentials.AnonymousCredentials(),
-        transport=transport,
-    )
-
-    # send a request that will satisfy transcoding
-    request_init = {"name": "projects/sample1/snapshots/sample2"}
-    request = request_type(**request_init)
-
-    # Mock the http request call within the method and fake a BadRequest error.
-    with mock.patch.object(Session, "request") as req, pytest.raises(
-        core_exceptions.BadRequest
-    ):
-        # Wrap the value into a proper Response obj
-        response_value = Response()
-        response_value.status_code = 400
-        response_value.request = Request()
-        req.return_value = response_value
-        client.create_snapshot(request)
 
 
 def test_create_snapshot_rest_flattened():
@@ -9290,6 +8986,7 @@ def test_create_snapshot_rest_flattened():
         json_return_value = json_format.MessageToJson(return_value)
         response_value._content = json_return_value.encode("UTF-8")
         req.return_value = response_value
+        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
 
         client.create_snapshot(**mock_args)
 
@@ -9318,52 +9015,40 @@ def test_create_snapshot_rest_flattened_error(transport: str = "rest"):
         )
 
 
-def test_create_snapshot_rest_error():
-    client = SubscriberClient(
-        credentials=ga_credentials.AnonymousCredentials(), transport="rest"
-    )
-
-
-@pytest.mark.parametrize(
-    "request_type",
-    [
-        pubsub.UpdateSnapshotRequest,
-        dict,
-    ],
-)
-def test_update_snapshot_rest(request_type):
-    client = SubscriberClient(
-        credentials=ga_credentials.AnonymousCredentials(),
-        transport="rest",
-    )
-
-    # send a request that will satisfy transcoding
-    request_init = {"snapshot": {"name": "projects/sample1/snapshots/sample2"}}
-    request = request_type(**request_init)
-
-    # Mock the http request call within the method and fake a response.
-    with mock.patch.object(type(client.transport._session), "request") as req:
-        # Designate an appropriate value for the returned response.
-        return_value = pubsub.Snapshot(
-            name="name_value",
-            topic="topic_value",
+def test_update_snapshot_rest_use_cached_wrapped_rpc():
+    # Clients should use _prep_wrapped_messages to create cached wrapped rpcs,
+    # instead of constructing them on each call
+    with mock.patch("google.api_core.gapic_v1.method.wrap_method") as wrapper_fn:
+        client = SubscriberClient(
+            credentials=ga_credentials.AnonymousCredentials(),
+            transport="rest",
         )
 
-        # Wrap the value into a proper Response obj
-        response_value = Response()
-        response_value.status_code = 200
-        # Convert return value to protobuf type
-        return_value = pubsub.Snapshot.pb(return_value)
-        json_return_value = json_format.MessageToJson(return_value)
+        # Should wrap all calls on client creation
+        assert wrapper_fn.call_count > 0
+        wrapper_fn.reset_mock()
 
-        response_value._content = json_return_value.encode("UTF-8")
-        req.return_value = response_value
-        response = client.update_snapshot(request)
+        # Ensure method has been cached
+        assert client._transport.update_snapshot in client._transport._wrapped_methods
 
-    # Establish that the response is the type that we expect.
-    assert isinstance(response, pubsub.Snapshot)
-    assert response.name == "name_value"
-    assert response.topic == "topic_value"
+        # Replace cached wrapped function with mock
+        mock_rpc = mock.Mock()
+        mock_rpc.return_value.name = (
+            "foo"  # operation_request.operation in compute client(s) expect a string.
+        )
+        client._transport._wrapped_methods[client._transport.update_snapshot] = mock_rpc
+
+        request = {}
+        client.update_snapshot(request)
+
+        # Establish that the underlying gRPC stub method was called.
+        assert mock_rpc.call_count == 1
+
+        client.update_snapshot(request)
+
+        # Establish that a new wrapper was not created for this call
+        assert wrapper_fn.call_count == 0
+        assert mock_rpc.call_count == 2
 
 
 def test_update_snapshot_rest_required_fields(
@@ -9428,6 +9113,7 @@ def test_update_snapshot_rest_required_fields(
 
             response_value._content = json_return_value.encode("UTF-8")
             req.return_value = response_value
+            req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
 
             response = client.update_snapshot(request)
 
@@ -9451,83 +9137,6 @@ def test_update_snapshot_rest_unset_required_fields():
             )
         )
     )
-
-
-@pytest.mark.parametrize("null_interceptor", [True, False])
-def test_update_snapshot_rest_interceptors(null_interceptor):
-    transport = transports.SubscriberRestTransport(
-        credentials=ga_credentials.AnonymousCredentials(),
-        interceptor=None
-        if null_interceptor
-        else transports.SubscriberRestInterceptor(),
-    )
-    client = SubscriberClient(transport=transport)
-    with mock.patch.object(
-        type(client.transport._session), "request"
-    ) as req, mock.patch.object(
-        path_template, "transcode"
-    ) as transcode, mock.patch.object(
-        transports.SubscriberRestInterceptor, "post_update_snapshot"
-    ) as post, mock.patch.object(
-        transports.SubscriberRestInterceptor, "pre_update_snapshot"
-    ) as pre:
-        pre.assert_not_called()
-        post.assert_not_called()
-        pb_message = pubsub.UpdateSnapshotRequest.pb(pubsub.UpdateSnapshotRequest())
-        transcode.return_value = {
-            "method": "post",
-            "uri": "my_uri",
-            "body": pb_message,
-            "query_params": pb_message,
-        }
-
-        req.return_value = Response()
-        req.return_value.status_code = 200
-        req.return_value.request = PreparedRequest()
-        req.return_value._content = pubsub.Snapshot.to_json(pubsub.Snapshot())
-
-        request = pubsub.UpdateSnapshotRequest()
-        metadata = [
-            ("key", "val"),
-            ("cephalopod", "squid"),
-        ]
-        pre.return_value = request, metadata
-        post.return_value = pubsub.Snapshot()
-
-        client.update_snapshot(
-            request,
-            metadata=[
-                ("key", "val"),
-                ("cephalopod", "squid"),
-            ],
-        )
-
-        pre.assert_called_once()
-        post.assert_called_once()
-
-
-def test_update_snapshot_rest_bad_request(
-    transport: str = "rest", request_type=pubsub.UpdateSnapshotRequest
-):
-    client = SubscriberClient(
-        credentials=ga_credentials.AnonymousCredentials(),
-        transport=transport,
-    )
-
-    # send a request that will satisfy transcoding
-    request_init = {"snapshot": {"name": "projects/sample1/snapshots/sample2"}}
-    request = request_type(**request_init)
-
-    # Mock the http request call within the method and fake a BadRequest error.
-    with mock.patch.object(Session, "request") as req, pytest.raises(
-        core_exceptions.BadRequest
-    ):
-        # Wrap the value into a proper Response obj
-        response_value = Response()
-        response_value.status_code = 400
-        response_value.request = Request()
-        req.return_value = response_value
-        client.update_snapshot(request)
 
 
 def test_update_snapshot_rest_flattened():
@@ -9559,6 +9168,7 @@ def test_update_snapshot_rest_flattened():
         json_return_value = json_format.MessageToJson(return_value)
         response_value._content = json_return_value.encode("UTF-8")
         req.return_value = response_value
+        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
 
         client.update_snapshot(**mock_args)
 
@@ -9588,45 +9198,40 @@ def test_update_snapshot_rest_flattened_error(transport: str = "rest"):
         )
 
 
-def test_update_snapshot_rest_error():
-    client = SubscriberClient(
-        credentials=ga_credentials.AnonymousCredentials(), transport="rest"
-    )
+def test_delete_snapshot_rest_use_cached_wrapped_rpc():
+    # Clients should use _prep_wrapped_messages to create cached wrapped rpcs,
+    # instead of constructing them on each call
+    with mock.patch("google.api_core.gapic_v1.method.wrap_method") as wrapper_fn:
+        client = SubscriberClient(
+            credentials=ga_credentials.AnonymousCredentials(),
+            transport="rest",
+        )
 
+        # Should wrap all calls on client creation
+        assert wrapper_fn.call_count > 0
+        wrapper_fn.reset_mock()
 
-@pytest.mark.parametrize(
-    "request_type",
-    [
-        pubsub.DeleteSnapshotRequest,
-        dict,
-    ],
-)
-def test_delete_snapshot_rest(request_type):
-    client = SubscriberClient(
-        credentials=ga_credentials.AnonymousCredentials(),
-        transport="rest",
-    )
+        # Ensure method has been cached
+        assert client._transport.delete_snapshot in client._transport._wrapped_methods
 
-    # send a request that will satisfy transcoding
-    request_init = {"snapshot": "projects/sample1/snapshots/sample2"}
-    request = request_type(**request_init)
+        # Replace cached wrapped function with mock
+        mock_rpc = mock.Mock()
+        mock_rpc.return_value.name = (
+            "foo"  # operation_request.operation in compute client(s) expect a string.
+        )
+        client._transport._wrapped_methods[client._transport.delete_snapshot] = mock_rpc
 
-    # Mock the http request call within the method and fake a response.
-    with mock.patch.object(type(client.transport._session), "request") as req:
-        # Designate an appropriate value for the returned response.
-        return_value = None
+        request = {}
+        client.delete_snapshot(request)
 
-        # Wrap the value into a proper Response obj
-        response_value = Response()
-        response_value.status_code = 200
-        json_return_value = ""
+        # Establish that the underlying gRPC stub method was called.
+        assert mock_rpc.call_count == 1
 
-        response_value._content = json_return_value.encode("UTF-8")
-        req.return_value = response_value
-        response = client.delete_snapshot(request)
+        client.delete_snapshot(request)
 
-    # Establish that the response is the type that we expect.
-    assert response is None
+        # Establish that a new wrapper was not created for this call
+        assert wrapper_fn.call_count == 0
+        assert mock_rpc.call_count == 2
 
 
 def test_delete_snapshot_rest_required_fields(
@@ -9692,6 +9297,7 @@ def test_delete_snapshot_rest_required_fields(
 
             response_value._content = json_return_value.encode("UTF-8")
             req.return_value = response_value
+            req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
 
             response = client.delete_snapshot(request)
 
@@ -9707,77 +9313,6 @@ def test_delete_snapshot_rest_unset_required_fields():
 
     unset_fields = transport.delete_snapshot._get_unset_required_fields({})
     assert set(unset_fields) == (set(()) & set(("snapshot",)))
-
-
-@pytest.mark.parametrize("null_interceptor", [True, False])
-def test_delete_snapshot_rest_interceptors(null_interceptor):
-    transport = transports.SubscriberRestTransport(
-        credentials=ga_credentials.AnonymousCredentials(),
-        interceptor=None
-        if null_interceptor
-        else transports.SubscriberRestInterceptor(),
-    )
-    client = SubscriberClient(transport=transport)
-    with mock.patch.object(
-        type(client.transport._session), "request"
-    ) as req, mock.patch.object(
-        path_template, "transcode"
-    ) as transcode, mock.patch.object(
-        transports.SubscriberRestInterceptor, "pre_delete_snapshot"
-    ) as pre:
-        pre.assert_not_called()
-        pb_message = pubsub.DeleteSnapshotRequest.pb(pubsub.DeleteSnapshotRequest())
-        transcode.return_value = {
-            "method": "post",
-            "uri": "my_uri",
-            "body": pb_message,
-            "query_params": pb_message,
-        }
-
-        req.return_value = Response()
-        req.return_value.status_code = 200
-        req.return_value.request = PreparedRequest()
-
-        request = pubsub.DeleteSnapshotRequest()
-        metadata = [
-            ("key", "val"),
-            ("cephalopod", "squid"),
-        ]
-        pre.return_value = request, metadata
-
-        client.delete_snapshot(
-            request,
-            metadata=[
-                ("key", "val"),
-                ("cephalopod", "squid"),
-            ],
-        )
-
-        pre.assert_called_once()
-
-
-def test_delete_snapshot_rest_bad_request(
-    transport: str = "rest", request_type=pubsub.DeleteSnapshotRequest
-):
-    client = SubscriberClient(
-        credentials=ga_credentials.AnonymousCredentials(),
-        transport=transport,
-    )
-
-    # send a request that will satisfy transcoding
-    request_init = {"snapshot": "projects/sample1/snapshots/sample2"}
-    request = request_type(**request_init)
-
-    # Mock the http request call within the method and fake a BadRequest error.
-    with mock.patch.object(Session, "request") as req, pytest.raises(
-        core_exceptions.BadRequest
-    ):
-        # Wrap the value into a proper Response obj
-        response_value = Response()
-        response_value.status_code = 400
-        response_value.request = Request()
-        req.return_value = response_value
-        client.delete_snapshot(request)
 
 
 def test_delete_snapshot_rest_flattened():
@@ -9806,6 +9341,7 @@ def test_delete_snapshot_rest_flattened():
         json_return_value = ""
         response_value._content = json_return_value.encode("UTF-8")
         req.return_value = response_value
+        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
 
         client.delete_snapshot(**mock_args)
 
@@ -9833,47 +9369,40 @@ def test_delete_snapshot_rest_flattened_error(transport: str = "rest"):
         )
 
 
-def test_delete_snapshot_rest_error():
-    client = SubscriberClient(
-        credentials=ga_credentials.AnonymousCredentials(), transport="rest"
-    )
+def test_seek_rest_use_cached_wrapped_rpc():
+    # Clients should use _prep_wrapped_messages to create cached wrapped rpcs,
+    # instead of constructing them on each call
+    with mock.patch("google.api_core.gapic_v1.method.wrap_method") as wrapper_fn:
+        client = SubscriberClient(
+            credentials=ga_credentials.AnonymousCredentials(),
+            transport="rest",
+        )
 
+        # Should wrap all calls on client creation
+        assert wrapper_fn.call_count > 0
+        wrapper_fn.reset_mock()
 
-@pytest.mark.parametrize(
-    "request_type",
-    [
-        pubsub.SeekRequest,
-        dict,
-    ],
-)
-def test_seek_rest(request_type):
-    client = SubscriberClient(
-        credentials=ga_credentials.AnonymousCredentials(),
-        transport="rest",
-    )
+        # Ensure method has been cached
+        assert client._transport.seek in client._transport._wrapped_methods
 
-    # send a request that will satisfy transcoding
-    request_init = {"subscription": "projects/sample1/subscriptions/sample2"}
-    request = request_type(**request_init)
+        # Replace cached wrapped function with mock
+        mock_rpc = mock.Mock()
+        mock_rpc.return_value.name = (
+            "foo"  # operation_request.operation in compute client(s) expect a string.
+        )
+        client._transport._wrapped_methods[client._transport.seek] = mock_rpc
 
-    # Mock the http request call within the method and fake a response.
-    with mock.patch.object(type(client.transport._session), "request") as req:
-        # Designate an appropriate value for the returned response.
-        return_value = pubsub.SeekResponse()
+        request = {}
+        client.seek(request)
 
-        # Wrap the value into a proper Response obj
-        response_value = Response()
-        response_value.status_code = 200
-        # Convert return value to protobuf type
-        return_value = pubsub.SeekResponse.pb(return_value)
-        json_return_value = json_format.MessageToJson(return_value)
+        # Establish that the underlying gRPC stub method was called.
+        assert mock_rpc.call_count == 1
 
-        response_value._content = json_return_value.encode("UTF-8")
-        req.return_value = response_value
-        response = client.seek(request)
+        client.seek(request)
 
-    # Establish that the response is the type that we expect.
-    assert isinstance(response, pubsub.SeekResponse)
+        # Establish that a new wrapper was not created for this call
+        assert wrapper_fn.call_count == 0
+        assert mock_rpc.call_count == 2
 
 
 def test_seek_rest_required_fields(request_type=pubsub.SeekRequest):
@@ -9941,6 +9470,7 @@ def test_seek_rest_required_fields(request_type=pubsub.SeekRequest):
 
             response_value._content = json_return_value.encode("UTF-8")
             req.return_value = response_value
+            req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
 
             response = client.seek(request)
 
@@ -9956,89 +9486,6 @@ def test_seek_rest_unset_required_fields():
 
     unset_fields = transport.seek._get_unset_required_fields({})
     assert set(unset_fields) == (set(()) & set(("subscription",)))
-
-
-@pytest.mark.parametrize("null_interceptor", [True, False])
-def test_seek_rest_interceptors(null_interceptor):
-    transport = transports.SubscriberRestTransport(
-        credentials=ga_credentials.AnonymousCredentials(),
-        interceptor=None
-        if null_interceptor
-        else transports.SubscriberRestInterceptor(),
-    )
-    client = SubscriberClient(transport=transport)
-    with mock.patch.object(
-        type(client.transport._session), "request"
-    ) as req, mock.patch.object(
-        path_template, "transcode"
-    ) as transcode, mock.patch.object(
-        transports.SubscriberRestInterceptor, "post_seek"
-    ) as post, mock.patch.object(
-        transports.SubscriberRestInterceptor, "pre_seek"
-    ) as pre:
-        pre.assert_not_called()
-        post.assert_not_called()
-        pb_message = pubsub.SeekRequest.pb(pubsub.SeekRequest())
-        transcode.return_value = {
-            "method": "post",
-            "uri": "my_uri",
-            "body": pb_message,
-            "query_params": pb_message,
-        }
-
-        req.return_value = Response()
-        req.return_value.status_code = 200
-        req.return_value.request = PreparedRequest()
-        req.return_value._content = pubsub.SeekResponse.to_json(pubsub.SeekResponse())
-
-        request = pubsub.SeekRequest()
-        metadata = [
-            ("key", "val"),
-            ("cephalopod", "squid"),
-        ]
-        pre.return_value = request, metadata
-        post.return_value = pubsub.SeekResponse()
-
-        client.seek(
-            request,
-            metadata=[
-                ("key", "val"),
-                ("cephalopod", "squid"),
-            ],
-        )
-
-        pre.assert_called_once()
-        post.assert_called_once()
-
-
-def test_seek_rest_bad_request(
-    transport: str = "rest", request_type=pubsub.SeekRequest
-):
-    client = SubscriberClient(
-        credentials=ga_credentials.AnonymousCredentials(),
-        transport=transport,
-    )
-
-    # send a request that will satisfy transcoding
-    request_init = {"subscription": "projects/sample1/subscriptions/sample2"}
-    request = request_type(**request_init)
-
-    # Mock the http request call within the method and fake a BadRequest error.
-    with mock.patch.object(Session, "request") as req, pytest.raises(
-        core_exceptions.BadRequest
-    ):
-        # Wrap the value into a proper Response obj
-        response_value = Response()
-        response_value.status_code = 400
-        response_value.request = Request()
-        req.return_value = response_value
-        client.seek(request)
-
-
-def test_seek_rest_error():
-    client = SubscriberClient(
-        credentials=ga_credentials.AnonymousCredentials(), transport="rest"
-    )
 
 
 def test_streaming_pull_rest_error():
@@ -10146,18 +9593,3124 @@ def test_transport_adc(transport_class):
         adc.assert_called_once()
 
 
+def test_transport_kind_grpc():
+    transport = SubscriberClient.get_transport_class("grpc")(
+        credentials=ga_credentials.AnonymousCredentials()
+    )
+    assert transport.kind == "grpc"
+
+
+def test_initialize_client_w_grpc():
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(), transport="grpc"
+    )
+    assert client is not None
+
+
+# This test is a coverage failsafe to make sure that totally empty calls,
+# i.e. request == None and no flattened fields passed, work.
+def test_create_subscription_empty_call_grpc():
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="grpc",
+    )
+
+    # Mock the actual call, and fake the request.
+    with mock.patch.object(
+        type(client.transport.create_subscription), "__call__"
+    ) as call:
+        call.return_value = pubsub.Subscription()
+        client.create_subscription(request=None)
+
+        # Establish that the underlying stub method was called.
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        request_msg = pubsub.Subscription()
+
+        assert args[0] == request_msg
+
+
+# This test is a coverage failsafe to make sure that totally empty calls,
+# i.e. request == None and no flattened fields passed, work.
+def test_get_subscription_empty_call_grpc():
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="grpc",
+    )
+
+    # Mock the actual call, and fake the request.
+    with mock.patch.object(type(client.transport.get_subscription), "__call__") as call:
+        call.return_value = pubsub.Subscription()
+        client.get_subscription(request=None)
+
+        # Establish that the underlying stub method was called.
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        request_msg = pubsub.GetSubscriptionRequest()
+
+        assert args[0] == request_msg
+
+
+# This test is a coverage failsafe to make sure that totally empty calls,
+# i.e. request == None and no flattened fields passed, work.
+def test_update_subscription_empty_call_grpc():
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="grpc",
+    )
+
+    # Mock the actual call, and fake the request.
+    with mock.patch.object(
+        type(client.transport.update_subscription), "__call__"
+    ) as call:
+        call.return_value = pubsub.Subscription()
+        client.update_subscription(request=None)
+
+        # Establish that the underlying stub method was called.
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        request_msg = pubsub.UpdateSubscriptionRequest()
+
+        assert args[0] == request_msg
+
+
+# This test is a coverage failsafe to make sure that totally empty calls,
+# i.e. request == None and no flattened fields passed, work.
+def test_list_subscriptions_empty_call_grpc():
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="grpc",
+    )
+
+    # Mock the actual call, and fake the request.
+    with mock.patch.object(
+        type(client.transport.list_subscriptions), "__call__"
+    ) as call:
+        call.return_value = pubsub.ListSubscriptionsResponse()
+        client.list_subscriptions(request=None)
+
+        # Establish that the underlying stub method was called.
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        request_msg = pubsub.ListSubscriptionsRequest()
+
+        assert args[0] == request_msg
+
+
+# This test is a coverage failsafe to make sure that totally empty calls,
+# i.e. request == None and no flattened fields passed, work.
+def test_delete_subscription_empty_call_grpc():
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="grpc",
+    )
+
+    # Mock the actual call, and fake the request.
+    with mock.patch.object(
+        type(client.transport.delete_subscription), "__call__"
+    ) as call:
+        call.return_value = None
+        client.delete_subscription(request=None)
+
+        # Establish that the underlying stub method was called.
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        request_msg = pubsub.DeleteSubscriptionRequest()
+
+        assert args[0] == request_msg
+
+
+# This test is a coverage failsafe to make sure that totally empty calls,
+# i.e. request == None and no flattened fields passed, work.
+def test_modify_ack_deadline_empty_call_grpc():
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="grpc",
+    )
+
+    # Mock the actual call, and fake the request.
+    with mock.patch.object(
+        type(client.transport.modify_ack_deadline), "__call__"
+    ) as call:
+        call.return_value = None
+        client.modify_ack_deadline(request=None)
+
+        # Establish that the underlying stub method was called.
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        request_msg = pubsub.ModifyAckDeadlineRequest()
+
+        assert args[0] == request_msg
+
+
+# This test is a coverage failsafe to make sure that totally empty calls,
+# i.e. request == None and no flattened fields passed, work.
+def test_acknowledge_empty_call_grpc():
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="grpc",
+    )
+
+    # Mock the actual call, and fake the request.
+    with mock.patch.object(type(client.transport.acknowledge), "__call__") as call:
+        call.return_value = None
+        client.acknowledge(request=None)
+
+        # Establish that the underlying stub method was called.
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        request_msg = pubsub.AcknowledgeRequest()
+
+        assert args[0] == request_msg
+
+
+# This test is a coverage failsafe to make sure that totally empty calls,
+# i.e. request == None and no flattened fields passed, work.
+def test_pull_empty_call_grpc():
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="grpc",
+    )
+
+    # Mock the actual call, and fake the request.
+    with mock.patch.object(type(client.transport.pull), "__call__") as call:
+        call.return_value = pubsub.PullResponse()
+        client.pull(request=None)
+
+        # Establish that the underlying stub method was called.
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        request_msg = pubsub.PullRequest()
+
+        assert args[0] == request_msg
+
+
+# This test is a coverage failsafe to make sure that totally empty calls,
+# i.e. request == None and no flattened fields passed, work.
+def test_modify_push_config_empty_call_grpc():
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="grpc",
+    )
+
+    # Mock the actual call, and fake the request.
+    with mock.patch.object(
+        type(client.transport.modify_push_config), "__call__"
+    ) as call:
+        call.return_value = None
+        client.modify_push_config(request=None)
+
+        # Establish that the underlying stub method was called.
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        request_msg = pubsub.ModifyPushConfigRequest()
+
+        assert args[0] == request_msg
+
+
+# This test is a coverage failsafe to make sure that totally empty calls,
+# i.e. request == None and no flattened fields passed, work.
+def test_get_snapshot_empty_call_grpc():
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="grpc",
+    )
+
+    # Mock the actual call, and fake the request.
+    with mock.patch.object(type(client.transport.get_snapshot), "__call__") as call:
+        call.return_value = pubsub.Snapshot()
+        client.get_snapshot(request=None)
+
+        # Establish that the underlying stub method was called.
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        request_msg = pubsub.GetSnapshotRequest()
+
+        assert args[0] == request_msg
+
+
+# This test is a coverage failsafe to make sure that totally empty calls,
+# i.e. request == None and no flattened fields passed, work.
+def test_list_snapshots_empty_call_grpc():
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="grpc",
+    )
+
+    # Mock the actual call, and fake the request.
+    with mock.patch.object(type(client.transport.list_snapshots), "__call__") as call:
+        call.return_value = pubsub.ListSnapshotsResponse()
+        client.list_snapshots(request=None)
+
+        # Establish that the underlying stub method was called.
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        request_msg = pubsub.ListSnapshotsRequest()
+
+        assert args[0] == request_msg
+
+
+# This test is a coverage failsafe to make sure that totally empty calls,
+# i.e. request == None and no flattened fields passed, work.
+def test_create_snapshot_empty_call_grpc():
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="grpc",
+    )
+
+    # Mock the actual call, and fake the request.
+    with mock.patch.object(type(client.transport.create_snapshot), "__call__") as call:
+        call.return_value = pubsub.Snapshot()
+        client.create_snapshot(request=None)
+
+        # Establish that the underlying stub method was called.
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        request_msg = pubsub.CreateSnapshotRequest()
+
+        assert args[0] == request_msg
+
+
+# This test is a coverage failsafe to make sure that totally empty calls,
+# i.e. request == None and no flattened fields passed, work.
+def test_update_snapshot_empty_call_grpc():
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="grpc",
+    )
+
+    # Mock the actual call, and fake the request.
+    with mock.patch.object(type(client.transport.update_snapshot), "__call__") as call:
+        call.return_value = pubsub.Snapshot()
+        client.update_snapshot(request=None)
+
+        # Establish that the underlying stub method was called.
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        request_msg = pubsub.UpdateSnapshotRequest()
+
+        assert args[0] == request_msg
+
+
+# This test is a coverage failsafe to make sure that totally empty calls,
+# i.e. request == None and no flattened fields passed, work.
+def test_delete_snapshot_empty_call_grpc():
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="grpc",
+    )
+
+    # Mock the actual call, and fake the request.
+    with mock.patch.object(type(client.transport.delete_snapshot), "__call__") as call:
+        call.return_value = None
+        client.delete_snapshot(request=None)
+
+        # Establish that the underlying stub method was called.
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        request_msg = pubsub.DeleteSnapshotRequest()
+
+        assert args[0] == request_msg
+
+
+# This test is a coverage failsafe to make sure that totally empty calls,
+# i.e. request == None and no flattened fields passed, work.
+def test_seek_empty_call_grpc():
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="grpc",
+    )
+
+    # Mock the actual call, and fake the request.
+    with mock.patch.object(type(client.transport.seek), "__call__") as call:
+        call.return_value = pubsub.SeekResponse()
+        client.seek(request=None)
+
+        # Establish that the underlying stub method was called.
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        request_msg = pubsub.SeekRequest()
+
+        assert args[0] == request_msg
+
+
+def test_transport_kind_grpc_asyncio():
+    transport = SubscriberAsyncClient.get_transport_class("grpc_asyncio")(
+        credentials=async_anonymous_credentials()
+    )
+    assert transport.kind == "grpc_asyncio"
+
+
+def test_initialize_client_w_grpc_asyncio():
+    client = SubscriberAsyncClient(
+        credentials=async_anonymous_credentials(), transport="grpc_asyncio"
+    )
+    assert client is not None
+
+
+# This test is a coverage failsafe to make sure that totally empty calls,
+# i.e. request == None and no flattened fields passed, work.
+@pytest.mark.asyncio
+async def test_create_subscription_empty_call_grpc_asyncio():
+    client = SubscriberAsyncClient(
+        credentials=async_anonymous_credentials(),
+        transport="grpc_asyncio",
+    )
+
+    # Mock the actual call, and fake the request.
+    with mock.patch.object(
+        type(client.transport.create_subscription), "__call__"
+    ) as call:
+        # Designate an appropriate return value for the call.
+        call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(
+            pubsub.Subscription(
+                name="name_value",
+                topic="topic_value",
+                ack_deadline_seconds=2066,
+                retain_acked_messages=True,
+                enable_message_ordering=True,
+                filter="filter_value",
+                detached=True,
+                enable_exactly_once_delivery=True,
+                state=pubsub.Subscription.State.ACTIVE,
+            )
+        )
+        await client.create_subscription(request=None)
+
+        # Establish that the underlying stub method was called.
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        request_msg = pubsub.Subscription()
+
+        assert args[0] == request_msg
+
+
+# This test is a coverage failsafe to make sure that totally empty calls,
+# i.e. request == None and no flattened fields passed, work.
+@pytest.mark.asyncio
+async def test_get_subscription_empty_call_grpc_asyncio():
+    client = SubscriberAsyncClient(
+        credentials=async_anonymous_credentials(),
+        transport="grpc_asyncio",
+    )
+
+    # Mock the actual call, and fake the request.
+    with mock.patch.object(type(client.transport.get_subscription), "__call__") as call:
+        # Designate an appropriate return value for the call.
+        call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(
+            pubsub.Subscription(
+                name="name_value",
+                topic="topic_value",
+                ack_deadline_seconds=2066,
+                retain_acked_messages=True,
+                enable_message_ordering=True,
+                filter="filter_value",
+                detached=True,
+                enable_exactly_once_delivery=True,
+                state=pubsub.Subscription.State.ACTIVE,
+            )
+        )
+        await client.get_subscription(request=None)
+
+        # Establish that the underlying stub method was called.
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        request_msg = pubsub.GetSubscriptionRequest()
+
+        assert args[0] == request_msg
+
+
+# This test is a coverage failsafe to make sure that totally empty calls,
+# i.e. request == None and no flattened fields passed, work.
+@pytest.mark.asyncio
+async def test_update_subscription_empty_call_grpc_asyncio():
+    client = SubscriberAsyncClient(
+        credentials=async_anonymous_credentials(),
+        transport="grpc_asyncio",
+    )
+
+    # Mock the actual call, and fake the request.
+    with mock.patch.object(
+        type(client.transport.update_subscription), "__call__"
+    ) as call:
+        # Designate an appropriate return value for the call.
+        call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(
+            pubsub.Subscription(
+                name="name_value",
+                topic="topic_value",
+                ack_deadline_seconds=2066,
+                retain_acked_messages=True,
+                enable_message_ordering=True,
+                filter="filter_value",
+                detached=True,
+                enable_exactly_once_delivery=True,
+                state=pubsub.Subscription.State.ACTIVE,
+            )
+        )
+        await client.update_subscription(request=None)
+
+        # Establish that the underlying stub method was called.
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        request_msg = pubsub.UpdateSubscriptionRequest()
+
+        assert args[0] == request_msg
+
+
+# This test is a coverage failsafe to make sure that totally empty calls,
+# i.e. request == None and no flattened fields passed, work.
+@pytest.mark.asyncio
+async def test_list_subscriptions_empty_call_grpc_asyncio():
+    client = SubscriberAsyncClient(
+        credentials=async_anonymous_credentials(),
+        transport="grpc_asyncio",
+    )
+
+    # Mock the actual call, and fake the request.
+    with mock.patch.object(
+        type(client.transport.list_subscriptions), "__call__"
+    ) as call:
+        # Designate an appropriate return value for the call.
+        call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(
+            pubsub.ListSubscriptionsResponse(
+                next_page_token="next_page_token_value",
+            )
+        )
+        await client.list_subscriptions(request=None)
+
+        # Establish that the underlying stub method was called.
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        request_msg = pubsub.ListSubscriptionsRequest()
+
+        assert args[0] == request_msg
+
+
+# This test is a coverage failsafe to make sure that totally empty calls,
+# i.e. request == None and no flattened fields passed, work.
+@pytest.mark.asyncio
+async def test_delete_subscription_empty_call_grpc_asyncio():
+    client = SubscriberAsyncClient(
+        credentials=async_anonymous_credentials(),
+        transport="grpc_asyncio",
+    )
+
+    # Mock the actual call, and fake the request.
+    with mock.patch.object(
+        type(client.transport.delete_subscription), "__call__"
+    ) as call:
+        # Designate an appropriate return value for the call.
+        call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(None)
+        await client.delete_subscription(request=None)
+
+        # Establish that the underlying stub method was called.
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        request_msg = pubsub.DeleteSubscriptionRequest()
+
+        assert args[0] == request_msg
+
+
+# This test is a coverage failsafe to make sure that totally empty calls,
+# i.e. request == None and no flattened fields passed, work.
+@pytest.mark.asyncio
+async def test_modify_ack_deadline_empty_call_grpc_asyncio():
+    client = SubscriberAsyncClient(
+        credentials=async_anonymous_credentials(),
+        transport="grpc_asyncio",
+    )
+
+    # Mock the actual call, and fake the request.
+    with mock.patch.object(
+        type(client.transport.modify_ack_deadline), "__call__"
+    ) as call:
+        # Designate an appropriate return value for the call.
+        call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(None)
+        await client.modify_ack_deadline(request=None)
+
+        # Establish that the underlying stub method was called.
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        request_msg = pubsub.ModifyAckDeadlineRequest()
+
+        assert args[0] == request_msg
+
+
+# This test is a coverage failsafe to make sure that totally empty calls,
+# i.e. request == None and no flattened fields passed, work.
+@pytest.mark.asyncio
+async def test_acknowledge_empty_call_grpc_asyncio():
+    client = SubscriberAsyncClient(
+        credentials=async_anonymous_credentials(),
+        transport="grpc_asyncio",
+    )
+
+    # Mock the actual call, and fake the request.
+    with mock.patch.object(type(client.transport.acknowledge), "__call__") as call:
+        # Designate an appropriate return value for the call.
+        call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(None)
+        await client.acknowledge(request=None)
+
+        # Establish that the underlying stub method was called.
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        request_msg = pubsub.AcknowledgeRequest()
+
+        assert args[0] == request_msg
+
+
+# This test is a coverage failsafe to make sure that totally empty calls,
+# i.e. request == None and no flattened fields passed, work.
+@pytest.mark.asyncio
+async def test_pull_empty_call_grpc_asyncio():
+    client = SubscriberAsyncClient(
+        credentials=async_anonymous_credentials(),
+        transport="grpc_asyncio",
+    )
+
+    # Mock the actual call, and fake the request.
+    with mock.patch.object(type(client.transport.pull), "__call__") as call:
+        # Designate an appropriate return value for the call.
+        call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(pubsub.PullResponse())
+        await client.pull(request=None)
+
+        # Establish that the underlying stub method was called.
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        request_msg = pubsub.PullRequest()
+
+        assert args[0] == request_msg
+
+
+# This test is a coverage failsafe to make sure that totally empty calls,
+# i.e. request == None and no flattened fields passed, work.
+@pytest.mark.asyncio
+async def test_modify_push_config_empty_call_grpc_asyncio():
+    client = SubscriberAsyncClient(
+        credentials=async_anonymous_credentials(),
+        transport="grpc_asyncio",
+    )
+
+    # Mock the actual call, and fake the request.
+    with mock.patch.object(
+        type(client.transport.modify_push_config), "__call__"
+    ) as call:
+        # Designate an appropriate return value for the call.
+        call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(None)
+        await client.modify_push_config(request=None)
+
+        # Establish that the underlying stub method was called.
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        request_msg = pubsub.ModifyPushConfigRequest()
+
+        assert args[0] == request_msg
+
+
+# This test is a coverage failsafe to make sure that totally empty calls,
+# i.e. request == None and no flattened fields passed, work.
+@pytest.mark.asyncio
+async def test_get_snapshot_empty_call_grpc_asyncio():
+    client = SubscriberAsyncClient(
+        credentials=async_anonymous_credentials(),
+        transport="grpc_asyncio",
+    )
+
+    # Mock the actual call, and fake the request.
+    with mock.patch.object(type(client.transport.get_snapshot), "__call__") as call:
+        # Designate an appropriate return value for the call.
+        call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(
+            pubsub.Snapshot(
+                name="name_value",
+                topic="topic_value",
+            )
+        )
+        await client.get_snapshot(request=None)
+
+        # Establish that the underlying stub method was called.
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        request_msg = pubsub.GetSnapshotRequest()
+
+        assert args[0] == request_msg
+
+
+# This test is a coverage failsafe to make sure that totally empty calls,
+# i.e. request == None and no flattened fields passed, work.
+@pytest.mark.asyncio
+async def test_list_snapshots_empty_call_grpc_asyncio():
+    client = SubscriberAsyncClient(
+        credentials=async_anonymous_credentials(),
+        transport="grpc_asyncio",
+    )
+
+    # Mock the actual call, and fake the request.
+    with mock.patch.object(type(client.transport.list_snapshots), "__call__") as call:
+        # Designate an appropriate return value for the call.
+        call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(
+            pubsub.ListSnapshotsResponse(
+                next_page_token="next_page_token_value",
+            )
+        )
+        await client.list_snapshots(request=None)
+
+        # Establish that the underlying stub method was called.
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        request_msg = pubsub.ListSnapshotsRequest()
+
+        assert args[0] == request_msg
+
+
+# This test is a coverage failsafe to make sure that totally empty calls,
+# i.e. request == None and no flattened fields passed, work.
+@pytest.mark.asyncio
+async def test_create_snapshot_empty_call_grpc_asyncio():
+    client = SubscriberAsyncClient(
+        credentials=async_anonymous_credentials(),
+        transport="grpc_asyncio",
+    )
+
+    # Mock the actual call, and fake the request.
+    with mock.patch.object(type(client.transport.create_snapshot), "__call__") as call:
+        # Designate an appropriate return value for the call.
+        call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(
+            pubsub.Snapshot(
+                name="name_value",
+                topic="topic_value",
+            )
+        )
+        await client.create_snapshot(request=None)
+
+        # Establish that the underlying stub method was called.
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        request_msg = pubsub.CreateSnapshotRequest()
+
+        assert args[0] == request_msg
+
+
+# This test is a coverage failsafe to make sure that totally empty calls,
+# i.e. request == None and no flattened fields passed, work.
+@pytest.mark.asyncio
+async def test_update_snapshot_empty_call_grpc_asyncio():
+    client = SubscriberAsyncClient(
+        credentials=async_anonymous_credentials(),
+        transport="grpc_asyncio",
+    )
+
+    # Mock the actual call, and fake the request.
+    with mock.patch.object(type(client.transport.update_snapshot), "__call__") as call:
+        # Designate an appropriate return value for the call.
+        call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(
+            pubsub.Snapshot(
+                name="name_value",
+                topic="topic_value",
+            )
+        )
+        await client.update_snapshot(request=None)
+
+        # Establish that the underlying stub method was called.
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        request_msg = pubsub.UpdateSnapshotRequest()
+
+        assert args[0] == request_msg
+
+
+# This test is a coverage failsafe to make sure that totally empty calls,
+# i.e. request == None and no flattened fields passed, work.
+@pytest.mark.asyncio
+async def test_delete_snapshot_empty_call_grpc_asyncio():
+    client = SubscriberAsyncClient(
+        credentials=async_anonymous_credentials(),
+        transport="grpc_asyncio",
+    )
+
+    # Mock the actual call, and fake the request.
+    with mock.patch.object(type(client.transport.delete_snapshot), "__call__") as call:
+        # Designate an appropriate return value for the call.
+        call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(None)
+        await client.delete_snapshot(request=None)
+
+        # Establish that the underlying stub method was called.
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        request_msg = pubsub.DeleteSnapshotRequest()
+
+        assert args[0] == request_msg
+
+
+# This test is a coverage failsafe to make sure that totally empty calls,
+# i.e. request == None and no flattened fields passed, work.
+@pytest.mark.asyncio
+async def test_seek_empty_call_grpc_asyncio():
+    client = SubscriberAsyncClient(
+        credentials=async_anonymous_credentials(),
+        transport="grpc_asyncio",
+    )
+
+    # Mock the actual call, and fake the request.
+    with mock.patch.object(type(client.transport.seek), "__call__") as call:
+        # Designate an appropriate return value for the call.
+        call.return_value = grpc_helpers_async.FakeUnaryUnaryCall(pubsub.SeekResponse())
+        await client.seek(request=None)
+
+        # Establish that the underlying stub method was called.
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        request_msg = pubsub.SeekRequest()
+
+        assert args[0] == request_msg
+
+
+def test_transport_kind_rest():
+    transport = SubscriberClient.get_transport_class("rest")(
+        credentials=ga_credentials.AnonymousCredentials()
+    )
+    assert transport.kind == "rest"
+
+
+def test_create_subscription_rest_bad_request(request_type=pubsub.Subscription):
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(), transport="rest"
+    )
+    # send a request that will satisfy transcoding
+    request_init = {"name": "projects/sample1/subscriptions/sample2"}
+    request = request_type(**request_init)
+
+    # Mock the http request call within the method and fake a BadRequest error.
+    with mock.patch.object(Session, "request") as req, pytest.raises(
+        core_exceptions.BadRequest
+    ):
+        # Wrap the value into a proper Response obj
+        response_value = mock.Mock()
+        json_return_value = ""
+        response_value.json = mock.Mock(return_value={})
+        response_value.status_code = 400
+        response_value.request = mock.Mock()
+        req.return_value = response_value
+        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
+        client.create_subscription(request)
+
+
 @pytest.mark.parametrize(
-    "transport_name",
+    "request_type",
     [
-        "grpc",
-        "rest",
+        pubsub.Subscription,
+        dict,
     ],
 )
-def test_transport_kind(transport_name):
-    transport = SubscriberClient.get_transport_class(transport_name)(
-        credentials=ga_credentials.AnonymousCredentials(),
+def test_create_subscription_rest_call_success(request_type):
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(), transport="rest"
     )
-    assert transport.kind == transport_name
+
+    # send a request that will satisfy transcoding
+    request_init = {"name": "projects/sample1/subscriptions/sample2"}
+    request = request_type(**request_init)
+
+    # Mock the http request call within the method and fake a response.
+    with mock.patch.object(type(client.transport._session), "request") as req:
+        # Designate an appropriate value for the returned response.
+        return_value = pubsub.Subscription(
+            name="name_value",
+            topic="topic_value",
+            ack_deadline_seconds=2066,
+            retain_acked_messages=True,
+            enable_message_ordering=True,
+            filter="filter_value",
+            detached=True,
+            enable_exactly_once_delivery=True,
+            state=pubsub.Subscription.State.ACTIVE,
+        )
+
+        # Wrap the value into a proper Response obj
+        response_value = mock.Mock()
+        response_value.status_code = 200
+
+        # Convert return value to protobuf type
+        return_value = pubsub.Subscription.pb(return_value)
+        json_return_value = json_format.MessageToJson(return_value)
+        response_value.content = json_return_value.encode("UTF-8")
+        req.return_value = response_value
+        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
+        response = client.create_subscription(request)
+
+    # Establish that the response is the type that we expect.
+    assert isinstance(response, pubsub.Subscription)
+    assert response.name == "name_value"
+    assert response.topic == "topic_value"
+    assert response.ack_deadline_seconds == 2066
+    assert response.retain_acked_messages is True
+    assert response.enable_message_ordering is True
+    assert response.filter == "filter_value"
+    assert response.detached is True
+    assert response.enable_exactly_once_delivery is True
+    assert response.state == pubsub.Subscription.State.ACTIVE
+
+
+@pytest.mark.parametrize("null_interceptor", [True, False])
+def test_create_subscription_rest_interceptors(null_interceptor):
+    transport = transports.SubscriberRestTransport(
+        credentials=ga_credentials.AnonymousCredentials(),
+        interceptor=None
+        if null_interceptor
+        else transports.SubscriberRestInterceptor(),
+    )
+    client = SubscriberClient(transport=transport)
+
+    with mock.patch.object(
+        type(client.transport._session), "request"
+    ) as req, mock.patch.object(
+        path_template, "transcode"
+    ) as transcode, mock.patch.object(
+        transports.SubscriberRestInterceptor, "post_create_subscription"
+    ) as post, mock.patch.object(
+        transports.SubscriberRestInterceptor, "post_create_subscription_with_metadata"
+    ) as post_with_metadata, mock.patch.object(
+        transports.SubscriberRestInterceptor, "pre_create_subscription"
+    ) as pre:
+        pre.assert_not_called()
+        post.assert_not_called()
+        post_with_metadata.assert_not_called()
+        pb_message = pubsub.Subscription.pb(pubsub.Subscription())
+        transcode.return_value = {
+            "method": "post",
+            "uri": "my_uri",
+            "body": pb_message,
+            "query_params": pb_message,
+        }
+
+        req.return_value = mock.Mock()
+        req.return_value.status_code = 200
+        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
+        return_value = pubsub.Subscription.to_json(pubsub.Subscription())
+        req.return_value.content = return_value
+
+        request = pubsub.Subscription()
+        metadata = [
+            ("key", "val"),
+            ("cephalopod", "squid"),
+        ]
+        pre.return_value = request, metadata
+        post.return_value = pubsub.Subscription()
+        post_with_metadata.return_value = pubsub.Subscription(), metadata
+
+        client.create_subscription(
+            request,
+            metadata=[
+                ("key", "val"),
+                ("cephalopod", "squid"),
+            ],
+        )
+
+        pre.assert_called_once()
+        post.assert_called_once()
+        post_with_metadata.assert_called_once()
+
+
+def test_get_subscription_rest_bad_request(request_type=pubsub.GetSubscriptionRequest):
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(), transport="rest"
+    )
+    # send a request that will satisfy transcoding
+    request_init = {"subscription": "projects/sample1/subscriptions/sample2"}
+    request = request_type(**request_init)
+
+    # Mock the http request call within the method and fake a BadRequest error.
+    with mock.patch.object(Session, "request") as req, pytest.raises(
+        core_exceptions.BadRequest
+    ):
+        # Wrap the value into a proper Response obj
+        response_value = mock.Mock()
+        json_return_value = ""
+        response_value.json = mock.Mock(return_value={})
+        response_value.status_code = 400
+        response_value.request = mock.Mock()
+        req.return_value = response_value
+        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
+        client.get_subscription(request)
+
+
+@pytest.mark.parametrize(
+    "request_type",
+    [
+        pubsub.GetSubscriptionRequest,
+        dict,
+    ],
+)
+def test_get_subscription_rest_call_success(request_type):
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(), transport="rest"
+    )
+
+    # send a request that will satisfy transcoding
+    request_init = {"subscription": "projects/sample1/subscriptions/sample2"}
+    request = request_type(**request_init)
+
+    # Mock the http request call within the method and fake a response.
+    with mock.patch.object(type(client.transport._session), "request") as req:
+        # Designate an appropriate value for the returned response.
+        return_value = pubsub.Subscription(
+            name="name_value",
+            topic="topic_value",
+            ack_deadline_seconds=2066,
+            retain_acked_messages=True,
+            enable_message_ordering=True,
+            filter="filter_value",
+            detached=True,
+            enable_exactly_once_delivery=True,
+            state=pubsub.Subscription.State.ACTIVE,
+        )
+
+        # Wrap the value into a proper Response obj
+        response_value = mock.Mock()
+        response_value.status_code = 200
+
+        # Convert return value to protobuf type
+        return_value = pubsub.Subscription.pb(return_value)
+        json_return_value = json_format.MessageToJson(return_value)
+        response_value.content = json_return_value.encode("UTF-8")
+        req.return_value = response_value
+        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
+        response = client.get_subscription(request)
+
+    # Establish that the response is the type that we expect.
+    assert isinstance(response, pubsub.Subscription)
+    assert response.name == "name_value"
+    assert response.topic == "topic_value"
+    assert response.ack_deadline_seconds == 2066
+    assert response.retain_acked_messages is True
+    assert response.enable_message_ordering is True
+    assert response.filter == "filter_value"
+    assert response.detached is True
+    assert response.enable_exactly_once_delivery is True
+    assert response.state == pubsub.Subscription.State.ACTIVE
+
+
+@pytest.mark.parametrize("null_interceptor", [True, False])
+def test_get_subscription_rest_interceptors(null_interceptor):
+    transport = transports.SubscriberRestTransport(
+        credentials=ga_credentials.AnonymousCredentials(),
+        interceptor=None
+        if null_interceptor
+        else transports.SubscriberRestInterceptor(),
+    )
+    client = SubscriberClient(transport=transport)
+
+    with mock.patch.object(
+        type(client.transport._session), "request"
+    ) as req, mock.patch.object(
+        path_template, "transcode"
+    ) as transcode, mock.patch.object(
+        transports.SubscriberRestInterceptor, "post_get_subscription"
+    ) as post, mock.patch.object(
+        transports.SubscriberRestInterceptor, "post_get_subscription_with_metadata"
+    ) as post_with_metadata, mock.patch.object(
+        transports.SubscriberRestInterceptor, "pre_get_subscription"
+    ) as pre:
+        pre.assert_not_called()
+        post.assert_not_called()
+        post_with_metadata.assert_not_called()
+        pb_message = pubsub.GetSubscriptionRequest.pb(pubsub.GetSubscriptionRequest())
+        transcode.return_value = {
+            "method": "post",
+            "uri": "my_uri",
+            "body": pb_message,
+            "query_params": pb_message,
+        }
+
+        req.return_value = mock.Mock()
+        req.return_value.status_code = 200
+        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
+        return_value = pubsub.Subscription.to_json(pubsub.Subscription())
+        req.return_value.content = return_value
+
+        request = pubsub.GetSubscriptionRequest()
+        metadata = [
+            ("key", "val"),
+            ("cephalopod", "squid"),
+        ]
+        pre.return_value = request, metadata
+        post.return_value = pubsub.Subscription()
+        post_with_metadata.return_value = pubsub.Subscription(), metadata
+
+        client.get_subscription(
+            request,
+            metadata=[
+                ("key", "val"),
+                ("cephalopod", "squid"),
+            ],
+        )
+
+        pre.assert_called_once()
+        post.assert_called_once()
+        post_with_metadata.assert_called_once()
+
+
+def test_update_subscription_rest_bad_request(
+    request_type=pubsub.UpdateSubscriptionRequest,
+):
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(), transport="rest"
+    )
+    # send a request that will satisfy transcoding
+    request_init = {"subscription": {"name": "projects/sample1/subscriptions/sample2"}}
+    request = request_type(**request_init)
+
+    # Mock the http request call within the method and fake a BadRequest error.
+    with mock.patch.object(Session, "request") as req, pytest.raises(
+        core_exceptions.BadRequest
+    ):
+        # Wrap the value into a proper Response obj
+        response_value = mock.Mock()
+        json_return_value = ""
+        response_value.json = mock.Mock(return_value={})
+        response_value.status_code = 400
+        response_value.request = mock.Mock()
+        req.return_value = response_value
+        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
+        client.update_subscription(request)
+
+
+@pytest.mark.parametrize(
+    "request_type",
+    [
+        pubsub.UpdateSubscriptionRequest,
+        dict,
+    ],
+)
+def test_update_subscription_rest_call_success(request_type):
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(), transport="rest"
+    )
+
+    # send a request that will satisfy transcoding
+    request_init = {"subscription": {"name": "projects/sample1/subscriptions/sample2"}}
+    request = request_type(**request_init)
+
+    # Mock the http request call within the method and fake a response.
+    with mock.patch.object(type(client.transport._session), "request") as req:
+        # Designate an appropriate value for the returned response.
+        return_value = pubsub.Subscription(
+            name="name_value",
+            topic="topic_value",
+            ack_deadline_seconds=2066,
+            retain_acked_messages=True,
+            enable_message_ordering=True,
+            filter="filter_value",
+            detached=True,
+            enable_exactly_once_delivery=True,
+            state=pubsub.Subscription.State.ACTIVE,
+        )
+
+        # Wrap the value into a proper Response obj
+        response_value = mock.Mock()
+        response_value.status_code = 200
+
+        # Convert return value to protobuf type
+        return_value = pubsub.Subscription.pb(return_value)
+        json_return_value = json_format.MessageToJson(return_value)
+        response_value.content = json_return_value.encode("UTF-8")
+        req.return_value = response_value
+        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
+        response = client.update_subscription(request)
+
+    # Establish that the response is the type that we expect.
+    assert isinstance(response, pubsub.Subscription)
+    assert response.name == "name_value"
+    assert response.topic == "topic_value"
+    assert response.ack_deadline_seconds == 2066
+    assert response.retain_acked_messages is True
+    assert response.enable_message_ordering is True
+    assert response.filter == "filter_value"
+    assert response.detached is True
+    assert response.enable_exactly_once_delivery is True
+    assert response.state == pubsub.Subscription.State.ACTIVE
+
+
+@pytest.mark.parametrize("null_interceptor", [True, False])
+def test_update_subscription_rest_interceptors(null_interceptor):
+    transport = transports.SubscriberRestTransport(
+        credentials=ga_credentials.AnonymousCredentials(),
+        interceptor=None
+        if null_interceptor
+        else transports.SubscriberRestInterceptor(),
+    )
+    client = SubscriberClient(transport=transport)
+
+    with mock.patch.object(
+        type(client.transport._session), "request"
+    ) as req, mock.patch.object(
+        path_template, "transcode"
+    ) as transcode, mock.patch.object(
+        transports.SubscriberRestInterceptor, "post_update_subscription"
+    ) as post, mock.patch.object(
+        transports.SubscriberRestInterceptor, "post_update_subscription_with_metadata"
+    ) as post_with_metadata, mock.patch.object(
+        transports.SubscriberRestInterceptor, "pre_update_subscription"
+    ) as pre:
+        pre.assert_not_called()
+        post.assert_not_called()
+        post_with_metadata.assert_not_called()
+        pb_message = pubsub.UpdateSubscriptionRequest.pb(
+            pubsub.UpdateSubscriptionRequest()
+        )
+        transcode.return_value = {
+            "method": "post",
+            "uri": "my_uri",
+            "body": pb_message,
+            "query_params": pb_message,
+        }
+
+        req.return_value = mock.Mock()
+        req.return_value.status_code = 200
+        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
+        return_value = pubsub.Subscription.to_json(pubsub.Subscription())
+        req.return_value.content = return_value
+
+        request = pubsub.UpdateSubscriptionRequest()
+        metadata = [
+            ("key", "val"),
+            ("cephalopod", "squid"),
+        ]
+        pre.return_value = request, metadata
+        post.return_value = pubsub.Subscription()
+        post_with_metadata.return_value = pubsub.Subscription(), metadata
+
+        client.update_subscription(
+            request,
+            metadata=[
+                ("key", "val"),
+                ("cephalopod", "squid"),
+            ],
+        )
+
+        pre.assert_called_once()
+        post.assert_called_once()
+        post_with_metadata.assert_called_once()
+
+
+def test_list_subscriptions_rest_bad_request(
+    request_type=pubsub.ListSubscriptionsRequest,
+):
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(), transport="rest"
+    )
+    # send a request that will satisfy transcoding
+    request_init = {"project": "projects/sample1"}
+    request = request_type(**request_init)
+
+    # Mock the http request call within the method and fake a BadRequest error.
+    with mock.patch.object(Session, "request") as req, pytest.raises(
+        core_exceptions.BadRequest
+    ):
+        # Wrap the value into a proper Response obj
+        response_value = mock.Mock()
+        json_return_value = ""
+        response_value.json = mock.Mock(return_value={})
+        response_value.status_code = 400
+        response_value.request = mock.Mock()
+        req.return_value = response_value
+        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
+        client.list_subscriptions(request)
+
+
+@pytest.mark.parametrize(
+    "request_type",
+    [
+        pubsub.ListSubscriptionsRequest,
+        dict,
+    ],
+)
+def test_list_subscriptions_rest_call_success(request_type):
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(), transport="rest"
+    )
+
+    # send a request that will satisfy transcoding
+    request_init = {"project": "projects/sample1"}
+    request = request_type(**request_init)
+
+    # Mock the http request call within the method and fake a response.
+    with mock.patch.object(type(client.transport._session), "request") as req:
+        # Designate an appropriate value for the returned response.
+        return_value = pubsub.ListSubscriptionsResponse(
+            next_page_token="next_page_token_value",
+        )
+
+        # Wrap the value into a proper Response obj
+        response_value = mock.Mock()
+        response_value.status_code = 200
+
+        # Convert return value to protobuf type
+        return_value = pubsub.ListSubscriptionsResponse.pb(return_value)
+        json_return_value = json_format.MessageToJson(return_value)
+        response_value.content = json_return_value.encode("UTF-8")
+        req.return_value = response_value
+        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
+        response = client.list_subscriptions(request)
+
+    # Establish that the response is the type that we expect.
+    assert isinstance(response, pagers.ListSubscriptionsPager)
+    assert response.next_page_token == "next_page_token_value"
+
+
+@pytest.mark.parametrize("null_interceptor", [True, False])
+def test_list_subscriptions_rest_interceptors(null_interceptor):
+    transport = transports.SubscriberRestTransport(
+        credentials=ga_credentials.AnonymousCredentials(),
+        interceptor=None
+        if null_interceptor
+        else transports.SubscriberRestInterceptor(),
+    )
+    client = SubscriberClient(transport=transport)
+
+    with mock.patch.object(
+        type(client.transport._session), "request"
+    ) as req, mock.patch.object(
+        path_template, "transcode"
+    ) as transcode, mock.patch.object(
+        transports.SubscriberRestInterceptor, "post_list_subscriptions"
+    ) as post, mock.patch.object(
+        transports.SubscriberRestInterceptor, "post_list_subscriptions_with_metadata"
+    ) as post_with_metadata, mock.patch.object(
+        transports.SubscriberRestInterceptor, "pre_list_subscriptions"
+    ) as pre:
+        pre.assert_not_called()
+        post.assert_not_called()
+        post_with_metadata.assert_not_called()
+        pb_message = pubsub.ListSubscriptionsRequest.pb(
+            pubsub.ListSubscriptionsRequest()
+        )
+        transcode.return_value = {
+            "method": "post",
+            "uri": "my_uri",
+            "body": pb_message,
+            "query_params": pb_message,
+        }
+
+        req.return_value = mock.Mock()
+        req.return_value.status_code = 200
+        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
+        return_value = pubsub.ListSubscriptionsResponse.to_json(
+            pubsub.ListSubscriptionsResponse()
+        )
+        req.return_value.content = return_value
+
+        request = pubsub.ListSubscriptionsRequest()
+        metadata = [
+            ("key", "val"),
+            ("cephalopod", "squid"),
+        ]
+        pre.return_value = request, metadata
+        post.return_value = pubsub.ListSubscriptionsResponse()
+        post_with_metadata.return_value = pubsub.ListSubscriptionsResponse(), metadata
+
+        client.list_subscriptions(
+            request,
+            metadata=[
+                ("key", "val"),
+                ("cephalopod", "squid"),
+            ],
+        )
+
+        pre.assert_called_once()
+        post.assert_called_once()
+        post_with_metadata.assert_called_once()
+
+
+def test_delete_subscription_rest_bad_request(
+    request_type=pubsub.DeleteSubscriptionRequest,
+):
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(), transport="rest"
+    )
+    # send a request that will satisfy transcoding
+    request_init = {"subscription": "projects/sample1/subscriptions/sample2"}
+    request = request_type(**request_init)
+
+    # Mock the http request call within the method and fake a BadRequest error.
+    with mock.patch.object(Session, "request") as req, pytest.raises(
+        core_exceptions.BadRequest
+    ):
+        # Wrap the value into a proper Response obj
+        response_value = mock.Mock()
+        json_return_value = ""
+        response_value.json = mock.Mock(return_value={})
+        response_value.status_code = 400
+        response_value.request = mock.Mock()
+        req.return_value = response_value
+        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
+        client.delete_subscription(request)
+
+
+@pytest.mark.parametrize(
+    "request_type",
+    [
+        pubsub.DeleteSubscriptionRequest,
+        dict,
+    ],
+)
+def test_delete_subscription_rest_call_success(request_type):
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(), transport="rest"
+    )
+
+    # send a request that will satisfy transcoding
+    request_init = {"subscription": "projects/sample1/subscriptions/sample2"}
+    request = request_type(**request_init)
+
+    # Mock the http request call within the method and fake a response.
+    with mock.patch.object(type(client.transport._session), "request") as req:
+        # Designate an appropriate value for the returned response.
+        return_value = None
+
+        # Wrap the value into a proper Response obj
+        response_value = mock.Mock()
+        response_value.status_code = 200
+        json_return_value = ""
+        response_value.content = json_return_value.encode("UTF-8")
+        req.return_value = response_value
+        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
+        response = client.delete_subscription(request)
+
+    # Establish that the response is the type that we expect.
+    assert response is None
+
+
+@pytest.mark.parametrize("null_interceptor", [True, False])
+def test_delete_subscription_rest_interceptors(null_interceptor):
+    transport = transports.SubscriberRestTransport(
+        credentials=ga_credentials.AnonymousCredentials(),
+        interceptor=None
+        if null_interceptor
+        else transports.SubscriberRestInterceptor(),
+    )
+    client = SubscriberClient(transport=transport)
+
+    with mock.patch.object(
+        type(client.transport._session), "request"
+    ) as req, mock.patch.object(
+        path_template, "transcode"
+    ) as transcode, mock.patch.object(
+        transports.SubscriberRestInterceptor, "pre_delete_subscription"
+    ) as pre:
+        pre.assert_not_called()
+        pb_message = pubsub.DeleteSubscriptionRequest.pb(
+            pubsub.DeleteSubscriptionRequest()
+        )
+        transcode.return_value = {
+            "method": "post",
+            "uri": "my_uri",
+            "body": pb_message,
+            "query_params": pb_message,
+        }
+
+        req.return_value = mock.Mock()
+        req.return_value.status_code = 200
+        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
+
+        request = pubsub.DeleteSubscriptionRequest()
+        metadata = [
+            ("key", "val"),
+            ("cephalopod", "squid"),
+        ]
+        pre.return_value = request, metadata
+
+        client.delete_subscription(
+            request,
+            metadata=[
+                ("key", "val"),
+                ("cephalopod", "squid"),
+            ],
+        )
+
+        pre.assert_called_once()
+
+
+def test_modify_ack_deadline_rest_bad_request(
+    request_type=pubsub.ModifyAckDeadlineRequest,
+):
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(), transport="rest"
+    )
+    # send a request that will satisfy transcoding
+    request_init = {"subscription": "projects/sample1/subscriptions/sample2"}
+    request = request_type(**request_init)
+
+    # Mock the http request call within the method and fake a BadRequest error.
+    with mock.patch.object(Session, "request") as req, pytest.raises(
+        core_exceptions.BadRequest
+    ):
+        # Wrap the value into a proper Response obj
+        response_value = mock.Mock()
+        json_return_value = ""
+        response_value.json = mock.Mock(return_value={})
+        response_value.status_code = 400
+        response_value.request = mock.Mock()
+        req.return_value = response_value
+        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
+        client.modify_ack_deadline(request)
+
+
+@pytest.mark.parametrize(
+    "request_type",
+    [
+        pubsub.ModifyAckDeadlineRequest,
+        dict,
+    ],
+)
+def test_modify_ack_deadline_rest_call_success(request_type):
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(), transport="rest"
+    )
+
+    # send a request that will satisfy transcoding
+    request_init = {"subscription": "projects/sample1/subscriptions/sample2"}
+    request = request_type(**request_init)
+
+    # Mock the http request call within the method and fake a response.
+    with mock.patch.object(type(client.transport._session), "request") as req:
+        # Designate an appropriate value for the returned response.
+        return_value = None
+
+        # Wrap the value into a proper Response obj
+        response_value = mock.Mock()
+        response_value.status_code = 200
+        json_return_value = ""
+        response_value.content = json_return_value.encode("UTF-8")
+        req.return_value = response_value
+        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
+        response = client.modify_ack_deadline(request)
+
+    # Establish that the response is the type that we expect.
+    assert response is None
+
+
+@pytest.mark.parametrize("null_interceptor", [True, False])
+def test_modify_ack_deadline_rest_interceptors(null_interceptor):
+    transport = transports.SubscriberRestTransport(
+        credentials=ga_credentials.AnonymousCredentials(),
+        interceptor=None
+        if null_interceptor
+        else transports.SubscriberRestInterceptor(),
+    )
+    client = SubscriberClient(transport=transport)
+
+    with mock.patch.object(
+        type(client.transport._session), "request"
+    ) as req, mock.patch.object(
+        path_template, "transcode"
+    ) as transcode, mock.patch.object(
+        transports.SubscriberRestInterceptor, "pre_modify_ack_deadline"
+    ) as pre:
+        pre.assert_not_called()
+        pb_message = pubsub.ModifyAckDeadlineRequest.pb(
+            pubsub.ModifyAckDeadlineRequest()
+        )
+        transcode.return_value = {
+            "method": "post",
+            "uri": "my_uri",
+            "body": pb_message,
+            "query_params": pb_message,
+        }
+
+        req.return_value = mock.Mock()
+        req.return_value.status_code = 200
+        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
+
+        request = pubsub.ModifyAckDeadlineRequest()
+        metadata = [
+            ("key", "val"),
+            ("cephalopod", "squid"),
+        ]
+        pre.return_value = request, metadata
+
+        client.modify_ack_deadline(
+            request,
+            metadata=[
+                ("key", "val"),
+                ("cephalopod", "squid"),
+            ],
+        )
+
+        pre.assert_called_once()
+
+
+def test_acknowledge_rest_bad_request(request_type=pubsub.AcknowledgeRequest):
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(), transport="rest"
+    )
+    # send a request that will satisfy transcoding
+    request_init = {"subscription": "projects/sample1/subscriptions/sample2"}
+    request = request_type(**request_init)
+
+    # Mock the http request call within the method and fake a BadRequest error.
+    with mock.patch.object(Session, "request") as req, pytest.raises(
+        core_exceptions.BadRequest
+    ):
+        # Wrap the value into a proper Response obj
+        response_value = mock.Mock()
+        json_return_value = ""
+        response_value.json = mock.Mock(return_value={})
+        response_value.status_code = 400
+        response_value.request = mock.Mock()
+        req.return_value = response_value
+        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
+        client.acknowledge(request)
+
+
+@pytest.mark.parametrize(
+    "request_type",
+    [
+        pubsub.AcknowledgeRequest,
+        dict,
+    ],
+)
+def test_acknowledge_rest_call_success(request_type):
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(), transport="rest"
+    )
+
+    # send a request that will satisfy transcoding
+    request_init = {"subscription": "projects/sample1/subscriptions/sample2"}
+    request = request_type(**request_init)
+
+    # Mock the http request call within the method and fake a response.
+    with mock.patch.object(type(client.transport._session), "request") as req:
+        # Designate an appropriate value for the returned response.
+        return_value = None
+
+        # Wrap the value into a proper Response obj
+        response_value = mock.Mock()
+        response_value.status_code = 200
+        json_return_value = ""
+        response_value.content = json_return_value.encode("UTF-8")
+        req.return_value = response_value
+        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
+        response = client.acknowledge(request)
+
+    # Establish that the response is the type that we expect.
+    assert response is None
+
+
+@pytest.mark.parametrize("null_interceptor", [True, False])
+def test_acknowledge_rest_interceptors(null_interceptor):
+    transport = transports.SubscriberRestTransport(
+        credentials=ga_credentials.AnonymousCredentials(),
+        interceptor=None
+        if null_interceptor
+        else transports.SubscriberRestInterceptor(),
+    )
+    client = SubscriberClient(transport=transport)
+
+    with mock.patch.object(
+        type(client.transport._session), "request"
+    ) as req, mock.patch.object(
+        path_template, "transcode"
+    ) as transcode, mock.patch.object(
+        transports.SubscriberRestInterceptor, "pre_acknowledge"
+    ) as pre:
+        pre.assert_not_called()
+        pb_message = pubsub.AcknowledgeRequest.pb(pubsub.AcknowledgeRequest())
+        transcode.return_value = {
+            "method": "post",
+            "uri": "my_uri",
+            "body": pb_message,
+            "query_params": pb_message,
+        }
+
+        req.return_value = mock.Mock()
+        req.return_value.status_code = 200
+        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
+
+        request = pubsub.AcknowledgeRequest()
+        metadata = [
+            ("key", "val"),
+            ("cephalopod", "squid"),
+        ]
+        pre.return_value = request, metadata
+
+        client.acknowledge(
+            request,
+            metadata=[
+                ("key", "val"),
+                ("cephalopod", "squid"),
+            ],
+        )
+
+        pre.assert_called_once()
+
+
+def test_pull_rest_bad_request(request_type=pubsub.PullRequest):
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(), transport="rest"
+    )
+    # send a request that will satisfy transcoding
+    request_init = {"subscription": "projects/sample1/subscriptions/sample2"}
+    request = request_type(**request_init)
+
+    # Mock the http request call within the method and fake a BadRequest error.
+    with mock.patch.object(Session, "request") as req, pytest.raises(
+        core_exceptions.BadRequest
+    ):
+        # Wrap the value into a proper Response obj
+        response_value = mock.Mock()
+        json_return_value = ""
+        response_value.json = mock.Mock(return_value={})
+        response_value.status_code = 400
+        response_value.request = mock.Mock()
+        req.return_value = response_value
+        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
+        client.pull(request)
+
+
+@pytest.mark.parametrize(
+    "request_type",
+    [
+        pubsub.PullRequest,
+        dict,
+    ],
+)
+def test_pull_rest_call_success(request_type):
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(), transport="rest"
+    )
+
+    # send a request that will satisfy transcoding
+    request_init = {"subscription": "projects/sample1/subscriptions/sample2"}
+    request = request_type(**request_init)
+
+    # Mock the http request call within the method and fake a response.
+    with mock.patch.object(type(client.transport._session), "request") as req:
+        # Designate an appropriate value for the returned response.
+        return_value = pubsub.PullResponse()
+
+        # Wrap the value into a proper Response obj
+        response_value = mock.Mock()
+        response_value.status_code = 200
+
+        # Convert return value to protobuf type
+        return_value = pubsub.PullResponse.pb(return_value)
+        json_return_value = json_format.MessageToJson(return_value)
+        response_value.content = json_return_value.encode("UTF-8")
+        req.return_value = response_value
+        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
+        response = client.pull(request)
+
+    # Establish that the response is the type that we expect.
+    assert isinstance(response, pubsub.PullResponse)
+
+
+@pytest.mark.parametrize("null_interceptor", [True, False])
+def test_pull_rest_interceptors(null_interceptor):
+    transport = transports.SubscriberRestTransport(
+        credentials=ga_credentials.AnonymousCredentials(),
+        interceptor=None
+        if null_interceptor
+        else transports.SubscriberRestInterceptor(),
+    )
+    client = SubscriberClient(transport=transport)
+
+    with mock.patch.object(
+        type(client.transport._session), "request"
+    ) as req, mock.patch.object(
+        path_template, "transcode"
+    ) as transcode, mock.patch.object(
+        transports.SubscriberRestInterceptor, "post_pull"
+    ) as post, mock.patch.object(
+        transports.SubscriberRestInterceptor, "post_pull_with_metadata"
+    ) as post_with_metadata, mock.patch.object(
+        transports.SubscriberRestInterceptor, "pre_pull"
+    ) as pre:
+        pre.assert_not_called()
+        post.assert_not_called()
+        post_with_metadata.assert_not_called()
+        pb_message = pubsub.PullRequest.pb(pubsub.PullRequest())
+        transcode.return_value = {
+            "method": "post",
+            "uri": "my_uri",
+            "body": pb_message,
+            "query_params": pb_message,
+        }
+
+        req.return_value = mock.Mock()
+        req.return_value.status_code = 200
+        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
+        return_value = pubsub.PullResponse.to_json(pubsub.PullResponse())
+        req.return_value.content = return_value
+
+        request = pubsub.PullRequest()
+        metadata = [
+            ("key", "val"),
+            ("cephalopod", "squid"),
+        ]
+        pre.return_value = request, metadata
+        post.return_value = pubsub.PullResponse()
+        post_with_metadata.return_value = pubsub.PullResponse(), metadata
+
+        client.pull(
+            request,
+            metadata=[
+                ("key", "val"),
+                ("cephalopod", "squid"),
+            ],
+        )
+
+        pre.assert_called_once()
+        post.assert_called_once()
+        post_with_metadata.assert_called_once()
+
+
+def test_streaming_pull_rest_error():
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(), transport="rest"
+    )
+
+    with pytest.raises(NotImplementedError) as not_implemented_error:
+        client.streaming_pull({})
+    assert "Method StreamingPull is not available over REST transport" in str(
+        not_implemented_error.value
+    )
+
+
+def test_modify_push_config_rest_bad_request(
+    request_type=pubsub.ModifyPushConfigRequest,
+):
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(), transport="rest"
+    )
+    # send a request that will satisfy transcoding
+    request_init = {"subscription": "projects/sample1/subscriptions/sample2"}
+    request = request_type(**request_init)
+
+    # Mock the http request call within the method and fake a BadRequest error.
+    with mock.patch.object(Session, "request") as req, pytest.raises(
+        core_exceptions.BadRequest
+    ):
+        # Wrap the value into a proper Response obj
+        response_value = mock.Mock()
+        json_return_value = ""
+        response_value.json = mock.Mock(return_value={})
+        response_value.status_code = 400
+        response_value.request = mock.Mock()
+        req.return_value = response_value
+        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
+        client.modify_push_config(request)
+
+
+@pytest.mark.parametrize(
+    "request_type",
+    [
+        pubsub.ModifyPushConfigRequest,
+        dict,
+    ],
+)
+def test_modify_push_config_rest_call_success(request_type):
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(), transport="rest"
+    )
+
+    # send a request that will satisfy transcoding
+    request_init = {"subscription": "projects/sample1/subscriptions/sample2"}
+    request = request_type(**request_init)
+
+    # Mock the http request call within the method and fake a response.
+    with mock.patch.object(type(client.transport._session), "request") as req:
+        # Designate an appropriate value for the returned response.
+        return_value = None
+
+        # Wrap the value into a proper Response obj
+        response_value = mock.Mock()
+        response_value.status_code = 200
+        json_return_value = ""
+        response_value.content = json_return_value.encode("UTF-8")
+        req.return_value = response_value
+        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
+        response = client.modify_push_config(request)
+
+    # Establish that the response is the type that we expect.
+    assert response is None
+
+
+@pytest.mark.parametrize("null_interceptor", [True, False])
+def test_modify_push_config_rest_interceptors(null_interceptor):
+    transport = transports.SubscriberRestTransport(
+        credentials=ga_credentials.AnonymousCredentials(),
+        interceptor=None
+        if null_interceptor
+        else transports.SubscriberRestInterceptor(),
+    )
+    client = SubscriberClient(transport=transport)
+
+    with mock.patch.object(
+        type(client.transport._session), "request"
+    ) as req, mock.patch.object(
+        path_template, "transcode"
+    ) as transcode, mock.patch.object(
+        transports.SubscriberRestInterceptor, "pre_modify_push_config"
+    ) as pre:
+        pre.assert_not_called()
+        pb_message = pubsub.ModifyPushConfigRequest.pb(pubsub.ModifyPushConfigRequest())
+        transcode.return_value = {
+            "method": "post",
+            "uri": "my_uri",
+            "body": pb_message,
+            "query_params": pb_message,
+        }
+
+        req.return_value = mock.Mock()
+        req.return_value.status_code = 200
+        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
+
+        request = pubsub.ModifyPushConfigRequest()
+        metadata = [
+            ("key", "val"),
+            ("cephalopod", "squid"),
+        ]
+        pre.return_value = request, metadata
+
+        client.modify_push_config(
+            request,
+            metadata=[
+                ("key", "val"),
+                ("cephalopod", "squid"),
+            ],
+        )
+
+        pre.assert_called_once()
+
+
+def test_get_snapshot_rest_bad_request(request_type=pubsub.GetSnapshotRequest):
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(), transport="rest"
+    )
+    # send a request that will satisfy transcoding
+    request_init = {"snapshot": "projects/sample1/snapshots/sample2"}
+    request = request_type(**request_init)
+
+    # Mock the http request call within the method and fake a BadRequest error.
+    with mock.patch.object(Session, "request") as req, pytest.raises(
+        core_exceptions.BadRequest
+    ):
+        # Wrap the value into a proper Response obj
+        response_value = mock.Mock()
+        json_return_value = ""
+        response_value.json = mock.Mock(return_value={})
+        response_value.status_code = 400
+        response_value.request = mock.Mock()
+        req.return_value = response_value
+        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
+        client.get_snapshot(request)
+
+
+@pytest.mark.parametrize(
+    "request_type",
+    [
+        pubsub.GetSnapshotRequest,
+        dict,
+    ],
+)
+def test_get_snapshot_rest_call_success(request_type):
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(), transport="rest"
+    )
+
+    # send a request that will satisfy transcoding
+    request_init = {"snapshot": "projects/sample1/snapshots/sample2"}
+    request = request_type(**request_init)
+
+    # Mock the http request call within the method and fake a response.
+    with mock.patch.object(type(client.transport._session), "request") as req:
+        # Designate an appropriate value for the returned response.
+        return_value = pubsub.Snapshot(
+            name="name_value",
+            topic="topic_value",
+        )
+
+        # Wrap the value into a proper Response obj
+        response_value = mock.Mock()
+        response_value.status_code = 200
+
+        # Convert return value to protobuf type
+        return_value = pubsub.Snapshot.pb(return_value)
+        json_return_value = json_format.MessageToJson(return_value)
+        response_value.content = json_return_value.encode("UTF-8")
+        req.return_value = response_value
+        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
+        response = client.get_snapshot(request)
+
+    # Establish that the response is the type that we expect.
+    assert isinstance(response, pubsub.Snapshot)
+    assert response.name == "name_value"
+    assert response.topic == "topic_value"
+
+
+@pytest.mark.parametrize("null_interceptor", [True, False])
+def test_get_snapshot_rest_interceptors(null_interceptor):
+    transport = transports.SubscriberRestTransport(
+        credentials=ga_credentials.AnonymousCredentials(),
+        interceptor=None
+        if null_interceptor
+        else transports.SubscriberRestInterceptor(),
+    )
+    client = SubscriberClient(transport=transport)
+
+    with mock.patch.object(
+        type(client.transport._session), "request"
+    ) as req, mock.patch.object(
+        path_template, "transcode"
+    ) as transcode, mock.patch.object(
+        transports.SubscriberRestInterceptor, "post_get_snapshot"
+    ) as post, mock.patch.object(
+        transports.SubscriberRestInterceptor, "post_get_snapshot_with_metadata"
+    ) as post_with_metadata, mock.patch.object(
+        transports.SubscriberRestInterceptor, "pre_get_snapshot"
+    ) as pre:
+        pre.assert_not_called()
+        post.assert_not_called()
+        post_with_metadata.assert_not_called()
+        pb_message = pubsub.GetSnapshotRequest.pb(pubsub.GetSnapshotRequest())
+        transcode.return_value = {
+            "method": "post",
+            "uri": "my_uri",
+            "body": pb_message,
+            "query_params": pb_message,
+        }
+
+        req.return_value = mock.Mock()
+        req.return_value.status_code = 200
+        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
+        return_value = pubsub.Snapshot.to_json(pubsub.Snapshot())
+        req.return_value.content = return_value
+
+        request = pubsub.GetSnapshotRequest()
+        metadata = [
+            ("key", "val"),
+            ("cephalopod", "squid"),
+        ]
+        pre.return_value = request, metadata
+        post.return_value = pubsub.Snapshot()
+        post_with_metadata.return_value = pubsub.Snapshot(), metadata
+
+        client.get_snapshot(
+            request,
+            metadata=[
+                ("key", "val"),
+                ("cephalopod", "squid"),
+            ],
+        )
+
+        pre.assert_called_once()
+        post.assert_called_once()
+        post_with_metadata.assert_called_once()
+
+
+def test_list_snapshots_rest_bad_request(request_type=pubsub.ListSnapshotsRequest):
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(), transport="rest"
+    )
+    # send a request that will satisfy transcoding
+    request_init = {"project": "projects/sample1"}
+    request = request_type(**request_init)
+
+    # Mock the http request call within the method and fake a BadRequest error.
+    with mock.patch.object(Session, "request") as req, pytest.raises(
+        core_exceptions.BadRequest
+    ):
+        # Wrap the value into a proper Response obj
+        response_value = mock.Mock()
+        json_return_value = ""
+        response_value.json = mock.Mock(return_value={})
+        response_value.status_code = 400
+        response_value.request = mock.Mock()
+        req.return_value = response_value
+        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
+        client.list_snapshots(request)
+
+
+@pytest.mark.parametrize(
+    "request_type",
+    [
+        pubsub.ListSnapshotsRequest,
+        dict,
+    ],
+)
+def test_list_snapshots_rest_call_success(request_type):
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(), transport="rest"
+    )
+
+    # send a request that will satisfy transcoding
+    request_init = {"project": "projects/sample1"}
+    request = request_type(**request_init)
+
+    # Mock the http request call within the method and fake a response.
+    with mock.patch.object(type(client.transport._session), "request") as req:
+        # Designate an appropriate value for the returned response.
+        return_value = pubsub.ListSnapshotsResponse(
+            next_page_token="next_page_token_value",
+        )
+
+        # Wrap the value into a proper Response obj
+        response_value = mock.Mock()
+        response_value.status_code = 200
+
+        # Convert return value to protobuf type
+        return_value = pubsub.ListSnapshotsResponse.pb(return_value)
+        json_return_value = json_format.MessageToJson(return_value)
+        response_value.content = json_return_value.encode("UTF-8")
+        req.return_value = response_value
+        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
+        response = client.list_snapshots(request)
+
+    # Establish that the response is the type that we expect.
+    assert isinstance(response, pagers.ListSnapshotsPager)
+    assert response.next_page_token == "next_page_token_value"
+
+
+@pytest.mark.parametrize("null_interceptor", [True, False])
+def test_list_snapshots_rest_interceptors(null_interceptor):
+    transport = transports.SubscriberRestTransport(
+        credentials=ga_credentials.AnonymousCredentials(),
+        interceptor=None
+        if null_interceptor
+        else transports.SubscriberRestInterceptor(),
+    )
+    client = SubscriberClient(transport=transport)
+
+    with mock.patch.object(
+        type(client.transport._session), "request"
+    ) as req, mock.patch.object(
+        path_template, "transcode"
+    ) as transcode, mock.patch.object(
+        transports.SubscriberRestInterceptor, "post_list_snapshots"
+    ) as post, mock.patch.object(
+        transports.SubscriberRestInterceptor, "post_list_snapshots_with_metadata"
+    ) as post_with_metadata, mock.patch.object(
+        transports.SubscriberRestInterceptor, "pre_list_snapshots"
+    ) as pre:
+        pre.assert_not_called()
+        post.assert_not_called()
+        post_with_metadata.assert_not_called()
+        pb_message = pubsub.ListSnapshotsRequest.pb(pubsub.ListSnapshotsRequest())
+        transcode.return_value = {
+            "method": "post",
+            "uri": "my_uri",
+            "body": pb_message,
+            "query_params": pb_message,
+        }
+
+        req.return_value = mock.Mock()
+        req.return_value.status_code = 200
+        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
+        return_value = pubsub.ListSnapshotsResponse.to_json(
+            pubsub.ListSnapshotsResponse()
+        )
+        req.return_value.content = return_value
+
+        request = pubsub.ListSnapshotsRequest()
+        metadata = [
+            ("key", "val"),
+            ("cephalopod", "squid"),
+        ]
+        pre.return_value = request, metadata
+        post.return_value = pubsub.ListSnapshotsResponse()
+        post_with_metadata.return_value = pubsub.ListSnapshotsResponse(), metadata
+
+        client.list_snapshots(
+            request,
+            metadata=[
+                ("key", "val"),
+                ("cephalopod", "squid"),
+            ],
+        )
+
+        pre.assert_called_once()
+        post.assert_called_once()
+        post_with_metadata.assert_called_once()
+
+
+def test_create_snapshot_rest_bad_request(request_type=pubsub.CreateSnapshotRequest):
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(), transport="rest"
+    )
+    # send a request that will satisfy transcoding
+    request_init = {"name": "projects/sample1/snapshots/sample2"}
+    request = request_type(**request_init)
+
+    # Mock the http request call within the method and fake a BadRequest error.
+    with mock.patch.object(Session, "request") as req, pytest.raises(
+        core_exceptions.BadRequest
+    ):
+        # Wrap the value into a proper Response obj
+        response_value = mock.Mock()
+        json_return_value = ""
+        response_value.json = mock.Mock(return_value={})
+        response_value.status_code = 400
+        response_value.request = mock.Mock()
+        req.return_value = response_value
+        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
+        client.create_snapshot(request)
+
+
+@pytest.mark.parametrize(
+    "request_type",
+    [
+        pubsub.CreateSnapshotRequest,
+        dict,
+    ],
+)
+def test_create_snapshot_rest_call_success(request_type):
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(), transport="rest"
+    )
+
+    # send a request that will satisfy transcoding
+    request_init = {"name": "projects/sample1/snapshots/sample2"}
+    request = request_type(**request_init)
+
+    # Mock the http request call within the method and fake a response.
+    with mock.patch.object(type(client.transport._session), "request") as req:
+        # Designate an appropriate value for the returned response.
+        return_value = pubsub.Snapshot(
+            name="name_value",
+            topic="topic_value",
+        )
+
+        # Wrap the value into a proper Response obj
+        response_value = mock.Mock()
+        response_value.status_code = 200
+
+        # Convert return value to protobuf type
+        return_value = pubsub.Snapshot.pb(return_value)
+        json_return_value = json_format.MessageToJson(return_value)
+        response_value.content = json_return_value.encode("UTF-8")
+        req.return_value = response_value
+        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
+        response = client.create_snapshot(request)
+
+    # Establish that the response is the type that we expect.
+    assert isinstance(response, pubsub.Snapshot)
+    assert response.name == "name_value"
+    assert response.topic == "topic_value"
+
+
+@pytest.mark.parametrize("null_interceptor", [True, False])
+def test_create_snapshot_rest_interceptors(null_interceptor):
+    transport = transports.SubscriberRestTransport(
+        credentials=ga_credentials.AnonymousCredentials(),
+        interceptor=None
+        if null_interceptor
+        else transports.SubscriberRestInterceptor(),
+    )
+    client = SubscriberClient(transport=transport)
+
+    with mock.patch.object(
+        type(client.transport._session), "request"
+    ) as req, mock.patch.object(
+        path_template, "transcode"
+    ) as transcode, mock.patch.object(
+        transports.SubscriberRestInterceptor, "post_create_snapshot"
+    ) as post, mock.patch.object(
+        transports.SubscriberRestInterceptor, "post_create_snapshot_with_metadata"
+    ) as post_with_metadata, mock.patch.object(
+        transports.SubscriberRestInterceptor, "pre_create_snapshot"
+    ) as pre:
+        pre.assert_not_called()
+        post.assert_not_called()
+        post_with_metadata.assert_not_called()
+        pb_message = pubsub.CreateSnapshotRequest.pb(pubsub.CreateSnapshotRequest())
+        transcode.return_value = {
+            "method": "post",
+            "uri": "my_uri",
+            "body": pb_message,
+            "query_params": pb_message,
+        }
+
+        req.return_value = mock.Mock()
+        req.return_value.status_code = 200
+        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
+        return_value = pubsub.Snapshot.to_json(pubsub.Snapshot())
+        req.return_value.content = return_value
+
+        request = pubsub.CreateSnapshotRequest()
+        metadata = [
+            ("key", "val"),
+            ("cephalopod", "squid"),
+        ]
+        pre.return_value = request, metadata
+        post.return_value = pubsub.Snapshot()
+        post_with_metadata.return_value = pubsub.Snapshot(), metadata
+
+        client.create_snapshot(
+            request,
+            metadata=[
+                ("key", "val"),
+                ("cephalopod", "squid"),
+            ],
+        )
+
+        pre.assert_called_once()
+        post.assert_called_once()
+        post_with_metadata.assert_called_once()
+
+
+def test_update_snapshot_rest_bad_request(request_type=pubsub.UpdateSnapshotRequest):
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(), transport="rest"
+    )
+    # send a request that will satisfy transcoding
+    request_init = {"snapshot": {"name": "projects/sample1/snapshots/sample2"}}
+    request = request_type(**request_init)
+
+    # Mock the http request call within the method and fake a BadRequest error.
+    with mock.patch.object(Session, "request") as req, pytest.raises(
+        core_exceptions.BadRequest
+    ):
+        # Wrap the value into a proper Response obj
+        response_value = mock.Mock()
+        json_return_value = ""
+        response_value.json = mock.Mock(return_value={})
+        response_value.status_code = 400
+        response_value.request = mock.Mock()
+        req.return_value = response_value
+        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
+        client.update_snapshot(request)
+
+
+@pytest.mark.parametrize(
+    "request_type",
+    [
+        pubsub.UpdateSnapshotRequest,
+        dict,
+    ],
+)
+def test_update_snapshot_rest_call_success(request_type):
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(), transport="rest"
+    )
+
+    # send a request that will satisfy transcoding
+    request_init = {"snapshot": {"name": "projects/sample1/snapshots/sample2"}}
+    request = request_type(**request_init)
+
+    # Mock the http request call within the method and fake a response.
+    with mock.patch.object(type(client.transport._session), "request") as req:
+        # Designate an appropriate value for the returned response.
+        return_value = pubsub.Snapshot(
+            name="name_value",
+            topic="topic_value",
+        )
+
+        # Wrap the value into a proper Response obj
+        response_value = mock.Mock()
+        response_value.status_code = 200
+
+        # Convert return value to protobuf type
+        return_value = pubsub.Snapshot.pb(return_value)
+        json_return_value = json_format.MessageToJson(return_value)
+        response_value.content = json_return_value.encode("UTF-8")
+        req.return_value = response_value
+        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
+        response = client.update_snapshot(request)
+
+    # Establish that the response is the type that we expect.
+    assert isinstance(response, pubsub.Snapshot)
+    assert response.name == "name_value"
+    assert response.topic == "topic_value"
+
+
+@pytest.mark.parametrize("null_interceptor", [True, False])
+def test_update_snapshot_rest_interceptors(null_interceptor):
+    transport = transports.SubscriberRestTransport(
+        credentials=ga_credentials.AnonymousCredentials(),
+        interceptor=None
+        if null_interceptor
+        else transports.SubscriberRestInterceptor(),
+    )
+    client = SubscriberClient(transport=transport)
+
+    with mock.patch.object(
+        type(client.transport._session), "request"
+    ) as req, mock.patch.object(
+        path_template, "transcode"
+    ) as transcode, mock.patch.object(
+        transports.SubscriberRestInterceptor, "post_update_snapshot"
+    ) as post, mock.patch.object(
+        transports.SubscriberRestInterceptor, "post_update_snapshot_with_metadata"
+    ) as post_with_metadata, mock.patch.object(
+        transports.SubscriberRestInterceptor, "pre_update_snapshot"
+    ) as pre:
+        pre.assert_not_called()
+        post.assert_not_called()
+        post_with_metadata.assert_not_called()
+        pb_message = pubsub.UpdateSnapshotRequest.pb(pubsub.UpdateSnapshotRequest())
+        transcode.return_value = {
+            "method": "post",
+            "uri": "my_uri",
+            "body": pb_message,
+            "query_params": pb_message,
+        }
+
+        req.return_value = mock.Mock()
+        req.return_value.status_code = 200
+        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
+        return_value = pubsub.Snapshot.to_json(pubsub.Snapshot())
+        req.return_value.content = return_value
+
+        request = pubsub.UpdateSnapshotRequest()
+        metadata = [
+            ("key", "val"),
+            ("cephalopod", "squid"),
+        ]
+        pre.return_value = request, metadata
+        post.return_value = pubsub.Snapshot()
+        post_with_metadata.return_value = pubsub.Snapshot(), metadata
+
+        client.update_snapshot(
+            request,
+            metadata=[
+                ("key", "val"),
+                ("cephalopod", "squid"),
+            ],
+        )
+
+        pre.assert_called_once()
+        post.assert_called_once()
+        post_with_metadata.assert_called_once()
+
+
+def test_delete_snapshot_rest_bad_request(request_type=pubsub.DeleteSnapshotRequest):
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(), transport="rest"
+    )
+    # send a request that will satisfy transcoding
+    request_init = {"snapshot": "projects/sample1/snapshots/sample2"}
+    request = request_type(**request_init)
+
+    # Mock the http request call within the method and fake a BadRequest error.
+    with mock.patch.object(Session, "request") as req, pytest.raises(
+        core_exceptions.BadRequest
+    ):
+        # Wrap the value into a proper Response obj
+        response_value = mock.Mock()
+        json_return_value = ""
+        response_value.json = mock.Mock(return_value={})
+        response_value.status_code = 400
+        response_value.request = mock.Mock()
+        req.return_value = response_value
+        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
+        client.delete_snapshot(request)
+
+
+@pytest.mark.parametrize(
+    "request_type",
+    [
+        pubsub.DeleteSnapshotRequest,
+        dict,
+    ],
+)
+def test_delete_snapshot_rest_call_success(request_type):
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(), transport="rest"
+    )
+
+    # send a request that will satisfy transcoding
+    request_init = {"snapshot": "projects/sample1/snapshots/sample2"}
+    request = request_type(**request_init)
+
+    # Mock the http request call within the method and fake a response.
+    with mock.patch.object(type(client.transport._session), "request") as req:
+        # Designate an appropriate value for the returned response.
+        return_value = None
+
+        # Wrap the value into a proper Response obj
+        response_value = mock.Mock()
+        response_value.status_code = 200
+        json_return_value = ""
+        response_value.content = json_return_value.encode("UTF-8")
+        req.return_value = response_value
+        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
+        response = client.delete_snapshot(request)
+
+    # Establish that the response is the type that we expect.
+    assert response is None
+
+
+@pytest.mark.parametrize("null_interceptor", [True, False])
+def test_delete_snapshot_rest_interceptors(null_interceptor):
+    transport = transports.SubscriberRestTransport(
+        credentials=ga_credentials.AnonymousCredentials(),
+        interceptor=None
+        if null_interceptor
+        else transports.SubscriberRestInterceptor(),
+    )
+    client = SubscriberClient(transport=transport)
+
+    with mock.patch.object(
+        type(client.transport._session), "request"
+    ) as req, mock.patch.object(
+        path_template, "transcode"
+    ) as transcode, mock.patch.object(
+        transports.SubscriberRestInterceptor, "pre_delete_snapshot"
+    ) as pre:
+        pre.assert_not_called()
+        pb_message = pubsub.DeleteSnapshotRequest.pb(pubsub.DeleteSnapshotRequest())
+        transcode.return_value = {
+            "method": "post",
+            "uri": "my_uri",
+            "body": pb_message,
+            "query_params": pb_message,
+        }
+
+        req.return_value = mock.Mock()
+        req.return_value.status_code = 200
+        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
+
+        request = pubsub.DeleteSnapshotRequest()
+        metadata = [
+            ("key", "val"),
+            ("cephalopod", "squid"),
+        ]
+        pre.return_value = request, metadata
+
+        client.delete_snapshot(
+            request,
+            metadata=[
+                ("key", "val"),
+                ("cephalopod", "squid"),
+            ],
+        )
+
+        pre.assert_called_once()
+
+
+def test_seek_rest_bad_request(request_type=pubsub.SeekRequest):
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(), transport="rest"
+    )
+    # send a request that will satisfy transcoding
+    request_init = {"subscription": "projects/sample1/subscriptions/sample2"}
+    request = request_type(**request_init)
+
+    # Mock the http request call within the method and fake a BadRequest error.
+    with mock.patch.object(Session, "request") as req, pytest.raises(
+        core_exceptions.BadRequest
+    ):
+        # Wrap the value into a proper Response obj
+        response_value = mock.Mock()
+        json_return_value = ""
+        response_value.json = mock.Mock(return_value={})
+        response_value.status_code = 400
+        response_value.request = mock.Mock()
+        req.return_value = response_value
+        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
+        client.seek(request)
+
+
+@pytest.mark.parametrize(
+    "request_type",
+    [
+        pubsub.SeekRequest,
+        dict,
+    ],
+)
+def test_seek_rest_call_success(request_type):
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(), transport="rest"
+    )
+
+    # send a request that will satisfy transcoding
+    request_init = {"subscription": "projects/sample1/subscriptions/sample2"}
+    request = request_type(**request_init)
+
+    # Mock the http request call within the method and fake a response.
+    with mock.patch.object(type(client.transport._session), "request") as req:
+        # Designate an appropriate value for the returned response.
+        return_value = pubsub.SeekResponse()
+
+        # Wrap the value into a proper Response obj
+        response_value = mock.Mock()
+        response_value.status_code = 200
+
+        # Convert return value to protobuf type
+        return_value = pubsub.SeekResponse.pb(return_value)
+        json_return_value = json_format.MessageToJson(return_value)
+        response_value.content = json_return_value.encode("UTF-8")
+        req.return_value = response_value
+        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
+        response = client.seek(request)
+
+    # Establish that the response is the type that we expect.
+    assert isinstance(response, pubsub.SeekResponse)
+
+
+@pytest.mark.parametrize("null_interceptor", [True, False])
+def test_seek_rest_interceptors(null_interceptor):
+    transport = transports.SubscriberRestTransport(
+        credentials=ga_credentials.AnonymousCredentials(),
+        interceptor=None
+        if null_interceptor
+        else transports.SubscriberRestInterceptor(),
+    )
+    client = SubscriberClient(transport=transport)
+
+    with mock.patch.object(
+        type(client.transport._session), "request"
+    ) as req, mock.patch.object(
+        path_template, "transcode"
+    ) as transcode, mock.patch.object(
+        transports.SubscriberRestInterceptor, "post_seek"
+    ) as post, mock.patch.object(
+        transports.SubscriberRestInterceptor, "post_seek_with_metadata"
+    ) as post_with_metadata, mock.patch.object(
+        transports.SubscriberRestInterceptor, "pre_seek"
+    ) as pre:
+        pre.assert_not_called()
+        post.assert_not_called()
+        post_with_metadata.assert_not_called()
+        pb_message = pubsub.SeekRequest.pb(pubsub.SeekRequest())
+        transcode.return_value = {
+            "method": "post",
+            "uri": "my_uri",
+            "body": pb_message,
+            "query_params": pb_message,
+        }
+
+        req.return_value = mock.Mock()
+        req.return_value.status_code = 200
+        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
+        return_value = pubsub.SeekResponse.to_json(pubsub.SeekResponse())
+        req.return_value.content = return_value
+
+        request = pubsub.SeekRequest()
+        metadata = [
+            ("key", "val"),
+            ("cephalopod", "squid"),
+        ]
+        pre.return_value = request, metadata
+        post.return_value = pubsub.SeekResponse()
+        post_with_metadata.return_value = pubsub.SeekResponse(), metadata
+
+        client.seek(
+            request,
+            metadata=[
+                ("key", "val"),
+                ("cephalopod", "squid"),
+            ],
+        )
+
+        pre.assert_called_once()
+        post.assert_called_once()
+        post_with_metadata.assert_called_once()
+
+
+def test_get_iam_policy_rest_bad_request(
+    request_type=iam_policy_pb2.GetIamPolicyRequest,
+):
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="rest",
+    )
+    request = request_type()
+    request = json_format.ParseDict(
+        {"resource": "projects/sample1/topics/sample2"}, request
+    )
+
+    # Mock the http request call within the method and fake a BadRequest error.
+    with mock.patch.object(Session, "request") as req, pytest.raises(
+        core_exceptions.BadRequest
+    ):
+        # Wrap the value into a proper Response obj
+        response_value = Response()
+        json_return_value = ""
+        response_value.json = mock.Mock(return_value={})
+        response_value.status_code = 400
+        response_value.request = Request()
+        req.return_value = response_value
+        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
+        client.get_iam_policy(request)
+
+
+@pytest.mark.parametrize(
+    "request_type",
+    [
+        iam_policy_pb2.GetIamPolicyRequest,
+        dict,
+    ],
+)
+def test_get_iam_policy_rest(request_type):
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="rest",
+    )
+
+    request_init = {"resource": "projects/sample1/topics/sample2"}
+    request = request_type(**request_init)
+    # Mock the http request call within the method and fake a response.
+    with mock.patch.object(Session, "request") as req:
+        # Designate an appropriate value for the returned response.
+        return_value = policy_pb2.Policy()
+
+        # Wrap the value into a proper Response obj
+        response_value = mock.Mock()
+        response_value.status_code = 200
+        json_return_value = json_format.MessageToJson(return_value)
+        response_value.content = json_return_value.encode("UTF-8")
+
+        req.return_value = response_value
+        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
+
+        response = client.get_iam_policy(request)
+
+    # Establish that the response is the type that we expect.
+    assert isinstance(response, policy_pb2.Policy)
+
+
+def test_set_iam_policy_rest_bad_request(
+    request_type=iam_policy_pb2.SetIamPolicyRequest,
+):
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="rest",
+    )
+    request = request_type()
+    request = json_format.ParseDict(
+        {"resource": "projects/sample1/topics/sample2"}, request
+    )
+
+    # Mock the http request call within the method and fake a BadRequest error.
+    with mock.patch.object(Session, "request") as req, pytest.raises(
+        core_exceptions.BadRequest
+    ):
+        # Wrap the value into a proper Response obj
+        response_value = Response()
+        json_return_value = ""
+        response_value.json = mock.Mock(return_value={})
+        response_value.status_code = 400
+        response_value.request = Request()
+        req.return_value = response_value
+        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
+        client.set_iam_policy(request)
+
+
+@pytest.mark.parametrize(
+    "request_type",
+    [
+        iam_policy_pb2.SetIamPolicyRequest,
+        dict,
+    ],
+)
+def test_set_iam_policy_rest(request_type):
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="rest",
+    )
+
+    request_init = {"resource": "projects/sample1/topics/sample2"}
+    request = request_type(**request_init)
+    # Mock the http request call within the method and fake a response.
+    with mock.patch.object(Session, "request") as req:
+        # Designate an appropriate value for the returned response.
+        return_value = policy_pb2.Policy()
+
+        # Wrap the value into a proper Response obj
+        response_value = mock.Mock()
+        response_value.status_code = 200
+        json_return_value = json_format.MessageToJson(return_value)
+        response_value.content = json_return_value.encode("UTF-8")
+
+        req.return_value = response_value
+        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
+
+        response = client.set_iam_policy(request)
+
+    # Establish that the response is the type that we expect.
+    assert isinstance(response, policy_pb2.Policy)
+
+
+def test_test_iam_permissions_rest_bad_request(
+    request_type=iam_policy_pb2.TestIamPermissionsRequest,
+):
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="rest",
+    )
+    request = request_type()
+    request = json_format.ParseDict(
+        {"resource": "projects/sample1/subscriptions/sample2"}, request
+    )
+
+    # Mock the http request call within the method and fake a BadRequest error.
+    with mock.patch.object(Session, "request") as req, pytest.raises(
+        core_exceptions.BadRequest
+    ):
+        # Wrap the value into a proper Response obj
+        response_value = Response()
+        json_return_value = ""
+        response_value.json = mock.Mock(return_value={})
+        response_value.status_code = 400
+        response_value.request = Request()
+        req.return_value = response_value
+        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
+        client.test_iam_permissions(request)
+
+
+@pytest.mark.parametrize(
+    "request_type",
+    [
+        iam_policy_pb2.TestIamPermissionsRequest,
+        dict,
+    ],
+)
+def test_test_iam_permissions_rest(request_type):
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="rest",
+    )
+
+    request_init = {"resource": "projects/sample1/subscriptions/sample2"}
+    request = request_type(**request_init)
+    # Mock the http request call within the method and fake a response.
+    with mock.patch.object(Session, "request") as req:
+        # Designate an appropriate value for the returned response.
+        return_value = iam_policy_pb2.TestIamPermissionsResponse()
+
+        # Wrap the value into a proper Response obj
+        response_value = mock.Mock()
+        response_value.status_code = 200
+        json_return_value = json_format.MessageToJson(return_value)
+        response_value.content = json_return_value.encode("UTF-8")
+
+        req.return_value = response_value
+        req.return_value.headers = {"header-1": "value-1", "header-2": "value-2"}
+
+        response = client.test_iam_permissions(request)
+
+    # Establish that the response is the type that we expect.
+    assert isinstance(response, iam_policy_pb2.TestIamPermissionsResponse)
+
+
+def test_initialize_client_w_rest():
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(), transport="rest"
+    )
+    assert client is not None
+
+
+# This test is a coverage failsafe to make sure that totally empty calls,
+# i.e. request == None and no flattened fields passed, work.
+def test_create_subscription_empty_call_rest():
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="rest",
+    )
+
+    # Mock the actual call, and fake the request.
+    with mock.patch.object(
+        type(client.transport.create_subscription), "__call__"
+    ) as call:
+        client.create_subscription(request=None)
+
+        # Establish that the underlying stub method was called.
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        request_msg = pubsub.Subscription()
+
+        assert args[0] == request_msg
+
+
+# This test is a coverage failsafe to make sure that totally empty calls,
+# i.e. request == None and no flattened fields passed, work.
+def test_get_subscription_empty_call_rest():
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="rest",
+    )
+
+    # Mock the actual call, and fake the request.
+    with mock.patch.object(type(client.transport.get_subscription), "__call__") as call:
+        client.get_subscription(request=None)
+
+        # Establish that the underlying stub method was called.
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        request_msg = pubsub.GetSubscriptionRequest()
+
+        assert args[0] == request_msg
+
+
+# This test is a coverage failsafe to make sure that totally empty calls,
+# i.e. request == None and no flattened fields passed, work.
+def test_update_subscription_empty_call_rest():
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="rest",
+    )
+
+    # Mock the actual call, and fake the request.
+    with mock.patch.object(
+        type(client.transport.update_subscription), "__call__"
+    ) as call:
+        client.update_subscription(request=None)
+
+        # Establish that the underlying stub method was called.
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        request_msg = pubsub.UpdateSubscriptionRequest()
+
+        assert args[0] == request_msg
+
+
+# This test is a coverage failsafe to make sure that totally empty calls,
+# i.e. request == None and no flattened fields passed, work.
+def test_list_subscriptions_empty_call_rest():
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="rest",
+    )
+
+    # Mock the actual call, and fake the request.
+    with mock.patch.object(
+        type(client.transport.list_subscriptions), "__call__"
+    ) as call:
+        client.list_subscriptions(request=None)
+
+        # Establish that the underlying stub method was called.
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        request_msg = pubsub.ListSubscriptionsRequest()
+
+        assert args[0] == request_msg
+
+
+# This test is a coverage failsafe to make sure that totally empty calls,
+# i.e. request == None and no flattened fields passed, work.
+def test_delete_subscription_empty_call_rest():
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="rest",
+    )
+
+    # Mock the actual call, and fake the request.
+    with mock.patch.object(
+        type(client.transport.delete_subscription), "__call__"
+    ) as call:
+        client.delete_subscription(request=None)
+
+        # Establish that the underlying stub method was called.
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        request_msg = pubsub.DeleteSubscriptionRequest()
+
+        assert args[0] == request_msg
+
+
+# This test is a coverage failsafe to make sure that totally empty calls,
+# i.e. request == None and no flattened fields passed, work.
+def test_modify_ack_deadline_empty_call_rest():
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="rest",
+    )
+
+    # Mock the actual call, and fake the request.
+    with mock.patch.object(
+        type(client.transport.modify_ack_deadline), "__call__"
+    ) as call:
+        client.modify_ack_deadline(request=None)
+
+        # Establish that the underlying stub method was called.
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        request_msg = pubsub.ModifyAckDeadlineRequest()
+
+        assert args[0] == request_msg
+
+
+# This test is a coverage failsafe to make sure that totally empty calls,
+# i.e. request == None and no flattened fields passed, work.
+def test_acknowledge_empty_call_rest():
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="rest",
+    )
+
+    # Mock the actual call, and fake the request.
+    with mock.patch.object(type(client.transport.acknowledge), "__call__") as call:
+        client.acknowledge(request=None)
+
+        # Establish that the underlying stub method was called.
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        request_msg = pubsub.AcknowledgeRequest()
+
+        assert args[0] == request_msg
+
+
+# This test is a coverage failsafe to make sure that totally empty calls,
+# i.e. request == None and no flattened fields passed, work.
+def test_pull_empty_call_rest():
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="rest",
+    )
+
+    # Mock the actual call, and fake the request.
+    with mock.patch.object(type(client.transport.pull), "__call__") as call:
+        client.pull(request=None)
+
+        # Establish that the underlying stub method was called.
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        request_msg = pubsub.PullRequest()
+
+        assert args[0] == request_msg
+
+
+# This test is a coverage failsafe to make sure that totally empty calls,
+# i.e. request == None and no flattened fields passed, work.
+def test_modify_push_config_empty_call_rest():
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="rest",
+    )
+
+    # Mock the actual call, and fake the request.
+    with mock.patch.object(
+        type(client.transport.modify_push_config), "__call__"
+    ) as call:
+        client.modify_push_config(request=None)
+
+        # Establish that the underlying stub method was called.
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        request_msg = pubsub.ModifyPushConfigRequest()
+
+        assert args[0] == request_msg
+
+
+# This test is a coverage failsafe to make sure that totally empty calls,
+# i.e. request == None and no flattened fields passed, work.
+def test_get_snapshot_empty_call_rest():
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="rest",
+    )
+
+    # Mock the actual call, and fake the request.
+    with mock.patch.object(type(client.transport.get_snapshot), "__call__") as call:
+        client.get_snapshot(request=None)
+
+        # Establish that the underlying stub method was called.
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        request_msg = pubsub.GetSnapshotRequest()
+
+        assert args[0] == request_msg
+
+
+# This test is a coverage failsafe to make sure that totally empty calls,
+# i.e. request == None and no flattened fields passed, work.
+def test_list_snapshots_empty_call_rest():
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="rest",
+    )
+
+    # Mock the actual call, and fake the request.
+    with mock.patch.object(type(client.transport.list_snapshots), "__call__") as call:
+        client.list_snapshots(request=None)
+
+        # Establish that the underlying stub method was called.
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        request_msg = pubsub.ListSnapshotsRequest()
+
+        assert args[0] == request_msg
+
+
+# This test is a coverage failsafe to make sure that totally empty calls,
+# i.e. request == None and no flattened fields passed, work.
+def test_create_snapshot_empty_call_rest():
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="rest",
+    )
+
+    # Mock the actual call, and fake the request.
+    with mock.patch.object(type(client.transport.create_snapshot), "__call__") as call:
+        client.create_snapshot(request=None)
+
+        # Establish that the underlying stub method was called.
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        request_msg = pubsub.CreateSnapshotRequest()
+
+        assert args[0] == request_msg
+
+
+# This test is a coverage failsafe to make sure that totally empty calls,
+# i.e. request == None and no flattened fields passed, work.
+def test_update_snapshot_empty_call_rest():
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="rest",
+    )
+
+    # Mock the actual call, and fake the request.
+    with mock.patch.object(type(client.transport.update_snapshot), "__call__") as call:
+        client.update_snapshot(request=None)
+
+        # Establish that the underlying stub method was called.
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        request_msg = pubsub.UpdateSnapshotRequest()
+
+        assert args[0] == request_msg
+
+
+# This test is a coverage failsafe to make sure that totally empty calls,
+# i.e. request == None and no flattened fields passed, work.
+def test_delete_snapshot_empty_call_rest():
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="rest",
+    )
+
+    # Mock the actual call, and fake the request.
+    with mock.patch.object(type(client.transport.delete_snapshot), "__call__") as call:
+        client.delete_snapshot(request=None)
+
+        # Establish that the underlying stub method was called.
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        request_msg = pubsub.DeleteSnapshotRequest()
+
+        assert args[0] == request_msg
+
+
+# This test is a coverage failsafe to make sure that totally empty calls,
+# i.e. request == None and no flattened fields passed, work.
+def test_seek_empty_call_rest():
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(),
+        transport="rest",
+    )
+
+    # Mock the actual call, and fake the request.
+    with mock.patch.object(type(client.transport.seek), "__call__") as call:
+        client.seek(request=None)
+
+        # Establish that the underlying stub method was called.
+        call.assert_called()
+        _, args, _ = call.mock_calls[0]
+        request_msg = pubsub.SeekRequest()
+
+        assert args[0] == request_msg
 
 
 def test_transport_grpc_default():
@@ -10850,194 +13403,6 @@ def test_client_with_default_client_info():
         prep.assert_called_once_with(client_info)
 
 
-@pytest.mark.asyncio
-async def test_transport_close_async():
-    client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
-        transport="grpc_asyncio",
-    )
-    with mock.patch.object(
-        type(getattr(client.transport, "grpc_channel")), "close"
-    ) as close:
-        async with client:
-            close.assert_not_called()
-        close.assert_called_once()
-
-
-def test_get_iam_policy_rest_bad_request(
-    transport: str = "rest", request_type=iam_policy_pb2.GetIamPolicyRequest
-):
-    client = SubscriberClient(
-        credentials=ga_credentials.AnonymousCredentials(),
-        transport=transport,
-    )
-
-    request = request_type()
-    request = json_format.ParseDict(
-        {"resource": "projects/sample1/topics/sample2"}, request
-    )
-
-    # Mock the http request call within the method and fake a BadRequest error.
-    with mock.patch.object(Session, "request") as req, pytest.raises(
-        core_exceptions.BadRequest
-    ):
-        # Wrap the value into a proper Response obj
-        response_value = Response()
-        response_value.status_code = 400
-        response_value.request = Request()
-        req.return_value = response_value
-        client.get_iam_policy(request)
-
-
-@pytest.mark.parametrize(
-    "request_type",
-    [
-        iam_policy_pb2.GetIamPolicyRequest,
-        dict,
-    ],
-)
-def test_get_iam_policy_rest(request_type):
-    client = SubscriberClient(
-        credentials=ga_credentials.AnonymousCredentials(),
-        transport="rest",
-    )
-    request_init = {"resource": "projects/sample1/topics/sample2"}
-    request = request_type(**request_init)
-    # Mock the http request call within the method and fake a response.
-    with mock.patch.object(type(client.transport._session), "request") as req:
-        # Designate an appropriate value for the returned response.
-        return_value = policy_pb2.Policy()
-
-        # Wrap the value into a proper Response obj
-        response_value = Response()
-        response_value.status_code = 200
-        json_return_value = json_format.MessageToJson(return_value)
-
-        response_value._content = json_return_value.encode("UTF-8")
-        req.return_value = response_value
-
-        response = client.get_iam_policy(request)
-
-    # Establish that the response is the type that we expect.
-    assert isinstance(response, policy_pb2.Policy)
-
-
-def test_set_iam_policy_rest_bad_request(
-    transport: str = "rest", request_type=iam_policy_pb2.SetIamPolicyRequest
-):
-    client = SubscriberClient(
-        credentials=ga_credentials.AnonymousCredentials(),
-        transport=transport,
-    )
-
-    request = request_type()
-    request = json_format.ParseDict(
-        {"resource": "projects/sample1/topics/sample2"}, request
-    )
-
-    # Mock the http request call within the method and fake a BadRequest error.
-    with mock.patch.object(Session, "request") as req, pytest.raises(
-        core_exceptions.BadRequest
-    ):
-        # Wrap the value into a proper Response obj
-        response_value = Response()
-        response_value.status_code = 400
-        response_value.request = Request()
-        req.return_value = response_value
-        client.set_iam_policy(request)
-
-
-@pytest.mark.parametrize(
-    "request_type",
-    [
-        iam_policy_pb2.SetIamPolicyRequest,
-        dict,
-    ],
-)
-def test_set_iam_policy_rest(request_type):
-    client = SubscriberClient(
-        credentials=ga_credentials.AnonymousCredentials(),
-        transport="rest",
-    )
-    request_init = {"resource": "projects/sample1/topics/sample2"}
-    request = request_type(**request_init)
-    # Mock the http request call within the method and fake a response.
-    with mock.patch.object(type(client.transport._session), "request") as req:
-        # Designate an appropriate value for the returned response.
-        return_value = policy_pb2.Policy()
-
-        # Wrap the value into a proper Response obj
-        response_value = Response()
-        response_value.status_code = 200
-        json_return_value = json_format.MessageToJson(return_value)
-
-        response_value._content = json_return_value.encode("UTF-8")
-        req.return_value = response_value
-
-        response = client.set_iam_policy(request)
-
-    # Establish that the response is the type that we expect.
-    assert isinstance(response, policy_pb2.Policy)
-
-
-def test_test_iam_permissions_rest_bad_request(
-    transport: str = "rest", request_type=iam_policy_pb2.TestIamPermissionsRequest
-):
-    client = SubscriberClient(
-        credentials=ga_credentials.AnonymousCredentials(),
-        transport=transport,
-    )
-
-    request = request_type()
-    request = json_format.ParseDict(
-        {"resource": "projects/sample1/subscriptions/sample2"}, request
-    )
-
-    # Mock the http request call within the method and fake a BadRequest error.
-    with mock.patch.object(Session, "request") as req, pytest.raises(
-        core_exceptions.BadRequest
-    ):
-        # Wrap the value into a proper Response obj
-        response_value = Response()
-        response_value.status_code = 400
-        response_value.request = Request()
-        req.return_value = response_value
-        client.test_iam_permissions(request)
-
-
-@pytest.mark.parametrize(
-    "request_type",
-    [
-        iam_policy_pb2.TestIamPermissionsRequest,
-        dict,
-    ],
-)
-def test_test_iam_permissions_rest(request_type):
-    client = SubscriberClient(
-        credentials=ga_credentials.AnonymousCredentials(),
-        transport="rest",
-    )
-    request_init = {"resource": "projects/sample1/subscriptions/sample2"}
-    request = request_type(**request_init)
-    # Mock the http request call within the method and fake a response.
-    with mock.patch.object(type(client.transport._session), "request") as req:
-        # Designate an appropriate value for the returned response.
-        return_value = iam_policy_pb2.TestIamPermissionsResponse()
-
-        # Wrap the value into a proper Response obj
-        response_value = Response()
-        response_value.status_code = 200
-        json_return_value = json_format.MessageToJson(return_value)
-
-        response_value._content = json_return_value.encode("UTF-8")
-        req.return_value = response_value
-
-        response = client.test_iam_permissions(request)
-
-    # Establish that the response is the type that we expect.
-    assert isinstance(response, iam_policy_pb2.TestIamPermissionsResponse)
-
-
 def test_set_iam_policy(transport: str = "grpc"):
     client = SubscriberClient(
         credentials=ga_credentials.AnonymousCredentials(),
@@ -11073,7 +13438,7 @@ def test_set_iam_policy(transport: str = "grpc"):
 @pytest.mark.asyncio
 async def test_set_iam_policy_async(transport: str = "grpc_asyncio"):
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
         transport=transport,
     )
 
@@ -11138,7 +13503,7 @@ def test_set_iam_policy_field_headers():
 @pytest.mark.asyncio
 async def test_set_iam_policy_field_headers_async():
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
     )
 
     # Any value that is part of the HTTP/1.1 URI should be sent as
@@ -11186,7 +13551,7 @@ def test_set_iam_policy_from_dict():
 @pytest.mark.asyncio
 async def test_set_iam_policy_from_dict_async():
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
     )
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(type(client.transport.set_iam_policy), "__call__") as call:
@@ -11239,7 +13604,7 @@ def test_get_iam_policy(transport: str = "grpc"):
 @pytest.mark.asyncio
 async def test_get_iam_policy_async(transport: str = "grpc_asyncio"):
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
         transport=transport,
     )
 
@@ -11305,7 +13670,7 @@ def test_get_iam_policy_field_headers():
 @pytest.mark.asyncio
 async def test_get_iam_policy_field_headers_async():
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
     )
 
     # Any value that is part of the HTTP/1.1 URI should be sent as
@@ -11353,7 +13718,7 @@ def test_get_iam_policy_from_dict():
 @pytest.mark.asyncio
 async def test_get_iam_policy_from_dict_async():
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
     )
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(type(client.transport.get_iam_policy), "__call__") as call:
@@ -11405,7 +13770,7 @@ def test_test_iam_permissions(transport: str = "grpc"):
 @pytest.mark.asyncio
 async def test_test_iam_permissions_async(transport: str = "grpc_asyncio"):
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
         transport=transport,
     )
 
@@ -11472,7 +13837,7 @@ def test_test_iam_permissions_field_headers():
 @pytest.mark.asyncio
 async def test_test_iam_permissions_field_headers_async():
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
     )
 
     # Any value that is part of the HTTP/1.1 URI should be sent as
@@ -11526,7 +13891,7 @@ def test_test_iam_permissions_from_dict():
 @pytest.mark.asyncio
 async def test_test_iam_permissions_from_dict_async():
     client = SubscriberAsyncClient(
-        credentials=ga_credentials.AnonymousCredentials(),
+        credentials=async_anonymous_credentials(),
     )
     # Mock the actual call within the gRPC stub, and fake the request.
     with mock.patch.object(
@@ -11546,22 +13911,41 @@ async def test_test_iam_permissions_from_dict_async():
         call.assert_called()
 
 
-def test_transport_close():
-    transports = {
-        "rest": "_session",
-        "grpc": "_grpc_channel",
-    }
+def test_transport_close_grpc():
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(), transport="grpc"
+    )
+    with mock.patch.object(
+        type(getattr(client.transport, "_grpc_channel")), "close"
+    ) as close:
+        with client:
+            close.assert_not_called()
+        close.assert_called_once()
 
-    for transport, close_name in transports.items():
-        client = SubscriberClient(
-            credentials=ga_credentials.AnonymousCredentials(), transport=transport
-        )
-        with mock.patch.object(
-            type(getattr(client.transport, close_name)), "close"
-        ) as close:
-            with client:
-                close.assert_not_called()
-            close.assert_called_once()
+
+@pytest.mark.asyncio
+async def test_transport_close_grpc_asyncio():
+    client = SubscriberAsyncClient(
+        credentials=async_anonymous_credentials(), transport="grpc_asyncio"
+    )
+    with mock.patch.object(
+        type(getattr(client.transport, "_grpc_channel")), "close"
+    ) as close:
+        async with client:
+            close.assert_not_called()
+        close.assert_called_once()
+
+
+def test_transport_close_rest():
+    client = SubscriberClient(
+        credentials=ga_credentials.AnonymousCredentials(), transport="rest"
+    )
+    with mock.patch.object(
+        type(getattr(client.transport, "_session")), "close"
+    ) as close:
+        with client:
+            close.assert_not_called()
+        close.assert_called_once()
 
 
 def test_client_ctx():

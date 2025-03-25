@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2024 Google LLC
+# Copyright 2025 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -40,6 +40,8 @@ from .types.pubsub import GetSnapshotRequest
 from .types.pubsub import GetSubscriptionRequest
 from .types.pubsub import GetTopicRequest
 from .types.pubsub import IngestionDataSourceSettings
+from .types.pubsub import IngestionFailureEvent
+from .types.pubsub import JavaScriptUDF
 from .types.pubsub import ListSnapshotsRequest
 from .types.pubsub import ListSnapshotsResponse
 from .types.pubsub import ListSubscriptionsRequest
@@ -51,8 +53,10 @@ from .types.pubsub import ListTopicsResponse
 from .types.pubsub import ListTopicSubscriptionsRequest
 from .types.pubsub import ListTopicSubscriptionsResponse
 from .types.pubsub import MessageStoragePolicy
+from .types.pubsub import MessageTransform
 from .types.pubsub import ModifyAckDeadlineRequest
 from .types.pubsub import ModifyPushConfigRequest
+from .types.pubsub import PlatformLogsSettings
 from .types.pubsub import PublishRequest
 from .types.pubsub import PublishResponse
 from .types.pubsub import PubsubMessage
@@ -115,6 +119,8 @@ __all__ = (
     "GetSubscriptionRequest",
     "GetTopicRequest",
     "IngestionDataSourceSettings",
+    "IngestionFailureEvent",
+    "JavaScriptUDF",
     "ListSchemaRevisionsRequest",
     "ListSchemaRevisionsResponse",
     "ListSchemasRequest",
@@ -130,8 +136,10 @@ __all__ = (
     "ListTopicsRequest",
     "ListTopicsResponse",
     "MessageStoragePolicy",
+    "MessageTransform",
     "ModifyAckDeadlineRequest",
     "ModifyPushConfigRequest",
+    "PlatformLogsSettings",
     "PublishRequest",
     "PublishResponse",
     "PublisherClient",

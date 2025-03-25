@@ -103,6 +103,229 @@ def create_topic_with_kinesis_ingestion(
     # [END pubsub_create_topic_with_kinesis_ingestion]
 
 
+def create_topic_with_cloud_storage_ingestion(
+    project_id: str,
+    topic_id: str,
+    bucket: str,
+    input_format: str,
+    text_delimiter: str,
+    match_glob: str,
+    minimum_object_create_time: str,
+) -> None:
+    """Create a new Pub/Sub topic with Cloud Storage Ingestion Settings."""
+    # [START pubsub_create_topic_with_cloud_storage_ingestion]
+    from google.cloud import pubsub_v1
+    from google.protobuf import timestamp_pb2
+    from google.pubsub_v1.types import Topic
+    from google.pubsub_v1.types import IngestionDataSourceSettings
+
+    # TODO(developer)
+    # project_id = "your-project-id"
+    # topic_id = "your-topic-id"
+    # bucket = "your-bucket"
+    # input_format = "text"  (can be one of "text", "avro", "pubsub_avro")
+    # text_delimiter = "\n"
+    # match_glob = "**.txt"
+    # minimum_object_create_time = "YYYY-MM-DDThh:mm:ssZ"
+
+    publisher = pubsub_v1.PublisherClient()
+    topic_path = publisher.topic_path(project_id, topic_id)
+
+    cloud_storage_settings = IngestionDataSourceSettings.CloudStorage(
+        bucket=bucket,
+    )
+    if input_format == "text":
+        cloud_storage_settings.text_format = (
+            IngestionDataSourceSettings.CloudStorage.TextFormat(
+                delimiter=text_delimiter
+            )
+        )
+    elif input_format == "avro":
+        cloud_storage_settings.avro_format = (
+            IngestionDataSourceSettings.CloudStorage.AvroFormat()
+        )
+    elif input_format == "pubsub_avro":
+        cloud_storage_settings.pubsub_avro_format = (
+            IngestionDataSourceSettings.CloudStorage.PubSubAvroFormat()
+        )
+    else:
+        print(
+            "Invalid input_format: "
+            + input_format
+            + "; must be in ('text', 'avro', 'pubsub_avro')"
+        )
+        return
+
+    if match_glob:
+        cloud_storage_settings.match_glob = match_glob
+
+    if minimum_object_create_time:
+        try:
+            minimum_object_create_time_timestamp = timestamp_pb2.Timestamp()
+            minimum_object_create_time_timestamp.FromJsonString(
+                minimum_object_create_time
+            )
+            cloud_storage_settings.minimum_object_create_time = (
+                minimum_object_create_time_timestamp
+            )
+        except ValueError:
+            print("Invalid minimum_object_create_time: " + minimum_object_create_time)
+            return
+
+    request = Topic(
+        name=topic_path,
+        ingestion_data_source_settings=IngestionDataSourceSettings(
+            cloud_storage=cloud_storage_settings,
+        ),
+    )
+
+    topic = publisher.create_topic(request=request)
+
+    print(f"Created topic: {topic.name} with Cloud Storage Ingestion Settings")
+    # [END pubsub_create_topic_with_cloud_storage_ingestion]
+
+
+def create_topic_with_aws_msk_ingestion(
+    project_id: str,
+    topic_id: str,
+    cluster_arn: str,
+    msk_topic: str,
+    aws_role_arn: str,
+    gcp_service_account: str,
+) -> None:
+    """Create a new Pub/Sub topic with AWS MSK Ingestion Settings."""
+    # [START pubsub_create_topic_with_aws_msk_ingestion]
+    from google.cloud import pubsub_v1
+    from google.pubsub_v1.types import Topic
+    from google.pubsub_v1.types import IngestionDataSourceSettings
+
+    # TODO(developer)
+    # project_id = "your-project-id"
+    # topic_id = "your-topic-id"
+    # cluster_arn = "your-cluster-arn"
+    # msk_topic = "your-msk-topic"
+    # aws_role_arn = "your-aws-role-arn"
+    # gcp_service_account = "your-gcp-service-account"
+
+    publisher = pubsub_v1.PublisherClient()
+    topic_path = publisher.topic_path(project_id, topic_id)
+
+    request = Topic(
+        name=topic_path,
+        ingestion_data_source_settings=IngestionDataSourceSettings(
+            aws_msk=IngestionDataSourceSettings.AwsMsk(
+                cluster_arn=cluster_arn,
+                topic=msk_topic,
+                aws_role_arn=aws_role_arn,
+                gcp_service_account=gcp_service_account,
+            )
+        ),
+    )
+
+    topic = publisher.create_topic(request=request)
+
+    print(f"Created topic: {topic.name} with AWS MSK Ingestion Settings")
+    # [END pubsub_create_topic_with_aws_msk_ingestion]
+
+
+def create_topic_with_azure_event_hubs_ingestion(
+    project_id: str,
+    topic_id: str,
+    resource_group: str,
+    namespace: str,
+    event_hub: str,
+    client_id: str,
+    tenant_id: str,
+    subscription_id: str,
+    gcp_service_account: str,
+) -> None:
+    """Create a new Pub/Sub topic with Azure Event Hubs Ingestion Settings."""
+    # [START pubsub_create_topic_with_azure_event_hubs_ingestion]
+    from google.cloud import pubsub_v1
+    from google.pubsub_v1.types import Topic
+    from google.pubsub_v1.types import IngestionDataSourceSettings
+
+    # TODO(developer)
+    # project_id = "your-project-id"
+    # topic_id = "your-topic-id"
+    # resource_group = "your-resource-group"
+    # namespace = "your-namespace"
+    # event_hub = "your-event-hub"
+    # client_id = "your-client-id"
+    # tenant_id = "your-tenant-id"
+    # subscription_id = "your-subscription-id"
+    # gcp_service_account = "your-gcp-service-account"
+
+    publisher = pubsub_v1.PublisherClient()
+    topic_path = publisher.topic_path(project_id, topic_id)
+
+    request = Topic(
+        name=topic_path,
+        ingestion_data_source_settings=IngestionDataSourceSettings(
+            azure_event_hubs=IngestionDataSourceSettings.AzureEventHubs(
+                resource_group=resource_group,
+                namespace=namespace,
+                event_hub=event_hub,
+                client_id=client_id,
+                tenant_id=tenant_id,
+                subscription_id=subscription_id,
+                gcp_service_account=gcp_service_account,
+            )
+        ),
+    )
+
+    topic = publisher.create_topic(request=request)
+
+    print(f"Created topic: {topic.name} with Azure Event Hubs Ingestion Settings")
+    # [END pubsub_create_topic_with_azure_event_hubs_ingestion]
+
+
+def create_topic_with_confluent_cloud_ingestion(
+    project_id: str,
+    topic_id: str,
+    bootstrap_server: str,
+    cluster_id: str,
+    confluent_topic: str,
+    identity_pool_id: str,
+    gcp_service_account: str,
+) -> None:
+    """Create a new Pub/Sub topic with Confluent Cloud Ingestion Settings."""
+    # [START pubsub_create_topic_with_confluent_cloud_ingestion]
+    from google.cloud import pubsub_v1
+    from google.pubsub_v1.types import Topic
+    from google.pubsub_v1.types import IngestionDataSourceSettings
+
+    # TODO(developer)
+    # project_id = "your-project-id"
+    # topic_id = "your-topic-id"
+    # bootstrap_server = "your-bootstrap-server"
+    # cluster_id = "your-cluster-id"
+    # confluent_topic = "your-confluent-topic"
+    # identity_pool_id = "your-identity-pool-id"
+    # gcp_service_account = "your-gcp-service-account"
+
+    publisher = pubsub_v1.PublisherClient()
+    topic_path = publisher.topic_path(project_id, topic_id)
+
+    request = Topic(
+        name=topic_path,
+        ingestion_data_source_settings=IngestionDataSourceSettings(
+            confluent_cloud=IngestionDataSourceSettings.ConfluentCloud(
+                bootstrap_server=bootstrap_server,
+                cluster_id=cluster_id,
+                topic=confluent_topic,
+                identity_pool_id=identity_pool_id,
+                gcp_service_account=gcp_service_account,
+            )
+        ),
+    )
+
+    topic = publisher.create_topic(request=request)
+
+    print(f"Created topic: {topic.name} with Confluent Cloud Ingestion Settings")
+    # [END pubsub_create_topic_with_confluent_cloud_ingestion]
+
+
 def update_topic_type(
     project_id: str,
     topic_id: str,
@@ -168,6 +391,83 @@ def delete_topic(project_id: str, topic_id: str) -> None:
 
     print(f"Topic deleted: {topic_path}")
     # [END pubsub_delete_topic]
+
+
+def pubsub_publish_otel_tracing(
+    topic_project_id: str, trace_project_id: str, topic_id: str
+) -> None:
+    """
+    Publish to `topic_id` in `topic_project_id` with OpenTelemetry enabled.
+    Export the OpenTelemetry traces to Google Cloud Trace in project
+    `trace_project_id`
+
+    Args:
+        topic_project_id: project ID of the topic to publish to.
+        trace_project_id: project ID to export Cloud Trace to.
+        topic_id: topic ID to publish to.
+
+    Returns:
+        None
+    """
+    # [START pubsub_publish_otel_tracing]
+
+    from opentelemetry import trace
+    from opentelemetry.sdk.trace import TracerProvider
+    from opentelemetry.sdk.trace.export import (
+        BatchSpanProcessor,
+    )
+    from opentelemetry.exporter.cloud_trace import CloudTraceSpanExporter
+    from opentelemetry.sdk.trace.sampling import TraceIdRatioBased, ParentBased
+
+    from google.cloud.pubsub_v1 import PublisherClient
+    from google.cloud.pubsub_v1.types import PublisherOptions
+
+    # TODO(developer)
+    # topic_project_id = "your-topic-project-id"
+    # trace_project_id = "your-trace-project-id"
+    # topic_id = "your-topic-id"
+
+    # In this sample, we use a Google Cloud Trace to export the OpenTelemetry
+    # traces: https://cloud.google.com/trace/docs/setup/python-ot
+    # Choose and configure the exporter for your set up accordingly.
+
+    sampler = ParentBased(root=TraceIdRatioBased(1))
+    trace.set_tracer_provider(TracerProvider(sampler=sampler))
+
+    # Export to Google Trace.
+    cloud_trace_exporter = CloudTraceSpanExporter(
+        project_id=trace_project_id,
+    )
+    trace.get_tracer_provider().add_span_processor(
+        BatchSpanProcessor(cloud_trace_exporter)
+    )
+
+    # Set the `enable_open_telemetry_tracing` option to True when creating
+    # the publisher client. This in itself is necessary and sufficient for
+    # the library to export OpenTelemetry traces. However, where the traces
+    # must be exported to needs to be configured based on your OpenTelemetry
+    # set up. Refer: https://opentelemetry.io/docs/languages/python/exporters/
+    publisher = PublisherClient(
+        publisher_options=PublisherOptions(
+            enable_open_telemetry_tracing=True,
+        ),
+    )
+
+    # The `topic_path` method creates a fully qualified identifier
+    # in the form `projects/{project_id}/topics/{topic_id}`
+    topic_path = publisher.topic_path(topic_project_id, topic_id)
+    # Publish messages.
+    for n in range(1, 10):
+        data_str = f"Message number {n}"
+        # Data must be a bytestring
+        data = data_str.encode("utf-8")
+        # When you publish a message, the client returns a future.
+        future = publisher.publish(topic_path, data)
+        print(future.result())
+
+    print(f"Published messages to {topic_path}.")
+
+    # [END pubsub_publish_otel_tracing]
 
 
 def publish_messages(project_id: str, topic_id: str) -> None:
@@ -509,7 +809,7 @@ def detach_subscription(project_id: str, subscription_id: str) -> None:
     # [END pubsub_detach_subscription]
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # noqa: C901
     parser = argparse.ArgumentParser(
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -522,6 +822,13 @@ if __name__ == "__main__":
     create_parser = subparsers.add_parser("create", help=create_topic.__doc__)
     create_parser.add_argument("topic_id")
 
+    pubsub_publish_otel_tracing_parser = subparsers.add_parser(
+        "pubsub-publish-otel-tracing", help=pubsub_publish_otel_tracing.__doc__
+    )
+    pubsub_publish_otel_tracing_parser.add_argument("topic_project_id")
+    pubsub_publish_otel_tracing_parser.add_argument("trace_project_id")
+    pubsub_publish_otel_tracing_parser.add_argument("topic_id")
+
     create_topic_with_kinesis_ingestion_parser = subparsers.add_parser(
         "create_kinesis_ingestion", help=create_topic_with_kinesis_ingestion.__doc__
     )
@@ -530,6 +837,56 @@ if __name__ == "__main__":
     create_topic_with_kinesis_ingestion_parser.add_argument("consumer_arn")
     create_topic_with_kinesis_ingestion_parser.add_argument("aws_role_arn")
     create_topic_with_kinesis_ingestion_parser.add_argument("gcp_service_account")
+
+    create_topic_with_cloud_storage_ingestion_parser = subparsers.add_parser(
+        "create_cloud_storage_ingestion",
+        help=create_topic_with_cloud_storage_ingestion.__doc__,
+    )
+    create_topic_with_cloud_storage_ingestion_parser.add_argument("topic_id")
+    create_topic_with_cloud_storage_ingestion_parser.add_argument("bucket")
+    create_topic_with_cloud_storage_ingestion_parser.add_argument("input_format")
+    create_topic_with_cloud_storage_ingestion_parser.add_argument("text_delimiter")
+    create_topic_with_cloud_storage_ingestion_parser.add_argument("match_glob")
+    create_topic_with_cloud_storage_ingestion_parser.add_argument(
+        "minimum_object_create_time"
+    )
+
+    create_topic_with_aws_msk_ingestion_parser = subparsers.add_parser(
+        "create_aws_msk_ingestion", help=create_topic_with_aws_msk_ingestion.__doc__
+    )
+    create_topic_with_aws_msk_ingestion_parser.add_argument("topic_id")
+    create_topic_with_aws_msk_ingestion_parser.add_argument("cluster_arn")
+    create_topic_with_aws_msk_ingestion_parser.add_argument("msk_topic")
+    create_topic_with_aws_msk_ingestion_parser.add_argument("aws_role_arn")
+    create_topic_with_aws_msk_ingestion_parser.add_argument("gcp_service_account")
+
+    create_topic_with_azure_event_hubs_ingestion_parser = subparsers.add_parser(
+        "create_azure_event_hubs_ingestion",
+        help=create_topic_with_azure_event_hubs_ingestion.__doc__,
+    )
+    create_topic_with_azure_event_hubs_ingestion_parser.add_argument("topic_id")
+    create_topic_with_azure_event_hubs_ingestion_parser.add_argument("resource_group")
+    create_topic_with_azure_event_hubs_ingestion_parser.add_argument("namespace")
+    create_topic_with_azure_event_hubs_ingestion_parser.add_argument("event_hub")
+    create_topic_with_azure_event_hubs_ingestion_parser.add_argument("client_id")
+    create_topic_with_azure_event_hubs_ingestion_parser.add_argument("tenant_id")
+    create_topic_with_azure_event_hubs_ingestion_parser.add_argument("subscription_id")
+    create_topic_with_azure_event_hubs_ingestion_parser.add_argument(
+        "gcp_service_account"
+    )
+
+    create_topic_with_confluent_cloud_ingestion_parser = subparsers.add_parser(
+        "create_confluent_cloud_ingestion",
+        help=create_topic_with_confluent_cloud_ingestion.__doc__,
+    )
+    create_topic_with_confluent_cloud_ingestion_parser.add_argument("topic_id")
+    create_topic_with_confluent_cloud_ingestion_parser.add_argument("bootstrap_server")
+    create_topic_with_confluent_cloud_ingestion_parser.add_argument("cluster_id")
+    create_topic_with_confluent_cloud_ingestion_parser.add_argument("confluent_topic")
+    create_topic_with_confluent_cloud_ingestion_parser.add_argument("identity_pool_id")
+    create_topic_with_confluent_cloud_ingestion_parser.add_argument(
+        "gcp_service_account"
+    )
 
     update_topic_type_parser = subparsers.add_parser(
         "update_kinesis_ingestion", help=update_topic_type.__doc__
@@ -609,6 +966,47 @@ if __name__ == "__main__":
             args.aws_role_arn,
             args.gcp_service_account,
         )
+    elif args.command == "create_cloud_storage_ingestion":
+        create_topic_with_cloud_storage_ingestion(
+            args.project_id,
+            args.topic_id,
+            args.bucket,
+            args.input_format,
+            args.text_delimiter,
+            args.match_glob,
+            args.minimum_object_create_time,
+        )
+    elif args.command == "create_aws_msk_ingestion":
+        create_topic_with_aws_msk_ingestion(
+            args.project_id,
+            args.topic_id,
+            args.cluster_arn,
+            args.msk_topic,
+            args.aws_role_arn,
+            args.gcp_service_account,
+        )
+    elif args.command == "create_azure_event_hubs_ingestion":
+        create_topic_with_azure_event_hubs_ingestion(
+            args.project_id,
+            args.topic_id,
+            args.resource_group,
+            args.namespace,
+            args.event_hub,
+            args.client_id,
+            args.tenant_id,
+            args.subscription_id,
+            args.gcp_service_account,
+        )
+    elif args.command == "create_confluent_cloud_ingestion":
+        create_topic_with_confluent_cloud_ingestion(
+            args.project_id,
+            args.topic_id,
+            args.bootstrap_server,
+            args.cluster_id,
+            args.confluent_topic,
+            args.identity_pool_id,
+            args.gcp_service_account,
+        )
     elif args.command == "update_kinesis_ingestion":
         update_topic_type(
             args.project_id,
@@ -638,3 +1036,7 @@ if __name__ == "__main__":
         resume_publish_with_ordering_keys(args.project_id, args.topic_id)
     elif args.command == "detach-subscription":
         detach_subscription(args.project_id, args.subscription_id)
+    elif args.command == "pubsub-publish-otel-tracing":
+        pubsub_publish_otel_tracing(
+            args.topic_project_id, args.trace_project_id, args.topic_id
+        )

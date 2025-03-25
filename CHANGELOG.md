@@ -5,6 +5,176 @@
 [1]: https://pypi.org/project/google-cloud-pubsub/#history
 
 
+## [2.29.0](https://github.com/googleapis/python-pubsub/compare/v2.28.0...v2.29.0) (2025-03-19)
+
+
+### Features
+
+* Add REST Interceptors which support reading metadata ([4363179](https://github.com/googleapis/python-pubsub/commit/43631790781ccfe071a7ecad41949399d3dbd063))
+* Add support for opt-in debug logging ([4363179](https://github.com/googleapis/python-pubsub/commit/43631790781ccfe071a7ecad41949399d3dbd063))
+* Deprecate `enabled` field for message transforms and add `disabled` field ([4363179](https://github.com/googleapis/python-pubsub/commit/43631790781ccfe071a7ecad41949399d3dbd063))
+
+
+### Bug Fixes
+
+* Allow logs to propagate upstream for caplog testing ([#1374](https://github.com/googleapis/python-pubsub/issues/1374)) ([fa39b0e](https://github.com/googleapis/python-pubsub/commit/fa39b0e87695da40036c1daec1b3108374672d61))
+* Allow Protobuf 6.x ([#1369](https://github.com/googleapis/python-pubsub/issues/1369)) ([c95b7a5](https://github.com/googleapis/python-pubsub/commit/c95b7a5bad7138a70e56c278970f5b54939a68f8))
+* Fix typing issue with gRPC metadata when key ends in -bin ([4363179](https://github.com/googleapis/python-pubsub/commit/43631790781ccfe071a7ecad41949399d3dbd063))
+
+
+### Documentation
+
+* A comment for field `code` in message `.google.pubsub.v1.JavaScriptUDF` is changed ([4363179](https://github.com/googleapis/python-pubsub/commit/43631790781ccfe071a7ecad41949399d3dbd063))
+* Add samples and test for ingestion from Kafka sources ([#1354](https://github.com/googleapis/python-pubsub/issues/1354)) ([820f986](https://github.com/googleapis/python-pubsub/commit/820f986104ca39fd0c92ba6816319e939be1ed63))
+* Deprecate `enabled` field for message transforms and add `disabled` field ([4363179](https://github.com/googleapis/python-pubsub/commit/43631790781ccfe071a7ecad41949399d3dbd063))
+* **samples:** Increase example max_bytes setting for cloud storage subscriptions to encourage more performant subscribe ([#1324](https://github.com/googleapis/python-pubsub/issues/1324)) ([cb760a7](https://github.com/googleapis/python-pubsub/commit/cb760a71cd4ad035d0c2c4c0f7b66bf52f18808c))
+
+## [2.28.0](https://github.com/googleapis/python-pubsub/compare/v2.27.3...v2.28.0) (2025-01-30)
+
+
+### Features
+
+* Add support for message transforms to Topic and Subscription ([#1274](https://github.com/googleapis/python-pubsub/issues/1274)) ([e5e2f3f](https://github.com/googleapis/python-pubsub/commit/e5e2f3f732f451d14dfb4c37ae979e5c04045305))
+
+
+### Bug Fixes
+
+* Get channel target for a gRPC request ([#1339](https://github.com/googleapis/python-pubsub/issues/1339)) ([16ea766](https://github.com/googleapis/python-pubsub/commit/16ea76611d121700a3f3119d18919063d12c81c1))
+* Set creds only if transport not provided ([#1348](https://github.com/googleapis/python-pubsub/issues/1348)) ([59965a4](https://github.com/googleapis/python-pubsub/commit/59965a4804a434467a47815cdbdd5ce31bbb3662))
+
+## [2.27.3](https://github.com/googleapis/python-pubsub/compare/v2.27.2...v2.27.3) (2025-01-24)
+
+
+### Bug Fixes
+
+* Stop using api_core default timeouts in publish since they are broken ([#1326](https://github.com/googleapis/python-pubsub/issues/1326)) ([ba2c2ee](https://github.com/googleapis/python-pubsub/commit/ba2c2eef7da89a3c14c14d9b6191cd8738c30341))
+
+## [2.27.2](https://github.com/googleapis/python-pubsub/compare/v2.27.1...v2.27.2) (2025-01-06)
+
+
+### Bug Fixes
+
+* Handle TransportError Exceptions thrown from gapic_publish ([#1318](https://github.com/googleapis/python-pubsub/issues/1318)) ([0e058c7](https://github.com/googleapis/python-pubsub/commit/0e058c73487384100847adcb2f4ab95a61c072c4))
+
+## [2.27.1](https://github.com/googleapis/python-pubsub/compare/v2.27.0...v2.27.1) (2024-11-08)
+
+
+### Bug Fixes
+
+* Add support for Python3.13 ([#1302](https://github.com/googleapis/python-pubsub/issues/1302)) ([ab22e27](https://github.com/googleapis/python-pubsub/commit/ab22e27954450b4e06ec98fe2e3458056aa8ca60))
+
+## [2.27.0](https://github.com/googleapis/python-pubsub/compare/v2.26.1...v2.27.0) (2024-11-02)
+
+
+### Features
+
+* Add support for Python 3.13 ([#1281](https://github.com/googleapis/python-pubsub/issues/1281)) ([0b46a33](https://github.com/googleapis/python-pubsub/commit/0b46a3321d6f19cd72e4f2ccdba73d062c7bd832))
+
+
+### Bug Fixes
+
+* Mark test_streaming_pull_max_messages flaky ([#1288](https://github.com/googleapis/python-pubsub/issues/1288)) ([d6635a0](https://github.com/googleapis/python-pubsub/commit/d6635a00dc2c614dd8608ef32ad4e79f9124e040))
+
+## [2.26.1](https://github.com/googleapis/python-pubsub/compare/v2.26.0...v2.26.1) (2024-10-10)
+
+
+### Documentation
+
+* Add ingestion from GCS sample ([#1273](https://github.com/googleapis/python-pubsub/issues/1273)) ([b59cc8d](https://github.com/googleapis/python-pubsub/commit/b59cc8d4fae593eb7592455a1696d7ab996a53dd))
+
+## [2.26.0](https://github.com/googleapis/python-pubsub/compare/v2.25.2...v2.26.0) (2024-10-09)
+
+
+### Features
+
+* Add ingestion Cloud Storage fields and Platform Logging fields to Topic ([#1248](https://github.com/googleapis/python-pubsub/issues/1248)) ([a7a4caa](https://github.com/googleapis/python-pubsub/commit/a7a4caaa5a73e9b15369471dc892688e24bf52e0))
+
+## [2.25.2](https://github.com/googleapis/python-pubsub/compare/v2.25.1...v2.25.2) (2024-09-30)
+
+
+### Documentation
+
+* Add command line args for OpenTelemetry Subscribe sample ([#1265](https://github.com/googleapis/python-pubsub/issues/1265)) ([0ff7f2a](https://github.com/googleapis/python-pubsub/commit/0ff7f2a64b5aa1b0e014e0933e4edaef0fb3f222))
+
+## [2.25.1](https://github.com/googleapis/python-pubsub/compare/v2.25.0...v2.25.1) (2024-09-29)
+
+
+### Bug Fixes
+
+* Update the requirements.txt for samples directory ([#1263](https://github.com/googleapis/python-pubsub/issues/1263)) ([5cce8b1](https://github.com/googleapis/python-pubsub/commit/5cce8b103ab7085613b7ee0efb5c8342d41ebae1))
+
+## [2.25.0](https://github.com/googleapis/python-pubsub/compare/v2.24.0...v2.25.0) (2024-09-28)
+
+
+### Features
+
+* Add OpenTelemetry publish sample ([#1258](https://github.com/googleapis/python-pubsub/issues/1258)) ([bc13ff0](https://github.com/googleapis/python-pubsub/commit/bc13ff05c3d1104c17169c360bdc09340430da37))
+
+## [2.24.0](https://github.com/googleapis/python-pubsub/compare/v2.23.1...v2.24.0) (2024-09-24)
+
+
+### Features
+
+* Add OpenTelemetry support for Subscribe Side ([#1252](https://github.com/googleapis/python-pubsub/issues/1252)) ([1b6f3d2](https://github.com/googleapis/python-pubsub/commit/1b6f3d284095e138943576de8551df263f73a506))
+* Open Telemetry Publish Side Support ([#1241](https://github.com/googleapis/python-pubsub/issues/1241)) ([bb5f3d1](https://github.com/googleapis/python-pubsub/commit/bb5f3d1a7df2d661cccc336edc8eceb2161c6921))
+
+
+### Bug Fixes
+
+* Fix flaky test ([#1254](https://github.com/googleapis/python-pubsub/issues/1254)) ([1ae49de](https://github.com/googleapis/python-pubsub/commit/1ae49de09996a5cf19f592f996c46e0222d540fc))
+
+## [2.23.1](https://github.com/googleapis/python-pubsub/compare/v2.23.0...v2.23.1) (2024-09-09)
+
+
+### Bug Fixes
+
+* Replace asserts with None checks for graceful shutdown ([#1244](https://github.com/googleapis/python-pubsub/issues/1244)) ([ced4f52](https://github.com/googleapis/python-pubsub/commit/ced4f527c7f918a87d1b89c2b5da59dbdf00e2c3))
+
+## [2.23.0](https://github.com/googleapis/python-pubsub/compare/v2.22.0...v2.23.0) (2024-07-29)
+
+
+### Features
+
+* Add max messages batching for Cloud Storage subscriptions ([#1224](https://github.com/googleapis/python-pubsub/issues/1224)) ([91c89d3](https://github.com/googleapis/python-pubsub/commit/91c89d36c5099591408ab0661c55929e786b1b04))
+
+## [2.22.0](https://github.com/googleapis/python-pubsub/compare/v2.21.5...v2.22.0) (2024-07-06)
+
+
+### Features
+
+* Add service_account_email for export subscriptions ([ec0cc34](https://github.com/googleapis/python-pubsub/commit/ec0cc349b344b6882979838171b6cae4209a9b02))
+* Add use_topic_schema for Cloud Storage Subscriptions ([ec0cc34](https://github.com/googleapis/python-pubsub/commit/ec0cc349b344b6882979838171b6cae4209a9b02))
+
+## [2.21.5](https://github.com/googleapis/python-pubsub/compare/v2.21.4...v2.21.5) (2024-06-20)
+
+
+### Bug Fixes
+
+* Allow Protobuf 5.x ([a369f04](https://github.com/googleapis/python-pubsub/commit/a369f04c46e4b3db34dcf8cc2ef7cda4ea491e26))
+
+## [2.21.4](https://github.com/googleapis/python-pubsub/compare/v2.21.3...v2.21.4) (2024-06-18)
+
+
+### Documentation
+
+* **samples:** Add code sample for optimistic subscribe ([#1182](https://github.com/googleapis/python-pubsub/issues/1182)) ([d8e8aa5](https://github.com/googleapis/python-pubsub/commit/d8e8aa59ab0288fdaf5a1cc5e476581e73d0f82c))
+
+## [2.21.3](https://github.com/googleapis/python-pubsub/compare/v2.21.2...v2.21.3) (2024-06-10)
+
+
+### Bug Fixes
+
+* Race condition where future callbacks invoked before client is in paused state ([#1145](https://github.com/googleapis/python-pubsub/issues/1145)) ([d12bac6](https://github.com/googleapis/python-pubsub/commit/d12bac6d94b337aa8978006600fb00e5b13d741d))
+* Suppress warnings caused during pytest runs ([#1189](https://github.com/googleapis/python-pubsub/issues/1189)) ([cd51149](https://github.com/googleapis/python-pubsub/commit/cd51149c9e0d3c59d1c75395c05308e860908bf9))
+* Typecheck errors in samples/snippets/subscriber.py ([#1186](https://github.com/googleapis/python-pubsub/issues/1186)) ([3698450](https://github.com/googleapis/python-pubsub/commit/3698450041cb4db0e2957832c24450f674b89c11))
+
+## [2.21.2](https://github.com/googleapis/python-pubsub/compare/v2.21.1...v2.21.2) (2024-05-30)
+
+
+### Bug Fixes
+
+* Test failures due to grpcio changes ([#1178](https://github.com/googleapis/python-pubsub/issues/1178)) ([086dd46](https://github.com/googleapis/python-pubsub/commit/086dd4660ec56d9ff2d41a32ec0b8e8dc44acc55))
+
 ## [2.21.1](https://github.com/googleapis/python-pubsub/compare/v2.21.0...v2.21.1) (2024-04-04)
 
 

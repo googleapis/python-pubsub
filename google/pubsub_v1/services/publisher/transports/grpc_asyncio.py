@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2024 Google LLC
+# Copyright 2025 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,15 +13,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+import inspect
+import json
+import pickle
+import logging as std_logging
 import warnings
 from typing import Awaitable, Callable, Dict, Optional, Sequence, Tuple, Union
 
 from google.api_core import gapic_v1
 from google.api_core import grpc_helpers_async
+from google.api_core import exceptions as core_exceptions
+from google.api_core import retry_async as retries
 from google.auth import credentials as ga_credentials  # type: ignore
 from google.auth.transport.grpc import SslCredentials  # type: ignore
+from google.protobuf.json_format import MessageToJson
+import google.protobuf.message
 
 import grpc  # type: ignore
+import proto  # type: ignore
 from grpc.experimental import aio  # type: ignore
 
 from google.iam.v1 import iam_policy_pb2  # type: ignore
@@ -30,6 +39,82 @@ from google.protobuf import empty_pb2  # type: ignore
 from google.pubsub_v1.types import pubsub
 from .base import PublisherTransport, DEFAULT_CLIENT_INFO
 from .grpc import PublisherGrpcTransport
+
+try:
+    from google.api_core import client_logging  # type: ignore
+
+    CLIENT_LOGGING_SUPPORTED = True  # pragma: NO COVER
+except ImportError:  # pragma: NO COVER
+    CLIENT_LOGGING_SUPPORTED = False
+
+_LOGGER = std_logging.getLogger(__name__)
+
+
+class _LoggingClientAIOInterceptor(
+    grpc.aio.UnaryUnaryClientInterceptor
+):  # pragma: NO COVER
+    async def intercept_unary_unary(self, continuation, client_call_details, request):
+        logging_enabled = CLIENT_LOGGING_SUPPORTED and _LOGGER.isEnabledFor(
+            std_logging.DEBUG
+        )
+        if logging_enabled:  # pragma: NO COVER
+            request_metadata = client_call_details.metadata
+            if isinstance(request, proto.Message):
+                request_payload = type(request).to_json(request)
+            elif isinstance(request, google.protobuf.message.Message):
+                request_payload = MessageToJson(request)
+            else:
+                request_payload = f"{type(request).__name__}: {pickle.dumps(request)}"
+
+            request_metadata = {
+                key: value.decode("utf-8") if isinstance(value, bytes) else value
+                for key, value in request_metadata
+            }
+            grpc_request = {
+                "payload": request_payload,
+                "requestMethod": "grpc",
+                "metadata": dict(request_metadata),
+            }
+            _LOGGER.debug(
+                f"Sending request for {client_call_details.method}",
+                extra={
+                    "serviceName": "google.pubsub.v1.Publisher",
+                    "rpcName": str(client_call_details.method),
+                    "request": grpc_request,
+                    "metadata": grpc_request["metadata"],
+                },
+            )
+        response = await continuation(client_call_details, request)
+        if logging_enabled:  # pragma: NO COVER
+            response_metadata = await response.trailing_metadata()
+            # Convert gRPC metadata `<class 'grpc.aio._metadata.Metadata'>` to list of tuples
+            metadata = (
+                dict([(k, str(v)) for k, v in response_metadata])
+                if response_metadata
+                else None
+            )
+            result = await response
+            if isinstance(result, proto.Message):
+                response_payload = type(result).to_json(result)
+            elif isinstance(result, google.protobuf.message.Message):
+                response_payload = MessageToJson(result)
+            else:
+                response_payload = f"{type(result).__name__}: {pickle.dumps(result)}"
+            grpc_response = {
+                "payload": response_payload,
+                "metadata": metadata,
+                "status": "OK",
+            }
+            _LOGGER.debug(
+                f"Received response to rpc {client_call_details.method}.",
+                extra={
+                    "serviceName": "google.pubsub.v1.Publisher",
+                    "rpcName": str(client_call_details.method),
+                    "response": grpc_response,
+                    "metadata": grpc_response["metadata"],
+                },
+            )
+        return response
 
 
 class PublisherGrpcAsyncIOTransport(PublisherTransport):
@@ -69,7 +154,6 @@ class PublisherGrpcAsyncIOTransport(PublisherTransport):
                 the credentials from the environment.
             credentials_file (Optional[str]): A file with credentials that can
                 be loaded with :func:`google.auth.load_credentials_from_file`.
-                This argument is ignored if ``channel`` is provided.
             scopes (Optional[Sequence[str]]): A optional list of scopes needed for this
                 service. These are only used when credentials are not specified and
                 are passed to :func:`google.auth.default`.
@@ -99,7 +183,7 @@ class PublisherGrpcAsyncIOTransport(PublisherTransport):
         credentials: Optional[ga_credentials.Credentials] = None,
         credentials_file: Optional[str] = None,
         scopes: Optional[Sequence[str]] = None,
-        channel: Optional[aio.Channel] = None,
+        channel: Optional[Union[aio.Channel, Callable[..., aio.Channel]]] = None,
         api_mtls_endpoint: Optional[str] = None,
         client_cert_source: Optional[Callable[[], Tuple[bytes, bytes]]] = None,
         ssl_channel_credentials: Optional[grpc.ChannelCredentials] = None,
@@ -119,15 +203,18 @@ class PublisherGrpcAsyncIOTransport(PublisherTransport):
                 credentials identify the application to the service; if none
                 are specified, the client will attempt to ascertain the
                 credentials from the environment.
-                This argument is ignored if ``channel`` is provided.
+                This argument is ignored if a ``channel`` instance is provided.
             credentials_file (Optional[str]): A file with credentials that can
                 be loaded with :func:`google.auth.load_credentials_from_file`.
-                This argument is ignored if ``channel`` is provided.
+                This argument is ignored if a ``channel`` instance is provided.
             scopes (Optional[Sequence[str]]): A optional list of scopes needed for this
                 service. These are only used when credentials are not specified and
                 are passed to :func:`google.auth.default`.
-            channel (Optional[aio.Channel]): A ``Channel`` instance through
-                which to make calls.
+            channel (Optional[Union[aio.Channel, Callable[..., aio.Channel]]]):
+                A ``Channel`` instance through which to make calls, or a Callable
+                that constructs and returns one. If set to None, ``self.create_channel``
+                is used to create the channel. If a Callable is given, it will be called
+                with the same arguments as used in ``self.create_channel``.
             api_mtls_endpoint (Optional[str]): Deprecated. The mutual TLS endpoint.
                 If provided, it overrides the ``host`` argument and tries to create
                 a mutual TLS channel with client SSL credentials from
@@ -137,11 +224,11 @@ class PublisherGrpcAsyncIOTransport(PublisherTransport):
                 private key bytes, both in PEM format. It is ignored if
                 ``api_mtls_endpoint`` is None.
             ssl_channel_credentials (grpc.ChannelCredentials): SSL credentials
-                for the grpc channel. It is ignored if ``channel`` is provided.
+                for the grpc channel. It is ignored if a ``channel`` instance is provided.
             client_cert_source_for_mtls (Optional[Callable[[], Tuple[bytes, bytes]]]):
                 A callback to provide client certificate bytes and private key bytes,
                 both in PEM format. It is used to configure a mutual TLS channel. It is
-                ignored if ``channel`` or ``ssl_channel_credentials`` is provided.
+                ignored if a ``channel`` instance or ``ssl_channel_credentials`` is provided.
             quota_project_id (Optional[str]): An optional project to use for billing
                 and quota.
             client_info (google.api_core.gapic_v1.client_info.ClientInfo):
@@ -167,9 +254,10 @@ class PublisherGrpcAsyncIOTransport(PublisherTransport):
         if client_cert_source:
             warnings.warn("client_cert_source is deprecated", DeprecationWarning)
 
-        if channel:
+        if isinstance(channel, aio.Channel):
             # Ignore credentials if a channel was passed.
-            credentials = False
+            credentials = None
+            self._ignore_credentials = True
             # If a channel was explicitly provided, set it.
             self._grpc_channel = channel
             self._ssl_channel_credentials = None
@@ -207,7 +295,9 @@ class PublisherGrpcAsyncIOTransport(PublisherTransport):
         )
 
         if not self._grpc_channel:
-            self._grpc_channel = type(self).create_channel(
+            # initialize with the provided callable or the default channel
+            channel_init = channel or type(self).create_channel
+            self._grpc_channel = channel_init(
                 self._host,
                 # use the credentials which are saved
                 credentials=self._credentials,
@@ -225,7 +315,13 @@ class PublisherGrpcAsyncIOTransport(PublisherTransport):
                 ],
             )
 
-        # Wrap messages. This must be done after self._grpc_channel exists
+        self._interceptor = _LoggingClientAIOInterceptor()
+        self._grpc_channel._unary_unary_interceptors.append(self._interceptor)
+        self._logged_channel = self._grpc_channel
+        self._wrap_with_kind = (
+            "kind" in inspect.signature(gapic_v1.method_async.wrap_method).parameters
+        )
+        # Wrap messages. This must be done after self._logged_channel exists
         self._prep_wrapped_messages(client_info)
 
     @property
@@ -257,7 +353,7 @@ class PublisherGrpcAsyncIOTransport(PublisherTransport):
         # gRPC handles serialization and deserialization, so we just need
         # to pass in the functions for each.
         if "create_topic" not in self._stubs:
-            self._stubs["create_topic"] = self.grpc_channel.unary_unary(
+            self._stubs["create_topic"] = self._logged_channel.unary_unary(
                 "/google.pubsub.v1.Publisher/CreateTopic",
                 request_serializer=pubsub.Topic.serialize,
                 response_deserializer=pubsub.Topic.deserialize,
@@ -285,7 +381,7 @@ class PublisherGrpcAsyncIOTransport(PublisherTransport):
         # gRPC handles serialization and deserialization, so we just need
         # to pass in the functions for each.
         if "update_topic" not in self._stubs:
-            self._stubs["update_topic"] = self.grpc_channel.unary_unary(
+            self._stubs["update_topic"] = self._logged_channel.unary_unary(
                 "/google.pubsub.v1.Publisher/UpdateTopic",
                 request_serializer=pubsub.UpdateTopicRequest.serialize,
                 response_deserializer=pubsub.Topic.deserialize,
@@ -312,7 +408,7 @@ class PublisherGrpcAsyncIOTransport(PublisherTransport):
         # gRPC handles serialization and deserialization, so we just need
         # to pass in the functions for each.
         if "publish" not in self._stubs:
-            self._stubs["publish"] = self.grpc_channel.unary_unary(
+            self._stubs["publish"] = self._logged_channel.unary_unary(
                 "/google.pubsub.v1.Publisher/Publish",
                 request_serializer=pubsub.PublishRequest.serialize,
                 response_deserializer=pubsub.PublishResponse.deserialize,
@@ -336,7 +432,7 @@ class PublisherGrpcAsyncIOTransport(PublisherTransport):
         # gRPC handles serialization and deserialization, so we just need
         # to pass in the functions for each.
         if "get_topic" not in self._stubs:
-            self._stubs["get_topic"] = self.grpc_channel.unary_unary(
+            self._stubs["get_topic"] = self._logged_channel.unary_unary(
                 "/google.pubsub.v1.Publisher/GetTopic",
                 request_serializer=pubsub.GetTopicRequest.serialize,
                 response_deserializer=pubsub.Topic.deserialize,
@@ -362,7 +458,7 @@ class PublisherGrpcAsyncIOTransport(PublisherTransport):
         # gRPC handles serialization and deserialization, so we just need
         # to pass in the functions for each.
         if "list_topics" not in self._stubs:
-            self._stubs["list_topics"] = self.grpc_channel.unary_unary(
+            self._stubs["list_topics"] = self._logged_channel.unary_unary(
                 "/google.pubsub.v1.Publisher/ListTopics",
                 request_serializer=pubsub.ListTopicsRequest.serialize,
                 response_deserializer=pubsub.ListTopicsResponse.deserialize,
@@ -392,7 +488,7 @@ class PublisherGrpcAsyncIOTransport(PublisherTransport):
         # gRPC handles serialization and deserialization, so we just need
         # to pass in the functions for each.
         if "list_topic_subscriptions" not in self._stubs:
-            self._stubs["list_topic_subscriptions"] = self.grpc_channel.unary_unary(
+            self._stubs["list_topic_subscriptions"] = self._logged_channel.unary_unary(
                 "/google.pubsub.v1.Publisher/ListTopicSubscriptions",
                 request_serializer=pubsub.ListTopicSubscriptionsRequest.serialize,
                 response_deserializer=pubsub.ListTopicSubscriptionsResponse.deserialize,
@@ -425,7 +521,7 @@ class PublisherGrpcAsyncIOTransport(PublisherTransport):
         # gRPC handles serialization and deserialization, so we just need
         # to pass in the functions for each.
         if "list_topic_snapshots" not in self._stubs:
-            self._stubs["list_topic_snapshots"] = self.grpc_channel.unary_unary(
+            self._stubs["list_topic_snapshots"] = self._logged_channel.unary_unary(
                 "/google.pubsub.v1.Publisher/ListTopicSnapshots",
                 request_serializer=pubsub.ListTopicSnapshotsRequest.serialize,
                 response_deserializer=pubsub.ListTopicSnapshotsResponse.deserialize,
@@ -456,7 +552,7 @@ class PublisherGrpcAsyncIOTransport(PublisherTransport):
         # gRPC handles serialization and deserialization, so we just need
         # to pass in the functions for each.
         if "delete_topic" not in self._stubs:
-            self._stubs["delete_topic"] = self.grpc_channel.unary_unary(
+            self._stubs["delete_topic"] = self._logged_channel.unary_unary(
                 "/google.pubsub.v1.Publisher/DeleteTopic",
                 request_serializer=pubsub.DeleteTopicRequest.serialize,
                 response_deserializer=empty_pb2.Empty.FromString,
@@ -488,23 +584,195 @@ class PublisherGrpcAsyncIOTransport(PublisherTransport):
         # gRPC handles serialization and deserialization, so we just need
         # to pass in the functions for each.
         if "detach_subscription" not in self._stubs:
-            self._stubs["detach_subscription"] = self.grpc_channel.unary_unary(
+            self._stubs["detach_subscription"] = self._logged_channel.unary_unary(
                 "/google.pubsub.v1.Publisher/DetachSubscription",
                 request_serializer=pubsub.DetachSubscriptionRequest.serialize,
                 response_deserializer=pubsub.DetachSubscriptionResponse.deserialize,
             )
         return self._stubs["detach_subscription"]
 
+    def _prep_wrapped_messages(self, client_info):
+        """Precompute the wrapped methods, overriding the base class method to use async wrappers."""
+        self._wrapped_methods = {
+            self.create_topic: self._wrap_method(
+                self.create_topic,
+                default_retry=retries.AsyncRetry(
+                    initial=0.1,
+                    maximum=60.0,
+                    multiplier=1.3,
+                    predicate=retries.if_exception_type(
+                        core_exceptions.ServiceUnavailable,
+                    ),
+                    deadline=60.0,
+                ),
+                default_timeout=60.0,
+                client_info=client_info,
+            ),
+            self.update_topic: self._wrap_method(
+                self.update_topic,
+                default_retry=retries.AsyncRetry(
+                    initial=0.1,
+                    maximum=60.0,
+                    multiplier=1.3,
+                    predicate=retries.if_exception_type(
+                        core_exceptions.ServiceUnavailable,
+                    ),
+                    deadline=60.0,
+                ),
+                default_timeout=60.0,
+                client_info=client_info,
+            ),
+            self.publish: self._wrap_method(
+                self.publish,
+                default_retry=retries.AsyncRetry(
+                    initial=0.1,
+                    maximum=60.0,
+                    multiplier=4,
+                    predicate=retries.if_exception_type(
+                        core_exceptions.Aborted,
+                        core_exceptions.Cancelled,
+                        core_exceptions.DeadlineExceeded,
+                        core_exceptions.InternalServerError,
+                        core_exceptions.ResourceExhausted,
+                        core_exceptions.ServiceUnavailable,
+                        core_exceptions.Unknown,
+                    ),
+                    deadline=60.0,
+                ),
+                default_timeout=60.0,
+                client_info=client_info,
+            ),
+            self.get_topic: self._wrap_method(
+                self.get_topic,
+                default_retry=retries.AsyncRetry(
+                    initial=0.1,
+                    maximum=60.0,
+                    multiplier=1.3,
+                    predicate=retries.if_exception_type(
+                        core_exceptions.Aborted,
+                        core_exceptions.ServiceUnavailable,
+                        core_exceptions.Unknown,
+                    ),
+                    deadline=60.0,
+                ),
+                default_timeout=60.0,
+                client_info=client_info,
+            ),
+            self.list_topics: self._wrap_method(
+                self.list_topics,
+                default_retry=retries.AsyncRetry(
+                    initial=0.1,
+                    maximum=60.0,
+                    multiplier=1.3,
+                    predicate=retries.if_exception_type(
+                        core_exceptions.Aborted,
+                        core_exceptions.ServiceUnavailable,
+                        core_exceptions.Unknown,
+                    ),
+                    deadline=60.0,
+                ),
+                default_timeout=60.0,
+                client_info=client_info,
+            ),
+            self.list_topic_subscriptions: self._wrap_method(
+                self.list_topic_subscriptions,
+                default_retry=retries.AsyncRetry(
+                    initial=0.1,
+                    maximum=60.0,
+                    multiplier=1.3,
+                    predicate=retries.if_exception_type(
+                        core_exceptions.Aborted,
+                        core_exceptions.ServiceUnavailable,
+                        core_exceptions.Unknown,
+                    ),
+                    deadline=60.0,
+                ),
+                default_timeout=60.0,
+                client_info=client_info,
+            ),
+            self.list_topic_snapshots: self._wrap_method(
+                self.list_topic_snapshots,
+                default_retry=retries.AsyncRetry(
+                    initial=0.1,
+                    maximum=60.0,
+                    multiplier=1.3,
+                    predicate=retries.if_exception_type(
+                        core_exceptions.Aborted,
+                        core_exceptions.ServiceUnavailable,
+                        core_exceptions.Unknown,
+                    ),
+                    deadline=60.0,
+                ),
+                default_timeout=60.0,
+                client_info=client_info,
+            ),
+            self.delete_topic: self._wrap_method(
+                self.delete_topic,
+                default_retry=retries.AsyncRetry(
+                    initial=0.1,
+                    maximum=60.0,
+                    multiplier=1.3,
+                    predicate=retries.if_exception_type(
+                        core_exceptions.ServiceUnavailable,
+                    ),
+                    deadline=60.0,
+                ),
+                default_timeout=60.0,
+                client_info=client_info,
+            ),
+            self.detach_subscription: self._wrap_method(
+                self.detach_subscription,
+                default_retry=retries.AsyncRetry(
+                    initial=0.1,
+                    maximum=60.0,
+                    multiplier=1.3,
+                    predicate=retries.if_exception_type(
+                        core_exceptions.ServiceUnavailable,
+                    ),
+                    deadline=60.0,
+                ),
+                default_timeout=60.0,
+                client_info=client_info,
+            ),
+            self.get_iam_policy: self._wrap_method(
+                self.get_iam_policy,
+                default_timeout=None,
+                client_info=client_info,
+            ),
+            self.set_iam_policy: self._wrap_method(
+                self.set_iam_policy,
+                default_timeout=None,
+                client_info=client_info,
+            ),
+            self.test_iam_permissions: self._wrap_method(
+                self.test_iam_permissions,
+                default_timeout=None,
+                client_info=client_info,
+            ),
+        }
+
+    def _wrap_method(self, func, *args, **kwargs):
+        if self._wrap_with_kind:  # pragma: NO COVER
+            kwargs["kind"] = self.kind
+        return gapic_v1.method_async.wrap_method(func, *args, **kwargs)
+
+    def close(self):
+        return self._logged_channel.close()
+
+    @property
+    def kind(self) -> str:
+        return "grpc_asyncio"
+
     @property
     def set_iam_policy(
         self,
-    ) -> Callable[[iam_policy_pb2.SetIamPolicyRequest], Awaitable[policy_pb2.Policy]]:
+    ) -> Callable[[iam_policy_pb2.SetIamPolicyRequest], policy_pb2.Policy]:
         r"""Return a callable for the set iam policy method over gRPC.
         Sets the IAM access control policy on the specified
         function. Replaces any existing policy.
         Returns:
             Callable[[~.SetIamPolicyRequest],
-                    Awaitable[~.Policy]]:
+                    ~.Policy]:
                 A function that, when called, will call the underlying RPC
                 on the server.
         """
@@ -513,7 +781,7 @@ class PublisherGrpcAsyncIOTransport(PublisherTransport):
         # gRPC handles serialization and deserialization, so we just need
         # to pass in the functions for each.
         if "set_iam_policy" not in self._stubs:
-            self._stubs["set_iam_policy"] = self.grpc_channel.unary_unary(
+            self._stubs["set_iam_policy"] = self._logged_channel.unary_unary(
                 "/google.iam.v1.IAMPolicy/SetIamPolicy",
                 request_serializer=iam_policy_pb2.SetIamPolicyRequest.SerializeToString,
                 response_deserializer=policy_pb2.Policy.FromString,
@@ -523,14 +791,14 @@ class PublisherGrpcAsyncIOTransport(PublisherTransport):
     @property
     def get_iam_policy(
         self,
-    ) -> Callable[[iam_policy_pb2.GetIamPolicyRequest], Awaitable[policy_pb2.Policy]]:
+    ) -> Callable[[iam_policy_pb2.GetIamPolicyRequest], policy_pb2.Policy]:
         r"""Return a callable for the get iam policy method over gRPC.
         Gets the IAM access control policy for a function.
         Returns an empty policy if the function exists and does
         not have a policy set.
         Returns:
             Callable[[~.GetIamPolicyRequest],
-                    Awaitable[~.Policy]]:
+                    ~.Policy]:
                 A function that, when called, will call the underlying RPC
                 on the server.
         """
@@ -539,7 +807,7 @@ class PublisherGrpcAsyncIOTransport(PublisherTransport):
         # gRPC handles serialization and deserialization, so we just need
         # to pass in the functions for each.
         if "get_iam_policy" not in self._stubs:
-            self._stubs["get_iam_policy"] = self.grpc_channel.unary_unary(
+            self._stubs["get_iam_policy"] = self._logged_channel.unary_unary(
                 "/google.iam.v1.IAMPolicy/GetIamPolicy",
                 request_serializer=iam_policy_pb2.GetIamPolicyRequest.SerializeToString,
                 response_deserializer=policy_pb2.Policy.FromString,
@@ -551,7 +819,7 @@ class PublisherGrpcAsyncIOTransport(PublisherTransport):
         self,
     ) -> Callable[
         [iam_policy_pb2.TestIamPermissionsRequest],
-        Awaitable[iam_policy_pb2.TestIamPermissionsResponse],
+        iam_policy_pb2.TestIamPermissionsResponse,
     ]:
         r"""Return a callable for the test iam permissions method over gRPC.
         Tests the specified permissions against the IAM access control
@@ -559,7 +827,7 @@ class PublisherGrpcAsyncIOTransport(PublisherTransport):
         return an empty set of permissions, not a NOT_FOUND error.
         Returns:
             Callable[[~.TestIamPermissionsRequest],
-                    Awaitable[~.TestIamPermissionsResponse]]:
+                    ~.TestIamPermissionsResponse]:
                 A function that, when called, will call the underlying RPC
                 on the server.
         """
@@ -568,15 +836,12 @@ class PublisherGrpcAsyncIOTransport(PublisherTransport):
         # gRPC handles serialization and deserialization, so we just need
         # to pass in the functions for each.
         if "test_iam_permissions" not in self._stubs:
-            self._stubs["test_iam_permissions"] = self.grpc_channel.unary_unary(
+            self._stubs["test_iam_permissions"] = self._logged_channel.unary_unary(
                 "/google.iam.v1.IAMPolicy/TestIamPermissions",
                 request_serializer=iam_policy_pb2.TestIamPermissionsRequest.SerializeToString,
                 response_deserializer=iam_policy_pb2.TestIamPermissionsResponse.FromString,
             )
         return self._stubs["test_iam_permissions"]
-
-    def close(self):
-        return self.grpc_channel.close()
 
 
 __all__ = ("PublisherGrpcAsyncIOTransport",)

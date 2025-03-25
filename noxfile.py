@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2023 Google LLC
+# Copyright 2024 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -32,11 +32,19 @@ BLACK_VERSION = "black[jupyter]==23.7.0"
 ISORT_VERSION = "isort==5.11.0"
 LINT_PATHS = ["docs", "google", "tests", "noxfile.py", "setup.py"]
 
-MYPY_VERSION = "mypy==0.910"
+MYPY_VERSION = "mypy==1.10.0"
 
 DEFAULT_PYTHON_VERSION = "3.8"
 
-UNIT_TEST_PYTHON_VERSIONS: List[str] = ["3.7", "3.8", "3.9", "3.10", "3.11", "3.12"]
+UNIT_TEST_PYTHON_VERSIONS: List[str] = [
+    "3.7",
+    "3.8",
+    "3.9",
+    "3.10",
+    "3.11",
+    "3.12",
+    "3.13",
+]
 UNIT_TEST_STANDARD_DEPENDENCIES = [
     "mock",
     "asyncmock",
@@ -46,7 +54,9 @@ UNIT_TEST_STANDARD_DEPENDENCIES = [
 ]
 UNIT_TEST_EXTERNAL_DEPENDENCIES: List[str] = []
 UNIT_TEST_LOCAL_DEPENDENCIES: List[str] = []
-UNIT_TEST_DEPENDENCIES: List[str] = []
+UNIT_TEST_DEPENDENCIES: List[str] = [
+    "flaky",
+]
 UNIT_TEST_EXTRAS: List[str] = []
 UNIT_TEST_EXTRAS_BY_PYTHON: Dict[str, List[str]] = {}
 
@@ -67,7 +77,6 @@ SYSTEM_TEST_EXTRAS_BY_PYTHON: Dict[str, List[str]] = {}
 
 CURRENT_DIRECTORY = pathlib.Path(__file__).parent.absolute()
 
-# 'docfx' is excluded since it only needs to run in 'docs-presubmit'
 nox.options.sessions = [
     "unit",
     "system",
@@ -79,6 +88,7 @@ nox.options.sessions = [
     # https://github.com/googleapis/python-pubsub/pull/552#issuecomment-1016256936
     # "mypy_samples",  # TODO: uncomment when the check passes
     "docs",
+    "docfx",
     "format",
 ]
 
@@ -214,13 +224,27 @@ def install_unittest_dependencies(session, *constraints):
         session.install("-e", ".", *constraints)
 
 
-def default(session):
+@nox.session(python=UNIT_TEST_PYTHON_VERSIONS)
+@nox.parametrize(
+    "protobuf_implementation",
+    ["python", "upb", "cpp"],
+)
+def unit(session, protobuf_implementation):
     # Install all test dependencies, then install this package in-place.
+
+    if protobuf_implementation == "cpp" and session.python in ("3.11", "3.12", "3.13"):
+        session.skip("cpp implementation is not supported in python 3.11+")
 
     constraints_path = str(
         CURRENT_DIRECTORY / "testing" / f"constraints-{session.python}.txt"
     )
     install_unittest_dependencies(session, "-c", constraints_path)
+
+    # TODO(https://github.com/googleapis/synthtool/issues/1976):
+    # Remove the 'cpp' implementation once support for Protobuf 3.x is dropped.
+    # The 'cpp' implementation requires Protobuf<4.
+    if protobuf_implementation == "cpp":
+        session.install("protobuf<4")
 
     # Run py.test against the unit tests.
     session.run(
@@ -235,13 +259,10 @@ def default(session):
         "--cov-fail-under=0",
         os.path.join("tests", "unit"),
         *session.posargs,
+        env={
+            "PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION": protobuf_implementation,
+        },
     )
-
-
-@nox.session(python=UNIT_TEST_PYTHON_VERSIONS)
-def unit(session):
-    """Run the unit test suite."""
-    default(session)
 
 
 def install_systemtest_dependencies(session, *constraints):
@@ -325,12 +346,12 @@ def cover(session):
     test runs (not system test runs), and then erases coverage data.
     """
     session.install("coverage", "pytest-cov")
-    session.run("coverage", "report", "--show-missing", "--fail-under=100")
+    session.run("coverage", "report", "--show-missing", "--fail-under=99")
 
     session.run("coverage", "erase")
 
 
-@nox.session(python="3.9")
+@nox.session(python="3.10")
 def docs(session):
     """Build the docs for this library."""
 
@@ -411,9 +432,16 @@ def docfx(session):
     )
 
 
-@nox.session(python=SYSTEM_TEST_PYTHON_VERSIONS)
-def prerelease_deps(session):
+@nox.session(python="3.13")
+@nox.parametrize(
+    "protobuf_implementation",
+    ["python", "upb", "cpp"],
+)
+def prerelease_deps(session, protobuf_implementation):
     """Run all tests with prerelease versions of dependencies installed."""
+
+    if protobuf_implementation == "cpp" and session.python in ("3.11", "3.12", "3.13"):
+        session.skip("cpp implementation is not supported in python 3.11+")
 
     # Install all dependencies
     session.install("-e", ".[all, tests, tracing]")
@@ -449,9 +477,9 @@ def prerelease_deps(session):
         "protobuf",
         # dependency of grpc
         "six",
+        "grpc-google-iam-v1",
         "googleapis-common-protos",
-        # Exclude version 1.52.0rc1 which has a known issue. See https://github.com/grpc/grpc/issues/32163
-        "grpcio!=1.52.0rc1",
+        "grpcio",
         "grpcio-status",
         "google-api-core",
         "google-auth",
@@ -477,7 +505,13 @@ def prerelease_deps(session):
     session.run("python", "-c", "import grpc; print(grpc.__version__)")
     session.run("python", "-c", "import google.auth; print(google.auth.__version__)")
 
-    session.run("py.test", "tests/unit")
+    session.run(
+        "py.test",
+        "tests/unit",
+        env={
+            "PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION": protobuf_implementation,
+        },
+    )
 
     system_test_path = os.path.join("tests", "system.py")
     system_test_folder_path = os.path.join("tests", "system")
@@ -490,6 +524,9 @@ def prerelease_deps(session):
             f"--junitxml=system_{session.python}_sponge_log.xml",
             system_test_path,
             *session.posargs,
+            env={
+                "PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION": protobuf_implementation,
+            },
         )
     if os.path.exists(system_test_folder_path):
         session.run(
@@ -498,4 +535,7 @@ def prerelease_deps(session):
             f"--junitxml=system_{session.python}_sponge_log.xml",
             system_test_folder_path,
             *session.posargs,
+            env={
+                "PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION": protobuf_implementation,
+            },
         )

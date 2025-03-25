@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2024 Google LLC
+# Copyright 2025 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -31,6 +31,10 @@ __protobuf__ = proto.module(
         "MessageStoragePolicy",
         "SchemaSettings",
         "IngestionDataSourceSettings",
+        "PlatformLogsSettings",
+        "IngestionFailureEvent",
+        "JavaScriptUDF",
+        "MessageTransform",
         "Topic",
         "PubsubMessage",
         "GetTopicRequest",
@@ -160,6 +164,11 @@ class SchemaSettings(proto.Message):
 class IngestionDataSourceSettings(proto.Message):
     r"""Settings for an ingestion data source on a topic.
 
+    This message has `oneof`_ fields (mutually exclusive fields).
+    For each oneof, at most one member field can be set at the same time.
+    Setting any member of the oneof automatically clears all other
+    members.
+
     .. _oneof: https://proto-plus-python.readthedocs.io/en/stable/fields.html#oneofs-mutually-exclusive-fields
 
     Attributes:
@@ -167,6 +176,25 @@ class IngestionDataSourceSettings(proto.Message):
             Optional. Amazon Kinesis Data Streams.
 
             This field is a member of `oneof`_ ``source``.
+        cloud_storage (google.pubsub_v1.types.IngestionDataSourceSettings.CloudStorage):
+            Optional. Cloud Storage.
+
+            This field is a member of `oneof`_ ``source``.
+        azure_event_hubs (google.pubsub_v1.types.IngestionDataSourceSettings.AzureEventHubs):
+            Optional. Azure Event Hubs.
+
+            This field is a member of `oneof`_ ``source``.
+        aws_msk (google.pubsub_v1.types.IngestionDataSourceSettings.AwsMsk):
+            Optional. Amazon MSK.
+
+            This field is a member of `oneof`_ ``source``.
+        confluent_cloud (google.pubsub_v1.types.IngestionDataSourceSettings.ConfluentCloud):
+            Optional. Confluent Cloud.
+
+            This field is a member of `oneof`_ ``source``.
+        platform_logs_settings (google.pubsub_v1.types.PlatformLogsSettings):
+            Optional. Platform Logs settings. If unset,
+            no Platform Logs will be generated.
     """
 
     class AwsKinesis(proto.Message):
@@ -259,11 +287,890 @@ class IngestionDataSourceSettings(proto.Message):
             number=5,
         )
 
+    class CloudStorage(proto.Message):
+        r"""Ingestion settings for Cloud Storage.
+
+        This message has `oneof`_ fields (mutually exclusive fields).
+        For each oneof, at most one member field can be set at the same time.
+        Setting any member of the oneof automatically clears all other
+        members.
+
+        .. _oneof: https://proto-plus-python.readthedocs.io/en/stable/fields.html#oneofs-mutually-exclusive-fields
+
+        Attributes:
+            state (google.pubsub_v1.types.IngestionDataSourceSettings.CloudStorage.State):
+                Output only. An output-only field that
+                indicates the state of the Cloud Storage
+                ingestion source.
+            bucket (str):
+                Optional. Cloud Storage bucket. The bucket name must be
+                without any prefix like "gs://". See the [bucket naming
+                requirements]
+                (https://cloud.google.com/storage/docs/buckets#naming).
+            text_format (google.pubsub_v1.types.IngestionDataSourceSettings.CloudStorage.TextFormat):
+                Optional. Data from Cloud Storage will be
+                interpreted as text.
+
+                This field is a member of `oneof`_ ``input_format``.
+            avro_format (google.pubsub_v1.types.IngestionDataSourceSettings.CloudStorage.AvroFormat):
+                Optional. Data from Cloud Storage will be
+                interpreted in Avro format.
+
+                This field is a member of `oneof`_ ``input_format``.
+            pubsub_avro_format (google.pubsub_v1.types.IngestionDataSourceSettings.CloudStorage.PubSubAvroFormat):
+                Optional. It will be assumed data from Cloud Storage was
+                written via `Cloud Storage
+                subscriptions <https://cloud.google.com/pubsub/docs/cloudstorage>`__.
+
+                This field is a member of `oneof`_ ``input_format``.
+            minimum_object_create_time (google.protobuf.timestamp_pb2.Timestamp):
+                Optional. Only objects with a larger or equal
+                creation timestamp will be ingested.
+            match_glob (str):
+                Optional. Glob pattern used to match objects that will be
+                ingested. If unset, all objects will be ingested. See the
+                `supported
+                patterns <https://cloud.google.com/storage/docs/json_api/v1/objects/list#list-objects-and-prefixes-using-glob>`__.
+        """
+
+        class State(proto.Enum):
+            r"""Possible states for ingestion from Cloud Storage.
+
+            Values:
+                STATE_UNSPECIFIED (0):
+                    Default value. This value is unused.
+                ACTIVE (1):
+                    Ingestion is active.
+                CLOUD_STORAGE_PERMISSION_DENIED (2):
+                    Permission denied encountered while calling the Cloud
+                    Storage API. This can happen if the Pub/Sub SA has not been
+                    granted the `appropriate
+                    permissions <https://cloud.google.com/storage/docs/access-control/iam-permissions>`__:
+
+                    -  storage.objects.list: to list the objects in a bucket.
+                    -  storage.objects.get: to read the objects in a bucket.
+                    -  storage.buckets.get: to verify the bucket exists.
+                PUBLISH_PERMISSION_DENIED (3):
+                    Permission denied encountered while publishing to the topic.
+                    This can happen if the Pub/Sub SA has not been granted the
+                    `appropriate publish
+                    permissions <https://cloud.google.com/pubsub/docs/access-control#pubsub.publisher>`__
+                BUCKET_NOT_FOUND (4):
+                    The provided Cloud Storage bucket doesn't
+                    exist.
+                TOO_MANY_OBJECTS (5):
+                    The Cloud Storage bucket has too many
+                    objects, ingestion will be paused.
+            """
+            STATE_UNSPECIFIED = 0
+            ACTIVE = 1
+            CLOUD_STORAGE_PERMISSION_DENIED = 2
+            PUBLISH_PERMISSION_DENIED = 3
+            BUCKET_NOT_FOUND = 4
+            TOO_MANY_OBJECTS = 5
+
+        class TextFormat(proto.Message):
+            r"""Configuration for reading Cloud Storage data in text format. Each
+            line of text as specified by the delimiter will be set to the
+            ``data`` field of a Pub/Sub message.
+
+
+            .. _oneof: https://proto-plus-python.readthedocs.io/en/stable/fields.html#oneofs-mutually-exclusive-fields
+
+            Attributes:
+                delimiter (str):
+                    Optional. When unset, '\n' is used.
+
+                    This field is a member of `oneof`_ ``_delimiter``.
+            """
+
+            delimiter: str = proto.Field(
+                proto.STRING,
+                number=1,
+                optional=True,
+            )
+
+        class AvroFormat(proto.Message):
+            r"""Configuration for reading Cloud Storage data in Avro binary format.
+            The bytes of each object will be set to the ``data`` field of a
+            Pub/Sub message.
+
+            """
+
+        class PubSubAvroFormat(proto.Message):
+            r"""Configuration for reading Cloud Storage data written via `Cloud
+            Storage
+            subscriptions <https://cloud.google.com/pubsub/docs/cloudstorage>`__.
+            The data and attributes fields of the originally exported Pub/Sub
+            message will be restored when publishing.
+
+            """
+
+        state: "IngestionDataSourceSettings.CloudStorage.State" = proto.Field(
+            proto.ENUM,
+            number=1,
+            enum="IngestionDataSourceSettings.CloudStorage.State",
+        )
+        bucket: str = proto.Field(
+            proto.STRING,
+            number=2,
+        )
+        text_format: "IngestionDataSourceSettings.CloudStorage.TextFormat" = (
+            proto.Field(
+                proto.MESSAGE,
+                number=3,
+                oneof="input_format",
+                message="IngestionDataSourceSettings.CloudStorage.TextFormat",
+            )
+        )
+        avro_format: "IngestionDataSourceSettings.CloudStorage.AvroFormat" = (
+            proto.Field(
+                proto.MESSAGE,
+                number=4,
+                oneof="input_format",
+                message="IngestionDataSourceSettings.CloudStorage.AvroFormat",
+            )
+        )
+        pubsub_avro_format: "IngestionDataSourceSettings.CloudStorage.PubSubAvroFormat" = proto.Field(
+            proto.MESSAGE,
+            number=5,
+            oneof="input_format",
+            message="IngestionDataSourceSettings.CloudStorage.PubSubAvroFormat",
+        )
+        minimum_object_create_time: timestamp_pb2.Timestamp = proto.Field(
+            proto.MESSAGE,
+            number=6,
+            message=timestamp_pb2.Timestamp,
+        )
+        match_glob: str = proto.Field(
+            proto.STRING,
+            number=9,
+        )
+
+    class AzureEventHubs(proto.Message):
+        r"""Ingestion settings for Azure Event Hubs.
+
+        Attributes:
+            state (google.pubsub_v1.types.IngestionDataSourceSettings.AzureEventHubs.State):
+                Output only. An output-only field that
+                indicates the state of the Event Hubs ingestion
+                source.
+            resource_group (str):
+                Optional. Name of the resource group within
+                the azure subscription.
+            namespace (str):
+                Optional. The name of the Event Hubs
+                namespace.
+            event_hub (str):
+                Optional. The name of the Event Hub.
+            client_id (str):
+                Optional. The client id of the Azure
+                application that is being used to authenticate
+                Pub/Sub.
+            tenant_id (str):
+                Optional. The tenant id of the Azure
+                application that is being used to authenticate
+                Pub/Sub.
+            subscription_id (str):
+                Optional. The Azure subscription id.
+            gcp_service_account (str):
+                Optional. The GCP service account to be used
+                for Federated Identity authentication.
+        """
+
+        class State(proto.Enum):
+            r"""Possible states for managed ingestion from Event Hubs.
+
+            Values:
+                STATE_UNSPECIFIED (0):
+                    Default value. This value is unused.
+                ACTIVE (1):
+                    Ingestion is active.
+                EVENT_HUBS_PERMISSION_DENIED (2):
+                    Permission denied encountered while consuming data from
+                    Event Hubs. This can happen when ``client_id``, or
+                    ``tenant_id`` are invalid. Or the right permissions haven't
+                    been granted.
+                PUBLISH_PERMISSION_DENIED (3):
+                    Permission denied encountered while
+                    publishing to the topic.
+                NAMESPACE_NOT_FOUND (4):
+                    The provided Event Hubs namespace couldn't be
+                    found.
+                EVENT_HUB_NOT_FOUND (5):
+                    The provided Event Hub couldn't be found.
+                SUBSCRIPTION_NOT_FOUND (6):
+                    The provided Event Hubs subscription couldn't
+                    be found.
+                RESOURCE_GROUP_NOT_FOUND (7):
+                    The provided Event Hubs resource group
+                    couldn't be found.
+            """
+            STATE_UNSPECIFIED = 0
+            ACTIVE = 1
+            EVENT_HUBS_PERMISSION_DENIED = 2
+            PUBLISH_PERMISSION_DENIED = 3
+            NAMESPACE_NOT_FOUND = 4
+            EVENT_HUB_NOT_FOUND = 5
+            SUBSCRIPTION_NOT_FOUND = 6
+            RESOURCE_GROUP_NOT_FOUND = 7
+
+        state: "IngestionDataSourceSettings.AzureEventHubs.State" = proto.Field(
+            proto.ENUM,
+            number=1,
+            enum="IngestionDataSourceSettings.AzureEventHubs.State",
+        )
+        resource_group: str = proto.Field(
+            proto.STRING,
+            number=2,
+        )
+        namespace: str = proto.Field(
+            proto.STRING,
+            number=3,
+        )
+        event_hub: str = proto.Field(
+            proto.STRING,
+            number=4,
+        )
+        client_id: str = proto.Field(
+            proto.STRING,
+            number=5,
+        )
+        tenant_id: str = proto.Field(
+            proto.STRING,
+            number=6,
+        )
+        subscription_id: str = proto.Field(
+            proto.STRING,
+            number=7,
+        )
+        gcp_service_account: str = proto.Field(
+            proto.STRING,
+            number=8,
+        )
+
+    class AwsMsk(proto.Message):
+        r"""Ingestion settings for Amazon MSK.
+
+        Attributes:
+            state (google.pubsub_v1.types.IngestionDataSourceSettings.AwsMsk.State):
+                Output only. An output-only field that
+                indicates the state of the Amazon MSK ingestion
+                source.
+            cluster_arn (str):
+                Required. The Amazon Resource Name (ARN) that
+                uniquely identifies the cluster.
+            topic (str):
+                Required. The name of the topic in the Amazon
+                MSK cluster that Pub/Sub will import from.
+            aws_role_arn (str):
+                Required. AWS role ARN to be used for
+                Federated Identity authentication with Amazon
+                MSK. Check the Pub/Sub docs for how to set up
+                this role and the required permissions that need
+                to be attached to it.
+            gcp_service_account (str):
+                Required. The GCP service account to be used for Federated
+                Identity authentication with Amazon MSK (via a
+                ``AssumeRoleWithWebIdentity`` call for the provided role).
+                The ``aws_role_arn`` must be set up with
+                ``accounts.google.com:sub`` equals to this service account
+                number.
+        """
+
+        class State(proto.Enum):
+            r"""Possible states for managed ingestion from Amazon MSK.
+
+            Values:
+                STATE_UNSPECIFIED (0):
+                    Default value. This value is unused.
+                ACTIVE (1):
+                    Ingestion is active.
+                MSK_PERMISSION_DENIED (2):
+                    Permission denied encountered while consuming
+                    data from Amazon MSK.
+                PUBLISH_PERMISSION_DENIED (3):
+                    Permission denied encountered while
+                    publishing to the topic.
+                CLUSTER_NOT_FOUND (4):
+                    The provided MSK cluster wasn't found.
+                TOPIC_NOT_FOUND (5):
+                    The provided topic wasn't found.
+            """
+            STATE_UNSPECIFIED = 0
+            ACTIVE = 1
+            MSK_PERMISSION_DENIED = 2
+            PUBLISH_PERMISSION_DENIED = 3
+            CLUSTER_NOT_FOUND = 4
+            TOPIC_NOT_FOUND = 5
+
+        state: "IngestionDataSourceSettings.AwsMsk.State" = proto.Field(
+            proto.ENUM,
+            number=1,
+            enum="IngestionDataSourceSettings.AwsMsk.State",
+        )
+        cluster_arn: str = proto.Field(
+            proto.STRING,
+            number=2,
+        )
+        topic: str = proto.Field(
+            proto.STRING,
+            number=3,
+        )
+        aws_role_arn: str = proto.Field(
+            proto.STRING,
+            number=4,
+        )
+        gcp_service_account: str = proto.Field(
+            proto.STRING,
+            number=5,
+        )
+
+    class ConfluentCloud(proto.Message):
+        r"""Ingestion settings for Confluent Cloud.
+
+        Attributes:
+            state (google.pubsub_v1.types.IngestionDataSourceSettings.ConfluentCloud.State):
+                Output only. An output-only field that
+                indicates the state of the Confluent Cloud
+                ingestion source.
+            bootstrap_server (str):
+                Required. The address of the bootstrap
+                server. The format is url:port.
+            cluster_id (str):
+                Required. The id of the cluster.
+            topic (str):
+                Required. The name of the topic in the
+                Confluent Cloud cluster that Pub/Sub will import
+                from.
+            identity_pool_id (str):
+                Required. The id of the identity pool to be
+                used for Federated Identity authentication with
+                Confluent Cloud. See
+                https://docs.confluent.io/cloud/current/security/authenticate/workload-identities/identity-providers/oauth/identity-pools.html#add-oauth-identity-pools.
+            gcp_service_account (str):
+                Required. The GCP service account to be used for Federated
+                Identity authentication with ``identity_pool_id``.
+        """
+
+        class State(proto.Enum):
+            r"""Possible states for managed ingestion from Confluent Cloud.
+
+            Values:
+                STATE_UNSPECIFIED (0):
+                    Default value. This value is unused.
+                ACTIVE (1):
+                    Ingestion is active.
+                CONFLUENT_CLOUD_PERMISSION_DENIED (2):
+                    Permission denied encountered while consuming
+                    data from Confluent Cloud.
+                PUBLISH_PERMISSION_DENIED (3):
+                    Permission denied encountered while
+                    publishing to the topic.
+                UNREACHABLE_BOOTSTRAP_SERVER (4):
+                    The provided bootstrap server address is
+                    unreachable.
+                CLUSTER_NOT_FOUND (5):
+                    The provided cluster wasn't found.
+                TOPIC_NOT_FOUND (6):
+                    The provided topic wasn't found.
+            """
+            STATE_UNSPECIFIED = 0
+            ACTIVE = 1
+            CONFLUENT_CLOUD_PERMISSION_DENIED = 2
+            PUBLISH_PERMISSION_DENIED = 3
+            UNREACHABLE_BOOTSTRAP_SERVER = 4
+            CLUSTER_NOT_FOUND = 5
+            TOPIC_NOT_FOUND = 6
+
+        state: "IngestionDataSourceSettings.ConfluentCloud.State" = proto.Field(
+            proto.ENUM,
+            number=1,
+            enum="IngestionDataSourceSettings.ConfluentCloud.State",
+        )
+        bootstrap_server: str = proto.Field(
+            proto.STRING,
+            number=2,
+        )
+        cluster_id: str = proto.Field(
+            proto.STRING,
+            number=3,
+        )
+        topic: str = proto.Field(
+            proto.STRING,
+            number=4,
+        )
+        identity_pool_id: str = proto.Field(
+            proto.STRING,
+            number=5,
+        )
+        gcp_service_account: str = proto.Field(
+            proto.STRING,
+            number=6,
+        )
+
     aws_kinesis: AwsKinesis = proto.Field(
         proto.MESSAGE,
         number=1,
         oneof="source",
         message=AwsKinesis,
+    )
+    cloud_storage: CloudStorage = proto.Field(
+        proto.MESSAGE,
+        number=2,
+        oneof="source",
+        message=CloudStorage,
+    )
+    azure_event_hubs: AzureEventHubs = proto.Field(
+        proto.MESSAGE,
+        number=3,
+        oneof="source",
+        message=AzureEventHubs,
+    )
+    aws_msk: AwsMsk = proto.Field(
+        proto.MESSAGE,
+        number=5,
+        oneof="source",
+        message=AwsMsk,
+    )
+    confluent_cloud: ConfluentCloud = proto.Field(
+        proto.MESSAGE,
+        number=6,
+        oneof="source",
+        message=ConfluentCloud,
+    )
+    platform_logs_settings: "PlatformLogsSettings" = proto.Field(
+        proto.MESSAGE,
+        number=4,
+        message="PlatformLogsSettings",
+    )
+
+
+class PlatformLogsSettings(proto.Message):
+    r"""Settings for Platform Logs produced by Pub/Sub.
+
+    Attributes:
+        severity (google.pubsub_v1.types.PlatformLogsSettings.Severity):
+            Optional. The minimum severity level of
+            Platform Logs that will be written.
+    """
+
+    class Severity(proto.Enum):
+        r"""Severity levels of Platform Logs.
+
+        Values:
+            SEVERITY_UNSPECIFIED (0):
+                Default value. Logs level is unspecified.
+                Logs will be disabled.
+            DISABLED (1):
+                Logs will be disabled.
+            DEBUG (2):
+                Debug logs and higher-severity logs will be
+                written.
+            INFO (3):
+                Info logs and higher-severity logs will be
+                written.
+            WARNING (4):
+                Warning logs and higher-severity logs will be
+                written.
+            ERROR (5):
+                Only error logs will be written.
+        """
+        SEVERITY_UNSPECIFIED = 0
+        DISABLED = 1
+        DEBUG = 2
+        INFO = 3
+        WARNING = 4
+        ERROR = 5
+
+    severity: Severity = proto.Field(
+        proto.ENUM,
+        number=1,
+        enum=Severity,
+    )
+
+
+class IngestionFailureEvent(proto.Message):
+    r"""Payload of the Platform Log entry sent when a failure is
+    encountered while ingesting.
+
+    This message has `oneof`_ fields (mutually exclusive fields).
+    For each oneof, at most one member field can be set at the same time.
+    Setting any member of the oneof automatically clears all other
+    members.
+
+    .. _oneof: https://proto-plus-python.readthedocs.io/en/stable/fields.html#oneofs-mutually-exclusive-fields
+
+    Attributes:
+        topic (str):
+            Required. Name of the import topic. Format is:
+            projects/{project_name}/topics/{topic_name}.
+        error_message (str):
+            Required. Error details explaining why
+            ingestion to Pub/Sub has failed.
+        cloud_storage_failure (google.pubsub_v1.types.IngestionFailureEvent.CloudStorageFailure):
+            Optional. Failure when ingesting from Cloud
+            Storage.
+
+            This field is a member of `oneof`_ ``failure``.
+        aws_msk_failure (google.pubsub_v1.types.IngestionFailureEvent.AwsMskFailureReason):
+            Optional. Failure when ingesting from Amazon
+            MSK.
+
+            This field is a member of `oneof`_ ``failure``.
+        azure_event_hubs_failure (google.pubsub_v1.types.IngestionFailureEvent.AzureEventHubsFailureReason):
+            Optional. Failure when ingesting from Azure
+            Event Hubs.
+
+            This field is a member of `oneof`_ ``failure``.
+        confluent_cloud_failure (google.pubsub_v1.types.IngestionFailureEvent.ConfluentCloudFailureReason):
+            Optional. Failure when ingesting from
+            Confluent Cloud.
+
+            This field is a member of `oneof`_ ``failure``.
+    """
+
+    class ApiViolationReason(proto.Message):
+        r"""Specifies the reason why some data may have been left out of the
+        desired Pub/Sub message due to the API message limits
+        (https://cloud.google.com/pubsub/quotas#resource_limits). For
+        example, when the number of attributes is larger than 100, the
+        number of attributes is truncated to 100 to respect the limit on the
+        attribute count. Other attribute limits are treated similarly. When
+        the size of the desired message would've been larger than 10MB, the
+        message won't be published at all, and ingestion of the subsequent
+        messages will proceed as normal.
+
+        """
+
+    class AvroFailureReason(proto.Message):
+        r"""Set when an Avro file is unsupported or its format is not
+        valid. When this occurs, one or more Avro objects won't be
+        ingested.
+
+        """
+
+    class CloudStorageFailure(proto.Message):
+        r"""Failure when ingesting from a Cloud Storage source.
+
+        This message has `oneof`_ fields (mutually exclusive fields).
+        For each oneof, at most one member field can be set at the same time.
+        Setting any member of the oneof automatically clears all other
+        members.
+
+        .. _oneof: https://proto-plus-python.readthedocs.io/en/stable/fields.html#oneofs-mutually-exclusive-fields
+
+        Attributes:
+            bucket (str):
+                Optional. Name of the Cloud Storage bucket
+                used for ingestion.
+            object_name (str):
+                Optional. Name of the Cloud Storage object
+                which contained the section that couldn't be
+                ingested.
+            object_generation (int):
+                Optional. Generation of the Cloud Storage
+                object which contained the section that couldn't
+                be ingested.
+            avro_failure_reason (google.pubsub_v1.types.IngestionFailureEvent.AvroFailureReason):
+                Optional. Failure encountered when parsing an
+                Avro file.
+
+                This field is a member of `oneof`_ ``reason``.
+            api_violation_reason (google.pubsub_v1.types.IngestionFailureEvent.ApiViolationReason):
+                Optional. The Pub/Sub API limits prevented
+                the desired message from being published.
+
+                This field is a member of `oneof`_ ``reason``.
+        """
+
+        bucket: str = proto.Field(
+            proto.STRING,
+            number=1,
+        )
+        object_name: str = proto.Field(
+            proto.STRING,
+            number=2,
+        )
+        object_generation: int = proto.Field(
+            proto.INT64,
+            number=3,
+        )
+        avro_failure_reason: "IngestionFailureEvent.AvroFailureReason" = proto.Field(
+            proto.MESSAGE,
+            number=5,
+            oneof="reason",
+            message="IngestionFailureEvent.AvroFailureReason",
+        )
+        api_violation_reason: "IngestionFailureEvent.ApiViolationReason" = proto.Field(
+            proto.MESSAGE,
+            number=6,
+            oneof="reason",
+            message="IngestionFailureEvent.ApiViolationReason",
+        )
+
+    class AwsMskFailureReason(proto.Message):
+        r"""Failure when ingesting from an Amazon MSK source.
+
+        .. _oneof: https://proto-plus-python.readthedocs.io/en/stable/fields.html#oneofs-mutually-exclusive-fields
+
+        Attributes:
+            cluster_arn (str):
+                Optional. The ARN of the cluster of the topic
+                being ingested from.
+            kafka_topic (str):
+                Optional. The name of the Kafka topic being
+                ingested from.
+            partition_id (int):
+                Optional. The partition ID of the message
+                that failed to be ingested.
+            offset (int):
+                Optional. The offset within the partition of
+                the message that failed to be ingested.
+            api_violation_reason (google.pubsub_v1.types.IngestionFailureEvent.ApiViolationReason):
+                Optional. The Pub/Sub API limits prevented
+                the desired message from being published.
+
+                This field is a member of `oneof`_ ``reason``.
+        """
+
+        cluster_arn: str = proto.Field(
+            proto.STRING,
+            number=1,
+        )
+        kafka_topic: str = proto.Field(
+            proto.STRING,
+            number=2,
+        )
+        partition_id: int = proto.Field(
+            proto.INT64,
+            number=3,
+        )
+        offset: int = proto.Field(
+            proto.INT64,
+            number=4,
+        )
+        api_violation_reason: "IngestionFailureEvent.ApiViolationReason" = proto.Field(
+            proto.MESSAGE,
+            number=5,
+            oneof="reason",
+            message="IngestionFailureEvent.ApiViolationReason",
+        )
+
+    class AzureEventHubsFailureReason(proto.Message):
+        r"""Failure when ingesting from an Azure Event Hubs source.
+
+        .. _oneof: https://proto-plus-python.readthedocs.io/en/stable/fields.html#oneofs-mutually-exclusive-fields
+
+        Attributes:
+            namespace (str):
+                Optional. The namespace containing the event
+                hub being ingested from.
+            event_hub (str):
+                Optional. The name of the event hub being
+                ingested from.
+            partition_id (int):
+                Optional. The partition ID of the message
+                that failed to be ingested.
+            offset (int):
+                Optional. The offset within the partition of
+                the message that failed to be ingested.
+            api_violation_reason (google.pubsub_v1.types.IngestionFailureEvent.ApiViolationReason):
+                Optional. The Pub/Sub API limits prevented
+                the desired message from being published.
+
+                This field is a member of `oneof`_ ``reason``.
+        """
+
+        namespace: str = proto.Field(
+            proto.STRING,
+            number=1,
+        )
+        event_hub: str = proto.Field(
+            proto.STRING,
+            number=2,
+        )
+        partition_id: int = proto.Field(
+            proto.INT64,
+            number=3,
+        )
+        offset: int = proto.Field(
+            proto.INT64,
+            number=4,
+        )
+        api_violation_reason: "IngestionFailureEvent.ApiViolationReason" = proto.Field(
+            proto.MESSAGE,
+            number=5,
+            oneof="reason",
+            message="IngestionFailureEvent.ApiViolationReason",
+        )
+
+    class ConfluentCloudFailureReason(proto.Message):
+        r"""Failure when ingesting from a Confluent Cloud source.
+
+        .. _oneof: https://proto-plus-python.readthedocs.io/en/stable/fields.html#oneofs-mutually-exclusive-fields
+
+        Attributes:
+            cluster_id (str):
+                Optional. The cluster ID containing the topic
+                being ingested from.
+            kafka_topic (str):
+                Optional. The name of the Kafka topic being
+                ingested from.
+            partition_id (int):
+                Optional. The partition ID of the message
+                that failed to be ingested.
+            offset (int):
+                Optional. The offset within the partition of
+                the message that failed to be ingested.
+            api_violation_reason (google.pubsub_v1.types.IngestionFailureEvent.ApiViolationReason):
+                Optional. The Pub/Sub API limits prevented
+                the desired message from being published.
+
+                This field is a member of `oneof`_ ``reason``.
+        """
+
+        cluster_id: str = proto.Field(
+            proto.STRING,
+            number=1,
+        )
+        kafka_topic: str = proto.Field(
+            proto.STRING,
+            number=2,
+        )
+        partition_id: int = proto.Field(
+            proto.INT64,
+            number=3,
+        )
+        offset: int = proto.Field(
+            proto.INT64,
+            number=4,
+        )
+        api_violation_reason: "IngestionFailureEvent.ApiViolationReason" = proto.Field(
+            proto.MESSAGE,
+            number=5,
+            oneof="reason",
+            message="IngestionFailureEvent.ApiViolationReason",
+        )
+
+    topic: str = proto.Field(
+        proto.STRING,
+        number=1,
+    )
+    error_message: str = proto.Field(
+        proto.STRING,
+        number=2,
+    )
+    cloud_storage_failure: CloudStorageFailure = proto.Field(
+        proto.MESSAGE,
+        number=3,
+        oneof="failure",
+        message=CloudStorageFailure,
+    )
+    aws_msk_failure: AwsMskFailureReason = proto.Field(
+        proto.MESSAGE,
+        number=4,
+        oneof="failure",
+        message=AwsMskFailureReason,
+    )
+    azure_event_hubs_failure: AzureEventHubsFailureReason = proto.Field(
+        proto.MESSAGE,
+        number=5,
+        oneof="failure",
+        message=AzureEventHubsFailureReason,
+    )
+    confluent_cloud_failure: ConfluentCloudFailureReason = proto.Field(
+        proto.MESSAGE,
+        number=6,
+        oneof="failure",
+        message=ConfluentCloudFailureReason,
+    )
+
+
+class JavaScriptUDF(proto.Message):
+    r"""User-defined JavaScript function that can transform or filter
+    a Pub/Sub message.
+
+    Attributes:
+        function_name (str):
+            Required. Name of the JavasScript function
+            that should applied to Pub/Sub messages.
+        code (str):
+            Required. JavaScript code that contains a function
+            ``function_name`` with the below signature:
+
+            ::
+
+                 /**
+                 * Transforms a Pub/Sub message.
+
+                 * @return {(Object<string, (string | Object<string, string>)>|null)} - To
+                 * filter a message, return `null`. To transform a message return a map
+                 * with the following keys:
+                 *   - (required) 'data' : {string}
+                 *   - (optional) 'attributes' : {Object<string, string>}
+                 * Returning empty `attributes` will remove all attributes from the
+                 * message.
+                 *
+                 * @param  {(Object<string, (string | Object<string, string>)>} Pub/Sub
+                 * message. Keys:
+                 *   - (required) 'data' : {string}
+                 *   - (required) 'attributes' : {Object<string, string>}
+                 *
+                 * @param  {Object<string, any>} metadata - Pub/Sub message metadata.
+                 * Keys:
+                 *   - (required) 'message_id'  : {string}
+                 *   - (optional) 'publish_time': {string} YYYY-MM-DDTHH:MM:SSZ format
+                 *   - (optional) 'ordering_key': {string}
+                 */
+
+                 function <function_name>(message, metadata) {
+                 }
+    """
+
+    function_name: str = proto.Field(
+        proto.STRING,
+        number=1,
+    )
+    code: str = proto.Field(
+        proto.STRING,
+        number=2,
+    )
+
+
+class MessageTransform(proto.Message):
+    r"""All supported message transforms types.
+
+    .. _oneof: https://proto-plus-python.readthedocs.io/en/stable/fields.html#oneofs-mutually-exclusive-fields
+
+    Attributes:
+        javascript_udf (google.pubsub_v1.types.JavaScriptUDF):
+            Optional. JavaScript User Defined Function. If multiple
+            JavaScriptUDF's are specified on a resource, each must have
+            a unique ``function_name``.
+
+            This field is a member of `oneof`_ ``transform``.
+        enabled (bool):
+            Optional. This field is deprecated, use the ``disabled``
+            field to disable transforms.
+        disabled (bool):
+            Optional. If true, the transform is disabled and will not be
+            applied to messages. Defaults to ``false``.
+    """
+
+    javascript_udf: "JavaScriptUDF" = proto.Field(
+        proto.MESSAGE,
+        number=2,
+        oneof="transform",
+        message="JavaScriptUDF",
+    )
+    enabled: bool = proto.Field(
+        proto.BOOL,
+        number=3,
+    )
+    disabled: bool = proto.Field(
+        proto.BOOL,
+        number=4,
     )
 
 
@@ -319,6 +1226,10 @@ class Topic(proto.Message):
         ingestion_data_source_settings (google.pubsub_v1.types.IngestionDataSourceSettings):
             Optional. Settings for ingestion from a data
             source into this topic.
+        message_transforms (MutableSequence[google.pubsub_v1.types.MessageTransform]):
+            Optional. Transforms to be applied to
+            messages published to the topic. Transforms are
+            applied in the order specified.
     """
 
     class State(proto.Enum):
@@ -381,6 +1292,11 @@ class Topic(proto.Message):
         proto.MESSAGE,
         number=10,
         message="IngestionDataSourceSettings",
+    )
+    message_transforms: MutableSequence["MessageTransform"] = proto.RepeatedField(
+        proto.MESSAGE,
+        number=13,
+        message="MessageTransform",
     )
 
 
@@ -821,7 +1737,7 @@ class Subscription(proto.Message):
             published. If ``retain_acked_messages`` is true, then this
             also configures the retention of acknowledged messages, and
             thus configures how far back in time a ``Seek`` can be done.
-            Defaults to 7 days. Cannot be more than 7 days or less than
+            Defaults to 7 days. Cannot be more than 31 days or less than
             10 minutes.
         labels (MutableMapping[str, str]):
             Optional. See `Creating and managing
@@ -906,6 +1822,15 @@ class Subscription(proto.Message):
             Output only. An output-only field indicating
             whether or not the subscription can receive
             messages.
+        analytics_hub_subscription_info (google.pubsub_v1.types.Subscription.AnalyticsHubSubscriptionInfo):
+            Output only. Information about the associated
+            Analytics Hub subscription. Only set if the
+            subscritpion is created by Analytics Hub.
+        message_transforms (MutableSequence[google.pubsub_v1.types.MessageTransform]):
+            Optional. Transforms to be applied to
+            messages before they are delivered to
+            subscribers. Transforms are applied in the order
+            specified.
     """
 
     class State(proto.Enum):
@@ -926,6 +1851,31 @@ class Subscription(proto.Message):
         STATE_UNSPECIFIED = 0
         ACTIVE = 1
         RESOURCE_ERROR = 2
+
+    class AnalyticsHubSubscriptionInfo(proto.Message):
+        r"""Information about an associated `Analytics Hub
+        subscription <https://cloud.google.com/bigquery/docs/analytics-hub-manage-subscriptions>`__.
+
+        Attributes:
+            listing (str):
+                Optional. The name of the associated Analytics Hub listing
+                resource. Pattern:
+                "projects/{project}/locations/{location}/dataExchanges/{data_exchange}/listings/{listing}".
+            subscription (str):
+                Optional. The name of the associated
+                Analytics Hub subscription resource. Pattern:
+
+                "projects/{project}/locations/{location}/subscriptions/{subscription}".
+        """
+
+        listing: str = proto.Field(
+            proto.STRING,
+            number=1,
+        )
+        subscription: str = proto.Field(
+            proto.STRING,
+            number=2,
+        )
 
     name: str = proto.Field(
         proto.STRING,
@@ -1008,6 +1958,16 @@ class Subscription(proto.Message):
         proto.ENUM,
         number=19,
         enum=State,
+    )
+    analytics_hub_subscription_info: AnalyticsHubSubscriptionInfo = proto.Field(
+        proto.MESSAGE,
+        number=23,
+        message=AnalyticsHubSubscriptionInfo,
+    )
+    message_transforms: MutableSequence["MessageTransform"] = proto.RepeatedField(
+        proto.MESSAGE,
+        number=25,
+        message="MessageTransform",
     )
 
 
@@ -1302,6 +2262,14 @@ class BigQueryConfig(proto.Message):
             Optional. When true, use the BigQuery table's schema as the
             columns to write to in BigQuery. ``use_table_schema`` and
             ``use_topic_schema`` cannot be enabled at the same time.
+        service_account_email (str):
+            Optional. The service account to use to write to BigQuery.
+            The subscription creator or updater that specifies this
+            field must have ``iam.serviceAccounts.actAs`` permission on
+            the service account. If not specified, the Pub/Sub `service
+            agent <https://cloud.google.com/iam/docs/service-agents>`__,
+            service-{project_number}@gcp-sa-pubsub.iam.gserviceaccount.com,
+            is used.
     """
 
     class State(proto.Enum):
@@ -1366,6 +2334,10 @@ class BigQueryConfig(proto.Message):
         proto.BOOL,
         number=6,
     )
+    service_account_email: str = proto.Field(
+        proto.STRING,
+        number=7,
+    )
 
 
 class CloudStorageConfig(proto.Message):
@@ -1420,10 +2392,23 @@ class CloudStorageConfig(proto.Message):
             Storage file before a new file is created. Min 1 KB, max 10
             GiB. The max_bytes limit may be exceeded in cases where
             messages are larger than the limit.
+        max_messages (int):
+            Optional. The maximum number of messages that
+            can be written to a Cloud Storage file before a
+            new file is created. Min 1000 messages.
         state (google.pubsub_v1.types.CloudStorageConfig.State):
             Output only. An output-only field that
             indicates whether or not the subscription can
             receive messages.
+        service_account_email (str):
+            Optional. The service account to use to write to Cloud
+            Storage. The subscription creator or updater that specifies
+            this field must have ``iam.serviceAccounts.actAs``
+            permission on the service account. If not specified, the
+            Pub/Sub `service
+            agent <https://cloud.google.com/iam/docs/service-agents>`__,
+            service-{project_number}@gcp-sa-pubsub.iam.gserviceaccount.com,
+            is used.
     """
 
     class State(proto.Enum):
@@ -1445,12 +2430,17 @@ class CloudStorageConfig(proto.Message):
                 Cannot write to the destination because enforce_in_transit
                 is set to true and the destination locations are not in the
                 allowed regions.
+            SCHEMA_MISMATCH (5):
+                Cannot write to the Cloud Storage bucket due
+                to an incompatibility between the topic schema
+                and subscription settings.
         """
         STATE_UNSPECIFIED = 0
         ACTIVE = 1
         PERMISSION_DENIED = 2
         NOT_FOUND = 3
         IN_TRANSIT_LOCATION_RESTRICTION = 4
+        SCHEMA_MISMATCH = 5
 
     class TextConfig(proto.Message):
         r"""Configuration for writing message data in text format.
@@ -1473,11 +2463,19 @@ class CloudStorageConfig(proto.Message):
                 fields while all other message properties other than data
                 (for example, an ordering_key, if present) are added as
                 entries in the attributes map.
+            use_topic_schema (bool):
+                Optional. When true, the output Cloud Storage
+                file will be serialized using the topic schema,
+                if it exists.
         """
 
         write_metadata: bool = proto.Field(
             proto.BOOL,
             number=1,
+        )
+        use_topic_schema: bool = proto.Field(
+            proto.BOOL,
+            number=2,
         )
 
     bucket: str = proto.Field(
@@ -1517,10 +2515,18 @@ class CloudStorageConfig(proto.Message):
         proto.INT64,
         number=7,
     )
+    max_messages: int = proto.Field(
+        proto.INT64,
+        number=8,
+    )
     state: State = proto.Field(
         proto.ENUM,
         number=9,
         enum=State,
+    )
+    service_account_email: str = proto.Field(
+        proto.STRING,
+        number=11,
     )
 
 

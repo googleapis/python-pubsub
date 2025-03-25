@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2024 Google LLC
+# Copyright 2025 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,6 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+import json
+import logging as std_logging
+import pickle
 import warnings
 from typing import Callable, Dict, Optional, Sequence, Tuple, Union
 
@@ -21,14 +24,92 @@ from google.api_core import gapic_v1
 import google.auth  # type: ignore
 from google.auth import credentials as ga_credentials  # type: ignore
 from google.auth.transport.grpc import SslCredentials  # type: ignore
+from google.protobuf.json_format import MessageToJson
+import google.protobuf.message
 
 import grpc  # type: ignore
+import proto  # type: ignore
 
 from google.iam.v1 import iam_policy_pb2  # type: ignore
 from google.iam.v1 import policy_pb2  # type: ignore
 from google.protobuf import empty_pb2  # type: ignore
 from google.pubsub_v1.types import pubsub
 from .base import PublisherTransport, DEFAULT_CLIENT_INFO
+
+try:
+    from google.api_core import client_logging  # type: ignore
+
+    CLIENT_LOGGING_SUPPORTED = True  # pragma: NO COVER
+except ImportError:  # pragma: NO COVER
+    CLIENT_LOGGING_SUPPORTED = False
+
+_LOGGER = std_logging.getLogger(__name__)
+
+
+class _LoggingClientInterceptor(grpc.UnaryUnaryClientInterceptor):  # pragma: NO COVER
+    def intercept_unary_unary(self, continuation, client_call_details, request):
+        logging_enabled = CLIENT_LOGGING_SUPPORTED and _LOGGER.isEnabledFor(
+            std_logging.DEBUG
+        )
+        if logging_enabled:  # pragma: NO COVER
+            request_metadata = client_call_details.metadata
+            if isinstance(request, proto.Message):
+                request_payload = type(request).to_json(request)
+            elif isinstance(request, google.protobuf.message.Message):
+                request_payload = MessageToJson(request)
+            else:
+                request_payload = f"{type(request).__name__}: {pickle.dumps(request)}"
+
+            request_metadata = {
+                key: value.decode("utf-8") if isinstance(value, bytes) else value
+                for key, value in request_metadata
+            }
+            grpc_request = {
+                "payload": request_payload,
+                "requestMethod": "grpc",
+                "metadata": dict(request_metadata),
+            }
+            _LOGGER.debug(
+                f"Sending request for {client_call_details.method}",
+                extra={
+                    "serviceName": "google.pubsub.v1.Publisher",
+                    "rpcName": client_call_details.method,
+                    "request": grpc_request,
+                    "metadata": grpc_request["metadata"],
+                },
+            )
+
+        response = continuation(client_call_details, request)
+        if logging_enabled:  # pragma: NO COVER
+            response_metadata = response.trailing_metadata()
+            # Convert gRPC metadata `<class 'grpc.aio._metadata.Metadata'>` to list of tuples
+            metadata = (
+                dict([(k, str(v)) for k, v in response_metadata])
+                if response_metadata
+                else None
+            )
+            result = response.result()
+            if isinstance(result, proto.Message):
+                response_payload = type(result).to_json(result)
+            elif isinstance(result, google.protobuf.message.Message):
+                response_payload = MessageToJson(result)
+            else:
+                response_payload = f"{type(result).__name__}: {pickle.dumps(result)}"
+            grpc_response = {
+                "payload": response_payload,
+                "metadata": metadata,
+                "status": "OK",
+            }
+            _LOGGER.debug(
+                f"Received response for {client_call_details.method}.",
+                extra={
+                    "serviceName": "google.pubsub.v1.Publisher",
+                    "rpcName": client_call_details.method,
+                    "response": grpc_response,
+                    "metadata": grpc_response["metadata"],
+                },
+            )
+        return response
 
 
 class PublisherGrpcTransport(PublisherTransport):
@@ -54,7 +135,7 @@ class PublisherGrpcTransport(PublisherTransport):
         credentials: Optional[ga_credentials.Credentials] = None,
         credentials_file: Optional[str] = None,
         scopes: Optional[Sequence[str]] = None,
-        channel: Optional[grpc.Channel] = None,
+        channel: Optional[Union[grpc.Channel, Callable[..., grpc.Channel]]] = None,
         api_mtls_endpoint: Optional[str] = None,
         client_cert_source: Optional[Callable[[], Tuple[bytes, bytes]]] = None,
         ssl_channel_credentials: Optional[grpc.ChannelCredentials] = None,
@@ -74,14 +155,17 @@ class PublisherGrpcTransport(PublisherTransport):
                 credentials identify the application to the service; if none
                 are specified, the client will attempt to ascertain the
                 credentials from the environment.
-                This argument is ignored if ``channel`` is provided.
+                This argument is ignored if a ``channel`` instance is provided.
             credentials_file (Optional[str]): A file with credentials that can
                 be loaded with :func:`google.auth.load_credentials_from_file`.
-                This argument is ignored if ``channel`` is provided.
+                This argument is ignored if a ``channel`` instance is provided.
             scopes (Optional(Sequence[str])): A list of scopes. This argument is
-                ignored if ``channel`` is provided.
-            channel (Optional[grpc.Channel]): A ``Channel`` instance through
-                which to make calls.
+                ignored if a ``channel`` instance is provided.
+            channel (Optional[Union[grpc.Channel, Callable[..., grpc.Channel]]]):
+                A ``Channel`` instance through which to make calls, or a Callable
+                that constructs and returns one. If set to None, ``self.create_channel``
+                is used to create the channel. If a Callable is given, it will be called
+                with the same arguments as used in ``self.create_channel``.
             api_mtls_endpoint (Optional[str]): Deprecated. The mutual TLS endpoint.
                 If provided, it overrides the ``host`` argument and tries to create
                 a mutual TLS channel with client SSL credentials from
@@ -91,11 +175,11 @@ class PublisherGrpcTransport(PublisherTransport):
                 private key bytes, both in PEM format. It is ignored if
                 ``api_mtls_endpoint`` is None.
             ssl_channel_credentials (grpc.ChannelCredentials): SSL credentials
-                for the grpc channel. It is ignored if ``channel`` is provided.
+                for the grpc channel. It is ignored if a ``channel`` instance is provided.
             client_cert_source_for_mtls (Optional[Callable[[], Tuple[bytes, bytes]]]):
                 A callback to provide client certificate bytes and private key bytes,
                 both in PEM format. It is used to configure a mutual TLS channel. It is
-                ignored if ``channel`` or ``ssl_channel_credentials`` is provided.
+                ignored if a ``channel`` instance or ``ssl_channel_credentials`` is provided.
             quota_project_id (Optional[str]): An optional project to use for billing
                 and quota.
             client_info (google.api_core.gapic_v1.client_info.ClientInfo):
@@ -121,9 +205,10 @@ class PublisherGrpcTransport(PublisherTransport):
         if client_cert_source:
             warnings.warn("client_cert_source is deprecated", DeprecationWarning)
 
-        if channel:
+        if isinstance(channel, grpc.Channel):
             # Ignore credentials if a channel was passed.
-            credentials = False
+            credentials = None
+            self._ignore_credentials = True
             # If a channel was explicitly provided, set it.
             self._grpc_channel = channel
             self._ssl_channel_credentials = None
@@ -162,7 +247,9 @@ class PublisherGrpcTransport(PublisherTransport):
         )
 
         if not self._grpc_channel:
-            self._grpc_channel = type(self).create_channel(
+            # initialize with the provided callable or the default channel
+            channel_init = channel or type(self).create_channel
+            self._grpc_channel = channel_init(
                 self._host,
                 # use the credentials which are saved
                 credentials=self._credentials,
@@ -180,7 +267,12 @@ class PublisherGrpcTransport(PublisherTransport):
                 ],
             )
 
-        # Wrap messages. This must be done after self._grpc_channel exists
+        self._interceptor = _LoggingClientInterceptor()
+        self._logged_channel = grpc.intercept_channel(
+            self._grpc_channel, self._interceptor
+        )
+
+        # Wrap messages. This must be done after self._logged_channel exists
         self._prep_wrapped_messages(client_info)
 
     @classmethod
@@ -254,7 +346,7 @@ class PublisherGrpcTransport(PublisherTransport):
         # gRPC handles serialization and deserialization, so we just need
         # to pass in the functions for each.
         if "create_topic" not in self._stubs:
-            self._stubs["create_topic"] = self.grpc_channel.unary_unary(
+            self._stubs["create_topic"] = self._logged_channel.unary_unary(
                 "/google.pubsub.v1.Publisher/CreateTopic",
                 request_serializer=pubsub.Topic.serialize,
                 response_deserializer=pubsub.Topic.deserialize,
@@ -280,7 +372,7 @@ class PublisherGrpcTransport(PublisherTransport):
         # gRPC handles serialization and deserialization, so we just need
         # to pass in the functions for each.
         if "update_topic" not in self._stubs:
-            self._stubs["update_topic"] = self.grpc_channel.unary_unary(
+            self._stubs["update_topic"] = self._logged_channel.unary_unary(
                 "/google.pubsub.v1.Publisher/UpdateTopic",
                 request_serializer=pubsub.UpdateTopicRequest.serialize,
                 response_deserializer=pubsub.Topic.deserialize,
@@ -305,7 +397,7 @@ class PublisherGrpcTransport(PublisherTransport):
         # gRPC handles serialization and deserialization, so we just need
         # to pass in the functions for each.
         if "publish" not in self._stubs:
-            self._stubs["publish"] = self.grpc_channel.unary_unary(
+            self._stubs["publish"] = self._logged_channel.unary_unary(
                 "/google.pubsub.v1.Publisher/Publish",
                 request_serializer=pubsub.PublishRequest.serialize,
                 response_deserializer=pubsub.PublishResponse.deserialize,
@@ -329,7 +421,7 @@ class PublisherGrpcTransport(PublisherTransport):
         # gRPC handles serialization and deserialization, so we just need
         # to pass in the functions for each.
         if "get_topic" not in self._stubs:
-            self._stubs["get_topic"] = self.grpc_channel.unary_unary(
+            self._stubs["get_topic"] = self._logged_channel.unary_unary(
                 "/google.pubsub.v1.Publisher/GetTopic",
                 request_serializer=pubsub.GetTopicRequest.serialize,
                 response_deserializer=pubsub.Topic.deserialize,
@@ -355,7 +447,7 @@ class PublisherGrpcTransport(PublisherTransport):
         # gRPC handles serialization and deserialization, so we just need
         # to pass in the functions for each.
         if "list_topics" not in self._stubs:
-            self._stubs["list_topics"] = self.grpc_channel.unary_unary(
+            self._stubs["list_topics"] = self._logged_channel.unary_unary(
                 "/google.pubsub.v1.Publisher/ListTopics",
                 request_serializer=pubsub.ListTopicsRequest.serialize,
                 response_deserializer=pubsub.ListTopicsResponse.deserialize,
@@ -384,7 +476,7 @@ class PublisherGrpcTransport(PublisherTransport):
         # gRPC handles serialization and deserialization, so we just need
         # to pass in the functions for each.
         if "list_topic_subscriptions" not in self._stubs:
-            self._stubs["list_topic_subscriptions"] = self.grpc_channel.unary_unary(
+            self._stubs["list_topic_subscriptions"] = self._logged_channel.unary_unary(
                 "/google.pubsub.v1.Publisher/ListTopicSubscriptions",
                 request_serializer=pubsub.ListTopicSubscriptionsRequest.serialize,
                 response_deserializer=pubsub.ListTopicSubscriptionsResponse.deserialize,
@@ -417,7 +509,7 @@ class PublisherGrpcTransport(PublisherTransport):
         # gRPC handles serialization and deserialization, so we just need
         # to pass in the functions for each.
         if "list_topic_snapshots" not in self._stubs:
-            self._stubs["list_topic_snapshots"] = self.grpc_channel.unary_unary(
+            self._stubs["list_topic_snapshots"] = self._logged_channel.unary_unary(
                 "/google.pubsub.v1.Publisher/ListTopicSnapshots",
                 request_serializer=pubsub.ListTopicSnapshotsRequest.serialize,
                 response_deserializer=pubsub.ListTopicSnapshotsResponse.deserialize,
@@ -446,7 +538,7 @@ class PublisherGrpcTransport(PublisherTransport):
         # gRPC handles serialization and deserialization, so we just need
         # to pass in the functions for each.
         if "delete_topic" not in self._stubs:
-            self._stubs["delete_topic"] = self.grpc_channel.unary_unary(
+            self._stubs["delete_topic"] = self._logged_channel.unary_unary(
                 "/google.pubsub.v1.Publisher/DeleteTopic",
                 request_serializer=pubsub.DeleteTopicRequest.serialize,
                 response_deserializer=empty_pb2.Empty.FromString,
@@ -478,12 +570,15 @@ class PublisherGrpcTransport(PublisherTransport):
         # gRPC handles serialization and deserialization, so we just need
         # to pass in the functions for each.
         if "detach_subscription" not in self._stubs:
-            self._stubs["detach_subscription"] = self.grpc_channel.unary_unary(
+            self._stubs["detach_subscription"] = self._logged_channel.unary_unary(
                 "/google.pubsub.v1.Publisher/DetachSubscription",
                 request_serializer=pubsub.DetachSubscriptionRequest.serialize,
                 response_deserializer=pubsub.DetachSubscriptionResponse.deserialize,
             )
         return self._stubs["detach_subscription"]
+
+    def close(self):
+        self._logged_channel.close()
 
     @property
     def set_iam_policy(
@@ -503,7 +598,7 @@ class PublisherGrpcTransport(PublisherTransport):
         # gRPC handles serialization and deserialization, so we just need
         # to pass in the functions for each.
         if "set_iam_policy" not in self._stubs:
-            self._stubs["set_iam_policy"] = self.grpc_channel.unary_unary(
+            self._stubs["set_iam_policy"] = self._logged_channel.unary_unary(
                 "/google.iam.v1.IAMPolicy/SetIamPolicy",
                 request_serializer=iam_policy_pb2.SetIamPolicyRequest.SerializeToString,
                 response_deserializer=policy_pb2.Policy.FromString,
@@ -529,7 +624,7 @@ class PublisherGrpcTransport(PublisherTransport):
         # gRPC handles serialization and deserialization, so we just need
         # to pass in the functions for each.
         if "get_iam_policy" not in self._stubs:
-            self._stubs["get_iam_policy"] = self.grpc_channel.unary_unary(
+            self._stubs["get_iam_policy"] = self._logged_channel.unary_unary(
                 "/google.iam.v1.IAMPolicy/GetIamPolicy",
                 request_serializer=iam_policy_pb2.GetIamPolicyRequest.SerializeToString,
                 response_deserializer=policy_pb2.Policy.FromString,
@@ -558,15 +653,12 @@ class PublisherGrpcTransport(PublisherTransport):
         # gRPC handles serialization and deserialization, so we just need
         # to pass in the functions for each.
         if "test_iam_permissions" not in self._stubs:
-            self._stubs["test_iam_permissions"] = self.grpc_channel.unary_unary(
+            self._stubs["test_iam_permissions"] = self._logged_channel.unary_unary(
                 "/google.iam.v1.IAMPolicy/TestIamPermissions",
                 request_serializer=iam_policy_pb2.TestIamPermissionsRequest.SerializeToString,
                 response_deserializer=iam_policy_pb2.TestIamPermissionsResponse.FromString,
             )
         return self._stubs["test_iam_permissions"]
-
-    def close(self):
-        self.grpc_channel.close()
 
     @property
     def kind(self) -> str:

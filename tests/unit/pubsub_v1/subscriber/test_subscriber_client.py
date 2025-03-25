@@ -30,6 +30,22 @@ from google.cloud.pubsub_v1 import types
 from google.cloud.pubsub_v1.subscriber import futures
 from google.pubsub_v1.services.subscriber import client as subscriber_client
 from google.pubsub_v1.services.subscriber.transports.grpc import SubscriberGrpcTransport
+from google.cloud.pubsub_v1.open_telemetry.context_propagation import (
+    OpenTelemetryContextGetter,
+)
+from google.pubsub_v1.types import PubsubMessage
+
+
+# Attempt to use `_thunk` to obtain the underlying grpc channel from
+# the intercept channel. Default to obtaining the grpc channel directly
+# for backwards compatibility.
+# TODO(https://github.com/grpc/grpc/issues/38519): Workaround to obtain a channel
+# until a public API is available.
+def get_pull_channel(client):
+    try:
+        return client._transport.pull._thunk("")._channel
+    except AttributeError:
+        return client._transport.pull._channel
 
 
 def test_init_default_client_info(creds):
@@ -66,17 +82,28 @@ def test_init_w_api_endpoint(creds):
     client_options = {"api_endpoint": "testendpoint.google.com"}
     client = subscriber.Client(client_options=client_options, credentials=creds)
 
+    # Behavior to include dns prefix changed in gRPCv1.63
+    grpc_major, grpc_minor = [int(part) for part in grpc.__version__.split(".")[0:2]]
+    if grpc_major > 1 or (grpc_major == 1 and grpc_minor >= 63):
+        _EXPECTED_TARGET = "dns:///testendpoint.google.com:443"
+    else:
+        _EXPECTED_TARGET = "testendpoint.google.com:443"
     assert (client._transport.grpc_channel._channel.target()).decode(
         "utf-8"
-    ) == "testendpoint.google.com:443"
+    ) == _EXPECTED_TARGET
 
 
 def test_init_w_empty_client_options(creds):
     client = subscriber.Client(client_options={}, credentials=creds)
-
+    # Behavior to include dns prefix changed in gRPCv1.63
+    grpc_major, grpc_minor = [int(part) for part in grpc.__version__.split(".")[0:2]]
+    if grpc_major > 1 or (grpc_major == 1 and grpc_minor >= 63):
+        _EXPECTED_TARGET = "dns:///pubsub.googleapis.com:443"
+    else:
+        _EXPECTED_TARGET = "pubsub.googleapis.com:443"
     assert (client._transport.grpc_channel._channel.target()).decode(
         "utf-8"
-    ) == subscriber_client.SubscriberClient.SERVICE_ADDRESS
+    ) == _EXPECTED_TARGET
 
 
 def test_init_client_options_pass_through():
@@ -114,8 +141,14 @@ def test_init_emulator(monkeypatch):
     #
     # Sadly, there seems to be no good way to do this without poking at
     # the private API of gRPC.
-    channel = client._transport.pull._channel
-    assert channel.target().decode("utf8") == "/baz/bacon:123"
+    channel = get_pull_channel(client)
+    # Behavior to include dns prefix changed in gRPCv1.63
+    grpc_major, grpc_minor = [int(part) for part in grpc.__version__.split(".")[0:2]]
+    if grpc_major > 1 or (grpc_major == 1 and grpc_minor >= 63):
+        _EXPECTED_TARGET = "dns:////baz/bacon:123"
+    else:
+        _EXPECTED_TARGET = "/baz/bacon:123"
+    assert channel.target().decode("utf8") == _EXPECTED_TARGET
 
 
 def test_class_method_factory():
@@ -282,9 +315,10 @@ async def test_sync_pull_warning_if_return_immediately_async(creds):
     client = SubscriberAsyncClient(credentials=creds)
     subscription_path = "projects/foo/subscriptions/bar"
 
-    patcher = mock.patch(
-        "google.pubsub_v1.services.subscriber.async_client.gapic_v1.method_async.wrap_method",
-        new=mock.AsyncMock,
+    patcher = mock.patch.object(
+        type(client.transport.pull),
+        "__call__",
+        new_callable=mock.AsyncMock,
     )
 
     with patcher, pytest.warns(
@@ -299,3 +333,48 @@ async def test_sync_pull_warning_if_return_immediately_async(creds):
     warning_msg = str(warned[0].message)
     assert "return_immediately" in warning_msg
     assert "deprecated" in warning_msg
+
+
+@pytest.mark.parametrize(
+    "enable_open_telemetry",
+    [
+        True,
+        False,
+    ],
+)
+def test_opentelemetry_subscriber_setting(creds, enable_open_telemetry):
+    options = types.SubscriberOptions(
+        enable_open_telemetry_tracing=enable_open_telemetry,
+    )
+    if sys.version_info >= (3, 8) or enable_open_telemetry is False:
+        client = subscriber.Client(credentials=creds, subscriber_options=options)
+        assert client.subscriber_options == options
+        assert client._open_telemetry_enabled == enable_open_telemetry
+    else:
+        with pytest.warns(
+            RuntimeWarning,
+            match="Open Telemetry for Python version 3.7 or lower is not supported. Disabling Open Telemetry tracing.",
+        ):
+            client = subscriber.Client(credentials=creds, subscriber_options=options)
+            assert client._open_telemetry_enabled is False
+
+
+def test_opentelemetry_propagator_get():
+    message = PubsubMessage(data=b"foo")
+    message.attributes["key1"] = "value1"
+    message.attributes["googclient_key2"] = "value2"
+
+    assert OpenTelemetryContextGetter().get(message, "key2") == ["value2"]
+
+    assert OpenTelemetryContextGetter().get(message, "key1") is None
+
+
+def test_opentelemetry_propagator_keys():
+    message = PubsubMessage(data=b"foo")
+    message.attributes["key1"] = "value1"
+    message.attributes["googclient_key2"] = "value2"
+
+    assert sorted(OpenTelemetryContextGetter().keys(message)) == [
+        "googclient_key2",
+        "key1",
+    ]

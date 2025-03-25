@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2024 Google LLC
+# Copyright 2025 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -31,6 +31,8 @@ from .pubsub import (
     GetSubscriptionRequest,
     GetTopicRequest,
     IngestionDataSourceSettings,
+    IngestionFailureEvent,
+    JavaScriptUDF,
     ListSnapshotsRequest,
     ListSnapshotsResponse,
     ListSubscriptionsRequest,
@@ -42,8 +44,10 @@ from .pubsub import (
     ListTopicSubscriptionsRequest,
     ListTopicSubscriptionsResponse,
     MessageStoragePolicy,
+    MessageTransform,
     ModifyAckDeadlineRequest,
     ModifyPushConfigRequest,
+    PlatformLogsSettings,
     PublishRequest,
     PublishResponse,
     PubsubMessage,
@@ -109,6 +113,8 @@ __all__ = (
     "GetSubscriptionRequest",
     "GetTopicRequest",
     "IngestionDataSourceSettings",
+    "IngestionFailureEvent",
+    "JavaScriptUDF",
     "ListSnapshotsRequest",
     "ListSnapshotsResponse",
     "ListSubscriptionsRequest",
@@ -120,8 +126,10 @@ __all__ = (
     "ListTopicSubscriptionsRequest",
     "ListTopicSubscriptionsResponse",
     "MessageStoragePolicy",
+    "MessageTransform",
     "ModifyAckDeadlineRequest",
     "ModifyPushConfigRequest",
+    "PlatformLogsSettings",
     "PublishRequest",
     "PublishResponse",
     "PubsubMessage",

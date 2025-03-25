@@ -12,8 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import google.auth.credentials
+import logging
 import pytest
+
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
+from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+from opentelemetry import trace
+import google.auth.credentials
 
 
 @pytest.fixture
@@ -23,3 +29,34 @@ def creds():
     GOOGLE_APPLICATION_CREDENTIALS set.
     """
     yield google.auth.credentials.AnonymousCredentials()
+
+
+@pytest.fixture(scope="session", autouse=True)
+def set_trace_provider():
+    provider = TracerProvider()
+    trace.set_tracer_provider(provider)
+
+
+@pytest.fixture(scope="function")
+def span_exporter():
+    exporter = InMemorySpanExporter()
+    processor = SimpleSpanProcessor(exporter)
+    provider = trace.get_tracer_provider()
+    provider.add_span_processor(processor)
+    yield exporter
+
+
+@pytest.fixture()
+def modify_google_logger_propagation():
+    """
+    Allow propagation of logs to the root logger for tests
+    that depend on the caplog fixture. Restore the default
+    propagation setting after the test finishes.
+    """
+    logger = logging.getLogger("google")
+    original_propagate = logger.propagate
+    logger.propagate = True
+    try:
+        yield
+    finally:
+        logger.propagate = original_propagate
