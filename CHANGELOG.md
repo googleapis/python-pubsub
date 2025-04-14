@@ -5,6 +5,13 @@
 [1]: https://pypi.org/project/google-cloud-pubsub/#history
 
 
+## [2.29.1](https://github.com/googleapis/python-pubsub/compare/v2.29.0...v2.29.1) (2025-04-14)
+
+
+### Documentation
+
+* Update documentation for JavaScriptUDF to indicate that the `message_id` metadata field is optional instead of required ([#1380](https://github.com/googleapis/python-pubsub/issues/1380)) ([be90054](https://github.com/googleapis/python-pubsub/commit/be9005412fea06bea917c8b6861546b7e6c62a1e))
+
 ## [2.29.0](https://github.com/googleapis/python-pubsub/compare/v2.28.0...v2.29.0) (2025-03-19)
 
 
