@@ -63,7 +63,6 @@ _REGULAR_SHUTDOWN_THREAD_NAME = "Thread-RegularStreamShutdown"
 _RPC_ERROR_THREAD_NAME = "Thread-OnRpcTerminated"
 _RETRYABLE_STREAM_ERRORS = (
     exceptions.Aborted,
-    exceptions.Cancelled,
     exceptions.DeadlineExceeded,
     exceptions.GatewayTimeout,
     exceptions.InternalServerError,
@@ -72,9 +71,9 @@ _RETRYABLE_STREAM_ERRORS = (
     exceptions.Unknown,
 )
 _TERMINATING_STREAM_ERRORS = (
+    exceptions.Cancelled,
     exceptions.InvalidArgument,
     exceptions.NotFound,
-    exceptions.PermissionDenied,
     exceptions.PermissionDenied,
     exceptions.Unauthenticated,
     exceptions.Unauthorized,
