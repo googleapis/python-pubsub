@@ -2277,7 +2277,11 @@ def test__should_terminate_true():
 def test__should_terminate_false():
     manager = make_manager()
 
-    for exc in [exceptions.ResourceExhausted(""), exceptions.ServiceUnavailable(""), exceptions.Cancelled("")]:
+    for exc in [
+        exceptions.ResourceExhausted(""),
+        exceptions.ServiceUnavailable(""),
+        exceptions.Cancelled(""),
+    ]:
         assert not manager._should_terminate(exc)
 
 
