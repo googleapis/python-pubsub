@@ -2270,7 +2270,12 @@ def test__should_recover_false():
 def test__should_terminate_true():
     manager = make_manager()
 
-    for exc in [exceptions.PermissionDenied(""), TypeError(), ValueError()]:
+    for exc in [
+        exceptions.Cancelled(""),
+        exceptions.PermissionDenied(""),
+        TypeError(),
+        ValueError(),
+    ]:
         assert manager._should_terminate(exc)
 
 
@@ -2280,7 +2285,7 @@ def test__should_terminate_false():
     for exc in [
         exceptions.ResourceExhausted(""),
         exceptions.ServiceUnavailable(""),
-        exceptions.Cancelled(""),
+        exceptions.DeadlineExceeded(""),
     ]:
         assert not manager._should_terminate(exc)
 
