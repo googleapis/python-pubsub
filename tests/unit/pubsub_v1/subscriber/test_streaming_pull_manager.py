@@ -2270,18 +2270,15 @@ def test__should_recover_false():
 def test__should_terminate_true():
     manager = make_manager()
 
-    details = "Cancelled. Go away, before I taunt you a second time."
-    exc = exceptions.Cancelled(details)
-
-    assert manager._should_terminate(exc) is True
+    for exc in [exceptions.PermissionDenied(""), TypeError(), ValueError()]:
+        assert manager._should_terminate(exc)
 
 
 def test__should_terminate_false():
     manager = make_manager()
 
-    exc = TypeError("wahhhhhh")
-
-    assert manager._should_terminate(exc) is False
+    for exc in [exceptions.ResourceExhausted(""), exceptions.ServiceUnavailable(""), exceptions.Cancelled("")]:
+        assert not manager._should_terminate(exc)
 
 
 @mock.patch("threading.Thread", autospec=True)
