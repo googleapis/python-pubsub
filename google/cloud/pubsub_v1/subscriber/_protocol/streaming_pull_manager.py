@@ -16,6 +16,7 @@ from __future__ import division
 
 import collections
 import functools
+import inspect
 import itertools
 import logging
 import threading
@@ -105,6 +106,13 @@ _EXACTLY_ONCE_DELIVERY_TEMPORARY_RETRY_ERRORS = {
     code_pb2.INTERNAL,
     code_pb2.UNAVAILABLE,
 }
+
+# `on_fatal_exception` added in `google-api-core v2.25.1``, which allows us to inform
+# callers on unrecoverable errors. We can only pass this arg if it's available in the
+# `BackgroundConsumer` spec.
+_SHOULD_USE_ON_FATAL_ERROR_CALLBACK = "on_fatal_exception" in inspect.getfullargspec(
+    bidi.BackgroundConsumer
+)
 
 
 def _wrap_as_exception(maybe_exception: Any) -> BaseException:
@@ -884,9 +892,18 @@ class StreamingPullManager(object):
         assert self._scheduler is not None
         scheduler_queue = self._scheduler.queue
         self._dispatcher = dispatcher.Dispatcher(self, scheduler_queue)
-        self._consumer = bidi.BackgroundConsumer(
-            self._rpc, self._on_response, on_fatal_exception=self._on_fatal_exception
-        )
+
+        # `on_fatal_exception` is only available in more recent library versions.
+        # For backwards compatibility reasons, we only pass it when `google-api-core` supports it.
+        if _SHOULD_USE_ON_FATAL_ERROR_CALLBACK:
+            self._consumer = bidi.BackgroundConsumer(
+                self._rpc,
+                self._on_response,
+                on_fatal_exception=self._on_fatal_exception,
+            )
+        else:
+            self._consumer = bidi.BackgroundConsumer(self._rpc, self._on_response)
+
         self._leaser = leaser.Leaser(self)
         self._heartbeater = heartbeater.Heartbeater(self)
 

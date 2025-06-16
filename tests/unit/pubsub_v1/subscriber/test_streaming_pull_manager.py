@@ -1333,9 +1333,13 @@ def test_open(heartbeater, dispatcher, leaser, background_consumer, resumable_bi
     leaser.return_value.start.assert_called_once()
     assert manager.leaser == leaser.return_value
 
-    background_consumer.assert_called_once_with(
-        manager._rpc, manager._on_response, manager._on_fatal_exception
-    )
+    if streaming_pull_manager._SHOULD_USE_ON_FATAL_ERROR_CALLBACK:
+        background_consumer.assert_called_once_with(
+            manager._rpc, manager._on_response, manager._on_fatal_exception
+        )
+    else:
+        background_consumer.assert_called_once_with(manager._rpc, manager._on_response)
+
     background_consumer.return_value.start.assert_called_once()
     assert manager._consumer == background_consumer.return_value
 
@@ -1444,18 +1448,19 @@ def test_closes_on_fatal_consumer_error():
         scheduler,
     ) = make_running_manager()
 
-    error = ValueError("some fatal exception")
-    manager._on_fatal_exception(error)
+    if streaming_pull_manager._SHOULD_USE_ON_FATAL_ERROR_CALLBACK:
+        error = ValueError("some fatal exception")
+        manager._on_fatal_exception(error)
 
-    await_manager_shutdown(manager, timeout=3)
+        await_manager_shutdown(manager, timeout=3)
 
-    consumer.stop.assert_called_once()
-    leaser.stop.assert_called_once()
-    dispatcher.stop.assert_called_once()
-    heartbeater.stop.assert_called_once()
-    scheduler.shutdown.assert_called_once()
+        consumer.stop.assert_called_once()
+        leaser.stop.assert_called_once()
+        dispatcher.stop.assert_called_once()
+        heartbeater.stop.assert_called_once()
+        scheduler.shutdown.assert_called_once()
 
-    assert manager.is_active is False
+        assert manager.is_active is False
 
 
 def test_close_inactive_consumer():
