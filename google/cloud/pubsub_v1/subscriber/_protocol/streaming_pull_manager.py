@@ -884,7 +884,9 @@ class StreamingPullManager(object):
         assert self._scheduler is not None
         scheduler_queue = self._scheduler.queue
         self._dispatcher = dispatcher.Dispatcher(self, scheduler_queue)
-        self._consumer = bidi.BackgroundConsumer(self._rpc, self._on_response)
+        self._consumer = bidi.BackgroundConsumer(
+            self._rpc, self._on_response, on_fatal_exception=self._on_fatal_exception
+        )
         self._leaser = leaser.Leaser(self)
         self._heartbeater = heartbeater.Heartbeater(self)
 
@@ -1254,6 +1256,17 @@ class StreamingPullManager(object):
             self._maybe_release_messages()
 
         self.maybe_pause_consumer()
+
+    def _on_fatal_exception(self, exception: BaseException) -> None:
+        """
+        Called whenever `self.consumer` receives a non-retryable exception.
+        We close the manager on such non-retryable cases.
+        """
+        _LOGGER.exception(
+            "Streaming pull terminating after receiving non-recoverable error: %s",
+            exception,
+        )
+        self.close(exception)
 
     def _should_recover(self, exception: BaseException) -> bool:
         """Determine if an error on the RPC stream should be recovered.
