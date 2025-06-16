@@ -107,7 +107,7 @@ _EXACTLY_ONCE_DELIVERY_TEMPORARY_RETRY_ERRORS = {
     code_pb2.UNAVAILABLE,
 }
 
-# `on_fatal_exception` added in `google-api-core v2.25.1``, which allows us to inform
+# `on_fatal_exception` was added in `google-api-core v2.25.1``, which allows us to inform
 # callers on unrecoverable errors. We can only pass this arg if it's available in the
 # `BackgroundConsumer` spec.
 _SHOULD_USE_ON_FATAL_ERROR_CALLBACK = "on_fatal_exception" in inspect.getfullargspec(
