@@ -2959,7 +2959,7 @@ def test_opentelemetry_subscriber_concurrency_control_span_end(span_exporter):
     assert len(spans) == 2
 
     concurrency_control_span = spans[0]
-    concurrency_control_span.name == "subscriber concurrency control"
+    assert concurrency_control_span.name == "subscriber concurrency control"
 
 
 def test_opentelemetry_wrap_callback_error(span_exporter):
