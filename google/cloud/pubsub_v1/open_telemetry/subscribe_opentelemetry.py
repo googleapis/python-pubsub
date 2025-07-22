@@ -201,6 +201,12 @@ class SubscribeOpenTelemetry:
             },
         )
 
+    def __enter__(self) -> trace.Span:
+        return self.start_process_span()
+
+    def __exit__(self, exc_type, exc_val, traceback):
+        if self._process_span:
+            self.end_process_span()
 
 def start_modack_span(
     subscribe_span_links: List[trace.Link],
