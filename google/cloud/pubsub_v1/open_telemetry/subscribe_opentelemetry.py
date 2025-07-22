@@ -208,6 +208,7 @@ class SubscribeOpenTelemetry:
         if self._process_span:
             self.end_process_span()
 
+
 def start_modack_span(
     subscribe_span_links: List[trace.Link],
     subscription_id: Optional[str],
