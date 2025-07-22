@@ -168,9 +168,9 @@ class SubscribeOpenTelemetry:
             publish_create_span: trace.Span = trace.get_current_span(
                 self._publisher_create_span_context
             )
-            span_context: Optional[trace.SpanContext] = (
-                publish_create_span.get_span_context()
-            )
+            span_context: Optional[
+                trace.SpanContext
+            ] = publish_create_span.get_span_context()
             publish_create_span_link = (
                 trace.Link(span_context) if span_context else None
             )
