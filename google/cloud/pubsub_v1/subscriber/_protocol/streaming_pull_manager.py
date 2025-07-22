@@ -148,7 +148,7 @@ def _wrap_callback_errors(
     try:
         if message.opentelemetry_data:
             message.opentelemetry_data.end_subscribe_concurrency_control_span()
-            with message.opentelemetry_data as otel_span:
+            with message.opentelemetry_data:
                 callback(message)
         else:
             callback(message)
