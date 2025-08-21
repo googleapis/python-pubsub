@@ -148,8 +148,10 @@ def _wrap_callback_errors(
     try:
         if message.opentelemetry_data:
             message.opentelemetry_data.end_subscribe_concurrency_control_span()
-            message.opentelemetry_data.start_process_span()
-        callback(message)
+            with message.opentelemetry_data:
+                callback(message)
+        else:
+            callback(message)
     except BaseException as exc:
         # Note: the likelihood of this failing is extremely low. This just adds
         # a message to a queue, so if this doesn't work the world is in an
@@ -1279,7 +1281,7 @@ class StreamingPullManager(object):
         Called whenever `self.consumer` receives a non-retryable exception.
         We close the manager on such non-retryable cases.
         """
-        _LOGGER.exception(
+        _LOGGER.info(
             "Streaming pull terminating after receiving non-recoverable error: %s",
             exception,
         )
@@ -1324,7 +1326,7 @@ class StreamingPullManager(object):
         is_api_error = isinstance(exception, exceptions.GoogleAPICallError)
         # Terminate any non-API errors, or non-retryable errors (permission denied, unauthorized, etc.)
         if not is_api_error or isinstance(exception, _TERMINATING_STREAM_ERRORS):
-            _LOGGER.error("Observed terminating stream error %s", exception)
+            _LOGGER.debug("Observed terminating stream error %s", exception)
             return True
         _LOGGER.debug("Observed non-terminating stream error %s", exception)
         return False
