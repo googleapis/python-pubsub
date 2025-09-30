@@ -133,7 +133,7 @@ class Message(object):
         self._delivery_attempt = delivery_attempt if delivery_attempt > 0 else None
         self._request_queue = request_queue
         self._exactly_once_delivery_enabled_func = exactly_once_delivery_enabled_func
-        self.message_id = message.message_id
+        self._message_id = message.message_id
 
         # The instantiation time is the time that this message
         # was received. Tracking this provides us a way to be smart about
@@ -230,6 +230,11 @@ class Message(object):
     def ack_id(self) -> str:
         """the ID used to ack the message."""
         return self._ack_id
+
+    @property
+    def message_id(self) -> str:
+        """The message id of the message"""
+        return self._message_id
 
     @property
     def delivery_attempt(self) -> Optional[int]:

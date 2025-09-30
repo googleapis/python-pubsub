@@ -173,7 +173,7 @@ def _wrap_callback_errors(
         # unrecoverable state and this thread should just bail.
 
         _CALLBACK_EXCEPTION_LOGGER.exception(
-            "Message (id=%s, ack_id=%s, ordering_key=%s, exactly_once=%s)'s callback threw exception %s, nacking message.",
+            "Message (id=%s, ack_id=%s, ordering_key=%s, exactly_once=%s)'s callback threw exception, nacking message.",
             message.message_id,
             message.ack_id,
             message.ordering_key,
