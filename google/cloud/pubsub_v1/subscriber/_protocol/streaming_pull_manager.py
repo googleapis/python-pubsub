@@ -217,10 +217,10 @@ def _get_ack_errors(
 
 
 def _process_requests(
-    ack_histogram: histogram.Histogram,
     error_status: Optional["status_pb2.Status"],
     ack_reqs_dict: Dict[str, requests.AckRequest],
     errors_dict: Optional[Dict[str, str]],
+    ack_histogram: Optional[histogram.Histogram] = None,
 ):
     """Process requests when exactly-once delivery is enabled by referring to
     error_status and errors_dict.
@@ -233,7 +233,9 @@ def _process_requests(
     requests_to_retry = []
     for ack_id, ack_request in ack_reqs_dict.items():
         # Debug logging: slow acks
-        if ack_request.time_to_ack > ack_histogram.percentile(percent=99):
+        if ack_histogram and ack_request.time_to_ack > ack_histogram.percentile(
+            percent=99
+        ):
             _SLOW_ACK_LOGGER.debug(
                 "Message (id=%s, ack_id=%s) ack duration of %s s is higher than the p99 ack duration",
                 ack_request.message_id,
@@ -742,7 +744,7 @@ class StreamingPullManager(object):
 
         if self._exactly_once_delivery_enabled():
             requests_completed, requests_to_retry = _process_requests(
-                self.ack_histogram, error_status, ack_reqs_dict, ack_errors_dict
+                error_status, ack_reqs_dict, ack_errors_dict, self.ack_histogram
             )
         else:
             requests_completed = []
@@ -836,7 +838,7 @@ class StreamingPullManager(object):
 
         if self._exactly_once_delivery_enabled():
             requests_completed, requests_to_retry = _process_requests(
-                self.ack_histogram, error_status, ack_reqs_dict, modack_errors_dict
+                error_status, ack_reqs_dict, modack_errors_dict, self.ack_histogram
             )
         else:
             requests_completed = []
