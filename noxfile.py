@@ -105,9 +105,7 @@ def mypy(session):
     # Version 2.1.1 of google-api-core version is the first type-checked release.
     # Version 2.2.0 of google-cloud-core version is the first type-checked release.
     session.install(
-        "google-api-core[grpc]>=2.1.1",
-        "google-cloud-core>=2.2.0",
-        "types-requests"
+        "google-api-core[grpc]>=2.1.1", "google-cloud-core>=2.2.0", "types-requests"
     )
 
     # Just install the type info directly, since "mypy --install-types" might
