@@ -107,6 +107,7 @@ def mypy(session):
     session.install(
         "google-api-core[grpc]>=2.1.1",
         "google-cloud-core>=2.2.0",
+        "types-requests"
     )
 
     # Just install the type info directly, since "mypy --install-types" might
@@ -132,7 +133,7 @@ def mypy_samples(session):
 
     # Just install the type info directly, since "mypy --install-types" might
     # require an additional pass.
-    session.install("types-mock", "types-protobuf", "types-setuptools")
+    session.install("types-mock", "types-protobuf", "types-setuptools", "types-requests")
 
     session.run(
         "mypy",
