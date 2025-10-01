@@ -133,7 +133,9 @@ def mypy_samples(session):
 
     # Just install the type info directly, since "mypy --install-types" might
     # require an additional pass.
-    session.install("types-mock", "types-protobuf", "types-setuptools", "types-requests")
+    session.install(
+        "types-mock", "types-protobuf", "types-setuptools", "types-requests"
+    )
 
     session.run(
         "mypy",
