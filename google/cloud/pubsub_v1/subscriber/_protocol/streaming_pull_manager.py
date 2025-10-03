@@ -214,7 +214,6 @@ def _get_ack_errors(
         return info.metadata
     return None
 
-
 def _process_requests(
     error_status: Optional["status_pb2.Status"],
     ack_reqs_dict: Dict[str, requests.AckRequest],
@@ -230,17 +229,17 @@ def _process_requests(
     """
     requests_completed = []
     requests_to_retry = []
-    for ack_id, ack_request in ack_reqs_dict.items():
+    for ack_id in ack_reqs_dict:
         # Debug logging: slow acks
-        if ack_histogram and ack_request.time_to_ack > ack_histogram.percentile(
+        if ack_histogram and ack_reqs_dict[ack_id].time_to_ack > ack_histogram.percentile(
             percent=99
         ):
             _SLOW_ACK_LOGGER.debug(
                 "Message (id=%s, ack_id=%s) ack duration of %s s is higher than the p99 ack duration",
-                ack_request.message_id,
-                ack_request.ack_id,
+                ack_reqs_dict[ack_id].message_id,
+                ack_reqs_dict[ack_id].ack_id,
             )
-
+        
         # Handle special errors returned for ack/modack RPCs via the ErrorInfo
         # sidecar metadata when exactly-once delivery is enabled.
         if errors_dict and ack_id in errors_dict:
@@ -252,16 +251,16 @@ def _process_requests(
                     exc = AcknowledgeError(AcknowledgeStatus.INVALID_ACK_ID, info=None)
                 else:
                     exc = AcknowledgeError(AcknowledgeStatus.OTHER, exactly_once_error)
-                future = ack_request.future
+                future = ack_reqs_dict[ack_id].future
                 if future is not None:
                     future.set_exception(exc)
-                requests_completed.append(ack_request)
+                requests_completed.append(ack_reqs_dict[ack_id])
         # Temporary GRPC errors are retried
         elif (
             error_status
             and error_status.code in _EXACTLY_ONCE_DELIVERY_TEMPORARY_RETRY_ERRORS
         ):
-            requests_to_retry.append(ack_request)
+            requests_to_retry.append(ack_reqs_dict[ack_id])
         # Other GRPC errors are NOT retried
         elif error_status:
             if error_status.code == code_pb2.PERMISSION_DENIED:
