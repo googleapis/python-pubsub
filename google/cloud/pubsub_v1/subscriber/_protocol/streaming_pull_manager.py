@@ -143,7 +143,6 @@ def _wrap_callback_errors(
     callback: Callable[["google.cloud.pubsub_v1.subscriber.message.Message"], Any],
     on_callback_error: Callable[[BaseException], Any],
     message: "google.cloud.pubsub_v1.subscriber.message.Message",
-    exactly_once_enabled: bool = False,
 ):
     """Wraps a user callback so that if an exception occurs the message is
     nacked.
@@ -157,7 +156,7 @@ def _wrap_callback_errors(
         message.message_id,
         message.ack_id,
         message.ordering_key,
-        exactly_once_enabled,
+        message.exactly_once_enabled,
     )
 
     try:
@@ -177,7 +176,7 @@ def _wrap_callback_errors(
             message.message_id,
             message.ack_id,
             message.ordering_key,
-            exactly_once_enabled,
+            message.exactly_once_enabled,
         )
 
         message.nack()
@@ -909,8 +908,7 @@ class StreamingPullManager(object):
         self._callback = functools.partial(
             _wrap_callback_errors,
             callback,
-            on_callback_error,
-            exactly_once_enabled=self._exactly_once_delivery_enabled,
+            on_callback_error
         )
 
         # Create the RPC
