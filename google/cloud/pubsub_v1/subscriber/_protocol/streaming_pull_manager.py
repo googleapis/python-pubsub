@@ -21,7 +21,18 @@ import itertools
 import logging
 import threading
 import typing
-from typing import Any, Dict, Callable, Iterable, List, Optional, Set, Tuple, Union, Literal
+from typing import (
+    Any,
+    Dict,
+    Callable,
+    Iterable,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    Union,
+    Literal,
+)
 import uuid
 
 from opentelemetry import trace
@@ -233,7 +244,11 @@ def _process_requests(
     requests_to_retry = []
     for ack_id, ack_request in ack_reqs_dict.items():
         # Debug logging: slow acks
-        if req_type == "ack" and ack_histogram and ack_request.time_to_ack > ack_histogram.percentile(percent=99):
+        if (
+            req_type == "ack"
+            and ack_histogram
+            and ack_request.time_to_ack > ack_histogram.percentile(percent=99)
+        ):
             _SLOW_ACK_LOGGER.debug(
                 "Message (id=%s, ack_id=%s) ack duration of %s s is higher than the p99 ack duration",
                 ack_request.message_id,
@@ -836,7 +851,11 @@ class StreamingPullManager(object):
 
         if self._exactly_once_delivery_enabled():
             requests_completed, requests_to_retry = _process_requests(
-                error_status, ack_reqs_dict, modack_errors_dict, self.ack_histogram, "modack"
+                error_status,
+                ack_reqs_dict,
+                modack_errors_dict,
+                self.ack_histogram,
+                "modack",
             )
         else:
             requests_completed = []
