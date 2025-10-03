@@ -61,6 +61,8 @@ from google.rpc import code_pb2
 from google.rpc import error_details_pb2
 
 _message_mock = mock.create_autospec(message.Message, instance=True)
+
+
 def create_mock_message(**kwargs):
     msg = _message_mock.return_value
     for k, v in kwargs.items():
@@ -1640,7 +1642,11 @@ def test_close_nacks_internally_queued_messages():
     def fake_nack(self):
         nacked_messages.append(self.data)
 
-    messages = [create_message(data=b"msg1"), create_message(data=b"msg2"), create_message(data=b"msg3")]
+    messages = [
+        create_message(data=b"msg1"),
+        create_message(data=b"msg2"),
+        create_message(data=b"msg3"),
+    ]
     for msg in messages:
         msg.nack = stdlib_types.MethodType(fake_nack, msg)
 
