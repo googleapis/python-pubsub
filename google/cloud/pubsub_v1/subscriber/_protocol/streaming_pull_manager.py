@@ -910,7 +910,7 @@ class StreamingPullManager(object):
             _wrap_callback_errors,
             callback,
             on_callback_error,
-            self._exactly_once_delivery_enabled,
+            exactly_once_enabled=self._exactly_once_delivery_enabled,
         )
 
         # Create the RPC
