@@ -59,10 +59,9 @@ from google.rpc import status_pb2
 from google.rpc import code_pb2
 from google.rpc import error_details_pb2
 
-_message_mock = mock.create_autospec(message.Message, instance=True)
-
 
 def create_mock_message(**kwargs):
+    _message_mock = mock.create_autospec(message.Message, instance=True)
     msg = _message_mock.return_value
     for k, v in kwargs.items():
         setattr(msg, k, v)
