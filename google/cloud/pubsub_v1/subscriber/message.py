@@ -561,7 +561,7 @@ class Message(object):
         )
 
         return future
-    
+
     @property
     def exactly_once_enabled(self):
         return self._exactly_once_delivery_enabled_func()
