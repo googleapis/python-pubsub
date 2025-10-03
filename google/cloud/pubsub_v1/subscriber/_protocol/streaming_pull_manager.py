@@ -1282,7 +1282,7 @@ class StreamingPullManager(object):
 
         if len(expired_ack_ids):
             _EXPIRY_LOGGER.debug(
-                "ack ids %s were dropped as they have already expired."
+                "ack ids %s were dropped as they have already expired.", expired_ack_ids
             )
 
         with self._pause_resume_lock:
