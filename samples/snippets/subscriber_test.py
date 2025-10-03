@@ -1013,7 +1013,9 @@ def test_receive_messages_with_exactly_once_delivery_enabled(
         PROJECT_ID, subscription_eod_for_receive_name, 200
     )
 
-    out, _ = capsys.readouterr()
+    out, err = capsys.readouterr()
+    if err:
+        print(err)
     assert subscription_eod_for_receive_name in out
     for message_id in message_ids:
         assert message_id in out
