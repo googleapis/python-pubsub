@@ -30,8 +30,6 @@ from typing import (
     Optional,
     Set,
     Tuple,
-    Union,
-    Literal,
 )
 import uuid
 
@@ -231,7 +229,8 @@ def _process_requests(
     ack_reqs_dict: Dict[str, requests.AckRequest],
     errors_dict: Optional[Dict[str, str]],
     ack_histogram: Optional[histogram.Histogram] = None,
-    req_type: Union[Literal["ack"], Literal["modack"]] = "ack",
+    # TODO - Change this param to a Union of Literals when we drop p3.7 support
+    req_type: str = "ack",
 ):
     """Process requests when exactly-once delivery is enabled by referring to
     error_status and errors_dict.
