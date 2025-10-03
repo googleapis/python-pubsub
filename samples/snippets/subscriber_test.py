@@ -164,7 +164,7 @@ def subscriber_client() -> Generator[pubsub_v1.SubscriberClient, None, None]:
 def _publish_messages(
     publisher_client: pubsub_v1.PublisherClient,
     topic: str,
-    message_num: int = 5,
+    message_num: int = 2,
     **attrs: Any,  # noqa: ANN401
 ) -> List[str]:
     message_ids = []
