@@ -21,7 +21,7 @@ import itertools
 import logging
 import threading
 import typing
-from typing import Any, Dict, Callable, Iterable, List, Optional, Set, Tuple
+from typing import Any, Dict, Callable, Iterable, List, Optional, Set, Tuple, Union, Literal
 import uuid
 
 from opentelemetry import trace
@@ -220,6 +220,7 @@ def _process_requests(
     ack_reqs_dict: Dict[str, requests.AckRequest],
     errors_dict: Optional[Dict[str, str]],
     ack_histogram: Optional[histogram.Histogram] = None,
+    req_type: Union[Literal["ack"], Literal["modack"]] = "ack",
 ):
     """Process requests when exactly-once delivery is enabled by referring to
     error_status and errors_dict.
@@ -230,15 +231,13 @@ def _process_requests(
     """
     requests_completed = []
     requests_to_retry = []
-    for ack_id in ack_reqs_dict:
+    for ack_id, ack_request in ack_reqs_dict.items():
         # Debug logging: slow acks
-        if ack_histogram and ack_reqs_dict[
-            ack_id
-        ].time_to_ack > ack_histogram.percentile(percent=99):
+        if req_type == "ack" and ack_histogram and ack_request.time_to_ack > ack_histogram.percentile(percent=99):
             _SLOW_ACK_LOGGER.debug(
                 "Message (id=%s, ack_id=%s) ack duration of %s s is higher than the p99 ack duration",
-                ack_reqs_dict[ack_id].message_id,
-                ack_reqs_dict[ack_id].ack_id,
+                ack_request.message_id,
+                ack_request.ack_id,
             )
 
         # Handle special errors returned for ack/modack RPCs via the ErrorInfo
@@ -246,22 +245,22 @@ def _process_requests(
         if errors_dict and ack_id in errors_dict:
             exactly_once_error = errors_dict[ack_id]
             if exactly_once_error.startswith("TRANSIENT_"):
-                requests_to_retry.append(ack_reqs_dict[ack_id])
+                requests_to_retry.append(ack_request)
             else:
                 if exactly_once_error == "PERMANENT_FAILURE_INVALID_ACK_ID":
                     exc = AcknowledgeError(AcknowledgeStatus.INVALID_ACK_ID, info=None)
                 else:
                     exc = AcknowledgeError(AcknowledgeStatus.OTHER, exactly_once_error)
-                future = ack_reqs_dict[ack_id].future
+                future = ack_request.future
                 if future is not None:
                     future.set_exception(exc)
-                requests_completed.append(ack_reqs_dict[ack_id])
+                requests_completed.append(ack_request)
         # Temporary GRPC errors are retried
         elif (
             error_status
             and error_status.code in _EXACTLY_ONCE_DELIVERY_TEMPORARY_RETRY_ERRORS
         ):
-            requests_to_retry.append(ack_reqs_dict[ack_id])
+            requests_to_retry.append(ack_request)
         # Other GRPC errors are NOT retried
         elif error_status:
             if error_status.code == code_pb2.PERMISSION_DENIED:
@@ -270,20 +269,20 @@ def _process_requests(
                 exc = AcknowledgeError(AcknowledgeStatus.FAILED_PRECONDITION, info=None)
             else:
                 exc = AcknowledgeError(AcknowledgeStatus.OTHER, str(error_status))
-            future = ack_reqs_dict[ack_id].future
+            future = ack_request.future
             if future is not None:
                 future.set_exception(exc)
-            requests_completed.append(ack_reqs_dict[ack_id])
+            requests_completed.append(ack_request)
         # Since no error occurred, requests with futures are completed successfully.
-        elif ack_reqs_dict[ack_id].future:
-            future = ack_reqs_dict[ack_id].future
+        elif ack_request.future:
+            future = ack_request.future
             # success
             assert future is not None
             future.set_result(AcknowledgeStatus.SUCCESS)
-            requests_completed.append(ack_reqs_dict[ack_id])
+            requests_completed.append(ack_request)
         # All other requests are considered completed.
         else:
-            requests_completed.append(ack_reqs_dict[ack_id])
+            requests_completed.append(ack_request)
 
     return requests_completed, requests_to_retry
 
@@ -743,7 +742,7 @@ class StreamingPullManager(object):
 
         if self._exactly_once_delivery_enabled():
             requests_completed, requests_to_retry = _process_requests(
-                error_status, ack_reqs_dict, ack_errors_dict, self.ack_histogram
+                error_status, ack_reqs_dict, ack_errors_dict, self.ack_histogram, "ack"
             )
         else:
             requests_completed = []
@@ -837,7 +836,7 @@ class StreamingPullManager(object):
 
         if self._exactly_once_delivery_enabled():
             requests_completed, requests_to_retry = _process_requests(
-                error_status, ack_reqs_dict, modack_errors_dict, self.ack_histogram
+                error_status, ack_reqs_dict, modack_errors_dict, self.ack_histogram, "modack"
             )
         else:
             requests_completed = []

@@ -164,7 +164,7 @@ def subscriber_client() -> Generator[pubsub_v1.SubscriberClient, None, None]:
 def _publish_messages(
     publisher_client: pubsub_v1.PublisherClient,
     topic: str,
-    message_num: int = 2,
+    message_num: int = 5,
     **attrs: Any,  # noqa: ANN401
 ) -> List[str]:
     message_ids = []
@@ -1013,9 +1013,7 @@ def test_receive_messages_with_exactly_once_delivery_enabled(
         PROJECT_ID, subscription_eod_for_receive_name, 200
     )
 
-    out, err = capsys.readouterr()
-    if err:
-        print(err)
+    out, _ = capsys.readouterr()
     assert subscription_eod_for_receive_name in out
     for message_id in message_ids:
         assert message_id in out
