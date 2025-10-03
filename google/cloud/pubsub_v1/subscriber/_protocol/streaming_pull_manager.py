@@ -151,14 +151,6 @@ def _wrap_callback_errors(
         callback: The user callback.
         message: The Pub/Sub message.
     """
-    _CALLBACK_DELIVERY_LOGGER.debug(
-        "Message (id=%s, ack_id=%s, ordering_key=%s, exactly_once=%s) received by subscriber callback",
-        message.message_id,
-        message.ack_id,
-        message.ordering_key,
-        message.exactly_once_enabled,
-    )
-
     try:
         if message.opentelemetry_data:
             message.opentelemetry_data.end_subscribe_concurrency_control_span()
@@ -170,15 +162,9 @@ def _wrap_callback_errors(
         # Note: the likelihood of this failing is extremely low. This just adds
         # a message to a queue, so if this doesn't work the world is in an
         # unrecoverable state and this thread should just bail.
-
-        _CALLBACK_EXCEPTION_LOGGER.exception(
-            "Message (id=%s, ack_id=%s, ordering_key=%s, exactly_once=%s)'s callback threw exception, nacking message.",
-            message.message_id,
-            message.ack_id,
-            message.ordering_key,
-            message.exactly_once_enabled,
+        _LOGGER.exception(
+            "Top-level exception occurred in callback while processing a message"
         )
-
         message.nack()
         on_callback_error(exc)
 
