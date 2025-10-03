@@ -239,7 +239,7 @@ def _process_requests(
                 ack_reqs_dict[ack_id].message_id,
                 ack_reqs_dict[ack_id].ack_id,
             )
-        
+
         # Handle special errors returned for ack/modack RPCs via the ErrorInfo
         # sidecar metadata when exactly-once delivery is enabled.
         if errors_dict and ack_id in errors_dict:
