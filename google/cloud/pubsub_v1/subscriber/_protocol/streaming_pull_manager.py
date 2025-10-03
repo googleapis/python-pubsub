@@ -906,9 +906,7 @@ class StreamingPullManager(object):
             raise ValueError("This manager has been closed and can not be re-used.")
 
         self._callback = functools.partial(
-            _wrap_callback_errors,
-            callback,
-            on_callback_error
+            _wrap_callback_errors, callback, on_callback_error
         )
 
         # Create the RPC
