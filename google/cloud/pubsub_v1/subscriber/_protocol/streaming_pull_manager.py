@@ -214,6 +214,7 @@ def _get_ack_errors(
         return info.metadata
     return None
 
+
 def _process_requests(
     error_status: Optional["status_pb2.Status"],
     ack_reqs_dict: Dict[str, requests.AckRequest],
@@ -231,9 +232,9 @@ def _process_requests(
     requests_to_retry = []
     for ack_id in ack_reqs_dict:
         # Debug logging: slow acks
-        if ack_histogram and ack_reqs_dict[ack_id].time_to_ack > ack_histogram.percentile(
-            percent=99
-        ):
+        if ack_histogram and ack_reqs_dict[
+            ack_id
+        ].time_to_ack > ack_histogram.percentile(percent=99):
             _SLOW_ACK_LOGGER.debug(
                 "Message (id=%s, ack_id=%s) ack duration of %s s is higher than the p99 ack duration",
                 ack_reqs_dict[ack_id].message_id,
