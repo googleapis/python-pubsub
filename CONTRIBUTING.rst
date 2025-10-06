@@ -143,12 +143,12 @@ Running System Tests
    $ nox -s system
 
    # Run a single system test
-   $ nox -s system-3.12 -- -k <name of test>
+   $ nox -s system-3.13 -- -k <name of test>
 
 
   .. note::
 
-      System tests are only configured to run under Python 3.12.
+      System tests are only configured to run under Python 3.13.
       For expediency, we do not run them in older versions of Python 3.
 
   This alone will not run the tests. You'll need to change some local
