@@ -32,6 +32,8 @@ import nox
 BLACK_VERSION = "black==22.3.0"
 ISORT_VERSION = "isort==5.10.1"
 
+DEFAULT_PYTHON_VERSION = "3.13"
+
 # Copy `noxfile_config.py` to your directory and modify it instead.
 
 # `TEST_CONFIG` dict is a configuration hook that allows users to
@@ -147,7 +149,7 @@ def lint(session: nox.sessions.Session) -> None:
 #
 
 
-@nox.session
+@nox.session(python=DEFAULT_PYTHON_VERSION)
 def blacken(session: nox.sessions.Session) -> None:
     """Run black. Format code to uniform standard."""
     session.install(BLACK_VERSION)
