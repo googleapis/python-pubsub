@@ -161,7 +161,7 @@ def lint(session):
     session.run("flake8", "google", "tests")
 
 
-@nox.session(python="3.12")
+@nox.session(python="3.10")
 def blacken(session):
     """Run black. Format code to uniform standard."""
     session.install(BLACK_VERSION)
