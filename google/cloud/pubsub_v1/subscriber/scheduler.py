@@ -37,7 +37,7 @@ class Scheduler(metaclass=abc.ABCMeta):
 
     @property
     @abc.abstractmethod
-    def queue(self) -> queue.Queue:  # pragma: NO COVER
+    def queue(self) -> "queue.Queue":  # pragma: NO COVER
         """Queue: A concurrency-safe queue specific to the underlying
         concurrency implementation.
 
