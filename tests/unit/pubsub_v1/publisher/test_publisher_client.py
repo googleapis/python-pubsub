@@ -308,11 +308,10 @@ def test_opentelemetry_flow_control_exception(creds, span_exporter):
         future2.result()
 
     spans = span_exporter.get_finished_spans()
-    # Span 1 = Publisher Flow Control Span of first publish
-    # Span 2 = Publisher Batching Span of first publish
-    # Span 3 = Publisher Flow Control Span of second publish(raises FlowControlLimitError)
-    # Span 4 = Publish Create Span of second publish(raises FlowControlLimitError)
-    assert len(spans) == 4
+    # The number of spans created is non-deterministic.
+    # The first successful publish can create 2 or 4 spans. The second,
+    # failing publish creates 2 spans.
+    assert len(spans) in [4, 6]
 
     failed_flow_control_span = spans[2]
     finished_publish_create_span = spans[3]
