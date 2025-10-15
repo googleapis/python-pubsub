@@ -8,7 +8,9 @@ libraries:
       - google/pubsub
       - google/cloud
       - google/pubsub_v1
-      - samples/generated_samples
+      - samples/
+      - testing/
+      - tests/
     preserve_regex:
       - .*
     remove_regex: []
