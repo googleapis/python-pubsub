@@ -491,7 +491,7 @@ def pubsub_publish_otel_tracing(
     topic_path = publisher.topic_path(topic_project_id, topic_id)
     # Publish messages.
     for n in range(1, 10):
-        data_str = f"Message number {n}"
+        data_str = '{"data": "Message number ' + str(n) + '"}'
         # Data must be a bytestring
         data = data_str.encode("utf-8")
         # When you publish a message, the client returns a future.
@@ -519,7 +519,7 @@ def publish_messages(project_id: str, topic_id: str) -> None:
     topic_path = publisher.topic_path(project_id, topic_id)
 
     for n in range(1, 10):
-        data_str = f"Message number {n}"
+        data_str = '{"data": "Message number ' + str(n) + '"}'
         # Data must be a bytestring
         data = data_str.encode("utf-8")
         # When you publish a message, the client returns a future.
@@ -545,7 +545,7 @@ def publish_messages_with_custom_attributes(project_id: str, topic_id: str) -> N
     topic_path = publisher.topic_path(project_id, topic_id)
 
     for n in range(1, 10):
-        data_str = f"Message number {n}"
+        data_str = '{"data": "Message number ' + str(n) + '"}'
         # Data must be a bytestring
         data = data_str.encode("utf-8")
         # Add two attributes, origin and username, to the message
@@ -627,7 +627,7 @@ def publish_messages_with_batch_settings(project_id: str, topic_id: str) -> None
         print(message_id)
 
     for n in range(1, 10):
-        data_str = f"Message number {n}"
+        data_str = '{"data": "Message number ' + str(n) + '"}'
         # Data must be a bytestring
         data = data_str.encode("utf-8")
         publish_future = publisher.publish(topic_path, data)

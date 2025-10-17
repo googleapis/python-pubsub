@@ -60,8 +60,6 @@ dependencies.
 
 Supported Python Versions
 ^^^^^^^^^^^^^^^^^^^^^^^^^
-- Python 3.7
-- Python 3.8
 - Python 3.9
 - Python 3.10
 - Python 3.11
@@ -71,7 +69,7 @@ Supported Python Versions
 
 Deprecated Python Versions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
-Python <= 3.6.
+Python <= 3.8.
 
 The last version of this library compatible with Python 2.7 is google-cloud-pubsub==1.7.0.
 
