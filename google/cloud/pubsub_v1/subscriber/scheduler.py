@@ -150,21 +150,7 @@ class ThreadScheduler(Scheduler):
             It is assumed that each message was submitted to the scheduler as the
             first positional argument to the provided callback.
         """
-        dropped_messages = []
-
-        # Drop all pending item from the executor. Without this, the executor will also
-        # try to process any pending work items before termination, which is undesirable.
-        #
-        # TODO: Replace the logic below by passing `cancel_futures=True` to shutdown()
-        # once we only need to support Python 3.9+.
-        try:
-            while True:
-                work_item = self._executor._work_queue.get(block=False)
-                if work_item is None:  # Exceutor in shutdown mode.
-                    continue
-                dropped_messages.append(work_item.args[0])  # type: ignore[index]
-        except queue.Empty:
-            pass
-
-        self._executor.shutdown(wait=await_msg_callbacks)
-        return dropped_messages
+        # The public API for ThreadPoolExecutor does not allow retrieving pending
+        # work items, so return an empty list.
+        self._executor.shutdown(wait=await_msg_callbacks, cancel_futures=True)
+        return []
