@@ -482,7 +482,7 @@ def prerelease_deps(session, protobuf_implementation):
         for match in re.finditer(r"^\s*(\S+)", constraints_text, flags=re.MULTILINE)
     ]
 
-#     session.install(*constraints_deps)
+    #     session.install(*constraints_deps)
 
     prerel_deps = [
         "protobuf",
