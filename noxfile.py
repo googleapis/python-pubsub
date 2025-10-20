@@ -479,9 +479,7 @@ def prerelease_deps(session, protobuf_implementation):
     # Ignore leading whitespace and comment lines.
     constraints_deps = [
         match.group(1)
-        for match in re.finditer(
-            r"^\s*(\S+)", constraints_text, flags=re.MULTILINE
-        )
+        for match in re.finditer(r"^\s*(\S+)", constraints_text, flags=re.MULTILINE)
     ]
 
     session.install(*constraints_deps)
