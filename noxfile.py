@@ -233,12 +233,7 @@ def install_unittest_dependencies(session, *constraints):
 def unit(session, protobuf_implementation):
     # Install all test dependencies, then install this package in-place.
 
-    if protobuf_implementation == "cpp" and session.python in (
-        "3.11",
-        "3.12",
-        "3.13",
-        "3.14",
-    ):
+    if protobuf_implementation == "cpp" and session.python in ("3.11", "3.12", "3.13", "3.14"):
         session.skip("cpp implementation is not supported in python 3.11+")
 
     constraints_path = str(
@@ -448,12 +443,7 @@ def docfx(session):
 def prerelease_deps(session, protobuf_implementation):
     """Run all tests with prerelease versions of dependencies installed."""
 
-    if protobuf_implementation == "cpp" and session.python in (
-        "3.11",
-        "3.12",
-        "3.13",
-        "3.14",
-    ):
+    if protobuf_implementation == "cpp" and session.python in ("3.11", "3.12", "3.13", "3.14"):
         session.skip("cpp implementation is not supported in python 3.11+")
 
     # Install all dependencies
@@ -465,26 +455,6 @@ def prerelease_deps(session, protobuf_implementation):
     )
     session.install(*system_deps_all)
 
-    # Because we test minimum dependency versions on the minimum Python
-    # version, the first version we test with in the unit tests sessions has a
-    # constraints file containing all dependencies and extras.
-    with open(
-        CURRENT_DIRECTORY
-        / "testing"
-        / f"constraints-{UNIT_TEST_PYTHON_VERSIONS[0]}.txt",
-        encoding="utf-8",
-    ) as constraints_file:
-        constraints_text = constraints_file.read()
-
-    # Ignore leading whitespace and comment lines.
-    constraints_deps = [
-        match.group(1)
-        for match in re.finditer(
-            r"^\s*(\S+)(?===\S+)", constraints_text, flags=re.MULTILINE
-        )
-    ]
-
-    session.install(*constraints_deps)
 
     prerel_deps = [
         "protobuf",
