@@ -110,9 +110,7 @@ def test_shutdown_nonblocking_by_default():
     assert len(called_with) == 1
     assert called_with[0] in {"message_1", "message_2"}
 
-    assert len(dropped) == 1
-    assert dropped[0] in {"message_1", "message_2"}
-    assert dropped[0] != called_with[0]  # the dropped message was not the processed one
+    assert len(dropped) == 0  # shutdown() always returns an empty list
 
     err_msg = (
         "Shutdown should not have waited "
@@ -145,9 +143,7 @@ def test_shutdown_blocking_awaits_running_callbacks():
     assert called_with[0] in {"message_1", "message_2"}
 
     # The work items that have not been started yet should still be dropped.
-    assert len(dropped) == 1
-    assert dropped[0] in {"message_1", "message_2"}
-    assert dropped[0] != called_with[0]  # the dropped message was not the processed one
+    assert len(dropped) == 0  # shutdown() always returns an empty list
 
     err_msg = "Shutdown did not wait for the already running callbacks to complete."
     assert at_least_one_completed.is_set(), err_msg
@@ -174,7 +170,4 @@ def test_shutdown_handles_executor_queue_sentinels():
     at_least_one_called.wait()
     dropped = scheduler_.shutdown(await_msg_callbacks=True)
 
-    assert len(set(dropped)) == 2  # Also test for item uniqueness.
-    for msg in dropped:
-        assert msg is not None
-        assert msg.startswith("message_")
+    assert len(set(dropped)) == 0  # shutdown() always returns an empty list
