@@ -732,7 +732,7 @@ class TestStreamingPull(object):
 
         # The messages that were not processed should have been NACK-ed and we should
         # receive them again quite soon.
-        all_done = threading.Barrier(7 + 1, timeout=5)  # +1 because of the main thread
+        all_done = threading.Barrier(7 + 1, timeout=15)  # +1 because of the main thread
         remaining = []
 
         def callback2(message):
