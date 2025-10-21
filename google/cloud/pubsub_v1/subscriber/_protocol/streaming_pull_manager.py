@@ -1041,13 +1041,10 @@ class StreamingPullManager(object):
             assert self._leaser is not None
             self._leaser.stop()
 
-            total = len(dropped_messages) + len(
-                self._messages_on_hold._messages_on_hold
-            )
+            on_hold_msgs = self._messages_on_hold._messages_on_hold
+            total = len(dropped_messages) + len(on_hold_msgs)
             _LOGGER.debug(f"NACK-ing all not-yet-dispatched messages (total: {total}).")
-            messages_to_nack = itertools.chain(
-                dropped_messages, self._messages_on_hold._messages_on_hold
-            )
+            messages_to_nack = itertools.chain(dropped_messages, on_hold_msgs)
             for msg in messages_to_nack:
                 msg.nack()
 

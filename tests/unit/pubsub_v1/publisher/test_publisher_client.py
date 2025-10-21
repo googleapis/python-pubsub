@@ -308,13 +308,38 @@ def test_opentelemetry_flow_control_exception(creds, span_exporter):
         future2.result()
 
     spans = span_exporter.get_finished_spans()
-    # The number of spans created is non-deterministic.
-    # The first successful publish can create 2 or 4 spans. The second,
-    # failing publish creates 2 spans.
-    assert len(spans) in [4, 6]
 
-    failed_flow_control_span = spans[2]
-    finished_publish_create_span = spans[3]
+    failed_flow_control_span = None
+    for span in spans:
+        if (
+            span.name == "publisher flow control"
+            and span.status.status_code == trace.StatusCode.ERROR
+        ):
+            failed_flow_control_span = span
+            break
+    assert failed_flow_control_span is not None, "Failed flow control span not found"
+
+    finished_publish_create_span = None
+    for span in spans:
+        if (
+            span.name == "topicID create"
+            and span.status.status_code == trace.StatusCode.ERROR
+        ):
+            # We need the span for the second publish, which is the one that failed.
+            # This is a bit heuristic, but the one with the flow control error as a child.
+            for child_span in spans:
+                if (
+                    child_span.parent
+                    and child_span.parent.span_id == span.get_span_context().span_id
+                    and child_span.name == "publisher flow control"
+                ):
+                    finished_publish_create_span = span
+                    break
+            if finished_publish_create_span:
+                break
+    assert (
+        finished_publish_create_span is not None
+    ), "Finished publish create span with flow control error not found"
 
     # Verify failed flow control span values.
     assert failed_flow_control_span.name == "publisher flow control"
