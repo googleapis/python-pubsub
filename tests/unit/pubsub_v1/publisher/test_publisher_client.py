@@ -326,18 +326,19 @@ def test_opentelemetry_flow_control_exception(creds, span_exporter):
     # Verify failed flow control span values.
     assert failed_fc_span.kind == trace.SpanKind.INTERNAL
     assert (
-        failed_fc_span.parent.span_id
-        == failed_create_span.get_span_context().span_id
+        failed_fc_span.parent.span_id == failed_create_span.get_span_context().span_id
     )
     assert len(failed_fc_span.events) == 1
     assert failed_fc_span.events[0].name == "exception"
 
     # Verify finished publish create span values
     assert failed_create_span.status.status_code == trace.StatusCode.ERROR
-    assert len(failed_create_span.events) >= 1 # Should have at least 'publish start'
+    assert len(failed_create_span.events) >= 1  # Should have at least 'publish start'
     assert failed_create_span.events[0].name == "publish start"
     # Check for exception event
-    has_exception_event = any(event.name == "exception" for event in failed_create_span.events)
+    has_exception_event = any(
+        event.name == "exception" for event in failed_create_span.events
+    )
     assert has_exception_event, "Exception event not found in failed create span"
 
 
