@@ -4,6 +4,18 @@
 
 [1]: https://pypi.org/project/google-cloud-pubsub/#history
 
+## [2.32.0](https://github.com/googleapis/google-cloud-python/compare/google-cloud-pubsub-v2.31.1...google-cloud-pubsub-v2.32.0) (2025-10-22)
+
+
+### Features
+
+* wip  ([15ecf16a6cbf8be331d3929329b4d9784855b1a7](https://github.com/googleapis/google-cloud-python/commit/15ecf16a6cbf8be331d3929329b4d9784855b1a7))
+* wip  ([a42d2724ce770ee167d925309ee3d15eee131fb2](https://github.com/googleapis/google-cloud-python/commit/a42d2724ce770ee167d925309ee3d15eee131fb2))
+* wip  ([5453dd738eda82319ce1ece03b0ffcc2febedc4f](https://github.com/googleapis/google-cloud-python/commit/5453dd738eda82319ce1ece03b0ffcc2febedc4f))
+* wip  ([edc1ccafb39c26cffc937db3eae68c375e8a5b4b](https://github.com/googleapis/google-cloud-python/commit/edc1ccafb39c26cffc937db3eae68c375e8a5b4b))
+* support the protocol version in StreamingPullRequest (#1455)  ([e6294a1883abf9809cb56d5cd4ad25cc501bc994](https://github.com/googleapis/google-cloud-python/commit/e6294a1883abf9809cb56d5cd4ad25cc501bc994))
+* debug logs (#1460)  ([b5d4a458ca9319bebbe3142a1f05d4d4471c8d4d](https://github.com/googleapis/google-cloud-python/commit/b5d4a458ca9319bebbe3142a1f05d4d4471c8d4d))
+
 
 ## [2.31.1](https://github.com/googleapis/python-pubsub/compare/v2.31.0...v2.31.1) (2025-07-28)
 
