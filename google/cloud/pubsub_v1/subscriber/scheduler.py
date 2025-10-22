@@ -168,16 +168,12 @@ class ThreadScheduler(Scheduler):
                 if sys.version_info < (3, 14):
                     # For Python < 3.14, work_item.args is a tuple of positional arguments.
                     # The message is expected to be the first argument.
-                    if hasattr(work_item, "args") and work_item.args:
+                    if hasattr(work_item, 'args') and work_item.args:
                         dropped_message = work_item.args[0]  # type: ignore[index]
                 else:
                     # For Python >= 3.14, work_item.task is (fn, args, kwargs).
                     # The message is expected to be the first item in the args tuple (task[1]).
-                    if (
-                        hasattr(work_item, "task")
-                        and len(work_item.task) == 3
-                        and work_item.task[1]
-                    ):
+                    if hasattr(work_item, 'task') and len(work_item.task) == 3 and work_item.task[1]:
                         dropped_message = work_item.task[1][0]
 
                 if dropped_message is not None:
