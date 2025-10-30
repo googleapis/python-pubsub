@@ -2,9 +2,19 @@ image: us-central1-docker.pkg.dev/cloud-sdk-librarian-prod/images-prod/python-li
 libraries:
   - id: google-cloud-pubsub
     version: 2.31.1
-    apis: []
+    last_generated_commit: d300b151a973ce0425ae4ad07b3de957ca31bec6
+    apis:
+      - path: google/pubsub/v1
+        service_config: pubsub_v1.yaml
     source_roots:
       - .
-    preserve_regex: []
-    remove_regex: []
+    preserve_regex:
+      - .git
+      - CHANGELOG.md
+      - docs/CHANGELOG.md
+      - docs/README.rst
+      - tests/system
+      - google/cloud/pubsub
+    remove_regex:
+      - .
     tag_format: v{version}
