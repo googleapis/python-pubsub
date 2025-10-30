@@ -6,4 +6,4 @@ mock==5.2.0
 flaky==3.8.1
 google-cloud-bigquery===3.30.0; python_version <= '3.8'
 google-cloud-bigquery==3.38.0; python_version >= '3.9'
-google-cloud-storage==3.4.0
+google-cloud-storage==3.4.1
