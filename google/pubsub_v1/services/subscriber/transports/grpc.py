@@ -339,8 +339,8 @@ class SubscriberGrpcTransport(SubscriberTransport):
         Creates a subscription to a given topic. See the [resource name
         rules]
         (https://cloud.google.com/pubsub/docs/pubsub-basics#resource_names).
-        If the subscription already exists, returns ``ALREADY_EXISTS``.
-        If the corresponding topic doesn't exist, returns ``NOT_FOUND``.
+        If the subscription already exists, raises ``ALREADY_EXISTS``.
+        If the corresponding topic doesn't exist, raises ``NOT_FOUND``.
 
         If the name is not provided in the request, the server will
         assign a random name for this subscription on the same project
@@ -702,8 +702,8 @@ class SubscriberGrpcTransport(SubscriberTransport):
         operations, which allow you to manage message acknowledgments in
         bulk. That is, you can set the acknowledgment state of messages
         in an existing subscription to the state captured by a snapshot.
-        If the snapshot already exists, returns ``ALREADY_EXISTS``. If
-        the requested subscription doesn't exist, returns ``NOT_FOUND``.
+        If the snapshot already exists, raises ``ALREADY_EXISTS``. If
+        the requested subscription doesn't exist, raises ``NOT_FOUND``.
         If the backlog in the subscription is too old -- and the
         resulting snapshot would expire in less than 1 hour -- then
         ``FAILED_PRECONDITION`` is returned. See also the
