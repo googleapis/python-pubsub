@@ -363,8 +363,7 @@ def cover(session):
     session.run("coverage", "erase")
 
 
-# py > 3.10 not supported yet
-@nox.session(python="3.10")
+@nox.session(python=DEFAULT_PYTHON_VERSION)
 def docs(session):
     """Build the docs for this library."""
 
