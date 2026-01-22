@@ -51,7 +51,7 @@ dependencies = [
     "protobuf>=3.20.2,<7.0.0,!=4.21.0,!=4.21.1,!=4.21.2,!=4.21.3,!=4.21.4,!=4.21.5",
     "grpc-google-iam-v1 >= 0.12.4, < 1.0.0",
     "grpcio-status >= 1.33.2",
-    "opentelemetry-api >= 1.27.",
+    "opentelemetry-api >= 1.27.0",
     "opentelemetry-sdk >= 1.27.0",
 ]
 extras = {"libcst": "libcst >= 0.3.10"}
