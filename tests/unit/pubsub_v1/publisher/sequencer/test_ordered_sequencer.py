@@ -13,10 +13,8 @@
 # limitations under the License.
 
 import concurrent.futures as futures
-import sys
 
 from unittest import mock
-
 import pytest
 
 from google.auth import credentials

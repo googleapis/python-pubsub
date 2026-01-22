@@ -14,7 +14,6 @@
 
 import datetime
 import queue
-import sys
 import time
 
 from unittest import mock

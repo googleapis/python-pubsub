@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import logging
-import sys
 import threading
 
 from google.cloud.pubsub_v1 import types

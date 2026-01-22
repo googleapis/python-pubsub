@@ -14,7 +14,6 @@
 
 import datetime
 import time
-import sys
 import queue
 import pytest
 

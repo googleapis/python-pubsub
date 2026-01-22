@@ -13,10 +13,8 @@
 # limitations under the License.
 
 from __future__ import absolute_import
-import sys
 
 from unittest import mock
-
 import pytest
 
 from google.cloud.pubsub_v1.subscriber import futures

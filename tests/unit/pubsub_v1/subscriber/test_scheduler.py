@@ -15,7 +15,6 @@
 import concurrent.futures
 import queue
 import pytest
-import sys
 import threading
 import time
 
