@@ -19,11 +19,7 @@ import threading
 from google.cloud.pubsub_v1.subscriber._protocol import heartbeater
 from google.cloud.pubsub_v1.subscriber._protocol import streaming_pull_manager
 
-# special case python < 3.8
-if sys.version_info.major == 3 and sys.version_info.minor < 8:
-    import mock
-else:
-    from unittest import mock
+from unittest import mock
 
 import pytest
 
