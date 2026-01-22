@@ -20,7 +20,6 @@ import itertools
 import operator as op
 import os
 import psutil
-import sys
 import threading
 import time
 from typing import Any, Callable, cast, TypeVar
