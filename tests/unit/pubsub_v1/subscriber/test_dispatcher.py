@@ -33,6 +33,7 @@ from unittest import mock
 
 import pytest
 from google.cloud.pubsub_v1.subscriber.exceptions import (
+    AcknowledgeError,
     AcknowledgeStatus,
 )
 
@@ -201,6 +202,182 @@ def test_dispatch_duplicate_items_callback_active_manager_with_futures_no_eod(
 
     if method_name != "drop" and method_name != "lease":
         assert items[1].future.result() == AcknowledgeStatus.SUCCESS
+
+
+@pytest.mark.parametrize(
+    "items,method_name",
+    [
+        (
+            [
+                requests.AckRequest("0", 0, 0, "", None),
+                requests.AckRequest("0", 0, 1, "", None),
+            ],
+            "ack",
+        ),
+        (
+            [
+                requests.DropRequest("0", 0, ""),
+                requests.DropRequest("0", 1, ""),
+            ],
+            "drop",
+        ),
+        (
+            [
+                requests.LeaseRequest("0", 0, ""),
+                requests.LeaseRequest("0", 1, ""),
+            ],
+            "lease",
+        ),
+        (
+            [
+                requests.ModAckRequest("0", 0, None),
+                requests.ModAckRequest("0", 1, None),
+            ],
+            "modify_ack_deadline",
+        ),
+        (
+            [
+                requests.NackRequest("0", 0, "", None),
+                requests.NackRequest("0", 1, "", None),
+            ],
+            "nack",
+        ),
+    ],
+)
+def test_dispatch_in_shutdown_mode_no_futures(items, method_name):
+    manager = mock.create_autospec(
+        streaming_pull_manager.StreamingPullManager, instance=True
+    )
+    dispatcher_ = dispatcher.Dispatcher(manager, mock.sentinel.queue)
+
+    dispatcher_._shutdown_mode = True
+
+    manager._exactly_once_delivery_enabled.return_value = False
+    with mock.patch.object(dispatcher_, method_name) as method:
+        dispatcher_.dispatch_callback(items)
+
+    method.assert_not_called()
+    manager._exactly_once_delivery_enabled.assert_called()
+
+
+@pytest.mark.parametrize(
+    "items,method_name",
+    [
+        (
+            [
+                requests.AckRequest("0", 0, 0, "", None),
+                requests.AckRequest("0", 0, 1, "", futures.Future()),
+            ],
+            "ack",
+        ),
+        (
+            [
+                requests.DropRequest("0", 0, ""),
+                requests.DropRequest("0", 1, ""),
+            ],
+            "drop",
+        ),
+        (
+            [
+                requests.LeaseRequest("0", 0, ""),
+                requests.LeaseRequest("0", 1, ""),
+            ],
+            "lease",
+        ),
+        (
+            [
+                requests.ModAckRequest("0", 0, None),
+                requests.ModAckRequest("0", 1, futures.Future()),
+            ],
+            "modify_ack_deadline",
+        ),
+        (
+            [
+                requests.NackRequest("0", 0, "", None),
+                requests.NackRequest("0", 1, "", futures.Future()),
+            ],
+            "nack",
+        ),
+    ],
+)
+def test_dispatch_in_shutdown_mode_no_eod(items, method_name):
+    manager = mock.create_autospec(
+        streaming_pull_manager.StreamingPullManager, instance=True
+    )
+    dispatcher_ = dispatcher.Dispatcher(manager, mock.sentinel.queue)
+
+    dispatcher_._shutdown_mode = True
+
+    manager._exactly_once_delivery_enabled.return_value = False
+    with mock.patch.object(dispatcher_, method_name) as method:
+        dispatcher_.dispatch_callback(items)
+
+    method.assert_not_called()
+    manager._exactly_once_delivery_enabled.assert_called()
+
+    if method_name != "drop" and method_name != "lease":
+        assert items[1].future.result() == AcknowledgeStatus.SUCCESS
+
+
+@pytest.mark.parametrize(
+    "items,method_name",
+    [
+        (
+            [
+                requests.AckRequest("0", 0, 0, "", None),
+                requests.AckRequest("0", 0, 1, "", futures.Future()),
+            ],
+            "ack",
+        ),
+        (
+            [
+                requests.DropRequest("0", 0, ""),
+                requests.DropRequest("0", 1, ""),
+            ],
+            "drop",
+        ),
+        (
+            [
+                requests.LeaseRequest("0", 0, ""),
+                requests.LeaseRequest("0", 1, ""),
+            ],
+            "lease",
+        ),
+        (
+            [
+                requests.ModAckRequest("0", 0, None),
+                requests.ModAckRequest("0", 1, futures.Future()),
+            ],
+            "modify_ack_deadline",
+        ),
+        (
+            [
+                requests.NackRequest("0", 0, "", None),
+                requests.NackRequest("0", 1, "", futures.Future()),
+            ],
+            "nack",
+        ),
+    ],
+)
+def test_dispatch_in_shutdown_mode_with_eod(items, method_name):
+    manager = mock.create_autospec(
+        streaming_pull_manager.StreamingPullManager, instance=True
+    )
+    dispatcher_ = dispatcher.Dispatcher(manager, mock.sentinel.queue)
+
+    dispatcher_._shutdown_mode = True
+
+    manager._exactly_once_delivery_enabled.return_value = True
+    with mock.patch.object(dispatcher_, method_name) as method:
+        dispatcher_.dispatch_callback(items)
+
+    method.assert_not_called()
+    manager._exactly_once_delivery_enabled.assert_called()
+
+    if method_name != "drop" and method_name != "lease":
+        with pytest.raises(AcknowledgeError) as e:
+            items[1].future.result()
+        assert e.value.error_code == AcknowledgeStatus.OTHER
 
 
 @pytest.mark.parametrize(
@@ -528,6 +705,7 @@ def test_ack_no_time():
             future=None,
         )
     ]
+
     manager.send_unary_ack.return_value = (items, [])
     dispatcher_.ack(items)
 
