@@ -195,3 +195,34 @@ def test_opentelemetry_project_id_set_after_create_subscribe_span():
         delivery_attempt=4,
     )
     assert opentelemetry_data.project_id == "projectId"
+
+
+def test_opentelemetry_context_manager_exits_recording_works_as_expected(span_exporter):
+    """Test that __exit__ properly ends process span in normal flow."""
+    msg = create_message(b"foo")
+    opentelemetry_data = SubscribeOpenTelemetry(msg)
+    msg.opentelemetry_data = opentelemetry_data
+
+    # Start the subscribe span
+    opentelemetry_data.start_subscribe_span(
+        subscription="projects/projectId/subscriptions/subscriptionID",
+        exactly_once_enabled=False,
+        ack_id="ack_id",
+        delivery_attempt=4,
+    )
+
+    # Use context manager
+    with opentelemetry_data as process_span:
+        assert process_span is not None
+        # Subscribe span should still be recording
+        assert opentelemetry_data._subscribe_span.is_recording()
+
+    # The span has not been completed and is no longer recording
+    assert not opentelemetry_data._subscribe_span.is_recording()
+
+    # Verify both spans are finished
+    spans = span_exporter.get_finished_spans()
+    assert len(spans) == 2
+    span_names = [span.name for span in spans]
+    assert any("process" in name for name in span_names)
+    assert any("subscribe" in name for name in span_names)

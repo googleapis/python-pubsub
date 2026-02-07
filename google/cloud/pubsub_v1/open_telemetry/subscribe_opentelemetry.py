@@ -205,7 +205,7 @@ class SubscribeOpenTelemetry:
         return self.start_process_span()
 
     def __exit__(self, exc_type, exc_val, traceback):
-        if self._process_span:
+        if self._process_span and self._subscribe_span.is_recording():
             self.end_process_span()
 
 
