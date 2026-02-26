@@ -26,9 +26,9 @@ import re
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union
 
 
-from google.protobuf import empty_pb2  # type: ignore
 from google.pubsub_v1.types import schema
 from google.pubsub_v1.types import schema as gp_schema
+import google.protobuf.empty_pb2 as empty_pb2  # type: ignore
 
 
 class _BaseSchemaServiceRestTransport(SchemaServiceTransport):

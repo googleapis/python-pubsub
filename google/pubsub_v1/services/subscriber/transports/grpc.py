@@ -32,8 +32,8 @@ import proto  # type: ignore
 
 from google.iam.v1 import iam_policy_pb2  # type: ignore
 from google.iam.v1 import policy_pb2  # type: ignore
-from google.protobuf import empty_pb2  # type: ignore
 from google.pubsub_v1.types import pubsub
+import google.protobuf.empty_pb2 as empty_pb2  # type: ignore
 from .base import SubscriberTransport, DEFAULT_CLIENT_INFO
 
 try:

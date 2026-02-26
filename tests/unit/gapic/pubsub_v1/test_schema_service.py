@@ -15,7 +15,12 @@
 #
 import os
 
-import mock
+# try/except added for compatibility with python < 3.8
+try:
+    from unittest import mock
+    from unittest.mock import AsyncMock  # pragma: NO COVER
+except ImportError:  # pragma: NO COVER
+    import mock
 
 import grpc
 from grpc.experimental import aio
@@ -24,6 +29,7 @@ from google.protobuf import json_format
 import json
 import math
 import pytest
+from collections.abc import Sequence, Mapping
 from google.api_core import api_core_version
 from proto.marshal.rules.dates import DurationRule, TimestampRule
 from proto.marshal.rules import wrappers
@@ -52,7 +58,6 @@ from google.iam.v1 import iam_policy_pb2  # type: ignore
 from google.iam.v1 import options_pb2  # type: ignore
 from google.iam.v1 import policy_pb2  # type: ignore
 from google.oauth2 import service_account
-from google.protobuf import timestamp_pb2  # type: ignore
 from google.pubsub_v1.services.schema_service import SchemaServiceAsyncClient
 from google.pubsub_v1.services.schema_service import SchemaServiceClient
 from google.pubsub_v1.services.schema_service import pagers
@@ -60,6 +65,7 @@ from google.pubsub_v1.services.schema_service import transports
 from google.pubsub_v1.types import schema
 from google.pubsub_v1.types import schema as gp_schema
 import google.auth
+import google.protobuf.timestamp_pb2 as timestamp_pb2  # type: ignore
 
 
 CRED_INFO_JSON = {

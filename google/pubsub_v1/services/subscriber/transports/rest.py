@@ -35,8 +35,8 @@ from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union
 import warnings
 
 
-from google.protobuf import empty_pb2  # type: ignore
 from google.pubsub_v1.types import pubsub
+import google.protobuf.empty_pb2 as empty_pb2  # type: ignore
 
 
 from .rest_base import _BaseSubscriberRestTransport
@@ -951,7 +951,7 @@ class SubscriberRestTransport(_BaseSubscriberRestTransport):
                 )
                 method = transcoded_request["method"]
                 try:
-                    request_payload = json_format.MessageToJson(request)
+                    request_payload = type(request).to_json(request)
                 except:
                     request_payload = None
                 http_request = {
@@ -1379,7 +1379,7 @@ class SubscriberRestTransport(_BaseSubscriberRestTransport):
                 )
                 method = transcoded_request["method"]
                 try:
-                    request_payload = json_format.MessageToJson(request)
+                    request_payload = type(request).to_json(request)
                 except:
                     request_payload = None
                 http_request = {
@@ -1488,7 +1488,7 @@ class SubscriberRestTransport(_BaseSubscriberRestTransport):
                 )
                 method = transcoded_request["method"]
                 try:
-                    request_payload = json_format.MessageToJson(request)
+                    request_payload = type(request).to_json(request)
                 except:
                     request_payload = None
                 http_request = {
@@ -2203,7 +2203,7 @@ class SubscriberRestTransport(_BaseSubscriberRestTransport):
                 )
                 method = transcoded_request["method"]
                 try:
-                    request_payload = json_format.MessageToJson(request)
+                    request_payload = type(request).to_json(request)
                 except:
                     request_payload = None
                 http_request = {
@@ -2318,7 +2318,7 @@ class SubscriberRestTransport(_BaseSubscriberRestTransport):
                 )
                 method = transcoded_request["method"]
                 try:
-                    request_payload = json_format.MessageToJson(request)
+                    request_payload = type(request).to_json(request)
                 except:
                     request_payload = None
                 http_request = {

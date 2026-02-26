@@ -47,11 +47,11 @@ except AttributeError:  # pragma: NO COVER
 
 from google.iam.v1 import iam_policy_pb2  # type: ignore
 from google.iam.v1 import policy_pb2  # type: ignore
-from google.protobuf import duration_pb2  # type: ignore
-from google.protobuf import field_mask_pb2  # type: ignore
 from google.pubsub_v1.services.publisher import pagers
 from google.pubsub_v1.types import pubsub
 from google.pubsub_v1.types import TimeoutType
+import google.protobuf.duration_pb2 as duration_pb2  # type: ignore
+import google.protobuf.field_mask_pb2 as field_mask_pb2  # type: ignore
 from .transports.base import PublisherTransport, DEFAULT_CLIENT_INFO
 from .transports.grpc_asyncio import PublisherGrpcAsyncIOTransport
 from .client import PublisherClient
@@ -122,7 +122,10 @@ class PublisherAsyncClient:
         Returns:
             PublisherAsyncClient: The constructed client.
         """
-        return PublisherClient.from_service_account_info.__func__(PublisherAsyncClient, info, *args, **kwargs)  # type: ignore
+        sa_info_func = (
+            PublisherClient.from_service_account_info.__func__  # type: ignore
+        )
+        return sa_info_func(PublisherAsyncClient, info, *args, **kwargs)
 
     @classmethod
     def from_service_account_file(cls, filename: str, *args, **kwargs):
@@ -138,7 +141,10 @@ class PublisherAsyncClient:
         Returns:
             PublisherAsyncClient: The constructed client.
         """
-        return PublisherClient.from_service_account_file.__func__(PublisherAsyncClient, filename, *args, **kwargs)  # type: ignore
+        sa_file_func = (
+            PublisherClient.from_service_account_file.__func__  # type: ignore
+        )
+        return sa_file_func(PublisherAsyncClient, filename, *args, **kwargs)
 
     from_service_account_json = from_service_account_file
 

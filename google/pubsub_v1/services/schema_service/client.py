@@ -64,10 +64,10 @@ _LOGGER = std_logging.getLogger(__name__)
 
 from google.iam.v1 import iam_policy_pb2  # type: ignore
 from google.iam.v1 import policy_pb2  # type: ignore
-from google.protobuf import timestamp_pb2  # type: ignore
 from google.pubsub_v1.services.schema_service import pagers
 from google.pubsub_v1.types import schema
 from google.pubsub_v1.types import schema as gp_schema
+import google.protobuf.timestamp_pb2 as timestamp_pb2  # type: ignore
 
 import grpc
 from .transports.base import SchemaServiceTransport, DEFAULT_CLIENT_INFO
